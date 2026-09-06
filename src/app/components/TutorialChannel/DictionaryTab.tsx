@@ -11,6 +11,8 @@ const DEMO_QUERIES = [
   "my gogeta for 3x speed"
 ];
 
+const FIRE_ZIO_AVATAR = "https://media.discordapp.net/attachments/1538970612947615744/1543320682430074971/image.png?ex=6a9470e4&is=6a931f64&hm=d97c87c7af214b524fdd41b313db6a4d45d5cf435046fc9a8a14fb307d258165&=&format=webp&quality=lossless";
+
 export function DictionaryTab() {
   const { units: ALL_UNITS } = useUnits();
 
@@ -70,7 +72,7 @@ export function DictionaryTab() {
   }, [liveParserInput]);
 
   return (
-    <div className="animate-fade-in pb-8 max-w-5xl mx-auto flex flex-col h-full gap-5">
+    <div className="animate-fade-in pb-8 max-w-5xl mx-auto flex flex-col h-full gap-5 font-sans select-none">
       <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] rounded-[12px] p-5 md:p-8 shadow-xl flex flex-col gap-4 relative">
           
           {/* Background effects container */}
@@ -108,7 +110,7 @@ export function DictionaryTab() {
                   className="w-full bg-[#111214] border border-[rgba(255,255,255,0.08)] rounded-[8px] p-4 text-[#F2F3F5] text-[15px] font-medium resize-none outline-none focus:border-[#5865F2] focus:ring-1 focus:ring-[#5865F2] transition-all shadow-inner leading-relaxed min-h-[100px]"
               />
 
-              {/* Aqua Reaction positioned safely inside document flow to prevent Z-index clipping */}
+              {/* Aqua Reaction */}
               {aquaReaction && (
                   <div className="bg-[#2B2D31] border-l-4 border-l-[#ed4245] px-4 py-3 rounded-[8px] shadow-sm flex items-center gap-3 animate-fade-in self-end w-fit max-w-full">
                       <img src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" className="w-8 h-8 rounded-full border border-[#ed4245] object-cover shrink-0 bg-[#111214]" alt="Aqua" />
@@ -121,6 +123,16 @@ export function DictionaryTab() {
               <span>{parsedData.total} Data Points Recognized</span>
               <span className="flex items-center gap-1.5"><Activity className="w-3.5 h-3.5 text-[#23a559] animate-pulse" /> Live Engine Active</span>
           </div>
+      </div>
+
+      <div className="bg-[#111214] border-l-4 border-l-[#ed4245] border-y border-y-[rgba(255,255,255,0.04)] border-r border-r-[rgba(255,255,255,0.04)] rounded-r-[8px] p-4 shadow-inner flex items-start gap-4">
+         <img src={FIRE_ZIO_AVATAR} className="w-10 h-10 rounded-full border border-[#ed4245] object-cover shrink-0 bg-[#1e1f22]" alt="Fire Zio" />
+         <div className="flex flex-col gap-1">
+           <span className="text-[11px] font-black uppercase tracking-widest text-[#ed4245]">Fire Zio's Technical Note</span>
+           <p className="text-[#949BA4] text-[13px] italic font-medium leading-relaxed">
+             "The parser runs purely client-side using Levenshtein distance and localized caching. If it fails to recognize your obscure slang, add it to your personal dictionary in the Calculator so it stops missing it."
+           </p>
+         </div>
       </div>
 
       {parsedData.total === 0 ? (

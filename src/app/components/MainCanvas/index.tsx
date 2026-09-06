@@ -13,6 +13,7 @@ import { CanvasControls } from "./CanvasControls";
 import { GuideType } from "../guides/AquaGuideOverlay";
 
 const STICKY_HEADER_CLASS = "bg-[#313338] pt-2 md:pt-3 pb-3 -mx-2 px-2 md:-mx-8 md:px-8";
+const FIRE_ZIO_AVATAR = "https://media.discordapp.net/attachments/1538970612947615744/1543320682430074971/image.png?ex=6a9470e4&is=6a931f64&hm=d97c87c7af214b524fdd41b313db6a4d45d5cf435046fc9a8a14fb307d258165&=&format=webp&quality=lossless";
 
 type VirtualItem = 
   | { type: 'space-top'; id: string }
@@ -148,9 +149,9 @@ export const MainCanvas = memo(function MainCanvas({
           const processed = processUnits(rawUnits, sortMode, statusFilter);
 
           if (processed.length === 0 && activeTierFilter !== "All") {
-              items.push({ type: 'tier-banner', id: `banner-${tKey}`, tier: TIER_CONFIG[tKey] });
-              items.push({ type: 'no-results', id: `no-results-${tKey}` });
-              return;
+             items.push({ type: 'tier-banner', id: `banner-${tKey}`, tier: TIER_CONFIG[tKey] });
+             items.push({ type: 'no-results', id: `no-results-${tKey}` });
+             return;
           }
           if (processed.length === 0) return;
 
@@ -314,19 +315,21 @@ export const MainCanvas = memo(function MainCanvas({
                   {item.type === 'space-bottom' && <div className="h-10 md:h-16" />}
 
                   {item.type === 'welcome' && (
-                    <div className="mb-4 md:mb-8 flex flex-col md:flex-row gap-3 md:gap-4 bg-[#2B2D31] md:bg-transparent p-3 md:p-0 rounded-[8px] md:rounded-none border md:border-none border-[rgba(255,255,255,0.04)] mx-2 md:mx-0">
+                    <div className="mb-4 md:mb-8 flex flex-col md:flex-row gap-3 md:gap-4 bg-[#2B2D31] md:bg-transparent p-3 md:p-0 rounded-[8px] md:rounded-none border md:border-none border-[rgba(255,255,255,0.04)] mx-2 md:mx-0 font-sans">
                       <div className="flex items-start justify-between md:hidden w-full">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-[#5865F2] flex items-center justify-center text-lg">👋</div>
-                          <h2 className="text-[16px] font-bold text-[#F2F3F5] tracking-tight">Welcome!</h2>
+                          <img src={FIRE_ZIO_AVATAR} className="w-8 h-8 rounded-full border border-[#ed4245] object-cover shrink-0 bg-[#1e1f22]" alt="Fire Zio" />
+                          <h2 className="text-[16px] font-bold text-[#F2F3F5] tracking-tight">Listen up.</h2>
                         </div>
                         <button onClick={dismissWelcome} className="text-[#80848E] hover:text-[#DBDEE1] p-1"><X className="w-4 h-4" /></button>
                       </div>
-                      <div className="hidden md:flex w-14 h-14 rounded-full bg-[#5865F2] items-center justify-center flex-shrink-0 text-3xl">🤔</div>
+                      
+                      <img src={FIRE_ZIO_AVATAR} className="hidden md:block w-14 h-14 rounded-full border-2 border-[#ed4245] object-cover shrink-0 bg-[#1e1f22] shadow-md" alt="Fire Zio" />
+                      
                       <div className="flex flex-col justify-center max-w-2xl">
-                        <h2 className="hidden md:block text-[22px] font-bold text-[#F2F3F5] mb-1 font-sans tracking-tight">Welcome to the value-list!</h2>
+                        <h2 className="hidden md:block text-[20px] font-black text-[#F2F3F5] mb-1 tracking-tight">Stop getting scammed.</h2>
                         <p className="text-[12px] md:text-[13px] text-[#B5BAC1] mb-2 md:mb-2.5 leading-relaxed">
-                          This is the ASTD value list. <strong>Left-click</strong> any unit card's plus button to instantly add it to <i>You Give</i>, and <strong>Right-click</strong> to add it to <i>You Get</i>.
+                          This is the value list. <strong>Left-click</strong> any unit card's 'plus' button to instantly throw it into <i>You Give</i>, and <strong>Right-click</strong> to put it in <i>You Get</i>. Check your stats before you open your mouth in trade chat.
                         </p>
                         <div className="flex flex-wrap items-center gap-1.5 md:gap-3 text-[9px] md:text-[11px] font-bold text-[#949BA4]">
                           <span className="bg-[#1E1F22] px-2 py-1 rounded border border-[rgba(255,255,255,0.04)]">R = Rarity (/20)</span>

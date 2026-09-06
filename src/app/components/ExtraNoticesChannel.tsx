@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
-import { Info, BookOpen, TriangleAlert, ShieldAlert, Sparkles, LucideIcon, Calendar, Inbox, Search, Pin } from "lucide-react";
+import { Info, BookOpen, ShieldAlert, LucideIcon, Inbox, Search, Pin, Megaphone, Eye } from "lucide-react";
 import { useUnits } from "../../context/UnitContext";
 import { TiltCard } from "./ui/TiltCard";
+
+const FIRE_ZIO_AVATAR = "https://media.discordapp.net/attachments/1538970612947615744/1543320682430074971/image.png?ex=6a9470e4&is=6a931f64&hm=d97c87c7af214b524fdd41b313db6a4d45d5cf435046fc9a8a14fb307d258165&=&format=webp&quality=lossless";
 
 export function ExtraNoticesChannel() {
   const { notices } = useUnits();
@@ -13,7 +15,6 @@ export function ExtraNoticesChannel() {
     setPinnedTitles(prev => ({ ...prev, [title]: !prev[title] }));
   };
 
-  // Filter and sort notices (pinned items float to top)
   const processedNotices = useMemo(() => {
     if (!notices) return [];
     
@@ -29,109 +30,138 @@ export function ExtraNoticesChannel() {
     });
   }, [notices, searchQuery, pinnedTitles]);
 
-  const getStyleForNotice = (idx: number): { icon: LucideIcon, color: string } => {
-    const styles = [
-      { icon: BookOpen, color: "#5865F2" },
-      { icon: Info, color: "#00A8FC" },
-      { icon: ShieldAlert, color: "#ed4245" },
-      { icon: TriangleAlert, color: "#FAA61A" },
-      { icon: Info, color: "#F1C40F" },
-      { icon: TriangleAlert, color: "#FAA61A" },
-      { icon: Info, color: "#949BA4" },
-      { icon: Sparkles, color: "#23a559" }
-    ];
-    return styles[idx % styles.length];
+  // Semantic Matcher
+  const getStyleForNotice = (title: string): { icon: LucideIcon, color: string } => {
+    const lower = title.toLowerCase();
+    if (/(manipulat|cult|leak|scam|warn|drop|unstable|fake|trap)/.test(lower)) {
+      return { icon: ShieldAlert, color: "#ed4245" }; // Discord Red
+    }
+    if (/(demand|og|shiny|value|guide|info|convert|update)/.test(lower)) {
+      return { icon: Info, color: "#5865F2" }; // Discord Blurple
+    }
+    return { icon: BookOpen, color: "#4e5058" }; // Stealth Gray
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#313338] h-full select-none">
+    <div className="flex-1 flex flex-col overflow-hidden bg-[#313338] h-full select-none font-sans">
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #2B2D31; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #1A1B1E; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #111214; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
       `}</style>
 
-      {/* SEARCH FILTER BAR HEADER */}
-      {notices.length > 0 && (
-        <div className="flex-shrink-0 px-4 md:px-6 pt-4 pb-2 bg-[#313338]">
-          <div className="relative w-full max-w-md">
+      {/* Unified Discord-Style Header */}
+      <div className="flex-shrink-0 px-5 py-4 bg-[#2B2D31] border-b border-[rgba(0,0,0,0.2)] shadow-sm z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-[8px] bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] flex items-center justify-center shadow-inner shrink-0">
+            <Megaphone className="w-5 h-5 text-[#5865F2]" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">Market Intelligence</span>
+            <h2 className="text-[17px] font-black text-[#F2F3F5] tracking-tight">Extra Notices</h2>
+          </div>
+        </div>
+
+        {notices.length > 0 && (
+          <div className="relative w-full sm:w-[260px] shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#80848E]" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search notices by keyword..."
-              className="w-full bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] rounded-[8px] pl-9 pr-4 py-2 text-[12px] text-[#DBDEE1] placeholder-[#80848E] focus:outline-none focus:border-[#5865F2] transition-colors shadow-inner"
+              placeholder="Search announcements..."
+              className="w-full bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-full pl-9 pr-4 py-2 text-[13px] text-[#F2F3F5] outline-none placeholder-[#80848E] focus:ring-1 focus:ring-[#5865F2] focus:border-[#5865F2] transition-all shadow-inner"
             />
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-5 md:p-6 flex flex-col gap-6">
+        
+        {/* Fire Zio Channel Banner */}
+        <div className="bg-[#111214] border-l-4 border-l-[#ed4245] border-y border-y-[rgba(255,255,255,0.04)] border-r border-r-[rgba(255,255,255,0.04)] rounded-r-[8px] p-4 shadow-inner flex items-start gap-4">
+           <img src={FIRE_ZIO_AVATAR} className="w-10 h-10 rounded-full border border-[#ed4245] object-cover shrink-0 bg-[#1e1f22]" alt="Fire Zio" />
+           <div className="flex flex-col gap-1">
+             <span className="text-[11px] font-black uppercase tracking-widest text-[#ed4245]">Fire Zio's Briefing</span>
+             <p className="text-[#949BA4] text-[13px] italic font-medium leading-relaxed">
+               "Read these notices before you open your mouth in the trading channels. If you ask a question that is already answered here, don't expect me to be nice about it."
+             </p>
+           </div>
+        </div>
+
         {processedNotices.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full opacity-60">
+          <div className="flex flex-col items-center justify-center h-full opacity-60 mt-10">
             <div className="w-16 h-16 bg-[#2B2D31] rounded-full flex items-center justify-center border border-[rgba(255,255,255,0.04)] mb-4">
-              <Inbox className="w-8 h-8 text-[#80848E]" />
+              <Inbox className="w-8 h-8 text-[#4e5058]" />
             </div>
-            <p className="text-[#DBDEE1] text-[14px] font-bold">
-              {notices.length === 0 ? "No notices currently active." : "No matching notices found."}
+            <p className="text-[#F2F3F5] text-[15px] font-bold tracking-tight">
+              {notices.length === 0 ? "No Active Notices" : "No Matches Found"}
             </p>
-            <p className="text-[#80848E] text-[12px] mt-1">
-              {notices.length === 0 ? "Check back later for updates from the Value List Team." : "Try adjusting your search query."}
+            <p className="text-[#949BA4] text-[13px] mt-1.5 max-w-sm text-center leading-relaxed">
+              {notices.length === 0 ? "Check back later for official market updates and rules from the Value List Team." : "Try adjusting your keywords to find what you're looking for."}
             </p>
           </div>
         ) : (
           <div className="columns-1 md:columns-2 xl:columns-3 gap-5 animate-fade-in pb-4">
             {processedNotices.map((notice, idx) => {
-              const { icon: Icon, color } = getStyleForNotice(idx);
+              const { icon: Icon, color } = getStyleForNotice(notice.title);
               const isPinned = pinnedTitles[notice.title];
+              const activeColor = isPinned ? "#FAA61A" : color;
 
               return (
                 <TiltCard 
                   key={idx} 
-                  color={isPinned ? "#FAA61A" : color} 
-                  className="break-inside-avoid mb-5"
+                  color={activeColor} 
+                  className="break-inside-avoid mb-5 group"
                 >
-                  <div className="p-5 flex flex-col h-full relative z-10">
-                    <div className="flex items-center gap-3 mb-4 border-b border-[rgba(255,255,255,0.04)] pb-3">
-                      <div className="w-9 h-9 rounded-[8px] flex items-center justify-center bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] shadow-inner flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
-                        <Icon className="w-[18px] h-[18px]" style={{ color: isPinned ? "#FAA61A" : color }} />
+                  <div 
+                    className="flex flex-col h-full relative z-10 border-l-[3px] rounded-r-[8px] transition-colors duration-300 border-y border-r shadow-sm overflow-hidden"
+                    style={{ 
+                      borderLeftColor: activeColor,
+                      backgroundColor: isPinned ? "rgba(250,166,26,0.04)" : "#1E1F22",
+                      borderTopColor: "rgba(255,255,255,0.03)",
+                      borderRightColor: "rgba(255,255,255,0.03)",
+                      borderBottomColor: "rgba(255,255,255,0.03)",
+                    }}
+                  >
+                    
+                    {/* Header Row */}
+                    <div className="px-5 pt-5 pb-3 flex items-start justify-between gap-3 border-b border-[rgba(255,255,255,0.03)] bg-[rgba(0,0,0,0.1)]">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Icon className="w-[18px] h-[18px] shrink-0" style={{ color: activeColor }} />
+                        <h3 className="text-[14px] font-black text-[#F2F3F5] tracking-tight uppercase truncate">
+                          {notice.title}
+                        </h3>
                       </div>
-                      <h3 className="text-[15px] font-extrabold text-[#F2F3F5] tracking-tight leading-tight uppercase pr-2">
-                        {notice.title}
-                      </h3>
-                      <button
-                        onClick={(e) => togglePin(notice.title, e)}
-                        title={isPinned ? "Unpin notice" : "Pin notice to top"}
-                        className={`ml-auto p-1.5 rounded-[6px] transition-all ${
-                          isPinned 
-                            ? "bg-[#FAA61A]/15 text-[#FAA61A] border border-[#FAA61A]/30" 
-                            : "text-[#80848E] hover:text-[#DBDEE1] hover:bg-[#1E1F22]"
-                        }`}
-                      >
-                        <Pin className={`w-3.5 h-3.5 ${isPinned ? "fill-current" : ""}`} />
-                      </button>
+                      
+                      <div className="flex items-center gap-2 shrink-0">
+                        {notice.date && (
+                          <span className="text-[10px] font-mono font-bold text-[#80848E] bg-[rgba(255,255,255,0.03)] px-2 py-1 rounded-[4px] border border-[rgba(255,255,255,0.05)]">
+                            {notice.date}
+                          </span>
+                        )}
+                        <button
+                          onClick={(e) => togglePin(notice.title, e)}
+                          title={isPinned ? "Unpin notice" : "Pin notice"}
+                          className={`p-1.5 rounded-[4px] transition-all focus-visible:outline-none ${
+                            isPinned 
+                              ? "bg-[rgba(250,166,26,0.15)] text-[#FAA61A] opacity-100 border border-[rgba(250,166,26,0.3)]" 
+                              : "text-[#4e5058] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.05)] opacity-0 group-hover:opacity-100"
+                          }`}
+                        >
+                          <Pin className={`w-3.5 h-3.5 ${isPinned ? "fill-current" : ""}`} />
+                        </button>
+                      </div>
                     </div>
                     
-                    <p className="text-[13px] text-[#DBDEE1] leading-relaxed mb-5 whitespace-pre-wrap">
+                    {/* Content Body */}
+                    <div className="p-5 text-[13px] text-[#B5BAC1] leading-[1.65] whitespace-pre-wrap flex-1">
                       {notice.content}
-                    </p>
+                    </div>
 
-                    {notice.date && (
-                      <div className="mt-auto pt-3 border-t border-[rgba(255,255,255,0.04)] flex items-center justify-between opacity-80 group-hover:opacity-100 transition-opacity">
-                        <span className="text-[10px] font-bold text-[#80848E] uppercase tracking-widest flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5" /> Logged
-                        </span>
-                        <span 
-                          className="text-[10.5px] font-bold px-2.5 py-1 rounded-[6px] bg-[#1E1F22] border shadow-inner" 
-                          style={{ color: isPinned ? "#FAA61A" : color, borderColor: `${isPinned ? "#FAA61A" : color}40` }}
-                        >
-                          {notice.date}
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </TiltCard>
               );

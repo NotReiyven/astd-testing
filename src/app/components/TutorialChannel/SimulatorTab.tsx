@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Zap, Timer, Sparkles, ArrowDown, CheckCircle2, XCircle, ShieldAlert } from "lucide-react";
+import { Timer, ArrowRight, HelpCircle, Eye } from "lucide-react";
 import { StaticStatusBadge } from "./TutorialUI";
 
 const SCENARIOS = [
@@ -42,8 +42,90 @@ const SCENARIOS = [
     correct: "WIN" as const,
     hint: "Supply is practically 0. Raw value might be lower, but it will never drop.",
     explanation: "Extremely low supply units have infinite leverage. You can essentially name your price later."
+  },
+  {
+    id: 5,
+    title: "The Inflated Bait",
+    desc: "Someone is overpaying with a unit that spiked 50k overnight.",
+    give: { name: "High-Demand Meta", value: "80,000", status: "stable" },
+    get: { name: "Random Old Unit", value: "120,000", status: "inflated" },
+    correct: "LOSS" as const,
+    hint: "Check the status tag. Why did it suddenly spike? Market manipulation.",
+    explanation: "Inflated units are artificially pumped by hoarders. No actual trader will pay that 120k value. It's fake."
+  },
+  {
+    id: 6,
+    title: "The Liquidity Flip",
+    desc: "Taking a small raw value hit to get rid of a hard-to-trade unit.",
+    give: { name: "Gatekept S-Tier", value: "300,000", status: "gatekept" },
+    get: { name: "2x High-Demand A-Tiers", value: "285,000", status: "rising" },
+    correct: "WIN" as const,
+    hint: "Gatekept units are hoarded and incredibly hard to trade off. Liquid assets are king.",
+    explanation: "You lost 15k raw value, but gained massive liquidity. Those A-tiers will easily trade for overpays tomorrow."
+  },
+  {
+    id: 7,
+    title: "The Update Hype",
+    desc: "A unit is confirmed to get an evolution tomorrow.",
+    give: { name: "Stable B-Tier", value: "25,000", status: "stable" },
+    get: { name: "Evo-Confirmed Unit", value: "22,000", status: "hyped" },
+    correct: "WIN" as const,
+    hint: "Value always spikes on update day. Raw value today means nothing.",
+    explanation: "Hyped units are guaranteed to rise when the update drops. Buy low before the value list officially updates."
+  },
+  {
+    id: 8,
+    title: "The Gatekeeper Trap",
+    desc: "A wealthy trader is offering you an incredibly rare, but unwanted unit.",
+    give: { name: "Rising Meta Core", value: "400,000", status: "rising" },
+    get: { name: "Forgotten Oddity", value: "450,000", status: "gatekept" },
+    correct: "LOSS" as const,
+    hint: "Why is a rich trader giving away a 50k overpay so easily?",
+    explanation: "Oddities and gatekept units have near-zero demand. You just traded a highly liquid core unit for a permanent brick."
+  },
+  {
+    id: 9,
+    title: "The Downgrade for Demand",
+    desc: "Taking a raw value hit to escape a dead unit.",
+    give: { name: "Gatekept S-Tier", value: "300,000", status: "gatekept" },
+    get: { name: "3x High-Demand A-Tiers", value: "285,000", status: "rising" },
+    correct: "WIN" as const,
+    hint: "Gatekept units have zero buyers. Liquid assets are king.",
+    explanation: "You lost 15k raw value, but gained massive liquidity. Those A-tiers will easily trade for overpays tomorrow."
+  },
+  {
+    id: 10,
+    title: "The Black Market Trap",
+    desc: "Trading a highly liquid meta unit for identical value.",
+    give: { name: "Rising Meta Core", value: "150,000", status: "rising" },
+    get: { name: "Dupe Suspect", value: "150,000", status: "black-marketed" },
+    correct: "LOSS" as const,
+    hint: "Check the tags. Do you want to hold stolen goods?",
+    explanation: "Black-marketed units are heavily duped and actively avoided by the community. Their value will inevitably crash."
+  },
+  {
+    id: 11,
+    title: "The Hype Cash-Out",
+    desc: "Someone is offering a massive overpay right before the update drops.",
+    give: { name: "Hyped Update Unit", value: "80,000", status: "hyped" },
+    get: { name: "Stable S-Tier Core", value: "120,000", status: "stable" },
+    correct: "WIN" as const,
+    hint: "Hype is temporary. S-Tiers are forever.",
+    explanation: "Always cash out on hype before the update actually drops. Once the unit is available, the hype dies and the value plummets."
+  },
+  {
+    id: 12,
+    title: "The False Stable",
+    desc: "Trading for a unit that looks fine on paper, but has a glaring warning.",
+    give: { name: "Solid A-Tier", value: "60,000", status: "rising" },
+    get: { name: "Outdated Meta", value: "65,000", status: "stable" },
+    correct: "LOSS" as const,
+    hint: "Always read the notices. 'Stable' doesn't mean safe if the devs announced a nerf.",
+    explanation: "If a unit is slated to drop next list or has a warning notice, its 'Stable' tag is a trap. Read the fine print."
   }
 ];
+
+const FIRE_ZIO_AVATAR = "https://media.discordapp.net/attachments/1538970612947615744/1543320682430074971/image.png?ex=6a9470e4&is=6a931f64&hm=d97c87c7af214b524fdd41b313db6a4d45d5cf435046fc9a8a14fb307d258165&=&format=webp&quality=lossless";
 
 export function SimulatorTab() {
   const [isSimulatorRunning, setIsSimulatorRunning] = useState(false);
@@ -53,7 +135,9 @@ export function SimulatorTab() {
   const [aquaHint, setAquaHint] = useState<string | null>(null);
   const [currentScenario, setCurrentScenario] = useState(0);
   const [guessResult, setGuessResult] = useState<"none" | "correct" | "incorrect">("none");
-  const [selectedGuess, setSelectedGuess] = useState<"WIN" | "FAIR" | "LOSS" | "TIME_OUT" | null>(null);
+  const [selectedGuess, setSelectedGuess] = useState<"WIN" | "LOSS" | "TIME_OUT" | null>(null);
+
+  const issueDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
   useEffect(() => {
     if (!isSimulatorRunning || guessResult !== "none") return;
@@ -81,7 +165,7 @@ export function SimulatorTab() {
     setAquaHint(null);
   };
 
-  const handleGuess = (guess: "WIN" | "FAIR" | "LOSS" | "TIME_OUT") => {
+  const handleGuess = (guess: "WIN" | "LOSS" | "TIME_OUT") => {
     setSelectedGuess(guess);
     if (guess === SCENARIOS[currentScenario].correct) {
       setGuessResult("correct");
@@ -108,166 +192,199 @@ export function SimulatorTab() {
   };
 
   return (
-    <div className="animate-fade-in pb-6 max-w-3xl mx-auto">
+    <div className="animate-fade-in pb-6 max-w-4xl mx-auto font-sans select-none">
       {!isSimulatorRunning && simScore === 0 ? (
-        <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.06)] rounded-[16px] shadow-2xl p-8 md:p-10 text-center flex flex-col items-center">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="relative">
-              <div className="absolute -inset-1 rounded-full bg-[#5865F2] opacity-30 blur-sm" />
-              <img 
-                src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" 
-                className="relative w-16 h-16 rounded-full border-2 border-[#5865F2] object-cover shadow-md" 
-                alt="Aqua" 
-              />
-            </div>
-            <div className="text-left">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#5865F2] block">Interactive Training</span>
-              <h2 className="text-[22px] font-black text-[#F2F3F5] uppercase tracking-tight">Market Analysis Simulator</h2>
-            </div>
+        <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] rounded-[12px] p-6 md:p-8 shadow-md flex flex-col gap-6">
+          <div className="flex items-start justify-between border-b border-[rgba(255,255,255,0.04)] pb-6">
+             <div className="flex items-center gap-4">
+                <img src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" className="w-12 h-12 md:w-14 md:h-14 rounded-full border border-[rgba(255,255,255,0.1)] object-cover" alt="Aqua"/>
+                <div className="flex flex-col">
+                   <span className="text-[15px] md:text-[16px] font-bold text-[#F2F3F5]">Goddess Aqua</span>
+                   <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-[#5865F2] mt-0.5">Lead Assessor</span>
+                </div>
+             </div>
+             <div className="text-right">
+                <span className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-[#80848E] mb-0.5">Date</span>
+                <span className="block text-[11px] md:text-[12px] font-mono text-[#DBDEE1]">{issueDate}</span>
+             </div>
           </div>
-          
-          <p className="text-[13.5px] text-[#949BA4] max-w-md leading-relaxed mb-8">
-            Test your trading intuition against realistic market scenarios. Evaluate transactions as a Win, Fair, or Loss before the timer runs out.
-          </p>
 
-          <button 
-            onClick={startSimulator}
-            className="bg-[#5865F2] hover:bg-[#4752C4] text-white px-8 py-3.5 rounded-[8px] text-[14px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-lg flex items-center gap-2.5"
-          >
-            <Zap className="w-4 h-4" /> Initialize Simulator
-          </button>
+          <div className="flex flex-col gap-3">
+             <p className="text-[13px] md:text-[13.5px] text-[#DBDEE1] leading-relaxed">
+                Think you're a trading prodigy? Prove it. I've compiled {SCENARIOS.length} real-world market scenarios that actively ruin people's inventories. Evaluate them quickly, or I'm revoking your calculator privileges.
+             </p>
+             <div className="bg-[#111214] border-l-4 border-l-[#ed4245] border-y border-y-[rgba(255,255,255,0.04)] border-r border-r-[rgba(255,255,255,0.04)] rounded-r-[8px] p-4 shadow-inner flex items-start gap-4">
+                 <img src={FIRE_ZIO_AVATAR} className="w-10 h-10 rounded-full border border-[#ed4245] object-cover shrink-0 bg-[#1e1f22]" alt="Fire Zio" />
+                 <div className="flex flex-col gap-1">
+                   <span className="text-[11px] font-black uppercase tracking-widest text-[#ed4245]">Fire Zio's Observation</span>
+                   <p className="text-[#949BA4] text-[13px] italic font-medium leading-relaxed">
+                     "If you fail this simulator, I will personally mock you in the trading channels. Don't waste my time with rookie mistakes."
+                   </p>
+                 </div>
+             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+             <div className="bg-[#2B2D31] p-4 rounded-[6px] border border-[rgba(255,255,255,0.03)] flex flex-col gap-2 shadow-inner">
+                <span className="text-[11.5px] md:text-[12px] font-bold text-[#F2F3F5] uppercase tracking-wider">Time is Value</span>
+                <span className="text-[11px] md:text-[11.5px] text-[#949BA4] leading-snug">Faster assessments yield higher score bonuses. Don't hesitate.</span>
+             </div>
+             <div className="bg-[#2B2D31] p-4 rounded-[6px] border border-[rgba(255,255,255,0.03)] flex flex-col gap-2 shadow-inner">
+                <span className="text-[11.5px] md:text-[12px] font-bold text-[#F2F3F5] uppercase tracking-wider">Momentum Multiplier</span>
+                <span className="text-[11px] md:text-[11.5px] text-[#949BA4] leading-snug">Consecutive correct answers build your combo for massive points.</span>
+             </div>
+             <div className="bg-[#2B2D31] p-4 rounded-[6px] border border-[rgba(255,255,255,0.03)] flex flex-col gap-2 shadow-inner">
+                <span className="text-[11.5px] md:text-[12px] font-bold text-[#F2F3F5] uppercase tracking-wider">Real Market Traps</span>
+                <span className="text-[11px] md:text-[11.5px] text-[#949BA4] leading-snug">Watch out for manipulated values, dead demand, and fake stability.</span>
+             </div>
+          </div>
+
+          <div className="pt-4 border-t border-[rgba(255,255,255,0.04)] flex justify-end">
+            <button 
+              onClick={startSimulator}
+              className="bg-[#5865F2] hover:bg-[#4752C4] text-white px-8 py-2.5 rounded-[4px] text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-all active:scale-95 focus-visible:outline-none shadow-md w-full md:w-auto"
+            >
+              Commence Assessment
+            </button>
+          </div>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {/* Dashboard Header Bar */}
-          <div className="flex items-center justify-between bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] rounded-[12px] px-5 py-3.5 shadow-sm">
+          
+          <div className="flex items-center justify-between px-2 text-[#80848E] text-[12px] font-medium">
             <div className="flex items-center gap-6">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#80848E] block">Score</span>
-                <span className="text-[18px] font-black font-mono text-[#F2F3F5] leading-none">{simScore.toLocaleString()}</span>
-              </div>
-              <div className="w-px h-6 bg-[rgba(255,255,255,0.08)]" />
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#80848E] block">Combo</span>
-                <span className={`text-[18px] font-black font-mono leading-none ${simCombo > 1 ? 'text-[#FAA61A]' : 'text-[#DBDEE1]'}`}>x{simCombo}</span>
-              </div>
+              <span>Score: <span className="text-[#DBDEE1] font-mono font-bold tracking-tight ml-1">{simScore.toLocaleString()}</span></span>
+              <span className="flex items-center gap-1">
+                Combo: 
+                <span key={simCombo} className={`font-mono font-bold tracking-tight ml-1 transition-transform ${simCombo > 0 ? 'text-[#DBDEE1] scale-110' : 'text-[#80848E] scale-100'}`}>
+                  x{simCombo}
+                </span>
+              </span>
             </div>
-
-            <div className="flex items-center gap-3 w-1/3 max-w-[200px]">
-              <Timer className={`w-4 h-4 ${simTimeLeft < 30 ? 'text-[#ed4245] animate-pulse' : 'text-[#949BA4]'}`} />
-              <div className="flex-1 h-2 bg-[#111214] rounded-full overflow-hidden border border-[rgba(255,255,255,0.04)] shadow-inner">
-                <div 
-                  className={`h-full transition-all duration-100 ease-linear rounded-full ${simTimeLeft < 30 ? 'bg-[#ed4245]' : 'bg-[#5865F2]'}`}
-                  style={{ width: `${simTimeLeft}%` }}
-                />
-              </div>
+            <div className="flex items-center gap-1.5">
+              <Timer className="w-3.5 h-3.5" />
+              <span className="font-mono w-[30px] text-right">{Math.ceil(simTimeLeft / 10)}s</span>
             </div>
           </div>
 
-          {/* Scenario Container */}
-          <div className="bg-[#2B2D31] p-6 md:p-8 rounded-[16px] border border-[rgba(255,255,255,0.06)] relative overflow-hidden shadow-xl">
-            {guessResult === "none" && (
-              <button 
-                onClick={() => setAquaHint(SCENARIOS[currentScenario].hint)} 
-                className="absolute top-5 right-5 bg-[rgba(88,101,242,0.12)] hover:bg-[rgba(88,101,242,0.22)] text-[#5865F2] border border-[rgba(88,101,242,0.3)] px-3.5 py-1.5 rounded-[6px] text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm z-20"
-              >
-                <Sparkles className="w-3.5 h-3.5" /> Request Analysis
-              </button>
-            )}
-
-            <div className="mb-6 relative z-10">
-              <span className="text-[10px] font-black text-[#80848E] uppercase tracking-widest block mb-1">Scenario {currentScenario + 1} of {SCENARIOS.length}</span>
-              <h3 className="text-[18px] font-black text-[#F2F3F5] uppercase tracking-tight">{SCENARIOS[currentScenario].title}</h3>
-              <p className="text-[13px] text-[#949BA4] mt-1">{SCENARIOS[currentScenario].desc}</p>
+          <div className="bg-[#2B2D31] rounded-[8px] border border-[rgba(255,255,255,0.04)] relative overflow-hidden shadow-md flex flex-col">
+            
+            <div className="h-[3px] w-full bg-[rgba(255,255,255,0.04)]">
+              <div 
+                className="h-full transition-all duration-100 ease-linear shadow-[0_0_8px_currentColor]"
+                style={{ 
+                  width: `${simTimeLeft}%`,
+                  backgroundColor: simTimeLeft < 30 ? '#ed4245' : '#5865F2',
+                  color: simTimeLeft < 30 ? 'rgba(237,66,69,0.5)' : 'rgba(88,101,242,0.5)'
+                }}
+              />
             </div>
 
-            {/* Sleek Discord Trade Ledger Cards */}
-            <div className="flex flex-col gap-2 mb-8">
-               <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.05)] rounded-[10px] p-4 flex items-center justify-between hover:border-[rgba(255,255,255,0.1)] transition-colors">
-                  <div>
-                     <span className="text-[9.5px] font-black uppercase tracking-widest text-[#80848E] block mb-1">You Give</span>
-                     <div className="flex items-center gap-2.5">
-                        <span className="text-[#F2F3F5] font-black text-[15px] tracking-tight">{SCENARIOS[currentScenario].give.name}</span>
-                        <StaticStatusBadge status={SCENARIOS[currentScenario].give.status} />
-                     </div>
-                  </div>
-                  <span className="text-[#DBDEE1] font-mono font-black text-[15px]">{SCENARIOS[currentScenario].give.value}</span>
-               </div>
-               
-               <div className="flex justify-center -my-3.5 relative z-10">
-                  <div className="w-6 h-6 rounded-full bg-[#111214] border border-[rgba(255,255,255,0.08)] flex items-center justify-center shadow-md">
-                     <ArrowDown className="w-3.5 h-3.5 text-[#949BA4]" />
-                  </div>
-               </div>
+            <div className="p-6 md:p-8 flex flex-col">
+              <div className="flex items-start justify-between gap-4 mb-8">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold text-[#80848E] uppercase tracking-wider">
+                    Scenario {currentScenario + 1} / {SCENARIOS.length}
+                  </span>
+                  <h3 className="text-[16px] font-bold text-[#F2F3F5]">{SCENARIOS[currentScenario].title}</h3>
+                  <p className="text-[13px] text-[#949BA4] max-w-lg leading-relaxed">{SCENARIOS[currentScenario].desc}</p>
+                </div>
+                
+                {guessResult === "none" && !aquaHint && (
+                  <button 
+                    onClick={() => setAquaHint(SCENARIOS[currentScenario].hint)}
+                    className="flex items-center gap-1.5 text-[11px] font-semibold text-[#80848E] hover:text-[#DBDEE1] transition-colors shrink-0 pt-1 focus-visible:outline-none"
+                  >
+                    <HelpCircle className="w-3.5 h-3.5" /> View Hint
+                  </button>
+                )}
+              </div>
 
-               <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.05)] rounded-[10px] p-4 flex items-center justify-between hover:border-[rgba(255,255,255,0.1)] transition-colors">
-                  <div>
-                     <span className="text-[9.5px] font-black uppercase tracking-widest text-[#80848E] block mb-1">You Get</span>
-                     <div className="flex items-center gap-2.5">
-                        <span className="text-[#F2F3F5] font-black text-[15px] tracking-tight">{SCENARIOS[currentScenario].get.name}</span>
-                        <StaticStatusBadge status={SCENARIOS[currentScenario].get.status} />
-                     </div>
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center mb-8">
+                
+                <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] rounded-[6px] p-4 flex flex-col gap-3 shadow-inner">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#80848E]">You Give</span>
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[14px] font-bold text-[#F2F3F5] truncate">{SCENARIOS[currentScenario].give.name}</span>
+                    <div className="flex items-center justify-between mt-1 border-t border-[rgba(255,255,255,0.04)] pt-2">
+                      <span className="text-[13px] font-mono font-bold text-[#DBDEE1]">{SCENARIOS[currentScenario].give.value}</span>
+                      <StaticStatusBadge status={SCENARIOS[currentScenario].give.status} />
+                    </div>
                   </div>
-                  <span className="text-[#DBDEE1] font-mono font-black text-[15px]">{SCENARIOS[currentScenario].get.value}</span>
-               </div>
-            </div>
+                </div>
 
-            {guessResult === "none" ? (
-              <div className="flex flex-col items-center relative z-10 animate-fade-in">
-                {aquaHint && (
-                  <div className="mb-4 bg-[rgba(88,101,242,0.08)] border border-[rgba(88,101,242,0.2)] text-[#DBDEE1] text-[12px] px-4 py-3 rounded-[8px] w-full flex items-start gap-2.5 shadow-inner">
-                    <ShieldAlert className="w-4 h-4 text-[#5865F2] flex-shrink-0 mt-0.5" />
-                    <span className="leading-relaxed font-medium">Advisor Note: {aquaHint}</span>
+                <div className="flex justify-center text-[#4e5058] bg-[#1E1F22] p-1.5 rounded-full border border-[rgba(255,255,255,0.04)] w-fit mx-auto md:mx-0">
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+
+                <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] rounded-[6px] p-4 flex flex-col gap-3 shadow-inner">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#80848E]">You Get</span>
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[14px] font-bold text-[#F2F3F5] truncate">{SCENARIOS[currentScenario].get.name}</span>
+                    <div className="flex items-center justify-between mt-1 border-t border-[rgba(255,255,255,0.04)] pt-2">
+                      <span className="text-[13px] font-mono font-bold text-[#DBDEE1]">{SCENARIOS[currentScenario].get.value}</span>
+                      <StaticStatusBadge status={SCENARIOS[currentScenario].get.status} />
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <div className="min-h-[120px] flex flex-col justify-end">
+                {guessResult === "none" ? (
+                  <div className="flex flex-col gap-4 animate-fade-in">
+                    {aquaHint && (
+                      <p className="text-[12.5px] text-[#DBDEE1] bg-[#1E1F22] p-3 rounded-[6px] border border-[rgba(255,255,255,0.04)] shadow-inner">
+                        <strong className="text-[#80848E] font-medium mr-2">Aqua's Hint:</strong>{aquaHint}
+                      </p>
+                    )}
+                    <div className="grid grid-cols-2 gap-3 w-full">
+                      <button 
+                        onClick={() => handleGuess("WIN")} 
+                        className="group flex items-center justify-center gap-2 py-3.5 rounded-[4px] bg-[#1E1F22] text-[#B5BAC1] border border-[rgba(255,255,255,0.04)] hover:border-[#43b581]/50 hover:bg-[rgba(67,181,129,0.05)] hover:text-[#43b581] font-bold text-[13px] transition-all focus-visible:outline-none active:scale-[0.98]"
+                      >
+                        Winning Trade
+                      </button>
+                      <button 
+                        onClick={() => handleGuess("LOSS")} 
+                        className="group flex items-center justify-center gap-2 py-3.5 rounded-[4px] bg-[#1E1F22] text-[#B5BAC1] border border-[rgba(255,255,255,0.04)] hover:border-[#ed4245]/50 hover:bg-[rgba(237,66,69,0.05)] hover:text-[#ed4245] font-bold text-[13px] transition-all focus-visible:outline-none active:scale-[0.98]"
+                      >
+                        Losing Trade
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div 
+                    className="flex flex-col md:flex-row gap-4 p-5 rounded-[8px] border transition-all animate-slide-up"
+                    style={{ 
+                      backgroundColor: guessResult === "correct" ? "rgba(67, 181, 129, 0.05)" : "rgba(237, 66, 69, 0.05)",
+                      borderColor: guessResult === "correct" ? "rgba(67, 181, 129, 0.2)" : "rgba(237, 66, 69, 0.2)" 
+                    }}
+                  >
+                    <img 
+                      src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" 
+                      className="w-10 h-10 rounded-full border border-[rgba(255,255,255,0.06)] object-cover shrink-0 hidden md:block mt-1" 
+                      alt="Aqua" 
+                    />
+                    <div className="flex flex-col flex-1">
+                      <span className="text-[13px] font-bold mb-1.5" style={{ color: guessResult === "correct" ? "#43b581" : "#ed4245" }}>
+                        {guessResult === "correct" ? "Correct Assessment" : selectedGuess === "TIME_OUT" ? "Time Expired" : "Incorrect Assessment"}
+                      </span>
+                      <p className="text-[13px] text-[#DBDEE1] leading-relaxed mb-4">
+                        {SCENARIOS[currentScenario].explanation}
+                      </p>
+                      <button 
+                        onClick={nextScenario} 
+                        className="self-start px-6 py-2.5 bg-[#2B2D31] hover:bg-[#3F4147] text-[#F2F3F5] text-[12px] font-bold rounded-[4px] transition-colors shadow-sm focus-visible:outline-none active:scale-95 border border-[rgba(255,255,255,0.04)]"
+                      >
+                        {currentScenario >= SCENARIOS.length - 1 ? "Complete Training" : "Next Scenario"}
+                      </button>
+                    </div>
                   </div>
                 )}
-                
-                <h4 className="text-[10.5px] font-black text-[#949BA4] mb-3 uppercase tracking-widest">Select Market Classification</h4>
-                <div className="grid grid-cols-3 gap-3 w-full">
-                   <button 
-                     onClick={() => handleGuess("WIN")} 
-                     className="py-3.5 rounded-[8px] bg-[#1E1F22] hover:bg-[rgba(35,165,89,0.12)] text-[#23a559] border border-[rgba(255,255,255,0.04)] hover:border-[#23a559]/30 font-black text-[13px] uppercase tracking-wider transition-all shadow-sm active:scale-95 focus-visible:outline-none"
-                   >
-                     Win
-                   </button>
-                   <button 
-                     onClick={() => handleGuess("FAIR")} 
-                     className="py-3.5 rounded-[8px] bg-[#1E1F22] hover:bg-[rgba(241,196,15,0.12)] text-[#F1C40F] border border-[rgba(255,255,255,0.04)] hover:border-[#F1C40F]/30 font-black text-[13px] uppercase tracking-wider transition-all shadow-sm active:scale-95 focus-visible:outline-none"
-                   >
-                     Fair
-                   </button>
-                   <button 
-                     onClick={() => handleGuess("LOSS")} 
-                     className="py-3.5 rounded-[8px] bg-[#1E1F22] hover:bg-[rgba(237,66,69,0.12)] text-[#ed4245] border border-[rgba(255,255,255,0.04)] hover:border-[#ed4245]/30 font-black text-[13px] uppercase tracking-wider transition-all shadow-sm active:scale-95 focus-visible:outline-none"
-                   >
-                     Loss
-                   </button>
-                </div>
               </div>
-            ) : (
-              <div className="animate-fade-in">
-                 <div className={`border-l-4 p-5 bg-[#1E1F22] rounded-r-[10px] text-left shadow-md ${guessResult === "correct" ? 'border-[#23a559]' : 'border-[#ed4245]'}`}>
-                    <div className="flex items-center gap-2.5 mb-2.5">
-                       {guessResult === "correct" ? <CheckCircle2 className="w-5 h-5 text-[#23a559]" /> : <XCircle className="w-5 h-5 text-[#ed4245]" />}
-                       <h4 className={`font-black text-[14px] uppercase tracking-wider ${guessResult === "correct" ? 'text-[#23a559]' : 'text-[#ed4245]'}`}>
-                          {guessResult === "correct" ? "Diagnosis Correct" : selectedGuess === "TIME_OUT" ? "Time Expired" : "Diagnosis Incorrect"}
-                       </h4>
-                    </div>
-                    
-                    <p className="text-[#DBDEE1] text-[13px] leading-relaxed mb-5 pl-7.5">
-                       {SCENARIOS[currentScenario].explanation}
-                    </p>
-                    
-                    <div className="pl-7.5">
-                       <button 
-                         onClick={nextScenario} 
-                         className="px-6 py-2.5 bg-[#2B2D31] hover:bg-[#3F4147] text-[#F2F3F5] text-[12px] font-black uppercase tracking-wider rounded-[6px] transition-colors shadow-sm focus-visible:outline-none active:scale-95"
-                       >
-                          {currentScenario >= SCENARIOS.length - 1 ? "Complete Training" : "Next Scenario"}
-                       </button>
-                    </div>
-                 </div>
-              </div>
-            )}
+
+            </div>
           </div>
         </div>
       )}
