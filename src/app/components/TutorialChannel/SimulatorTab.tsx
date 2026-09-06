@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Target, Zap, Timer, Sparkles, ArrowRight, CheckCircle2, XCircle } from "lucide-react";
+import { Zap, Timer, Sparkles, ArrowDown, CheckCircle2, XCircle, ShieldAlert } from "lucide-react";
 import { StaticStatusBadge } from "./TutorialUI";
 
 const SCENARIOS = [
@@ -108,43 +108,54 @@ export function SimulatorTab() {
   };
 
   return (
-    <div className="animate-fade-in pb-4 max-w-4xl mx-auto">
-
+    <div className="animate-fade-in pb-6 max-w-3xl mx-auto">
       {!isSimulatorRunning && simScore === 0 ? (
-        <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.06)] rounded-[14px] shadow-2xl p-8 md:p-12 text-center flex flex-col items-center">
+        <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.06)] rounded-[16px] shadow-2xl p-8 md:p-10 text-center flex flex-col items-center">
           <div className="flex items-center gap-4 mb-6">
-            <img src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" className="w-16 h-16 rounded-full border-2 border-[#5865F2] object-cover shadow-[0_0_20px_rgba(88,101,242,0.3)]" alt="Aqua" />
-            <h2 className="text-[28px] font-black text-[#F2F3F5] uppercase tracking-tight">Goddess Aqua's Trade Simulator</h2>
+            <div className="relative">
+              <div className="absolute -inset-1 rounded-full bg-[#5865F2] opacity-30 blur-sm" />
+              <img 
+                src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" 
+                className="relative w-16 h-16 rounded-full border-2 border-[#5865F2] object-cover shadow-md" 
+                alt="Aqua" 
+              />
+            </div>
+            <div className="text-left">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#5865F2] block">Interactive Training</span>
+              <h2 className="text-[22px] font-black text-[#F2F3F5] uppercase tracking-tight">Market Analysis Simulator</h2>
+            </div>
           </div>
-          <p className="text-[14px] text-[#B5BAC1] max-w-lg leading-relaxed mb-8">
-            Test your trading intuition against realistic, high-stakes market scenarios. 
-            Evaluate the trades as a <strong className="text-[#23a559]">Win</strong>, <strong className="text-[#F1C40F]">Fair</strong>, or <strong className="text-[#ed4245]">Loss</strong> before the timer runs out. 
-            Don't fail, or I'll laugh at you!
+          
+          <p className="text-[13.5px] text-[#949BA4] max-w-md leading-relaxed mb-8">
+            Test your trading intuition against realistic market scenarios. Evaluate transactions as a Win, Fair, or Loss before the timer runs out.
           </p>
+
           <button 
             onClick={startSimulator}
-            className="bg-[#5865F2] hover:bg-[#4752C4] text-white px-10 py-4 rounded-[8px] text-[16px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-[0_8px_20px_rgba(88,101,242,0.4)] hover:shadow-[0_8px_30px_rgba(88,101,242,0.6)] flex items-center gap-3"
+            className="bg-[#5865F2] hover:bg-[#4752C4] text-white px-8 py-3.5 rounded-[8px] text-[14px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-lg flex items-center gap-2.5"
           >
-            <Zap className="w-5 h-5" /> Start Training
+            <Zap className="w-4 h-4" /> Initialize Simulator
           </button>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {/* Dashboard Header */}
-          <div className="flex items-center justify-between bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[10px] p-4 shadow-sm">
+          {/* Dashboard Header Bar */}
+          <div className="flex items-center justify-between bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] rounded-[12px] px-5 py-3.5 shadow-sm">
             <div className="flex items-center gap-6">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#80848E] block">Score</span>
-                <span className="text-[20px] font-black font-mono text-[#F2F3F5] leading-none">{simScore.toLocaleString()}</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#80848E] block">Score</span>
+                <span className="text-[18px] font-black font-mono text-[#F2F3F5] leading-none">{simScore.toLocaleString()}</span>
               </div>
+              <div className="w-px h-6 bg-[rgba(255,255,255,0.08)]" />
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#80848E] block">Combo</span>
-                <span className={`text-[20px] font-black font-mono leading-none ${simCombo > 1 ? 'text-[#FAA61A]' : 'text-[#DBDEE1]'}`}>x{simCombo}</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#80848E] block">Combo</span>
+                <span className={`text-[18px] font-black font-mono leading-none ${simCombo > 1 ? 'text-[#FAA61A]' : 'text-[#DBDEE1]'}`}>x{simCombo}</span>
               </div>
             </div>
-            <div className="flex items-center gap-3 w-1/3">
-              <Timer className={`w-5 h-5 ${simTimeLeft < 30 ? 'text-[#ed4245] animate-pulse' : 'text-[#949BA4]'}`} />
-              <div className="flex-1 h-2.5 bg-[#111214] rounded-full overflow-hidden border border-[rgba(255,255,255,0.06)] shadow-inner">
+
+            <div className="flex items-center gap-3 w-1/3 max-w-[200px]">
+              <Timer className={`w-4 h-4 ${simTimeLeft < 30 ? 'text-[#ed4245] animate-pulse' : 'text-[#949BA4]'}`} />
+              <div className="flex-1 h-2 bg-[#111214] rounded-full overflow-hidden border border-[rgba(255,255,255,0.04)] shadow-inner">
                 <div 
                   className={`h-full transition-all duration-100 ease-linear rounded-full ${simTimeLeft < 30 ? 'bg-[#ed4245]' : 'bg-[#5865F2]'}`}
                   style={{ width: `${simTimeLeft}%` }}
@@ -153,86 +164,105 @@ export function SimulatorTab() {
             </div>
           </div>
 
-          <div className="bg-[#2B2D31] p-5 md:p-8 rounded-[12px] border border-[rgba(255,255,255,0.06)] relative overflow-hidden shadow-md">
+          {/* Scenario Container */}
+          <div className="bg-[#2B2D31] p-6 md:p-8 rounded-[16px] border border-[rgba(255,255,255,0.06)] relative overflow-hidden shadow-xl">
             {guessResult === "none" && (
               <button 
                 onClick={() => setAquaHint(SCENARIOS[currentScenario].hint)} 
-                className="absolute top-4 right-4 bg-[#5865F2]/10 hover:bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/30 px-3 py-1.5 rounded-full text-[11px] font-bold flex items-center gap-1.5 transition-colors z-20"
+                className="absolute top-5 right-5 bg-[rgba(88,101,242,0.12)] hover:bg-[rgba(88,101,242,0.22)] text-[#5865F2] border border-[rgba(88,101,242,0.3)] px-3.5 py-1.5 rounded-[6px] text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm z-20"
               >
-                <Sparkles className="w-3.5 h-3.5" /> Ask Aqua
+                <Sparkles className="w-3.5 h-3.5" /> Request Analysis
               </button>
             )}
 
             <div className="mb-6 relative z-10">
-              <span className="text-[11px] font-bold text-[#80848E] uppercase tracking-widest block mb-1">Scenario {currentScenario + 1} / {SCENARIOS.length}</span>
-              <h3 className="text-[20px] font-black text-[#F2F3F5] uppercase tracking-wide">{SCENARIOS[currentScenario].title}</h3>
+              <span className="text-[10px] font-black text-[#80848E] uppercase tracking-widest block mb-1">Scenario {currentScenario + 1} of {SCENARIOS.length}</span>
+              <h3 className="text-[18px] font-black text-[#F2F3F5] uppercase tracking-tight">{SCENARIOS[currentScenario].title}</h3>
               <p className="text-[13px] text-[#949BA4] mt-1">{SCENARIOS[currentScenario].desc}</p>
             </div>
 
-            {/* Sleek Ledger View */}
+            {/* Sleek Discord Trade Ledger Cards */}
             <div className="flex flex-col gap-2 mb-8">
-               <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-4 flex items-center justify-between border-l-4 border-l-[#FAA61A]">
+               <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.05)] rounded-[10px] p-4 flex items-center justify-between hover:border-[rgba(255,255,255,0.1)] transition-colors">
                   <div>
-                     <span className="text-[10px] font-bold uppercase tracking-widest text-[#80848E] block mb-1">You Give</span>
-                     <div className="flex items-center gap-2">
-                        <span className="text-[#F2F3F5] font-black text-[16px] tracking-tight">{SCENARIOS[currentScenario].give.name}</span>
+                     <span className="text-[9.5px] font-black uppercase tracking-widest text-[#80848E] block mb-1">You Give</span>
+                     <div className="flex items-center gap-2.5">
+                        <span className="text-[#F2F3F5] font-black text-[15px] tracking-tight">{SCENARIOS[currentScenario].give.name}</span>
                         <StaticStatusBadge status={SCENARIOS[currentScenario].give.status} />
                      </div>
                   </div>
-                  <span className="text-[#DBDEE1] font-mono font-bold text-[16px]">{SCENARIOS[currentScenario].give.value}</span>
+                  <span className="text-[#DBDEE1] font-mono font-black text-[15px]">{SCENARIOS[currentScenario].give.value}</span>
                </div>
                
-               <div className="flex justify-center -my-3 relative z-10">
-                  <div className="w-6 h-6 rounded-full bg-[#111214] border border-[rgba(255,255,255,0.06)] flex items-center justify-center">
-                     <ArrowRight className="w-3.5 h-3.5 text-[#80848E]" />
+               <div className="flex justify-center -my-3.5 relative z-10">
+                  <div className="w-6 h-6 rounded-full bg-[#111214] border border-[rgba(255,255,255,0.08)] flex items-center justify-center shadow-md">
+                     <ArrowDown className="w-3.5 h-3.5 text-[#949BA4]" />
                   </div>
                </div>
 
-               <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-4 flex items-center justify-between border-l-4 border-l-[#5865F2]">
+               <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.05)] rounded-[10px] p-4 flex items-center justify-between hover:border-[rgba(255,255,255,0.1)] transition-colors">
                   <div>
-                     <span className="text-[10px] font-bold uppercase tracking-widest text-[#80848E] block mb-1">You Get</span>
-                     <div className="flex items-center gap-2">
-                        <span className="text-[#F2F3F5] font-black text-[16px] tracking-tight">{SCENARIOS[currentScenario].get.name}</span>
+                     <span className="text-[9.5px] font-black uppercase tracking-widest text-[#80848E] block mb-1">You Get</span>
+                     <div className="flex items-center gap-2.5">
+                        <span className="text-[#F2F3F5] font-black text-[15px] tracking-tight">{SCENARIOS[currentScenario].get.name}</span>
                         <StaticStatusBadge status={SCENARIOS[currentScenario].get.status} />
                      </div>
                   </div>
-                  <span className="text-[#DBDEE1] font-mono font-bold text-[16px]">{SCENARIOS[currentScenario].get.value}</span>
+                  <span className="text-[#DBDEE1] font-mono font-black text-[15px]">{SCENARIOS[currentScenario].get.value}</span>
                </div>
             </div>
 
             {guessResult === "none" ? (
               <div className="flex flex-col items-center relative z-10 animate-fade-in">
                 {aquaHint && (
-                  <div className="mb-4 bg-[rgba(88,101,242,0.1)] border border-[rgba(88,101,242,0.3)] text-[#DBDEE1] text-[12.5px] px-4 py-2.5 rounded-[8px] w-full text-center italic">
-                    "{aquaHint}"
+                  <div className="mb-4 bg-[rgba(88,101,242,0.08)] border border-[rgba(88,101,242,0.2)] text-[#DBDEE1] text-[12px] px-4 py-3 rounded-[8px] w-full flex items-start gap-2.5 shadow-inner">
+                    <ShieldAlert className="w-4 h-4 text-[#5865F2] flex-shrink-0 mt-0.5" />
+                    <span className="leading-relaxed font-medium">Advisor Note: {aquaHint}</span>
                   </div>
                 )}
                 
-                <h4 className="text-[12px] font-bold text-[#949BA4] mb-3 uppercase tracking-wider">Is this trade a Win, Fair, or Loss?</h4>
-                <div className="flex bg-[#1E1F22] rounded-[8px] p-1 border border-[rgba(255,255,255,0.04)] w-full max-w-sm shadow-inner">
-                   <button onClick={() => handleGuess("WIN")} className="flex-1 py-3 rounded-[6px] text-[#23a559] font-bold text-[14px] uppercase tracking-wider hover:bg-[rgba(35,165,89,0.1)] transition-colors focus-visible:outline-none">WIN</button>
-                   <button onClick={() => handleGuess("FAIR")} className="flex-1 py-3 rounded-[6px] text-[#F1C40F] font-bold text-[14px] uppercase tracking-wider hover:bg-[rgba(241,196,15,0.1)] transition-colors focus-visible:outline-none">FAIR</button>
-                   <button onClick={() => handleGuess("LOSS")} className="flex-1 py-3 rounded-[6px] text-[#ed4245] font-bold text-[14px] uppercase tracking-wider hover:bg-[rgba(237,66,69,0.1)] transition-colors focus-visible:outline-none">LOSS</button>
+                <h4 className="text-[10.5px] font-black text-[#949BA4] mb-3 uppercase tracking-widest">Select Market Classification</h4>
+                <div className="grid grid-cols-3 gap-3 w-full">
+                   <button 
+                     onClick={() => handleGuess("WIN")} 
+                     className="py-3.5 rounded-[8px] bg-[#1E1F22] hover:bg-[rgba(35,165,89,0.12)] text-[#23a559] border border-[rgba(255,255,255,0.04)] hover:border-[#23a559]/30 font-black text-[13px] uppercase tracking-wider transition-all shadow-sm active:scale-95 focus-visible:outline-none"
+                   >
+                     Win
+                   </button>
+                   <button 
+                     onClick={() => handleGuess("FAIR")} 
+                     className="py-3.5 rounded-[8px] bg-[#1E1F22] hover:bg-[rgba(241,196,15,0.12)] text-[#F1C40F] border border-[rgba(255,255,255,0.04)] hover:border-[#F1C40F]/30 font-black text-[13px] uppercase tracking-wider transition-all shadow-sm active:scale-95 focus-visible:outline-none"
+                   >
+                     Fair
+                   </button>
+                   <button 
+                     onClick={() => handleGuess("LOSS")} 
+                     className="py-3.5 rounded-[8px] bg-[#1E1F22] hover:bg-[rgba(237,66,69,0.12)] text-[#ed4245] border border-[rgba(255,255,255,0.04)] hover:border-[#ed4245]/30 font-black text-[13px] uppercase tracking-wider transition-all shadow-sm active:scale-95 focus-visible:outline-none"
+                   >
+                     Loss
+                   </button>
                 </div>
               </div>
             ) : (
               <div className="animate-fade-in">
-                 <div className={`border-l-4 p-5 bg-[#1E1F22] rounded-r-[8px] text-left shadow-sm ${guessResult === "correct" ? 'border-[#23a559]' : 'border-[#ed4245]'}`}>
-                    <div className="flex items-center gap-2 mb-2">
+                 <div className={`border-l-4 p-5 bg-[#1E1F22] rounded-r-[10px] text-left shadow-md ${guessResult === "correct" ? 'border-[#23a559]' : 'border-[#ed4245]'}`}>
+                    <div className="flex items-center gap-2.5 mb-2.5">
                        {guessResult === "correct" ? <CheckCircle2 className="w-5 h-5 text-[#23a559]" /> : <XCircle className="w-5 h-5 text-[#ed4245]" />}
-                       <h4 className={`font-black text-[15px] uppercase tracking-wide ${guessResult === "correct" ? 'text-[#23a559]' : 'text-[#ed4245]'}`}>
-                          {guessResult === "correct" ? "Correct Diagnosis" : selectedGuess === "TIME_OUT" ? "Time Expired" : "Critical Error"}
+                       <h4 className={`font-black text-[14px] uppercase tracking-wider ${guessResult === "correct" ? 'text-[#23a559]' : 'text-[#ed4245]'}`}>
+                          {guessResult === "correct" ? "Diagnosis Correct" : selectedGuess === "TIME_OUT" ? "Time Expired" : "Diagnosis Incorrect"}
                        </h4>
                     </div>
                     
-                    <p className="text-[#DBDEE1] text-[13px] leading-relaxed mb-4 pl-7">
-                       {guessResult === "incorrect" && <strong className="text-[#ed4245] font-semibold">Goddess Aqua says: </strong>}
+                    <p className="text-[#DBDEE1] text-[13px] leading-relaxed mb-5 pl-7.5">
                        {SCENARIOS[currentScenario].explanation}
                     </p>
                     
-                    <div className="pl-7">
-                       <button onClick={nextScenario} className="px-5 py-2.5 bg-[#2B2D31] hover:bg-[#3F4147] text-[#F2F3F5] text-[12px] font-bold uppercase tracking-wider rounded-[6px] transition-colors shadow-sm focus-visible:outline-none">
-                          {currentScenario >= SCENARIOS.length - 1 ? "Finish Training" : "Proceed to Next Scenario"}
+                    <div className="pl-7.5">
+                       <button 
+                         onClick={nextScenario} 
+                         className="px-6 py-2.5 bg-[#2B2D31] hover:bg-[#3F4147] text-[#F2F3F5] text-[12px] font-black uppercase tracking-wider rounded-[6px] transition-colors shadow-sm focus-visible:outline-none active:scale-95"
+                       >
+                          {currentScenario >= SCENARIOS.length - 1 ? "Complete Training" : "Next Scenario"}
                        </button>
                     </div>
                  </div>

@@ -39,7 +39,7 @@ export function CustomDropdown({ icon: Icon, value, options, onChange, defaultLa
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-max min-w-[200px] bg-[#2B2D31] border border-[rgba(255,255,255,0.08)] rounded-[6px] shadow-xl z-50 py-1.5 flex flex-col">
+        <div className="absolute top-full left-0 mt-1 w-max min-w-[200px] bg-[#2B2D31] border border-[rgba(255,255,255,0.08)] rounded-[6px] shadow-xl z-[9999] py-1.5 flex flex-col">
           {Object.entries(options).map(([k, v]) => (
             <button
               key={k}

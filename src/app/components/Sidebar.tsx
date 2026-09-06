@@ -108,7 +108,7 @@ export function Sidebar({
     >
       <div className="h-[48px] flex-shrink-0 px-4 flex items-center justify-between shadow-sm hover:bg-[rgba(255,255,255,0.02)] cursor-pointer transition-colors" style={{ borderBottom: "1px solid rgba(0,0,0,0.2)" }}>
         <span className="font-black text-[#F2F3F5] text-[15px] truncate">
-          ASTD Trading Server
+          ASTD Value List
         </span>
         <ChevronDown className="w-4 h-4 text-[#F2F3F5] opacity-80 flex-shrink-0" />
       </div>

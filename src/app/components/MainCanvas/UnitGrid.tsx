@@ -5,6 +5,7 @@ import { PopupUnit, GridUnit, MasterUnit, UnitStatus } from "../../../types";
 import { GRID_STATUS_CFG, getRarityLabel, SUPPLY_SCALE, DEMAND_SCALE, getTier, TIER_CONFIG, getProxyImage } from "../../../data";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils"; 
 import { useTradeStore } from "../../../store/useTradeStore";
+import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 
 export const UnitGrid = memo(function UnitGrid({ units }: { units: MasterUnit[] }) {
   return (
@@ -27,6 +28,7 @@ export const TierGridCard = memo(function TierGridCard({ unit }: { unit: GridUni
   const scrollDirectionRef = useRef<"horizontal" | "vertical" | null>(null);
 
   const addCard = useTradeStore(state => state.addCard);
+  const openModal = useHistoryModalStore(state => state.openModal);
 
   const popupUnit: PopupUnit = {
     id: unit.id, name: unit.name, subtitle: unit.subtitle,
@@ -51,7 +53,6 @@ export const TierGridCard = memo(function TierGridCard({ unit }: { unit: GridUni
     e.dataTransfer.effectAllowed = "copy";
   };
 
-  // PHASE 4: Stop Propagation to block global drawer swipes
   const onTouchStart = (e: React.TouchEvent) => {
     e.stopPropagation();
     touchStartX.current = e.touches[0].clientX;
@@ -105,16 +106,10 @@ export const TierGridCard = memo(function TierGridCard({ unit }: { unit: GridUni
       <div
         draggable
         onDragStart={handleDragStart}
-        onClick={(e) => { 
-          if (window.innerWidth < 768) {
-            setMobileMenuOpen(true); 
-          } else {
-            handleAdd("give");
-          }
-        }}
+        onClick={() => openModal(unit.id)}
         onContextMenu={(e) => { 
           e.preventDefault(); 
-          handleAdd("get");
+          openModal(unit.id);
         }}
         onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
         className="flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10 will-change-transform"
@@ -189,7 +184,11 @@ export const TierGridCard = memo(function TierGridCard({ unit }: { unit: GridUni
                     if (window.innerWidth < 768) setMobileMenuOpen(true);
                     else handleAdd("give");
                   }}
-                  onContextMenu={(e) => { e.stopPropagation(); e.preventDefault(); handleAdd("get"); }}
+                  onContextMenu={(e) => { 
+                    e.stopPropagation(); 
+                    e.preventDefault(); 
+                    handleAdd("get"); 
+                  }}
                   title="Left Click: Add Give | Right Click: Add Get"
                 >
                   <Plus className="w-3.5 h-3.5 flex-shrink-0" />

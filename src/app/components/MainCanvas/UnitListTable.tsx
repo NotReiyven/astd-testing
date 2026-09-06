@@ -4,6 +4,7 @@ import { PopupUnit, MasterUnit } from "../../../types";
 import { GRID_STATUS_CFG, getTier, TIER_CONFIG, getProxyImage } from "../../../data";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils"; 
 import { useTradeStore } from "../../../store/useTradeStore";
+import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 
 export const getStatColor = (label: string, value: number) => {
   if (label === "R") {
@@ -52,6 +53,7 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
   const scrollDirectionRef = useRef<"horizontal" | "vertical" | null>(null);
 
   const addCard = useTradeStore(state => state.addCard);
+  const openModal = useHistoryModalStore(state => state.openModal);
 
   const popupUnit: PopupUnit = { id: unit.id, name: unit.name, subtitle: unit.subtitle, value: typeof unit.value === "number" ? unit.value : 0, demand: unit.demand };
   const sCfg = unit.status ? GRID_STATUS_CFG[unit.status] : null;
@@ -76,15 +78,6 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
     e.dataTransfer.effectAllowed = "copy";
   };
 
-  const handleCardClick = (e: React.MouseEvent) => {
-    if (window.innerWidth < 768) {
-      setMobileMenuOpen(true);
-    } else {
-      handleAdd("give");
-    }
-  };
-
-  // PHASE 4: Stop Propagation to block global drawer swipes
   const onTouchStart = (e: React.TouchEvent) => {
     e.stopPropagation();
     touchStartX.current = e.touches[0].clientX;
@@ -140,8 +133,8 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
       <div
         draggable
         onDragStart={handleDragStart}
-        onClick={handleCardClick}
-        onContextMenu={(e) => { e.preventDefault(); handleAdd("get"); }}
+        onClick={() => openModal(unit.id)}
+        onContextMenu={(e) => { e.preventDefault(); openModal(unit.id); }}
         onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
@@ -197,9 +190,8 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
           <div className="group-hover:opacity-0 transition-opacity duration-300">
             {valDisplay}
           </div>
-          <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-center gap-1.5 pr-3">
-            <span className="text-[10px] font-black text-[#FAA61A]">[L] Give</span>
-            <span className="text-[10px] font-black text-[#5865F2]">[R] Get</span>
+          <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-center pr-3">
+            <span className="text-[10px] font-black text-[#80848E]">Click for History</span>
           </div>
         </div>
 

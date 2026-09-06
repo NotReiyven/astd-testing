@@ -322,11 +322,11 @@ export const MainCanvas = memo(function MainCanvas({
                         </div>
                         <button onClick={dismissWelcome} className="text-[#80848E] hover:text-[#DBDEE1] p-1"><X className="w-4 h-4" /></button>
                       </div>
-                      <div className="hidden md:flex w-14 h-14 rounded-full bg-[#5865F2] items-center justify-center flex-shrink-0 text-3xl">👋</div>
+                      <div className="hidden md:flex w-14 h-14 rounded-full bg-[#5865F2] items-center justify-center flex-shrink-0 text-3xl">🤔</div>
                       <div className="flex flex-col justify-center max-w-2xl">
                         <h2 className="hidden md:block text-[22px] font-bold text-[#F2F3F5] mb-1 font-sans tracking-tight">Welcome to the value-list!</h2>
                         <p className="text-[12px] md:text-[13px] text-[#B5BAC1] mb-2 md:mb-2.5 leading-relaxed">
-                          This is the official ASTD value list. <strong>Left-click</strong> any unit card to instantly add it to <i>You Give</i>, and <strong>Right-click</strong> to add it to <i>You Get</i>.
+                          This is the ASTD value list. <strong>Left-click</strong> any unit card's plus button to instantly add it to <i>You Give</i>, and <strong>Right-click</strong> to add it to <i>You Get</i>.
                         </p>
                         <div className="flex flex-wrap items-center gap-1.5 md:gap-3 text-[9px] md:text-[11px] font-bold text-[#949BA4]">
                           <span className="bg-[#1E1F22] px-2 py-1 rounded border border-[rgba(255,255,255,0.04)]">R = Rarity (/20)</span>

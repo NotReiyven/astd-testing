@@ -6,6 +6,7 @@ import { AquaGuideOverlay, GuideType } from "./components/guides/AquaGuideOverla
 import { TopBar } from "./components/layout/TopBar";
 import { WelcomeModal } from "./components/WelcomeModal";
 import { useTradeStore } from "../store/useTradeStore";
+import { HistoryModal } from "./components/MainCanvas/HistoryModal";
 
 const TradeAnalyzerPanel = lazy(() => import("./components/TradeAnalyzer").then(module => ({ default: module.TradeAnalyzerPanel })));
 const Sidebar = lazy(() => import("./components/Sidebar").then(module => ({ default: module.Sidebar })));
@@ -18,7 +19,7 @@ const LegalChannel = lazy(() => import("./components/LegalChannel").then(module 
 
 const CHANNEL_INFO: Record<string, { title: string; subtitle: string }> = {
   "home": { title: "home", subtitle: "Welcome to the ASTD Value List! Important information and update logs are posted here." },
-  "value-list": { title: "value-list", subtitle: "Official ASTD unit values • Live Updated" },
+  "value-list": { title: "value-list", subtitle: "ASTD unit values • Being Observed Live by Fire Zio" },
   "tutorial": { title: "tutorial", subtitle: "Learn how to use the ASTD trading calculator and value list." },
   "extra-notices": { title: "extra-notices", subtitle: "Additional rules, exceptions, and community notes." },
   "terms-of-service": { title: "terms-of-service", subtitle: "Rules and guidelines for using the ASTD Value List." },
@@ -405,6 +406,8 @@ export default function App() {
         <Suspense fallback={null}>
 
           <WelcomeModal />
+          <HistoryModal /> {/* <-- ADD IT HERE */}
+          
           <AquaGuideOverlay guideState={guideState} onEndGuide={endGuide} />
 
           {isRosterOpen && <div className="md:hidden fixed inset-0 bg-black/60 z-40 animate-fade-in" onClick={() => setIsRosterOpen(false)} />}

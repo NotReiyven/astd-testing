@@ -79,7 +79,7 @@ export function CanvasControls({
 
       {/* Action Toolbar */}
       <div 
-        className="flex items-center gap-2.5 w-full xl:w-auto overflow-x-auto hide-scrollbar pb-1 -mb-1"
+        className="flex items-center gap-2.5 w-full xl:w-auto flex-wrap"
         onTouchStart={e => e.stopPropagation()}
         onTouchMove={e => e.stopPropagation()}
       >
