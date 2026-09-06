@@ -49,9 +49,9 @@ export const ActiveCardRow = memo(function ActiveCardRow({
   onTogglePin: (id: string) => void;
 }) {
   const { units } = useUnits();
-  
+
   const masterData = useMemo(() => units.find(u => u.id === card.id), [units, card.id]);
-  
+
   const dropCfg = masterData?.status ? GRID_STATUS_CFG[masterData.status as keyof typeof GRID_STATUS_CFG] : null;
   const proxyUrl = getProxyImage(card.id, masterData?.imageUrl);
 
@@ -63,7 +63,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
 
   return (
     <div 
-      className={`flex items-center gap-2 bg-[#2B2D31] hover:bg-[rgba(255,255,255,0.02)] p-2 rounded-[8px] border transition-colors group ${isPinned ? "border-[#5865F2] shadow-[0_0_8px_rgba(88,101,242,0.15)]" : "border-[rgba(255,255,255,0.04)]"}`}
+      className={`flex items-center gap-2 bg-[#2B2D31] hover:bg-[rgba(255,255,255,0.04)] p-2 rounded-[8px] border transition-colors group ${isPinned ? "border-[#5865F2] shadow-[0_0_8px_rgba(88,101,242,0.15)]" : "border-[rgba(255,255,255,0.04)]"}`}
       style={{ contentVisibility: 'auto', containIntrinsicSize: '58px' }}
     >
       <div className={`w-10 h-10 flex-shrink-0 rounded-[6px] bg-[#111214] overflow-hidden flex items-center justify-center border ${isPinned ? "border-[rgba(88,101,242,0.5)]" : "border-[rgba(255,255,255,0.04)]"}`}>
@@ -79,7 +79,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
            </div>
          )}
       </div>
-      
+
       <div className="flex flex-col min-w-0 flex-1 mr-1">
          <div className="flex items-center gap-1.5 min-w-0">
            <span className="text-[13px] md:text-[14px] font-extrabold text-[#F2F3F5] truncate" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -110,7 +110,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
          >
            {card.value === 0 ? "O/C" : (card.value * card.qty).toLocaleString()}
          </span>
-         
+
          <div className="flex items-center bg-[#1E1F22] rounded-[4px] p-0.5 border border-[rgba(255,255,255,0.04)] shadow-inner flex-shrink-0">
            <button 
              onClick={handleMinus} 
@@ -118,9 +118,9 @@ export const ActiveCardRow = memo(function ActiveCardRow({
            >
              <Minus className="w-3 h-3" />
            </button>
-           
+
            <QuantityInput qty={card.qty} onChange={handleQtyInput} />
-           
+
            <button 
              onClick={handlePlus} 
              className="w-5 h-5 flex items-center justify-center text-[#949BA4] hover:text-[#DBDEE1] hover:bg-[#2B2D31] rounded-[3px] transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2]"
@@ -128,19 +128,19 @@ export const ActiveCardRow = memo(function ActiveCardRow({
              <Plus className="w-3 h-3" />
            </button>
          </div>
-         
+
          <div className="flex items-center ml-0.5 flex-shrink-0">
            <button 
              onClick={handlePin} 
              title={isPinned ? "Unpin unit" : "Pin unit (prevents clearing)"}
-             className={`w-6 h-6 flex items-center justify-center transition-colors flex-shrink-0 active:scale-90 rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] ${isPinned ? "text-[#DBDEE1]" : "text-[#80848E] hover:text-[#DBDEE1]"}`}
+             className={`w-6 h-6 flex items-center justify-center transition-colors flex-shrink-0 active:scale-90 rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] ${isPinned ? "text-[#DBDEE1]" : "text-[#80848E] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)]"}`}
            >
              <Pin className="w-[14px] h-[14px]" style={{ fill: isPinned ? "currentColor" : "none" }} />
            </button>
 
            <button 
              onClick={handleRemove} 
-             className="w-6 h-6 flex items-center justify-center text-[#80848E] hover:text-[#ed4245] transition-colors flex-shrink-0 active:scale-90 rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ed4245]"
+             className="w-6 h-6 flex items-center justify-center text-[#80848E] hover:text-[#ed4245] hover:bg-[rgba(237,66,69,0.1)] transition-colors flex-shrink-0 active:scale-90 rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ed4245]"
            >
              <X className="w-[15px] h-[15px]" />
            </button>

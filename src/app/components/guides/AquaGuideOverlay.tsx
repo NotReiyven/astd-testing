@@ -6,38 +6,38 @@ export type GuideType = "main" | "channels" | "advanced" | "developer" | "filter
 export const AQUA_DIALOGUES: Record<string, string[]> = {
   main: [
     "",
-    "Listen up, you shut-in NEET! I, the beautiful and wise Goddess Aqua, have descended to save you from getting !!completely scammed!!! You'd be helpless without me. First, click the ^^Value List^^ channel in the sidebar so we can begin!",
+    "Listen up, you shut-in NEET! I, the beautiful and wise Goddess Aqua, have descended to save you from getting !!completely scammed!!! First, click the ^^Value List^^ channel in the sidebar so we can begin!",
     "Hmph, even someone with your pitiful intelligence stat can do this part. Let's build a mock trade. If you're on a PC, ^^Left-click^^ a unit for your *Give* side, or ^^Right-click^^ for your *Get* side! On mobile? Just ^^tap^^ the card! !!Don't mess this up!!!",
     "!!W-Wait! Don't just accept a trade blindly!!! Are you trying to lose all your value?! Use the divine tool I've graciously bestowed upon you! Click that glowing ^^Calculator^^ button right now to open the Analyzer!",
-    "See?! It instantly breaks down the value differences and market momentum for you! I just saved you from financial ruin, so you should be on your knees thanking me! Now get out there and trade, and don't forget to ^^praise your Goddess!^^"
+    "See?! It instantly breaks down the value differences and market momentum! But wait—you're not done! I've enrolled you in the Academy to finish your training. Go complete your Graduation Checklist!"
   ],
   channels: [
     "",
-    "Lost, are we? Typical. Pay attention to the sidebar on the left! ^^Home^^ has patch notes, and ^^Extra Notices^^ has crucial market rules you probably ignored! !!Don't just stare at the Value List all day!!!"
+    "Lost, are we? Typical. Pay attention to the sidebar on the left! ^^Home^^ has patch notes, ^^Tutorial^^ is where you learn how to trade, and ^^Extra Notices^^ has crucial market rules you probably ignored!"
   ],
   advanced: [
     "",
-    "Too lazy to type? Click the ^^Wand^^ in the calculator to paste whole paragraphs and let my divine magic sort the units! Also, keep an eye on the ^^Trade Notices^^ below the calculator—they'll tell you if a unit is !!Inflated!! or dropping!"
+    "Want to be a pro? The Academy Sandbox tracks your progress. Go finish your Graduation Checklist before you bother me again!"
   ],
   developer: [
     "",
-    "Oh, you want to know who built this shrine to my greatness? It was my loyal head developer, ^^Reiyven!^^ He spent way too much time coding this instead of going outside. Be sure to appreciate his hard work!"
+    "Oh, you want to know who built this shrine to my greatness? It was my loyal head developer, ^^Reiyven!^^ He spent way too much time coding this instead of going outside."
   ],
   filters: [
     "",
-    "Don't just blindly trade! Open the ^^Status Dropdown^^ and filter out the trash! Holding onto !!Dropping!! or !!Inflated!! units is a one-way ticket to being as broke as I am!"
+    "Don't just blindly scroll! Open the ^^Status Dropdown^^ and filter out the trash! Holding onto !!Dropping!! units is a one-way ticket to being as broke as I am! Read the Market Theory tab if you're confused!"
   ],
   dictionary: [
     "",
-    "I'm a Goddess, not a mind reader! Click the ^^Wand^^ icon in the Calculator to open the Smart Parser. Teach me your weird abbreviations so I can actually understand your messy trades!"
+    "I'm a Goddess, not a mind reader! Click the ^^Wand^^ icon in the Calculator to open the Smart Parser. It uses the exact Dictionary logic you can test in the Academy! Teach me your weird abbreviations!"
   ],
   stats: [
     "",
-    "Stop staring at the raw value like an idiot! Open the ^^R / S / D Stats^^ tab in the Tutorial. High value means nothing if the unit has terrible Demand. !!Nobody wants your overpriced garbage!!!"
+    "Stop staring at the raw value like an idiot! Read the ^^Market Theory^^ tab to understand Rarity, Supply, and Demand. High value means nothing if the unit has terrible Demand!"
   ],
   management: [
     "",
-    "Listen closely! When testing offers, click the ^^Pin^^ icon on your 'Give' units. That way, when you clear the board, your core inventory stays put! Even you can't mess that up... probably."
+    "Listen closely! When testing offers, click the ^^Pin^^ icon on your 'Give' units. That way, when you clear the board, your core inventory stays put! The Academy tracks this, so go do it!"
   ],
   annoyed: [
     "",
@@ -45,7 +45,7 @@ export const AQUA_DIALOGUES: Record<string, string[]> = {
   ],
   academy_grad: [
     "",
-    "Oh ho? You actually completed the Sandbox checklist?! I didn't think a NEET like you had the attention span!",
+    "Oh ho? You actually completed the Graduation Checklist?! I didn't think a NEET like you had the attention span!",
     "I guess my divine guidance is just *that* good! You're officially a certified trader now. Don't go losing all your value, or I'll laugh at you! ^^Praise Aqua!^^"
   ]
 };
@@ -95,6 +95,14 @@ export function AquaGuideOverlay({
     }
   };
 
+  const handleEndMainGuide = () => {
+    if (guideState.type === "main" && guideState.step === 4) {
+      window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'tutorial' }));
+      window.dispatchEvent(new CustomEvent("set-tutorial-tab", { detail: "sandbox" }));
+    }
+    onEndGuide();
+  };
+
   const renderDialogue = (text: string) => {
     const parts = text.split(/(!!.*?!!|\^\^.*?\^\^|\*\*.*?\*\*|\*.*?\*)/g);
     return parts.map((part, idx) => {
@@ -117,7 +125,7 @@ export function AquaGuideOverlay({
   if (!guideState.type) return null;
 
   const isMainStep4 = guideState.type === "main" && guideState.step === 4;
-  
+
   // Event-Driven Progression check
   let actionPrompt = "";
   if (!isTyping && guideState.type === "main") {
@@ -214,7 +222,7 @@ export function AquaGuideOverlay({
              {/* Footer Actions */}
              <div className="mt-5 pt-4 border-t border-[rgba(255,255,255,0.04)] flex items-center justify-between">
                <div className="flex-1 flex items-center gap-3">
-                 
+
                  {/* State 1: Typing Indicator */}
                  {isTyping && (
                    <span className="text-[12px] font-medium text-[#80848E] flex items-center gap-1.5 animate-pulse cursor-pointer">
@@ -233,10 +241,10 @@ export function AquaGuideOverlay({
                  {/* State 3: Free to Advance */}
                  {!needsInteraction && !isTyping && (
                    <button 
-                     onClick={(e) => { e.stopPropagation(); onEndGuide(); }} 
+                     onClick={(e) => { e.stopPropagation(); handleEndMainGuide(); }} 
                      className="group flex items-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-2 px-5 rounded-[6px] transition-all duration-300 active:scale-95 shadow-md focus-visible:outline-none animate-fade-in"
                    >
-                     <span>{isMainStep4 || guideState.type === "academy_grad" ? "Praise Aqua! (Finish)" : "Got it!"}</span>
+                     <span>{isMainStep4 ? "Go to Academy" : guideState.type === "academy_grad" ? "Praise Aqua! (Finish)" : "Got it!"}</span>
                      <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                    </button>
                  )}

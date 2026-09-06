@@ -28,6 +28,7 @@ export function WelcomeModal() {
 
     setIsVisible(false);
     document.body.style.overflow = "auto";
+    window.dispatchEvent(new Event("welcome-closed"));
   };
 
   const handleNavigate = (channel: string) => {
@@ -46,7 +47,7 @@ export function WelcomeModal() {
         : "fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/75 animate-fade-in transition-all duration-500"
     }>
       <div className={`bg-[#313338] w-full rounded-[8px] flex flex-col overflow-hidden border border-[rgba(255,255,255,0.05)] transition-all duration-500 ${isMinimized ? 'shadow-[0_20px_60px_rgba(0,0,0,0.8)]' : 'max-w-[500px] shadow-2xl animate-slide-up'}`}>
-        
+
         {!isMinimized && (
           <>
             <div className="pt-6 px-6 pb-5 bg-[#2B2D31] border-b border-[rgba(255,255,255,0.04)]">

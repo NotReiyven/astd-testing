@@ -30,14 +30,14 @@ export function CustomDropdown({ icon: Icon, value, options, onChange, defaultLa
     <div ref={ref} className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center bg-[#1E1F22] hover:bg-[#2B2D31] rounded-[4px] border border-[rgba(255,255,255,0.04)] px-3 h-[30px] transition-colors"
+        className="flex items-center bg-[#1E1F22] hover:bg-[rgba(255,255,255,0.04)] rounded-[4px] border border-[rgba(255,255,255,0.04)] px-3 h-[30px] transition-colors shadow-inner"
       >
         <Icon className="w-3.5 h-3.5 text-[#949BA4] mr-2" />
         <span className="text-[11px] font-bold text-[#DBDEE1] uppercase tracking-wider">
           {value === "all" ? defaultLabel : options[value]}
         </span>
       </button>
-      
+
       {isOpen && (
         <div className="absolute top-full left-0 mt-1 w-max min-w-[200px] bg-[#2B2D31] border border-[rgba(255,255,255,0.08)] rounded-[6px] shadow-xl z-50 py-1.5 flex flex-col">
           {Object.entries(options).map(([k, v]) => (

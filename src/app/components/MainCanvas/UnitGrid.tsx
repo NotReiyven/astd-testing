@@ -51,7 +51,9 @@ export const TierGridCard = memo(function TierGridCard({ unit }: { unit: GridUni
     e.dataTransfer.effectAllowed = "copy";
   };
 
+  // PHASE 4: Stop Propagation to block global drawer swipes
   const onTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
     scrollDirectionRef.current = null;
@@ -71,14 +73,16 @@ export const TierGridCard = memo(function TierGridCard({ unit }: { unit: GridUni
     }
 
     if (scrollDirectionRef.current === "horizontal") {
+      e.stopPropagation();
       setSwipeOffset(dx);
     }
   };
 
-  const onTouchEnd = () => {
-    if (swipeOffset > 80) {
+  const onTouchEnd = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    if (swipeOffset > 75) {
       handleAdd("give");
-    } else if (swipeOffset < -80) {
+    } else if (swipeOffset < -75) {
       handleAdd("get");
     }
     setSwipeOffset(0);
@@ -116,7 +120,7 @@ export const TierGridCard = memo(function TierGridCard({ unit }: { unit: GridUni
         className="flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10 will-change-transform"
         style={{
           background: "#2B2D31",
-          transition: swipeOffset === 0 ? "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)" : "none",
+          transition: swipeOffset === 0 ? "all 0.15s cubic-bezier(0.16, 1, 0.3, 1)" : "none",
           border: `1px solid ${isAdded ? tierColor : hovered ? `${tierColor}50` : "rgba(255,255,255,0.04)"}`,
           boxShadow: isAdded
             ? `0 0 20px ${tierColor}80, inset 0 0 15px ${tierColor}40`
@@ -167,10 +171,10 @@ export const TierGridCard = memo(function TierGridCard({ unit }: { unit: GridUni
             <div className="pl-2 md:pl-3 border-l-[3px] transition-colors duration-300 w-full min-w-0" style={{ borderColor: hovered ? tierColor : "#5865F2" }}>
               <GridValueDisplay unit={unit} />
             </div>
-            
+
             <div className="relative w-full mt-3 md:mt-4 pt-3 md:pt-4 border-t border-[rgba(255,255,255,0.06)] min-h-[34px] md:min-h-[38px] flex items-center justify-between">
               <div className={`flex items-center justify-between w-full transition-opacity duration-200 ${mobileMenuOpen ? 'opacity-0 pointer-events-none md:opacity-100 md:pointer-events-auto' : 'opacity-100'}`}>
-                
+
                 <div className="flex items-center gap-1 flex-nowrap flex-1 min-w-0 pr-1 overflow-hidden">
                   <GridStatItem label="R" value={unit.rarity} />
                   <GridStatItem label="S" value={unit.supply} />

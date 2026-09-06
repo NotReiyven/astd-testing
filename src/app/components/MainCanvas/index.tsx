@@ -6,7 +6,7 @@ import { TIER_CONFIG, getTier } from "../../../data";
 import { useUnits } from "../../../context/UnitContext"; 
 
 import { TierGridCard, UnitGrid } from "./UnitGrid";
-import { UnitListRow, ListHeaderRow, UnitListTable } from "./UnitListTable";
+import { UnitListRow, ListHeaderRow } from "./UnitListTable";
 import { TierBanner, TierSubHeader, processUnits, buildSections } from "./TierSections";
 import { CanvasSkeleton } from "./CanvasSkeleton";
 import { CanvasControls } from "./CanvasControls";
@@ -22,7 +22,6 @@ type VirtualItem =
   | { type: 'tier-banner'; id: string; tier: any }
   | { type: 'sub-header'; id: string; label: string; range: string; count: number }
   | { type: 'grid-row'; id: string; units: MasterUnit[]; cols: number }
-  | { type: 'list-header'; id: string }
   | { type: 'list-row'; id: string; unit: MasterUnit; isLast: boolean }
   | { type: 'space-bottom'; id: string };
 
@@ -36,7 +35,7 @@ export const MainCanvas = memo(function MainCanvas({
   guideState?: { type: GuideType | null; step: number };
 }) {
   const { units: ALL_UNITS, isLoading } = useUnits(); 
-  
+
   const [showWelcome, setShowWelcome] = useState(() => {
     try { return localStorage.getItem("astd_welcome_dismissed") !== "true"; } 
     catch (e) { return true; }
@@ -136,7 +135,6 @@ export const MainCanvas = memo(function MainCanvas({
                 items.push({ type: 'grid-row', id: `grid-${tKey}-${i}`, units: unitsInTier.slice(i, i + cols), cols });
              }
           } else {
-             items.push({ type: 'list-header', id: `list-head-${tKey}` });
              unitsInTier.forEach((u, i) => {
                 items.push({ type: 'list-row', id: `list-${u.id}`, unit: u, isLast: i === unitsInTier.length - 1 });
              });
@@ -168,7 +166,6 @@ export const MainCanvas = memo(function MainCanvas({
                        items.push({ type: 'grid-row', id: `grid-${sec.label}-${i}`, units: sec.processedUnits.slice(i, i + cols), cols });
                     }
                  } else {
-                    items.push({ type: 'list-header', id: `list-head-${sec.label}` });
                     sec.processedUnits.forEach((u, i) => {
                        items.push({ type: 'list-row', id: `list-${u.id}`, unit: u, isLast: i === sec.processedUnits.length - 1 });
                     });
@@ -180,7 +177,6 @@ export const MainCanvas = memo(function MainCanvas({
                     items.push({ type: 'grid-row', id: `grid-${tKey}-${i}`, units: processed.slice(i, i + cols), cols });
                  }
               } else {
-                 items.push({ type: 'list-header', id: `list-head-${tKey}` });
                  processed.forEach((u, i) => {
                     items.push({ type: 'list-row', id: `list-${u.id}`, unit: u, isLast: i === processed.length - 1 });
                  });
@@ -206,18 +202,17 @@ export const MainCanvas = memo(function MainCanvas({
          case 'tier-banner': return 120; 
          case 'sub-header': return 60;
          case 'grid-row': return 272;
-         case 'list-header': return 45;
          case 'list-row': return 57;
          case 'space-bottom': return 100;
          default: return 50;
        }
     },
-    overscan: 5,
+    overscan: 12,
   });
 
   useEffect(() => {
     if (!scrollToSection || flattenedItems.length === 0) return;
-    
+
     skipNextResetRef.current = true;
     setSearchQuery("");
     setStatusFilter("all");
@@ -265,7 +260,7 @@ export const MainCanvas = memo(function MainCanvas({
       `}</style>
 
       {/* Filter Highlight Wrap */}
-      <div className={`relative transition-all duration-300 ${guideState?.type === "filters" ? "ring-2 ring-[#5865F2] rounded-[8px] bg-[rgba(88,101,242,0.15)] shadow-[0_0_20px_rgba(88,101,242,0.4)] z-[100005] mx-4 mb-2 animate-pulse" : "z-40"}`}>
+      <div className={`flex flex-col relative transition-all duration-300 ${guideState?.type === "filters" ? "ring-2 ring-[#5865F2] rounded-[8px] bg-[rgba(88,101,242,0.15)] shadow-[0_0_20px_rgba(88,101,242,0.4)] z-[100005] mx-4 mb-2 animate-pulse" : "z-[45]"}`}>
         <CanvasControls 
           activeTierFilter={activeTierFilter}
           setActiveTierFilter={setActiveTierFilter}
@@ -279,6 +274,13 @@ export const MainCanvas = memo(function MainCanvas({
           viewMode={viewMode}
           setViewMode={setViewMode}
         />
+        
+        {/* Global Sticky List Header */}
+        {viewMode === "list" && !isLoading && (
+          <div className="hidden md:block w-full border-b border-[rgba(0,0,0,0.5)] shadow-md z-[45] bg-[#1E1F22]">
+            <ListHeaderRow />
+          </div>
+        )}
       </div>
 
       <div 
@@ -299,7 +301,7 @@ export const MainCanvas = memo(function MainCanvas({
           <div className={`relative ${isStatsTarget ? 'ring-2 ring-[#5865F2] rounded-[8px] bg-[rgba(88,101,242,0.05)] shadow-[0_0_20px_rgba(88,101,242,0.2)] z-[100005]' : ''}`} style={{ height: virtualizer.getTotalSize(), width: '100%' }}>
             {virtualizer.getVirtualItems().map((virtualRow) => {
               const item = flattenedItems[virtualRow.index];
-              
+
               return (
                 <div
                   key={virtualRow.key}
@@ -310,7 +312,7 @@ export const MainCanvas = memo(function MainCanvas({
                 >
                   {item.type === 'space-top' && <div className="h-4 md:h-6" />}
                   {item.type === 'space-bottom' && <div className="h-10 md:h-16" />}
-                  
+
                   {item.type === 'welcome' && (
                     <div className="mb-4 md:mb-8 flex flex-col md:flex-row gap-3 md:gap-4 bg-[#2B2D31] md:bg-transparent p-3 md:p-0 rounded-[8px] md:rounded-none border md:border-none border-[rgba(255,255,255,0.04)] mx-2 md:mx-0">
                       <div className="flex items-start justify-between md:hidden w-full">
@@ -366,12 +368,8 @@ export const MainCanvas = memo(function MainCanvas({
                     </div>
                   )}
 
-                  {item.type === 'list-header' && (
-                    <ListHeaderRow />
-                  )}
-
                   {item.type === 'list-row' && (
-                    <div className={isStatsTarget && virtualRow.index === 1 ? 'animate-pulse ring-2 ring-[#5865F2]' : ''}>
+                    <div className={`${isStatsTarget && virtualRow.index === 1 ? 'animate-pulse ring-2 ring-[#5865F2]' : ''}`}>
                        <UnitListRow unit={item.unit} isLast={item.isLast} />
                     </div>
                   )}
@@ -382,9 +380,10 @@ export const MainCanvas = memo(function MainCanvas({
         )}
       </div>
 
+      {/* Adjust bottom-[90px] on mobile to prevent overlapping with the floating calculator button */}
       <button
         onClick={scrollToTop}
-        className={`absolute bottom-6 right-6 md:bottom-8 md:right-8 w-[46px] h-[46px] md:w-[52px] md:h-[52px] bg-[#5865F2] text-white rounded-full flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.4)] transition-all duration-300 ease-out hover:bg-[#4752C4] hover:-translate-y-1 z-50 ${
+        className={`absolute bottom-[90px] right-6 md:bottom-8 md:right-8 w-[46px] h-[46px] md:w-[52px] md:h-[52px] bg-[#5865F2] text-white rounded-full flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.4)] transition-all duration-300 ease-out hover:bg-[#4752C4] hover:-translate-y-1 z-50 ${
           showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8 pointer-events-none"
         }`}
         title="Scroll to Top"

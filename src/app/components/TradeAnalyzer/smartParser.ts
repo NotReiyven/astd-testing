@@ -7,7 +7,6 @@ const getEditDistance = (a: string, b: string): number => {
     if (lenB === 0) return lenA;
     if (lenA >= 50 || lenB >= 50) return 99;
 
-    // Use highly-efficient typed 1D arrays instead of memory-heavy 2D arrays
     let prevRow = new Uint8Array(lenB + 1);
     let currRow = new Uint8Array(lenB + 1);
 
@@ -18,12 +17,11 @@ const getEditDistance = (a: string, b: string): number => {
         for (let j = 1; j <= lenB; j++) {
             const cost = a[i - 1] === b[j - 1] ? 0 : 1;
             currRow[j] = Math.min(
-                currRow[j - 1] + 1,       // Insertion
-                prevRow[j] + 1,           // Deletion
-                prevRow[j - 1] + cost     // Substitution
+                currRow[j - 1] + 1,       
+                prevRow[j] + 1,           
+                prevRow[j - 1] + cost     
             );
         }
-        // Swap rows without reallocating memory
         const temp = prevRow;
         prevRow = currRow;
         currRow = temp;
@@ -42,7 +40,7 @@ const buildLexicon = (ALL_UNITS: MasterUnit[]) => {
     const addLexicon = (key: string, unit: MasterUnit, type: "exact" | "alias" | "acronym") => {
         const cleanKey = key.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, "");
         if (!cleanKey || cleanKey.length < 2) return;
-        
+
         if (LEXICON_MAP.has(cleanKey)) {
             const entry = LEXICON_MAP.get(cleanKey)!;
             if (!entry.units.some(u => u.id === unit.id)) entry.units.push(unit);
@@ -65,18 +63,35 @@ const buildLexicon = (ALL_UNITS: MasterUnit[]) => {
         addLexicon(u.name, u, "exact");
         if (u.name.includes("*")) addLexicon(u.name.replace(/\*/g, ""), u, "exact");
         if (u.subtitle) addLexicon(u.subtitle, u, "exact");
-        
+
         u.aliases?.forEach(a => {
             addLexicon(a, u, "alias");
             if (a.includes("*")) addLexicon(a.replace(/\*/g, ""), u, "alias");
         });
 
-        const nameLower = u.name.toLowerCase();
-        if (nameLower.includes("3x speed") || nameLower.includes("speed gamepass")) {
+        // Robust hardcoded alias injections for notoriously misparsed units
+        const nameStr = `${u.name} ${u.subtitle} ${u.id}`.toLowerCase();
+        
+        if (nameStr.includes("3x") || nameStr.includes("speed")) {
             addLexicon("x3", u, "alias");
             addLexicon("3x", u, "alias");
+            addLexicon("speed", u, "alias");
+            addLexicon("3x speed", u, "alias");
+            addLexicon("speed gamepass", u, "alias");
         }
-        
+        if (nameStr.includes("star pass") || nameStr.includes("starpass")) {
+            addLexicon("starpass", u, "alias");
+            addLexicon("star pass", u, "alias");
+        }
+        if (nameStr.includes("vip") || nameStr.includes("v.i.p")) {
+            addLexicon("vip", u, "alias");
+        }
+        if (nameStr.includes("egg ii") || nameStr.includes("ainz")) {
+            addLexicon("100% egg", u, "alias");
+            addLexicon("necro egg", u, "alias");
+            addLexicon("ainz egg", u, "alias");
+        }
+
         if (u.id === "l-borul-alt") addLexicon("dbz", u, "alias");
         if (u.id === "ul-borul-alt") addLexicon("udbz", u, "alias");
         if (u.id === "galaxy-girl") addLexicon("gg", u, "alias");
@@ -134,7 +149,6 @@ export const parseSmartTrade = (smartInput: string, ALL_UNITS: MasterUnit[]): Pa
         return { giveCards: [], getCards: [], ambiguous: [], error: "Input is empty." };
     }
 
-    // FIXED: Content-based fingerprint check to avoid thrashing when array references change
     const needsRebuild = cachedUnits.length !== ALL_UNITS.length || (ALL_UNITS.length > 0 && cachedUnits[0]?.id !== ALL_UNITS[0]?.id);
     if (needsRebuild) {
         buildLexicon(ALL_UNITS);
@@ -213,7 +227,7 @@ const executeNERPipeline = (rawInput: string, ALL_UNITS: MasterUnit[]): ParseRes
     const pivots = Array.from(text.matchAll(/\b(for|want|lf|mlf)\b/gi));
     const validPivots: RegExpMatchArray[] = pivots.filter(p => isFree(p.index!, p.index! + p[0].length));
     validPivots.forEach(p => markConsumed(p.index!, p.index! + p[0].length));
-    
+
     const delims = Array.from(text.matchAll(/[,+&]|\band\b/gi));
     delims.forEach(d => { if (isFree(d.index!, d.index! + d[0].length)) markConsumed(d.index!, d.index! + d[0].length); });
 
@@ -228,14 +242,27 @@ const executeNERPipeline = (rawInput: string, ALL_UNITS: MasterUnit[]): ParseRes
             if (currentChunkStart !== -1) {
                 let chunk = text.slice(currentChunkStart, i).trim();
                 let chunkQty = 1;
-                
-                const qFront = chunk.match(/^(\d+)\s*[xX]?\s+(.+)$/i) || chunk.match(/^[xX](\d+)\s+(.+)$/i);
-                if (qFront) { chunkQty = parseInt(qFront[1] || qFront[3], 10); chunk = (qFront[2] || qFront[4]).trim(); }
-                const qBack = chunk.match(/^(.*?)(?:\s*x(\d+)|\s*\(x(\d+)\))$/i);
-                if (qBack) { chunkQty = parseInt(qBack[2] || qBack[3], 10); chunk = qBack[1].trim(); }
+                let chunkUnitText = chunk;
 
-                if (chunk.length > 2) {
-                    const tokens = chunk.split(/[\s-]+/).filter(t => t.length > 0);
+                // PREVENT QUANTITY STRIPPING if the entire chunk is already a known alias (e.g. "3x speed")
+                const isExactLexicon = DICTIONARY.some(d => d.key === chunk);
+
+                if (!isExactLexicon) {
+                    const qFront = chunk.match(/^(\d+)\s*[xX]?\s+(.+)$/i) || chunk.match(/^[xX](\d+)\s+(.+)$/i);
+                    if (qFront) { 
+                        chunkQty = parseInt(qFront[1] || qFront[3], 10); 
+                        chunkUnitText = (qFront[2] || qFront[4]).trim(); 
+                    } else {
+                        const qBack = chunk.match(/^(.*?)(?:\s*x(\d+)|\s*\(x(\d+)\))$/i);
+                        if (qBack) { 
+                            chunkQty = parseInt(qBack[2] || qBack[3], 10); 
+                            chunkUnitText = qBack[1].trim(); 
+                        }
+                    }
+                }
+
+                if (chunkUnitText.length > 2) {
+                    const tokens = chunkUnitText.split(/[\s-]+/).filter(t => t.length > 0);
                     const tokenMatches = ALL_UNITS.filter(u => {
                         const targetStr = `${u.name.toLowerCase()} ${u.subtitle?.toLowerCase() || ""} ${(u.aliases || []).join(" ")}`;
                         return tokens.every(t => {
@@ -249,10 +276,10 @@ const executeNERPipeline = (rawInput: string, ALL_UNITS: MasterUnit[]): ParseRes
                         spans.push({ start: currentChunkStart, end: i, text: chunk, options: tokenMatches.slice(0, 5), matchType: "fuzzy", confidence: 40, qty: chunkQty, isPure: false, isShiny: false });
                         markConsumed(currentChunkStart, i);
                     } else {
-                        const threshold = Math.min(3, Math.max(1, Math.floor(chunk.length * 0.25)));
+                        const threshold = Math.min(3, Math.max(1, Math.floor(chunkUnitText.length * 0.25)));
                         const scored = ALL_UNITS.map(u => {
-                            const nDist = getEditDistance(chunk, u.name.toLowerCase());
-                            const aDist = u.aliases?.length ? Math.min(...u.aliases.map(a => getEditDistance(chunk, a.toLowerCase()))) : 99;
+                            const nDist = getEditDistance(chunkUnitText, u.name.toLowerCase());
+                            const aDist = u.aliases?.length ? Math.min(...u.aliases.map(a => getEditDistance(chunkUnitText, a.toLowerCase()))) : 99;
                             return { unit: u, dist: Math.min(nDist, aDist) };
                         }).filter(u => u.dist <= threshold).sort((a, b) => a.dist - b.dist);
 
@@ -287,7 +314,7 @@ const executeNERPipeline = (rawInput: string, ALL_UNITS: MasterUnit[]): ParseRes
     }
 
     spans.sort((a, b) => a.start - b.start);
-    
+
     const assignModifier = (gapText: string, leftSpan: EntitySpan | null, rightSpan: EntitySpan | null) => {
         if (!gapText.trim()) return;
         const pureMatch = gapText.match(/\b(pure|p)\b/i);
@@ -348,7 +375,7 @@ const executeNERPipeline = (rawInput: string, ALL_UNITS: MasterUnit[]): ParseRes
     const buildResult = (bucket: EntitySpan[], col: "give" | "get") => {
         const exact: TradeCard[] = [];
         const ambig: AmbiguousToken[] = [];
-        
+
         bucket.forEach(span => {
             if (span.confidence >= 90 && span.options.length === 1) {
                 const u = span.options[0];

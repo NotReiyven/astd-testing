@@ -27,31 +27,16 @@ export const getStatColor = (label: string, value: number) => {
   return "#DBDEE1";
 };
 
-export const UnitListTable = memo(function UnitListTable({ units }: { units: MasterUnit[] }) {
-  return (
-    <div className="w-full rounded-[8px] border border-[rgba(255,255,255,0.06)] bg-[#2B2D31] shadow-sm pb-2 md:pb-0 overflow-hidden">
-      <div className="flex flex-col w-full">
-        <ListHeaderRow />
-        <div className="flex flex-col bg-[#2B2D31]">
-          {units.map((unit, i) => (
-            <UnitListRow key={unit.id} unit={unit} isLast={i === units.length - 1} />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-});
-
 export const ListHeaderRow = memo(function ListHeaderRow() {
   return (
-    <div className="hidden md:grid grid-cols-[52px_240px_130px_55px_55px_55px_minmax(180px,1fr)] items-center bg-[#1E1F22] text-[#949BA4] text-[10px] font-bold uppercase tracking-wider select-none border border-b-0 border-[rgba(255,255,255,0.08)] rounded-t-[8px]">
-      <div className="px-3 py-2.5 border-r border-[rgba(255,255,255,0.06)] h-full flex items-center justify-center">Icon</div>
-      <div className="px-3 py-2.5 border-r border-[rgba(255,255,255,0.06)] h-full flex items-center">Units</div>
-      <div className="px-3 py-2.5 border-r border-[rgba(255,255,255,0.06)] h-full flex items-center justify-end">Value</div>
-      <div className="px-3 py-2.5 border-r border-[rgba(255,255,255,0.06)] h-full flex items-center justify-center" title="Rarity (0-20)">R</div>
-      <div className="px-3 py-2.5 border-r border-[rgba(255,255,255,0.06)] h-full flex items-center justify-center" title="Supply (1-5)">S</div>
-      <div className="px-3 py-2.5 border-r border-[rgba(255,255,255,0.06)] h-full flex items-center justify-center" title="Demand (1-5)">D</div>
-      <div className="px-3 py-2.5 h-full flex items-center">Notices</div>
+    <div className="hidden md:grid grid-cols-[52px_240px_130px_55px_55px_55px_minmax(180px,1fr)] items-center bg-[#1E1F22] text-[#80848E] text-[10px] font-black uppercase tracking-widest select-none w-full border-b border-[rgba(0,0,0,0.5)] shadow-sm">
+      <div className="px-3 py-3 h-full flex items-center justify-center">Icon</div>
+      <div className="px-3 py-3 h-full flex items-center">Units</div>
+      <div className="px-3 py-3 h-full flex items-center justify-end">Value</div>
+      <div className="px-3 py-3 h-full flex items-center justify-center" title="Rarity (0-20)">R</div>
+      <div className="px-3 py-3 h-full flex items-center justify-center" title="Supply (1-5)">S</div>
+      <div className="px-3 py-3 h-full flex items-center justify-center" title="Demand (1-5)">D</div>
+      <div className="px-3 py-3 h-full flex items-center">Notices</div>
     </div>
   );
 });
@@ -65,7 +50,7 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
   const scrollDirectionRef = useRef<"horizontal" | "vertical" | null>(null);
-  
+
   const addCard = useTradeStore(state => state.addCard);
 
   const popupUnit: PopupUnit = { id: unit.id, name: unit.name, subtitle: unit.subtitle, value: typeof unit.value === "number" ? unit.value : 0, demand: unit.demand };
@@ -99,7 +84,9 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
     }
   };
 
+  // PHASE 4: Stop Propagation to block global drawer swipes
   const onTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
     scrollDirectionRef.current = null;
@@ -119,14 +106,16 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
     }
 
     if (scrollDirectionRef.current === "horizontal") {
+      e.stopPropagation();
       setSwipeOffset(dx);
     }
   };
 
-  const onTouchEnd = () => {
-    if (swipeOffset > 80) {
+  const onTouchEnd = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    if (swipeOffset > 75) {
       handleAdd("give");
-    } else if (swipeOffset < -80) {
+    } else if (swipeOffset < -75) {
       handleAdd("get");
     }
     setSwipeOffset(0);
@@ -142,7 +131,7 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
       : <span className="text-[13px] md:text-[14px] font-bold tracking-tight text-[#F2F3F5] font-mono">{(unit.value as number).toLocaleString()}</span>;
 
   return (
-    <div className={`relative group w-full overflow-hidden bg-[#2B2D31] border-x border-[rgba(255,255,255,0.06)] ${isLast ? 'border-b rounded-b-[8px]' : 'border-b border-b-[rgba(255,255,255,0.04)]'}`} style={{ contentVisibility: "auto", containIntrinsicSize: "56px" }}>
+    <div className={`relative group w-full overflow-hidden bg-[#2B2D31] ${isLast ? '' : 'border-b border-[rgba(255,255,255,0.03)]'}`} style={{ contentVisibility: "auto", containIntrinsicSize: "56px" }}>
       <div className={`absolute inset-0 flex items-center px-5 font-bold transition-colors duration-200 z-0 ${swipeOffset > 0 ? 'bg-[#FAA61A] justify-start text-white' : swipeOffset < 0 ? 'bg-[#5865F2] justify-end text-white' : 'bg-transparent'}`}>
          {swipeOffset > 0 && <><ArrowRight className="w-4 h-4 mr-2" /> Add Give</>}
          {swipeOffset < 0 && <><ArrowLeft className="w-4 h-4 ml-2" /> Add Get</>}
@@ -160,20 +149,21 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
         style={{ 
           background: isAdded ? `${tierColor}40` : "",
           transform: `translateX(${swipeOffset}px) ${isAdded ? "scale(0.98)" : "scale(1)"}`,
-          transition: swipeOffset === 0 ? "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease" : "none",
+          transition: swipeOffset === 0 ? "transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease" : "none",
           touchAction: 'pan-y'
         }}
       >
-        <div className="hidden md:flex px-3 py-2 border-r border-[rgba(255,255,255,0.06)] items-center justify-center">
-          <div className="w-8 h-8 rounded-full overflow-hidden bg-[#111214] border shadow-sm flex-shrink-0 flex items-center justify-center" style={{ borderColor: hovered ? `${tierColor}60` : "rgba(255,255,255,0.08)", transition: "border-color 0.3s ease" }}>
-            {proxyUrl ? <img src={proxyUrl} alt={unit.name} loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <span className="text-white font-bold text-[10px]" style={getAvatarStyle(unit.name)}>{getInitials(unit.name)}</span>}
+        <div className="hidden md:flex px-3 py-2 items-center justify-center">
+          <div className="w-8 h-8 rounded-full overflow-hidden bg-[#111214] border border-[rgba(255,255,255,0.08)] shadow-sm flex-shrink-0 flex items-center justify-center" style={{ borderColor: hovered ? `${tierColor}60` : "rgba(255,255,255,0.08)", transition: "border-color 0.3s ease" }}>
+            {proxyUrl ? <img src={proxyUrl} alt={unit.name} loading="lazy" decoding="async" className="w-full h-full object-cover animate-fade-in" /> : <span className="text-white font-bold text-[10px]" style={getAvatarStyle(unit.name)}>{getInitials(unit.name)}</span>}
           </div>
         </div>
 
+        {/* Mobile View Content */}
         <div className="flex md:hidden items-center justify-between w-full px-4 py-3">
           <div className="flex items-center gap-3 min-w-0 pr-2">
             <div className="relative w-10 h-10 rounded-full overflow-hidden bg-[#111214] border shadow-sm flex-shrink-0 flex items-center justify-center" style={{ borderColor: hovered ? `${tierColor}60` : "rgba(255,255,255,0.08)" }}>
-              {proxyUrl ? <img src={proxyUrl} alt={unit.name} loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <span className="text-white font-bold text-[12px]" style={getAvatarStyle(unit.name)}>{getInitials(unit.name)}</span>}
+              {proxyUrl ? <img src={proxyUrl} alt={unit.name} loading="lazy" decoding="async" className="w-full h-full object-cover animate-fade-in" /> : <span className="text-white font-bold text-[12px]" style={getAvatarStyle(unit.name)}>{getInitials(unit.name)}</span>}
             </div>
             <div className="flex flex-col min-w-0 flex-1">
               <span className="text-[14px] font-extrabold tracking-tight text-[#F2F3F5] truncate">{unit.name}</span>
@@ -183,7 +173,8 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
           <div className="flex-shrink-0 text-right">{valDisplay}</div>
         </div>
 
-        <div className="hidden md:flex flex-col justify-center min-w-0 px-3 py-2 border-r border-[rgba(255,255,255,0.06)]">
+        {/* Desktop View Content */}
+        <div className="hidden md:flex flex-col justify-center min-w-0 px-3 py-2 border-r border-[rgba(255,255,255,0.03)]">
           <span className="text-[13.5px] font-extrabold tracking-tight text-[#F2F3F5] truncate transition-colors duration-300" style={{ color: hovered ? "#FFF" : "#F2F3F5" }}>{unit.name}</span>
           <span className="text-[10px] font-bold uppercase tracking-wider leading-none text-[#949BA4] truncate mt-1 mb-1.5">{unit.subtitle}</span>
           <div className="flex items-center gap-1.5">
@@ -197,7 +188,7 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
 
         {/* Value Column with Status Tag Color Fill */}
         <div 
-          className="hidden md:flex px-3 py-2 border-r border-[rgba(255,255,255,0.06)] items-center justify-end relative transition-colors"
+          className="hidden md:flex px-3 py-2 border-r border-[rgba(255,255,255,0.03)] items-center justify-end relative transition-colors"
           style={{
             background: sCfg ? sCfg.bg : 'transparent',
             borderColor: sCfg ? sCfg.border : undefined
@@ -206,19 +197,19 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
           <div className="group-hover:opacity-0 transition-opacity duration-300">
             {valDisplay}
           </div>
-          <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-center gap-1 pr-3">
-            <span className="text-[10px] font-bold text-[#FAA61A]">[L] Give</span>
-            <span className="text-[10px] font-bold text-[#5865F2]">[R] Get</span>
+          <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-center gap-1.5 pr-3">
+            <span className="text-[10px] font-black text-[#FAA61A]">[L] Give</span>
+            <span className="text-[10px] font-black text-[#5865F2]">[R] Get</span>
           </div>
         </div>
 
-        <div className="hidden md:flex px-2 py-2 border-r border-[rgba(255,255,255,0.06)] items-center justify-center font-mono font-bold text-[12px]" style={{ color: getStatColor("R", unit.rarity) }}>
+        <div className="hidden md:flex px-2 py-2 border-r border-[rgba(255,255,255,0.03)] items-center justify-center font-mono font-bold text-[12px]" style={{ color: getStatColor("R", unit.rarity) }}>
           {unit.rarity}
         </div>
-        <div className="hidden md:flex px-2 py-2 border-r border-[rgba(255,255,255,0.06)] items-center justify-center font-mono font-bold text-[12px]" style={{ color: getStatColor("S", unit.supply) }}>
+        <div className="hidden md:flex px-2 py-2 border-r border-[rgba(255,255,255,0.03)] items-center justify-center font-mono font-bold text-[12px]" style={{ color: getStatColor("S", unit.supply) }}>
           {unit.supply}
         </div>
-        <div className="hidden md:flex px-2 py-2 border-r border-[rgba(255,255,255,0.06)] items-center justify-center font-mono font-bold text-[12px]" style={{ color: getStatColor("D", unit.demand) }}>
+        <div className="hidden md:flex px-2 py-2 border-r border-[rgba(255,255,255,0.03)] items-center justify-center font-mono font-bold text-[12px]" style={{ color: getStatColor("D", unit.demand) }}>
           {unit.demand}
         </div>
 
@@ -226,6 +217,7 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
           {unit.notice ? <span className="text-[11.5px] font-medium text-[#B5BAC1] line-clamp-2 leading-snug">{unit.notice}</span> : <span className="text-[11.5px] font-medium text-[#4e5058] italic">No notes</span>}
         </div>
 
+        {/* Mobile Expansion Menu */}
         <div className="flex md:hidden items-center justify-between w-full px-4 pb-3 relative min-h-[28px]">
           <div className={`flex items-center justify-between w-full transition-opacity duration-200 ${mobileMenuOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             <div className="flex items-center gap-2 text-[12px] font-mono">
@@ -237,7 +229,7 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
             </div>
             {unit.notice && <div className="flex-1 px-3 text-[11px] text-[#949BA4] italic leading-snug truncate">{unit.notice}</div>}
             <button 
-              className="flex flex-shrink-0 items-center justify-center rounded-[4px] w-[28px] h-[28px] bg-[rgba(255,255,255,0.06)] text-[#B5BAC1] active:scale-95"
+              className="flex flex-shrink-0 items-center justify-center rounded-[4px] w-[28px] h-[28px] bg-[rgba(255,255,255,0.06)] text-[#B5BAC1] hover:bg-[rgba(255,255,255,0.04)] transition-colors active:scale-95"
               onClick={(e) => { e.stopPropagation(); setMobileMenuOpen(true); }}
             >
               <Plus className="w-4 h-4" />

@@ -86,7 +86,7 @@ export function Sidebar({
         tier,
         color: colorMap[tier] || "#52525b",
         children: subCats.map(sub => ({ 
-          id: `${tier.toLowerCase()}-${sub.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`, 
+          id: sub, // Send the exact raw label for the virtualizer match
           label: sub 
         }))
       };
@@ -138,7 +138,7 @@ export function Sidebar({
                   <div className="overflow-visible flex flex-col min-h-0">
                     {cat.channels.map((channel) => {
                       const isActive = activeChannel === channel.id;
-                      
+
                       // Identify if this is the active tutorial target
                       const isTarget = guideState?.type === "main" && guideState.step === 1 && channel.id === "value-list";
                       const Icon = channel.icon || Hash;
