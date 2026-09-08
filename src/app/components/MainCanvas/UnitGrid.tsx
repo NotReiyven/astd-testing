@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Plus, X, ArrowLeft, ArrowRight } from "lucide-react";
 import { PopupUnit, GridUnit, MasterUnit, UnitStatus } from "../../../types";
 import { GRID_STATUS_CFG, getRarityLabel, SUPPLY_SCALE, DEMAND_SCALE, getTier, TIER_CONFIG, getProxyImage } from "../../../data";
-import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils"; 
+import { getAvatarStyle, getInitials, handleImageError } from "../TradeAnalyzer/summaryUtils"; 
 import { useTradeStore } from "../../../store/useTradeStore";
 import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 
@@ -129,21 +129,27 @@ export const TierGridCard = memo(function TierGridCard({ unit }: { unit: GridUni
         onMouseLeave={() => setHovered(false)}
       >
         <div className="relative w-full overflow-hidden flex-shrink-0" style={{ aspectRatio: "1/1", transform: "translateZ(0)" }}>
-          <div className="absolute inset-0" style={{ background: "linear-gradient(160deg, #383a3f 0%, #1E1F22 100%)" }} />
-          {proxyUrl ? (
-            <img 
-              src={proxyUrl} alt={unit.name} loading="lazy" decoding="async"
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out" 
-              style={{ objectPosition: "center 15%", transform: hovered ? "scale(1.05)" : "scale(1)", willChange: "transform" }} 
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-white font-black text-5xl shadow-inner" style={{ ...getAvatarStyle(unit.name), transform: hovered ? "scale(1.05)" : "scale(1)", transition: "transform 0.7s ease-out" }}>
-              {getInitials(unit.name)}
-            </div>
-          )}
-          <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(to right, rgba(43,45,49,0.3) 0%, transparent 20%, transparent 80%, rgba(43,45,49,0.3) 100%)" }} />
-          <div className="absolute -bottom-[2px] left-0 right-0 h-[calc(40%+2px)]" style={{ background: "linear-gradient(to bottom, transparent 0%, rgba(43,45,49,0.8) 60%, rgba(43,45,49,1) 100%)" }} />
-          {unit.status && <div className="absolute top-2 left-2 md:top-3 md:left-3 z-10"><GridStatusBadge status={unit.status} /></div>}
+          <div className="absolute inset-0 z-0" style={{ background: "linear-gradient(160deg, #383a3f 0%, #1E1F22 100%)" }} />
+          
+          {/* Layer 1: Persistent Gradient Initials Fallback */}
+          <div className="absolute inset-0 flex items-center justify-center text-white font-black text-6xl tracking-tight shadow-inner z-0" style={{ ...getAvatarStyle(unit.name), transform: hovered ? "scale(1.05)" : "scale(1)", transition: "transform 0.7s ease-out" }}>
+            {getInitials(unit.name)}
+          </div>
+          
+          {/* Layer 2: Main Image (hides itself via opacity if error cascade fails) */}
+          <img 
+            src={proxyUrl} 
+            alt={unit.name} 
+            loading="lazy" 
+            decoding="async"
+            onError={(e) => handleImageError(e, unit.id, unit.imageUrl)}
+            className="absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-out z-10 bg-[#1E1F22]" 
+            style={{ objectPosition: "center 15%", transform: hovered ? "scale(1.05)" : "scale(1)", willChange: "transform" }} 
+          />
+          
+          <div className="absolute inset-0 pointer-events-none z-20" style={{ background: "linear-gradient(to right, rgba(43,45,49,0.3) 0%, transparent 20%, transparent 80%, rgba(43,45,49,0.3) 100%)" }} />
+          <div className="absolute -bottom-[2px] left-0 right-0 h-[calc(40%+2px)] z-20" style={{ background: "linear-gradient(to bottom, transparent 0%, rgba(43,45,49,0.8) 60%, rgba(43,45,49,1) 100%)" }} />
+          {unit.status && <div className="absolute top-2 left-2 md:top-3 md:left-3 z-30"><GridStatusBadge status={unit.status} /></div>}
         </div>
 
         <div className="flex flex-col flex-1 px-3 md:px-4 pt-3 md:pt-4 pb-3 md:pb-4 relative z-10 bg-[#2B2D31] -mt-[1px]">

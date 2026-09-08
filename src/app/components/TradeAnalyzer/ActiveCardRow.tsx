@@ -3,7 +3,7 @@ import { X, Plus, Minus, Pin } from "lucide-react";
 import { TradeCard } from "../../../types";
 import { GRID_STATUS_CFG, getProxyImage } from "../../../data";
 import { useUnits } from "../../../context/UnitContext";
-import { getAvatarStyle, getInitials } from "./summaryUtils";
+import { getAvatarStyle, getInitials, handleImageError } from "./summaryUtils";
 
 const QuantityInput = memo(({ qty, onChange }: { qty: number; onChange: (val: number) => void }) => {
   const [val, setVal] = useState(qty.toString());
@@ -66,18 +66,16 @@ export const ActiveCardRow = memo(function ActiveCardRow({
       className={`flex items-center gap-2 bg-[#2B2D31] hover:bg-[rgba(255,255,255,0.04)] p-2 rounded-[8px] border transition-colors group ${isPinned ? "border-[#5865F2] shadow-[0_0_8px_rgba(88,101,242,0.15)]" : "border-[rgba(255,255,255,0.04)]"}`}
       style={{ contentVisibility: 'auto', containIntrinsicSize: '58px' }}
     >
-      <div className={`w-10 h-10 flex-shrink-0 rounded-[6px] bg-[#111214] overflow-hidden flex items-center justify-center border ${isPinned ? "border-[rgba(88,101,242,0.5)]" : "border-[rgba(255,255,255,0.04)]"}`}>
-         {proxyUrl ? (
-           <img 
-             src={proxyUrl} 
-             alt={card.name} 
-             className="w-full h-full object-cover object-[center_15%]" 
-           />
-         ) : (
-           <div className="w-full h-full flex items-center justify-center text-white font-black text-[13px]" style={getAvatarStyle(card.name)}>
-             {getInitials(card.name)}
-           </div>
-         )}
+      <div className={`relative w-10 h-10 flex-shrink-0 rounded-[6px] bg-[#111214] overflow-hidden flex items-center justify-center border ${isPinned ? "border-[rgba(88,101,242,0.5)]" : "border-[rgba(255,255,255,0.04)]"}`}>
+         <div className="absolute inset-0 flex items-center justify-center text-white font-black text-[13px] z-0" style={getAvatarStyle(card.name)}>
+           {getInitials(card.name)}
+         </div>
+         <img 
+           src={proxyUrl} 
+           alt={card.name} 
+           onError={(e) => handleImageError(e, card.id, masterData?.imageUrl)}
+           className="absolute inset-0 w-full h-full object-cover object-[center_15%] z-10 bg-[#111214] transition-opacity duration-300" 
+         />
       </div>
 
       <div className="flex flex-col min-w-0 flex-1 mr-1">

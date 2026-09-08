@@ -1,4 +1,5 @@
 import { TradeCard, MasterUnit } from "../../../types";
+import { UNIT_IMAGES } from "../../../data/images";
 
 export const fmtK = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k` : `${n}`;
 
@@ -10,6 +11,30 @@ export const getAvatarStyle = (name: string) => {
 };
 
 export const getInitials = (name: string) => name.substring(0, 2).toUpperCase();
+
+// Fallback logic implementation
+export const getProxyImage = (id: string, fallbackUrl?: string) => {
+  return `/units/${id}.webp`; 
+};
+
+// Fallback handler for the React `onError` event
+export const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, id: string, _ignore?: string) => {
+    const target = e.currentTarget;
+    const fallbackStage = target.getAttribute('data-fallback-stage');
+
+    if (!fallbackStage) {
+        // Stage 1: Local webp failed, try external Wikia link
+        target.setAttribute('data-fallback-stage', '1');
+        if (UNIT_IMAGES[id]) {
+            // Route through wsrv.nl proxy to bypass Wikia's strict 403 Forbidden hotlink blocks
+            target.src = `https://wsrv.nl/?url=${encodeURIComponent(UNIT_IMAGES[id])}`;
+            return;
+        }
+    }
+
+    // Stage 2: External link failed OR didn't exist. Hide image to show gradient initials.
+    target.style.opacity = '0';
+};
 
 const getItemWeight = (c: TradeCard, master: MasterUnit | undefined) => {
   if (!master) return 1 * c.qty;
@@ -110,7 +135,6 @@ export const getTradeForecast = (giveItems: TradeCard[], getItems: TradeCard[], 
   
   const ra = getRa(getItems) / getRa(giveItems);
 
-  // Corrected predictive formula logic using (Variable - 1) structure
   const score_st = ((0.8 * (vt_st - 1)) + (0.6 * (ld - 1)) + (0.1 * (ra - 1))) * 100;
   const score_lt = ((0.85 * (vt_lt - 1)) + (0.4 * (ld - 1)) + (0.25 * (ra - 1))) * 100;
 

@@ -2,7 +2,7 @@ import { memo, useState, useRef } from "react";
 import { Plus, X, ArrowRight, ArrowLeft } from "lucide-react";
 import { PopupUnit, MasterUnit } from "../../../types";
 import { GRID_STATUS_CFG, getTier, TIER_CONFIG, getProxyImage } from "../../../data";
-import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils"; 
+import { getAvatarStyle, getInitials, handleImageError } from "../TradeAnalyzer/summaryUtils"; 
 import { useTradeStore } from "../../../store/useTradeStore";
 import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 
@@ -147,8 +147,18 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
         }}
       >
         <div className="hidden md:flex px-3 py-2 items-center justify-center">
-          <div className="w-8 h-8 rounded-full overflow-hidden bg-[#111214] border border-[rgba(255,255,255,0.08)] shadow-sm flex-shrink-0 flex items-center justify-center" style={{ borderColor: hovered ? `${tierColor}60` : "rgba(255,255,255,0.08)", transition: "border-color 0.3s ease" }}>
-            {proxyUrl ? <img src={proxyUrl} alt={unit.name} loading="lazy" decoding="async" className="w-full h-full object-cover animate-fade-in" /> : <span className="text-white font-bold text-[10px]" style={getAvatarStyle(unit.name)}>{getInitials(unit.name)}</span>}
+          <div className="relative w-8 h-8 rounded-full overflow-hidden bg-[#111214] border border-[rgba(255,255,255,0.08)] shadow-sm flex-shrink-0 flex items-center justify-center" style={{ borderColor: hovered ? `${tierColor}60` : "rgba(255,255,255,0.08)", transition: "border-color 0.3s ease" }}>
+            <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-[10px] z-0" style={getAvatarStyle(unit.name)}>
+              {getInitials(unit.name)}
+            </div>
+            <img 
+              src={proxyUrl} 
+              alt={unit.name} 
+              loading="lazy" 
+              decoding="async" 
+              onError={(e) => handleImageError(e, unit.id, unit.imageUrl)}
+              className="absolute inset-0 w-full h-full object-cover animate-fade-in z-10 bg-[#111214]" 
+            />
           </div>
         </div>
 
@@ -156,7 +166,17 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
         <div className="flex md:hidden items-center justify-between w-full px-4 py-3">
           <div className="flex items-center gap-3 min-w-0 pr-2">
             <div className="relative w-10 h-10 rounded-full overflow-hidden bg-[#111214] border shadow-sm flex-shrink-0 flex items-center justify-center" style={{ borderColor: hovered ? `${tierColor}60` : "rgba(255,255,255,0.08)" }}>
-              {proxyUrl ? <img src={proxyUrl} alt={unit.name} loading="lazy" decoding="async" className="w-full h-full object-cover animate-fade-in" /> : <span className="text-white font-bold text-[12px]" style={getAvatarStyle(unit.name)}>{getInitials(unit.name)}</span>}
+              <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-[12px] z-0" style={getAvatarStyle(unit.name)}>
+                {getInitials(unit.name)}
+              </div>
+              <img 
+                src={proxyUrl} 
+                alt={unit.name} 
+                loading="lazy" 
+                decoding="async" 
+                onError={(e) => handleImageError(e, unit.id, unit.imageUrl)}
+                className="absolute inset-0 w-full h-full object-cover animate-fade-in z-10 bg-[#111214]" 
+              />
             </div>
             <div className="flex flex-col min-w-0 flex-1">
               <span className="text-[14px] font-extrabold tracking-tight text-[#F2F3F5] truncate">{unit.name}</span>
