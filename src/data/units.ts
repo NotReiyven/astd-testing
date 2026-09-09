@@ -93,7 +93,7 @@ export const UNIT_METADATA: Record<string, UnitMeta> = {
   "fire-king": { subtitle: "Sabo", aliases: ["sabo", "flame emperor"], obtainability: "UNOB" },
   "cursed-brothers-enraged": { subtitle: "Itadori and Todo (Enraged)", aliases: ["itadori and todo (enraged)", "itadori", "todo"], obtainability: "UNOB" },
   "gankai": { subtitle: "Kaos", aliases: ["kaos", "godus"], obtainability: "UNOB" },
-  "overlord": { name: "The Overlord", subtitle: "The Overlord", aliases: ["the overlord"], obtainability: "UNOB" },
+  "overlord": { name: "The Overlord", subtitle: "The Overlord", aliases: ["the overlord", "ainz ooal gown"], obtainability: "UNOB" },
 
   // ── Low A Tier ──
   "jangiku": { subtitle: "Rangiku", aliases: ["rangiku"], obtainability: "UNOB" },
@@ -364,18 +364,30 @@ export const UNIT_METADATA: Record<string, UnitMeta> = {
   "pumpkin-ii": { name: "Pumpkin II", subtitle: "Pumpkin", aliases: ["pumpkin 2"], obtainability: "UNOB" },
   "pumpkin-i": { name: "Pumpkin I", subtitle: "Pumpkin", aliases: ["pumpkin 1"], obtainability: "UNOB" },
 
-  // ── Eggs II ──
-  "100-egg": { name: "100% Egg", subtitle: "Egg", aliases: ["100% egg ii", "100% egg ii - necro", "necro egg", "necromancer egg", "necro", "necros", "ainz egg", "ainz", "ainz ooal gown", "overlord", "the overlord"], obtainability: "UNOB" },
-  "90-egg": { name: "90% Egg", subtitle: "Egg", aliases: ["egg2 90", "egg2-90"], obtainability: "UNOB" },
-  "80-egg": { name: "80% Egg", subtitle: "Egg", aliases: ["egg2 80", "egg2-80"], obtainability: "UNOB" },
-  "70-egg": { name: "70% Egg", subtitle: "Egg", aliases: ["egg2 70", "egg2-70"], obtainability: "UNOB" },
-  "60-egg": { name: "60% Egg", subtitle: "Egg", aliases: ["egg2 60", "egg2-60"], obtainability: "UNOB" },
-  "50-egg": { name: "50% Egg", subtitle: "Egg", aliases: ["egg2 50", "egg2-50"], obtainability: "UNOB" },
-  "40-egg": { name: "40% Egg", subtitle: "Egg", aliases: ["egg2 40", "egg2-40"], obtainability: "UNOB" },
-  "30-egg": { name: "30% Egg", subtitle: "Egg", aliases: ["egg2 30", "egg2-30"], obtainability: "UNOB" },
-  "20-egg-ii": { name: "20% Egg II", subtitle: "Egg", aliases: ["egg2 20", "egg2-20"], obtainability: "UNOB" },
-  "10-egg": { name: "10% Egg", subtitle: "Egg", aliases: ["egg2 10", "egg2-10"], obtainability: "UNOB" },
+// ── Eggs II ──
+  "100-egg-ii": { name: "100% Egg II - Necro", subtitle: "Egg", aliases: ["100% egg ii", "100% egg ii - necro", "necro egg", "necromancer"], obtainability: "UNOB" },
+  "90-egg-ii": { name: "90% Egg II - Manipulation", subtitle: "Egg", aliases: ["egg2 90", "egg2-90"], obtainability: "UNOB" },
+  "80-egg-ii": { name: "80% Egg II - Telepathy", subtitle: "Egg", aliases: ["egg2 80", "egg2-80"], obtainability: "UNOB" },
+  "70-egg-ii": { name: "70% Egg II - Hypersonic", subtitle: "Egg", aliases: ["egg2 70", "egg2-70"], obtainability: "UNOB" },
+  "60-egg-ii": { name: "60% Egg II - Pyro", subtitle: "Egg", aliases: ["egg2 60", "egg2-60"], obtainability: "UNOB" },
+  "50-egg-ii": { name: "50% Egg II - Dream", subtitle: "Egg", aliases: ["egg2 50", "egg2-50"], obtainability: "UNOB" },
+  "40-egg-ii": { name: "40% Egg II - Electric", subtitle: "Egg", aliases: ["egg2 40", "egg2-40"], obtainability: "UNOB" },
+  "30-egg-ii": { name: "30% Egg II - Gold", subtitle: "Egg", aliases: ["egg2 30", "egg2-30"], obtainability: "UNOB" },
+  "20-egg-ii": { name: "20% Egg II - Silver", subtitle: "Egg", aliases: ["egg2 20", "egg2-20"], obtainability: "UNOB" },
+  "10-egg-ii": { name: "10% Egg II - Bronze", subtitle: "Egg", aliases: ["egg2 10", "egg2-10"], obtainability: "UNOB" },
 
+  // -- Eggs OG --
+  "100-egg": { name: "100% Egg - Dark", subtitle: "Egg", aliases: ["Cid", "Kageni", "Kagenou", "Ombre"], obtainability: "UNOB" },
+  "90-egg": { name: "90% Egg - Leaf", subtitle: "Egg", aliases: ["Shisui"], obtainability: "UNOB" },
+  "80-egg": { name: "80% Egg - Neon", subtitle: "Egg", aliases: ["Venus", "Ishtar"], obtainability: "UNOB" },
+  "70-egg": { name: "70% Egg - Cinder", subtitle: "Egg", aliases: ["Ring", "Rin Tohsaka"], obtainability: "UNOB" },
+  "60-egg": { name: "60% Egg - Tone", subtitle: "Egg", aliases: ["Zebra", "Zebruh"], obtainability: "UNOB" },
+  "50-egg": { name: "50% Egg - Metal", subtitle: "Egg", aliases: ["Zumi", "Mumei"], obtainability: "UNOB" },
+  "40-egg": { name: "40% Egg - Mist", subtitle: "Egg", aliases: ["Water Boy", "suigetsu"], obtainability: "UNOB" },
+  "30-egg": { name: "30% Egg - Ice", subtitle: "Egg", aliases: ["Esdeath", "Etri"], obtainability: "UNOB" },
+  "20-egg": { name: "20% Egg - Shadow", subtitle: "Egg", aliases: ["Shikadi", "Rhikadai"], obtainability: "UNOB" },
+  "10-egg": { name: "10% Egg - Water", subtitle: "Egg", aliases: ["Juvia", "Water Mage"], obtainability: "UNOB" },
+  
   // ── Pure Tier ──
   "death-pure": { name: "Death (Pure)", subtitle: "Ryuk", aliases: ["ryuk"], obtainability: "UNOB" },
   "legendary-borul-alternative-pure": { name: "Legendary Borul (Alternative) (Pure)", subtitle: "DBZ Broly", aliases: ["dbz broly", "dbz", "DBZ BROLY"], obtainability: "UNOB" },
@@ -395,19 +407,26 @@ export const UNIT_METADATA: Record<string, UnitMeta> = {
   "17-pure": { name: "17 (Pure)", subtitle: "Capsule", aliases: [], obtainability: "UNOB" },
   "5-pure": { name: "5 (Pure)", subtitle: "Capsule", aliases: [], obtainability: "UNOB" },
 
-  // ── Untiered & Passes ──
-  "vampire-queen-arcane": { name: "Vampire Queen (Arcane)", subtitle: "Arcane", aliases: ["arcane"], obtainability: "OBT" },
-  "13000-gems": { name: "13000 Gems", subtitle: "Gems", aliases: ["13k gems"], obtainability: "OBT" },
-  "1850-gems": { name: "1850 Gems", subtitle: "Gems", aliases: ["1.85k gems"], obtainability: "OBT" },
-  "950-gems": { name: "950 Gems", subtitle: "Gems", aliases: [], obtainability: "OBT" },
-  "500-gems": { name: "500 Gems", subtitle: "Gems", aliases: [], obtainability: "OBT" },
-  "50-gems": { name: "50 Gems", subtitle: "Gems", aliases: [], obtainability: "OBT" },
-  "3x-speed": { name: "3x Speed", subtitle: "Gamepass", aliases: ["3x", "speed", "x3", "3x speed"], obtainability: "OBT" },
-  "star-pass": { name: "Star Pass", subtitle: "Gamepass", aliases: ["starpass", "star"], obtainability: "OBT" },
-  "vip": { name: "VIP", subtitle: "Gamepass", aliases: ["vip", "v.i.p.", "v.i.p"], obtainability: "OBT" },
-  "nimbus-cloud": { name: "Nimbus Cloud", subtitle: "Gamepass", aliases: ["nimbus"], obtainability: "OBT" },
-  "space-pod": { name: "Space Pod", subtitle: "Gamepass", aliases: ["frieza pod", "space pod"], obtainability: "OBT" },
-  "capsule-car": { name: "Capsule Car", subtitle: "Gamepass", aliases: ["capsule car"], obtainability: "OBT" }
+ // ── Gamepasses & Mounts ──
+  "3x-gamepass": { name: "3x GamePass", subtitle: "Gamepass", aliases: ["3x", "speed gamepass", "3x speed"], obtainability: "OBT" },
+  "star-pass": { name: "Star Pass", subtitle: "Gamepass", aliases: ["starpass"], obtainability: "OBT" },
+  "v-i-p-gamepass": { name: "V.I.P GamePass", subtitle: "Gamepass", aliases: ["vip"], obtainability: "OBT" },
+  "nimbus-unit-mount-gamepass": { name: "Nimbus Unit Mount GamePass", subtitle: "Gamepass", aliases: ["cloud mount", "nimbus"], obtainability: "OBT" },
+  "frieza-pod-unit-mount-gamepass": { name: "Frieza Pod Unit Mount GamePass", subtitle: "Gamepass", aliases: ["pod mount", "frieza pod"], obtainability: "OBT" },
+  "capsule-corp-car-unit-mount-gamepass": { name: "Capsule Corp. Car Unit Mount GamePass", subtitle: "Gamepass", aliases: ["car mount", "capsule car"], obtainability: "OBT" },
+  "premium-pass": { name: "Premium Pass", subtitle: "Gamepass", aliases: ["premium"], obtainability: "UNOB" },
+
+  // ── Bundles (Stardust / Gems) ──
+  "375-stardust-bundle": { name: "375 Stardust Bundle", subtitle: "Bundle", aliases: ["375 stardust"], obtainability: "UNOB" },
+  "97-stardust-bundle": { name: "97 Stardust Bundle", subtitle: "Bundle", aliases: ["97 stardust"], obtainability: "UNOB" },
+  "31-stardust-bundle": { name: "31 Stardust Bundle", subtitle: "Bundle", aliases: ["31 stardust"], obtainability: "UNOB" },
+  "17-stardust-bundle": { name: "17 Stardust Bundle", subtitle: "Bundle", aliases: ["17 stardust"], obtainability: "UNOB" },
+  "5-stardust-bundle": { name: "5 Stardust Bundle", subtitle: "Bundle", aliases: ["5 stardust"], obtainability: "UNOB" },
+  "13000-gems-bundle": { name: "13000 Gems Bundle", subtitle: "Bundle", aliases: ["13000 gems", "13k gems"], obtainability: "UNOB" },
+  "1850-gems-bundle": { name: "1850 Gems Bundle", subtitle: "Bundle", aliases: ["1850 gems"], obtainability: "UNOB" },
+  "950-gems-bundle": { name: "950 Gems Bundle", subtitle: "Bundle", aliases: ["950 gems"], obtainability: "UNOB" },
+  "500-gems-bundle": { name: "500 Gems Bundle", subtitle: "Bundle", aliases: ["500 gems"], obtainability: "UNOB" },
+  "50-gems-bundle": { name: "50 Gems Bundle", subtitle: "Bundle", aliases: ["50 gems"], obtainability: "UNOB" },
 };
 
 // Generates an initial lightweight fallback list so child components never break on mount

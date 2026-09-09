@@ -77,7 +77,7 @@ export const UNIT_IMAGES: Record<string, string> = {
   "fire-king":                         "https://static.wikia.nocookie.net/allstartd/images/7/78/Fire_King.png/revision/latest/scale-to-width-down/250?cb=20230106222607",
   "cursed-brothers-enraged":           "https://static.wikia.nocookie.net/allstartd/images/0/03/Cursed_Brothers_%28Enraged%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064605",
   "gankai":                            "https://static.wikia.nocookie.net/allstartd/images/0/00/Gankai_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260630070559",
-  "overlord":                          "https://static.wikia.nocookie.net/allstartd/images/f/f8/The_Overlord_%28Pose%29.png/revision/latest?/scale-to-width-down/250?cb=20260810015430",
+  "overlord":                      "https://static.wikia.nocookie.net/allstartd/images/f/f8/The_Overlord_%28Pose%29.png/revision/latest?/scale-to-width-down/250?cb=20260810015430",
 
   "jangiku":                           "https://static.wikia.nocookie.net/allstartd/images/b/b9/Jangiku_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240122001432",
   "the-finger":                        "https://static.wikia.nocookie.net/allstartd/images/7/7c/The_Finger_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240122001405",
@@ -350,18 +350,30 @@ export const UNIT_IMAGES: Record<string, string> = {
   "pumpkin-ii":                        "https://static.wikia.nocookie.net/allstartd/images/5/50/Pumpkin_II_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231025075058",
   "pumpkin-i":                         "https://static.wikia.nocookie.net/allstartd/images/e/e2/Pumpkin_I_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231025074700",
 
-  // ── Eggs II ──
-  "100-egg":                           "https://static.wikia.nocookie.net/allstartd/images/3/34/100%25_Egg_-_Necro.png/revision/latest/scale-to-width-down/250?cb=20240828231200",
-  "90-egg":                            "https://static.wikia.nocookie.net/allstartd/images/e/ed/90%25_Egg_-_Manipulation.png/revision/latest/scale-to-width-down/250?cb=20240828234315",
-  "80-egg":                            "https://static.wikia.nocookie.net/allstartd/images/c/c6/80%25_Egg_-_Telepathy.png/revision/latest/scale-to-width-down/250?cb=20240409182711",
-  "70-egg":                            "https://static.wikia.nocookie.net/allstartd/images/4/4f/70%25_Egg_-_Hypersonic.png/revision/latest/scale-to-width-down/250?cb=20240828232846",
-  "60-egg":                            "https://static.wikia.nocookie.net/allstartd/images/3/3f/60%25_Egg_-_Pyro.png/revision/latest/scale-to-width-down/250?cb=20240829070416",
-  "50-egg":                            "https://static.wikia.nocookie.net/allstartd/images/c/c0/50%25_Egg_-_Dream.png/revision/latest/scale-to-width-down/250?cb=20240829125904",
-  "40-egg":                            "https://static.wikia.nocookie.net/allstartd/images/3/33/40%25_Egg_-_Electric.png/revision/latest/scale-to-width-down/250?cb=20240412235531",
-  "30-egg":                            "https://static.wikia.nocookie.net/allstartd/images/3/30/30%25_Egg_-_Gold.png/revision/latest/scale-to-width-down/250?cb=20240829224737",
-  "20-egg-ii":                         "https://static.wikia.nocookie.net/allstartd/images/b/b4/20%25_Egg_II_-_Silver.png/revision/latest/scale-to-width-down/250?cb=20240829225209",
-  "10-egg":                            "https://static.wikia.nocookie.net/allstartd/images/0/09/10%25_Egg_-_Bronze.png/revision/latest/scale-to-width-down/250?cb=20240829225519",
+// ── Eggs II ──
+  "100-egg-ii": "https://static.wikia.nocookie.net/allstartd/images/3/34/100%25_Egg_-_Necro.png/revision/latest/scale-to-width-down/250?cb=20240828231200",
+  "90-egg-ii":  "https://static.wikia.nocookie.net/allstartd/images/e/ed/90%25_Egg_-_Manipulation.png/revision/latest/scale-to-width-down/250?cb=20240828234315",
+  "80-egg-ii":  "https://static.wikia.nocookie.net/allstartd/images/c/c6/80%25_Egg_-_Telepathy.png/revision/latest/scale-to-width-down/250?cb=20240409182711",
+  "70-egg-ii":  "https://static.wikia.nocookie.net/allstartd/images/4/4f/70%25_Egg_-_Hypersonic.png/revision/latest/scale-to-width-down/250?cb=20240828232846",
+  "60-egg-ii":  "https://static.wikia.nocookie.net/allstartd/images/3/3f/60%25_Egg_-_Pyro.png/revision/latest/scale-to-width-down/250?cb=20240829070416",
+  "50-egg-ii":  "https://static.wikia.nocookie.net/allstartd/images/c/c0/50%25_Egg_-_Dream.png/revision/latest/scale-to-width-down/250?cb=20240829125904",
+  "40-egg-ii":  "https://static.wikia.nocookie.net/allstartd/images/3/33/40%25_Egg_-_Electric.png/revision/latest/scale-to-width-down/250?cb=20240412235531",
+  "30-egg-ii":  "https://static.wikia.nocookie.net/allstartd/images/3/30/30%25_Egg_-_Gold.png/revision/latest/scale-to-width-down/250?cb=20240829224737",
+  "20-egg-ii":  "https://static.wikia.nocookie.net/allstartd/images/b/b4/20%25_Egg_II_-_Silver.png/revision/latest/scale-to-width-down/250?cb=20240829225209",
+  "10-egg-ii":  "https://static.wikia.nocookie.net/allstartd/images/0/09/10%25_Egg_-_Bronze.png/revision/latest/scale-to-width-down/250?cb=20240829225519",
 
+  // ── OG Eggs ──
+  "100-egg": "https://static.wikia.nocookie.net/allstartd/images/6/6c/100%25_Egg_-_Dark.png/revision/latest/scale-to-width-down/250?cb=20230113090518",
+  "90-egg":  "https://static.wikia.nocookie.net/allstartd/images/8/86/90%25_Egg_-_Leaf.png/revision/latest/scale-to-width-down/250?cb=20230113090524",
+  "80-egg":  "https://static.wikia.nocookie.net/allstartd/images/6/6e/80%25_Egg_-_Neon.png/revision/latest/scale-to-width-down/250?cb=20230113090533",
+  "70-egg":  "https://static.wikia.nocookie.net/allstartd/images/5/57/70%25_Egg_-_Cinder.png/revision/latest/scale-to-width-down/250?cb=20230113090538",
+  "60-egg":  "https://static.wikia.nocookie.net/allstartd/images/7/70/60%25_Egg_-_Tone.png/revision/latest/scale-to-width-down/250?cb=20230113090542",
+  "50-egg":  "https://static.wikia.nocookie.net/allstartd/images/e/ef/50%25_Egg_-_Metal.png/revision/latest/scale-to-width-down/250?cb=20230113090547",
+  "40-egg":  "https://static.wikia.nocookie.net/allstartd/images/6/69/40%25_Egg_-_Mist.png/revision/latest/scale-to-width-down/250?cb=20230113090604",
+  "30-egg":  "https://static.wikia.nocookie.net/allstartd/images/8/82/30%25_Egg_-_Ice.png/revision/latest/scale-to-width-down/250?cb=20230113090622",
+  "20-egg":  "https://static.wikia.nocookie.net/allstartd/images/c/c3/20%25_Egg_-_Shadow.png/revision/latest/scale-to-width-down/250?cb=20230113090602",
+  "10-egg":  "https://static.wikia.nocookie.net/allstartd/images/8/8f/10%25_Egg_-_Water.png/revision/latest/scale-to-width-down/250?cb=20230113090627",
+  
   // ── Pure Tier ──
   "death-pure":                        "https://static.wikia.nocookie.net/allstartd/images/5/59/Death_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20230909020936",
   "legendary-borul-alternative-pure":  "https://static.wikia.nocookie.net/allstartd/images/1/17/Legendary_Borul_%28Alternative%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20230909023237",

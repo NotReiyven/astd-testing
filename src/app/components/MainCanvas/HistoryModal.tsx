@@ -5,7 +5,7 @@ import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 import { useUnitHistory, HistorySnapshot } from "../../../hooks/useUnitHistory";
 import { useUnits } from "../../../context/UnitContext";
 import { GRID_STATUS_CFG, TIER_CONFIG, getProxyImage, getTier } from "../../../data";
-import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
+import { getAvatarStyle, getInitials, handleImageError } from "../TradeAnalyzer/summaryUtils";
 
 export function HistoryModal() {
   const { isOpen, unitId, closeModal } = useHistoryModalStore();
@@ -169,17 +169,26 @@ export function HistoryModal() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 sm:gap-5 min-w-0">
               <div className="relative group shrink-0">
-                <div className="absolute -inset-1 rounded-[18px] opacity-75 blur-md transition-opacity duration-300 group-hover:opacity-100" style={{ background: tierCfg.badgeColor }} />
-                <div 
-                  className="relative overflow-hidden bg-[#111214] shadow-2xl flex items-center justify-center border-2 border-white/10 w-20 h-20 sm:w-24 sm:h-24 rounded-[14px] sm:rounded-[16px]"
-                >
-                  {proxyUrl ? (
-                    <img src={proxyUrl} alt={currentUnit.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-white font-black text-xl sm:text-2xl" style={getAvatarStyle(currentUnit.name)}>{getInitials(currentUnit.name)}</span>
-                  )}
-                </div>
-              </div>
+  <div className="absolute -inset-1 rounded-[18px] opacity-75 blur-md transition-opacity duration-300 group-hover:opacity-100" style={{ background: tierCfg.badgeColor }} />
+  <div 
+    className="relative overflow-hidden bg-[#111214] shadow-2xl flex items-center justify-center border-2 border-white/10 w-20 h-20 sm:w-24 sm:h-24 rounded-[14px] sm:rounded-[16px]"
+  >
+    {/* Layer 1: Background CSS Initials (Always renders behind the image) */}
+    <div className="absolute inset-0 flex items-center justify-center text-white font-black text-xl sm:text-2xl z-0" style={getAvatarStyle(currentUnit.name)}>
+      {getInitials(currentUnit.name)}
+    </div>
+
+    {/* Layer 2: The actual image, which hides itself if it fails to load */}
+    {proxyUrl && (
+      <img 
+        src={proxyUrl} 
+        alt={currentUnit.name} 
+        className="absolute inset-0 w-full h-full object-cover z-10 bg-[#111214] transition-opacity duration-300" 
+        onError={(e) => handleImageError(e, currentUnit.id, currentUnit.imageUrl)}
+      />
+    )}
+  </div>
+</div>
 
               <div className="flex flex-col min-w-0 justify-center">
                 <div className="flex items-center gap-2.5 flex-wrap">
