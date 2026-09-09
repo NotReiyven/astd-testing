@@ -39,7 +39,6 @@ export function TopBar({
   const [helpClicks, setHelpClicks] = useState(0);
   const [lastClickTime, setLastClickTime] = useState(0);
   
-  // Phase 3: Mobile Search Overlay State
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const mobileInputRef = useRef<HTMLInputElement>(null);
 
@@ -49,7 +48,6 @@ export function TopBar({
     }
   }, [mobileSearchOpen]);
 
-  // Global Escape Listener to drop focus and clear search
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" || e.key === "Esc") {
@@ -86,7 +84,6 @@ export function TopBar({
   return (
     <div className={`flex-shrink-0 flex items-center justify-between px-2 md:px-4 py-3 min-h-[48px] relative border-b border-[rgba(0,0,0,0.22)] shadow-sm bg-[#313338] ${calcHeaderZ}`}>
       
-      {/* PHASE 3: Mobile Search Overlay */}
       {mobileSearchOpen && (
         <div className="absolute inset-0 z-[100] bg-[#313338] px-3 flex items-center gap-2 animate-fade-in border-b border-[rgba(0,0,0,0.22)]">
           <Search className="w-4 h-4 text-[#80848E] ml-1 shrink-0" />
@@ -133,7 +130,6 @@ export function TopBar({
       </div>
 
       <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
-
         <LiveAvatars />
 
         <div className="relative">
@@ -185,7 +181,6 @@ export function TopBar({
           )}
         </div>
 
-        {/* Phase 3: Mobile Reveal Button */}
         <button 
           onClick={() => setMobileSearchOpen(true)}
           className="md:hidden flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] text-[#80848E] hover:bg-[rgba(255,255,255,0.05)] hover:text-[#F2F3F5] transition-colors"
@@ -193,7 +188,6 @@ export function TopBar({
           <Search className="w-4 h-4" />
         </button>
 
-        {/* Phase 3: Refined Desktop Search Bar */}
         <div className="relative hidden md:flex items-center bg-[#1E1F22] rounded-[6px] px-2.5 h-[28px] w-[120px] focus-within:w-[180px] lg:w-48 lg:focus-within:w-64 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] border border-[rgba(255,255,255,0.04)] shadow-inner">
           <input 
             type="text" 
@@ -218,9 +212,10 @@ export function TopBar({
 
         <div className="hidden md:block w-px h-5 mx-0.5 md:mx-1 flex-shrink-0" style={{ background: "rgba(255,255,255,0.08)" }} />
 
+        {/* HIDDEN ON MOBILE: We now rely entirely on the Bottom Sheet for mobile */}
         <button 
           onClick={handleToggleAnalyzer} 
-          className={`relative flex items-center gap-2 px-3 py-1.5 rounded-[6px] transition-all duration-300 shadow-sm font-bold text-[12px] active:scale-95 ${
+          className={`hidden md:flex relative items-center gap-2 px-3 py-1.5 rounded-[6px] transition-all duration-300 shadow-sm font-bold text-[12px] active:scale-95 ${
             isAnalyzerOpen 
               ? 'bg-[#4752C4] text-white shadow-[0_0_12px_rgba(88,101,242,0.4)]' 
               : 'bg-[#5865F2] hover:bg-[#4752C4] text-white'
@@ -228,7 +223,7 @@ export function TopBar({
           title="Toggle Trade Analyzer"
         >
           <Calculator className="w-4 h-4 flex-shrink-0" />
-          <span className="hidden sm:inline">Calculator</span>
+          <span>Calculator</span>
           {activeItemsCount > 0 && (
             <span className="absolute -top-1.5 -right-1.5 bg-[#ed4245] text-white font-mono font-bold text-[9px] w-4 h-4 rounded-full flex items-center justify-center shadow-md animate-pulse">
               {activeItemsCount > 9 ? '9+' : activeItemsCount}

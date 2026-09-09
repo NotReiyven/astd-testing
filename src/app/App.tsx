@@ -1,5 +1,5 @@
 import { useState, useEffect, Suspense, lazy, useRef, useCallback } from "react";
-import { Hash, Calculator, Check } from "lucide-react";
+import { Hash, Check } from "lucide-react";
 import { FilterKey, PopupUnit } from "../types";
 import { useStickyState, isBoolean, isNonEmptyString } from "../hooks/useStickyState";
 import { AquaGuideOverlay, GuideType } from "./components/guides/AquaGuideOverlay";
@@ -7,6 +7,7 @@ import { TopBar } from "./components/layout/TopBar";
 import { WelcomeModal } from "./components/WelcomeModal";
 import { useTradeStore } from "../store/useTradeStore";
 import { HistoryModal } from "./components/MainCanvas/HistoryModal";
+import { triggerHaptic } from "../data/helpers";
 
 const TradeAnalyzerPanel = lazy(() => import("./components/TradeAnalyzer").then(module => ({ default: module.TradeAnalyzerPanel })));
 const Sidebar = lazy(() => import("./components/Sidebar").then(module => ({ default: module.Sidebar })));
@@ -57,21 +58,22 @@ export default function App() {
 
   const isDictionaryActive = activeChannel === "tutorial" && tutorialTab === "dictionary";
 
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   useEffect(() => {
     if (globalSearchQuery.trim().length > 0) {
-      if (activeChannel !== "value-list") {
-        setActiveChannel("value-list");
-      }
-      if (activeTierFilter !== "All") {
-        setActiveTierFilter("All");
-      }
-      if (window.innerWidth < 768 && isRosterOpen) {
-        setIsRosterOpen(false);
-      }
+      if (activeChannel !== "value-list") setActiveChannel("value-list");
+      if (activeTierFilter !== "All") setActiveTierFilter("All");
+      if (window.innerWidth < 768 && isRosterOpen) setIsRosterOpen(false);
     }
   }, [globalSearchQuery, activeChannel, activeTierFilter, setActiveChannel, setActiveTierFilter, isRosterOpen, setIsRosterOpen]);
 
-  // Cinematic Boot Sequence orchestration (Refined Iaijutsu Timing)
   useEffect(() => {
     Promise.all([
       import("./components/TradeAnalyzer"),
@@ -83,23 +85,20 @@ export default function App() {
       import("./components/LegalChannel")
     ]).then(() => {
       setTimeout(() => {
-        setBootStage('tension'); // Vignette dims, focus narrows
+        setBootStage('tension');
         setTimeout(() => {
-          setBootStage('strike'); // The blade draws and snaps across cleanly
+          setBootStage('strike');
           setTimeout(() => {
-            setBootStage('fracture'); // Halves slide apart with cooling plasma edges
-            setTimeout(() => {
-              setBootStage('complete'); 
-            }, 900);
-          }, 200); // 200ms strike frame
-        }, 900); // 900ms anticipation
-      }, 700); // Initial load hold
+            setBootStage('fracture');
+            setTimeout(() => setBootStage('complete'), 900);
+          }, 200);
+        }, 900);
+      }, 700);
     }).catch(() => setBootStage('complete'));
   }, []);
 
   useEffect(() => {
     if (bootStage !== 'complete') return;
-
     const timer = setTimeout(() => {
       if (localStorage.getItem("astd_welcome_acknowledged") !== "true") {
         window.dispatchEvent(new Event("open-welcome-modal"));
@@ -112,9 +111,7 @@ export default function App() {
   }, [setIsRosterOpen, completedGuides, bootStage]);
 
   useEffect(() => {
-    const handleSetTab = (e: Event) => {
-      setTutorialTab((e as CustomEvent).detail);
-    };
+    const handleSetTab = (e: Event) => setTutorialTab((e as CustomEvent).detail);
     const handleAcademyEvent = (e: Event) => {
       if (e.type === "academy-used-parser") setCompletedGuides(p => ({ ...p, hasUsedParser: true }));
       if (e.type === "academy-used-filter") setCompletedGuides(p => ({ ...p, hasFiltered: true }));
@@ -125,12 +122,12 @@ export default function App() {
         if (window.innerWidth < 768) setIsRosterOpen(true);
       }
     };
-    
+
     window.addEventListener("set-tutorial-tab", handleSetTab);
     window.addEventListener("academy-used-parser", handleAcademyEvent);
     window.addEventListener("academy-used-filter", handleAcademyEvent);
     window.addEventListener("welcome-closed", handleWelcomeClosed);
-    
+
     return () => {
       window.removeEventListener("set-tutorial-tab", handleSetTab);
       window.removeEventListener("academy-used-parser", handleAcademyEvent);
@@ -143,6 +140,7 @@ export default function App() {
     const handleTradeAdded = (e: Event) => {
       const customEvent = e as CustomEvent<{ name: string; type: "give" | "get" }>;
       if (!customEvent.detail) return;
+      triggerHaptic('medium'); // HAPTIC FEEDBACK: Unit added
       setToast({ id: Date.now(), unitName: customEvent.detail.name, type: customEvent.detail.type });
       setGuideState(prev => (prev.type === "main" && prev.step === 2) ? { ...prev, step: 3 } : prev);
     };
@@ -155,7 +153,10 @@ export default function App() {
       }
     };
 
-    const handleOpenAnalyzer = () => setIsAnalyzerOpen(true);
+    const handleOpenAnalyzer = () => {
+      setIsAnalyzerOpen(true);
+      setGuideState(prev => (prev.type === "main" && prev.step === 3) ? { ...prev, step: 4 } : prev);
+    };
 
     window.addEventListener("trade-added", handleTradeAdded);
     window.document.addEventListener("navigate", handleNavigate);
@@ -193,9 +194,7 @@ export default function App() {
   }, [completedGuides, setActiveChannel, setIsAnalyzerOpen, setIsRosterOpen, setTutorialTab]);
 
   const endGuide = useCallback(() => {
-    if (guideState.type) {
-      setCompletedGuides(prev => ({ ...prev, [guideState.type as string]: true }));
-    }
+    if (guideState.type) setCompletedGuides(prev => ({ ...prev, [guideState.type as string]: true }));
     setGuideState({ type: null, step: 0 });
   }, [guideState.type, setCompletedGuides]);
 
@@ -206,46 +205,40 @@ export default function App() {
   }, [toast]);
 
   useEffect(() => {
-    if (window.innerWidth < 768) {
-      setIsRosterOpen(false);
-      setIsAnalyzerOpen(false);
-    }
-  }, [setIsRosterOpen, setIsAnalyzerOpen]);
+    if (window.innerWidth < 768) setIsRosterOpen(false);
+  }, [setIsRosterOpen]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const x = e.touches[0].clientX;
     const y = e.touches[0].clientY;
-    
+
     const edgeWidth = 40;
     const isLeftEdge = x <= edgeWidth;
-    const isRightEdge = x >= window.innerWidth - edgeWidth;
-    
-    if (isLeftEdge || isRightEdge || isRosterOpen || isAnalyzerOpen) {
+
+    if (isLeftEdge || isRosterOpen) {
       touchStartPos.current = { x, y };
     } else {
       touchStartPos.current = null;
     }
-  }, [isRosterOpen, isAnalyzerOpen]);
+  }, [isRosterOpen]);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     if (!touchStartPos.current) return;
     const dx = e.changedTouches[0].clientX - touchStartPos.current.x;
     const dy = e.changedTouches[0].clientY - touchStartPos.current.y;
-    
+
     if (Math.abs(dy) > Math.abs(dx) * 0.6) {
       touchStartPos.current = null;
       return;
     }
 
-    if (dx > 90) {
-      if (isAnalyzerOpen) setIsAnalyzerOpen(false);
-      else if (!isRosterOpen && window.innerWidth < 768) setIsRosterOpen(true);
-    } else if (dx < -90) {
-      if (isRosterOpen) setIsRosterOpen(false);
-      else if (!isAnalyzerOpen && window.innerWidth < 768) setIsAnalyzerOpen(true);
+    if (dx > 90 && !isRosterOpen && window.innerWidth < 768) {
+      setIsRosterOpen(true);
+    } else if (dx < -90 && isRosterOpen) {
+      setIsRosterOpen(false);
     }
     touchStartPos.current = null;
-  }, [isAnalyzerOpen, isRosterOpen, setIsAnalyzerOpen, setIsRosterOpen]);
+  }, [isRosterOpen, setIsRosterOpen]);
 
   const handleChannelChange = useCallback((id: string) => {
     setActiveChannel(id);
@@ -264,16 +257,6 @@ export default function App() {
     setTimeout(() => setScrollToSection(null), 400);
   }, [setActiveChannel, setActiveTierFilter, setIsRosterOpen]);
 
-  const handleAddGive = useCallback((unit: PopupUnit) => {
-    useTradeStore.getState().addCard("give", { ...unit, qty: 1 });
-    window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: unit.name, type: "give" } }));
-  }, []);
-
-  const handleAddGet = useCallback((unit: PopupUnit) => {
-    useTradeStore.getState().addCard("get", { ...unit, qty: 1 });
-    window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: unit.name, type: "get" } }));
-  }, []);
-
   const handleToggleAnalyzer = useCallback(() => {
     setIsAnalyzerOpen(prev => !prev);
     if (guideState.type === "main" && guideState.step === 3) setGuideState(prev => ({ ...prev, step: 4 }));
@@ -287,7 +270,7 @@ export default function App() {
   const isMainStep4 = guideState.type === "main" && guideState.step === 4;
 
   const sidebarZ = isMainStep1 || guideState.type === "channels" ? "!z-[100000] shadow-[15px_0_50px_rgba(0,0,0,0.8)]" : "z-50";
-  const mainContentZ = isMainStep2 || guideState.type === "developer" || guideState.type === "filters" || guideState.type === "stats" ? "!z-[100000] relative shadow-[0_0_50px_rgba(0,0,0,0.8)]" : "";
+  const mainContentZ = isMainStep2 || guideState.type === "developer" || guideState.type === "filters" || guideState.type === "stats" ? "!z-[100000] relative shadow-[0_0_50px_rgba(0,0,0,0.8)]" : "z-10";
   const calcHeaderZ = helpMenuOpen || isMainStep3 ? "!z-[99999] shadow-[0_0_50px_rgba(0,0,0,0.8)]" : "z-50";
   const analyzerZ = isMainStep4 || guideState.type === "advanced" || guideState.type === "dictionary" || guideState.type === "management" ? "!z-[100000] shadow-[-20px_0_50px_rgba(0,0,0,0.8)]" : "z-50";
 
@@ -332,14 +315,6 @@ export default function App() {
         }
         .animate-lens-glint { animation: lensGlint 0.3s ease-out forwards; }
 
-        @keyframes wiggle {
-          0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(-6deg) scale(1.05); }
-          50% { transform: rotate(6deg) scale(1.05); }
-          75% { transform: rotate(-6deg) scale(1.05); }
-        }
-        .animate-wiggle { animation: wiggle 0.4s ease-in-out infinite; }
-
         @keyframes fadeThrough {
           0% { opacity: 0; transform: scale(0.995); }
           100% { opacity: 1; transform: scale(1); }
@@ -349,35 +324,22 @@ export default function App() {
 
       {bootStage !== 'complete' && (
         <div className="fixed inset-0 z-[1000000] pointer-events-none flex items-center justify-center overflow-hidden bg-transparent">
-          
           <div className="absolute inset-0 w-full h-full">
-            {/* Top Left Fracture Half */}
-            <div 
-              className={`absolute inset-0 transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${bootStage === 'fracture' ? '-translate-x-full -translate-y-full opacity-0' : 'translate-x-0 translate-y-0 opacity-100'} ${bootStage === 'fracture' ? 'animate-edge-glow' : ''}`}
-            >
+            <div className={`absolute inset-0 transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${bootStage === 'fracture' ? '-translate-x-full -translate-y-full opacity-0' : 'translate-x-0 translate-y-0 opacity-100'} ${bootStage === 'fracture' ? 'animate-edge-glow' : ''}`}>
                <div className="absolute inset-0 bg-[#313338]" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
             </div>
-            
-            {/* Bottom Right Fracture Half */}
-            <div 
-              className={`absolute inset-0 transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${bootStage === 'fracture' ? 'translate-x-full translate-y-full opacity-0' : 'translate-x-0 translate-y-0 opacity-100'} ${bootStage === 'fracture' ? 'animate-edge-glow' : ''}`}
-            >
+            <div className={`absolute inset-0 transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${bootStage === 'fracture' ? 'translate-x-full translate-y-full opacity-0' : 'translate-x-0 translate-y-0 opacity-100'} ${bootStage === 'fracture' ? 'animate-edge-glow' : ''}`}>
                <div className="absolute inset-0 bg-[#313338]" style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 100%)' }} />
             </div>
           </div>
-
           {(bootStage === 'strike' || bootStage === 'fracture') && (
             <div className="absolute inset-0 flex items-center justify-center">
-              {/* Pre-strike lens glint at origin */}
               <div className="absolute w-12 h-12 bg-white rounded-full blur-[4px] animate-lens-glint z-40" />
-              {/* Master blade slice */}
               <div className="w-[160vw] h-[2px] bg-gradient-to-r from-transparent via-[#01EFFD] to-transparent shadow-[0_0_25px_4px_#5865F2] animate-master-slash rounded-full z-40" />
-              {/* Perpendicular sparks */}
               <div className="absolute w-[35vw] h-[1.5px] bg-[#01EFFD] shadow-[0_0_12px_#5865F2] animate-spark-1 z-30" />
               <div className="absolute w-[25vw] h-[1px] bg-white shadow-[0_0_12px_#5865F2] animate-spark-2 z-30" />
             </div>
           )}
-
           <div className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-500 ease-in-out ${bootStage === 'loading' ? 'opacity-100 scale-100 blur-none' : 'opacity-0 scale-95 blur-sm'}`}>
             <div className="relative flex items-center justify-center mb-6">
                <div className="absolute w-24 h-24 bg-[#5865F2] rounded-full blur-[40px] opacity-30 animate-pulse"></div>
@@ -408,17 +370,14 @@ export default function App() {
         onTouchEnd={handleTouchEnd}
       >
         <Suspense fallback={null}>
-
           <WelcomeModal />
           <HistoryModal />
-          
           <AquaGuideOverlay guideState={guideState} onEndGuide={endGuide} />
 
           {isRosterOpen && <div className="md:hidden fixed inset-0 bg-black/60 z-40 animate-fade-in" onClick={() => setIsRosterOpen(false)} />}
-          {isAnalyzerOpen && <div className="md:hidden fixed inset-0 bg-black/60 z-40 animate-fade-in" onClick={() => setIsAnalyzerOpen(false)} />}
 
           <div 
-            className={`fixed bottom-[100px] md:bottom-8 left-1/2 -translate-x-1/2 pointer-events-none transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${guideState.type ? 'z-[100002]' : 'z-[9999]'} ${
+            className={`fixed bottom-[140px] md:bottom-8 left-1/2 -translate-x-1/2 pointer-events-none transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${guideState.type ? 'z-[100002]' : 'z-[9999]'} ${
               toast ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-6 scale-90"
             }`}
           >
@@ -435,7 +394,7 @@ export default function App() {
           </div>
 
           <div 
-            className={`fixed md:relative top-0 bottom-0 left-0 flex-shrink-0 overflow-hidden transition-all duration-300 ease-out shadow-2xl md:shadow-none will-change-[width,transform] ${isRosterOpen ? 'w-[85vw] max-w-[320px] md:w-[240px] translate-x-0' : 'w-0 -translate-x-full md:translate-x-0'} ${sidebarZ}`}
+            className={`fixed md:relative top-0 bottom-0 left-0 flex-shrink-0 overflow-hidden transition-all duration-300 ease-out shadow-2xl md:shadow-none will-change-[width,transform] z-50 ${isRosterOpen ? 'w-[85vw] max-w-[320px] md:w-[240px] translate-x-0' : 'w-0 -translate-x-full md:translate-x-0'} ${sidebarZ}`}
             style={{ opacity: isRosterOpen ? 1 : 0 }}
           >
             <div className="w-[85vw] max-w-[320px] md:w-[240px] h-full">
@@ -443,24 +402,25 @@ export default function App() {
             </div>
           </div>
 
-          <div className={`flex-1 flex flex-col min-w-0 bg-[#313338] ${mainContentZ}`}>
-
-            <TopBar 
-              calcHeaderZ={calcHeaderZ}
-              isRosterOpen={isRosterOpen}
-              setIsRosterOpen={setIsRosterOpen}
-              currentChannelInfo={currentChannelInfo}
-              helpMenuOpen={helpMenuOpen}
-              setHelpMenuOpen={setHelpMenuOpen}
-              startGuide={(type) => startGuide(type, true)}
-              globalSearchQuery={globalSearchQuery}
-              setGlobalSearchQuery={setGlobalSearchQuery}
-              handleToggleAnalyzer={handleToggleAnalyzer}
-              isAnalyzerOpen={isAnalyzerOpen}
-              isMainStep3={isMainStep3}
-              activeItemsCount={activeItemsCount}
-              isDictionaryActive={isDictionaryActive}
-            />
+          <div className={`flex-1 flex flex-col min-w-0 bg-[#313338] md:pb-0 pb-[80px] ${mainContentZ}`}>
+            <div className="relative z-40">
+              <TopBar 
+                calcHeaderZ={calcHeaderZ}
+                isRosterOpen={isRosterOpen}
+                setIsRosterOpen={setIsRosterOpen}
+                currentChannelInfo={currentChannelInfo}
+                helpMenuOpen={helpMenuOpen}
+                setHelpMenuOpen={setHelpMenuOpen}
+                startGuide={(type) => startGuide(type, true)}
+                globalSearchQuery={globalSearchQuery}
+                setGlobalSearchQuery={setGlobalSearchQuery}
+                handleToggleAnalyzer={handleToggleAnalyzer}
+                isAnalyzerOpen={isAnalyzerOpen}
+                isMainStep3={isMainStep3}
+                activeItemsCount={activeItemsCount}
+                isDictionaryActive={isDictionaryActive}
+              />
+            </div>
 
             <div key={activeChannel} className="flex-1 flex flex-col overflow-hidden relative animate-fade-through h-full">
               {activeChannel === "home" ? ( <HomeChannel guideState={guideState} />
@@ -480,6 +440,7 @@ export default function App() {
                   scrollToSection={scrollToSection}
                   startGuide={startGuide}
                   guideState={guideState}
+                  isMobile={isMobile}
                 />
               ) : activeChannel === "extra-notices" ? ( <ExtraNoticesChannel />
               ) : activeChannel === "terms-of-service" ? ( <LegalChannel type="tos" />
@@ -492,36 +453,14 @@ export default function App() {
             </div>
           </div>
 
-          {!isAnalyzerOpen && (
-            <button
-              onClick={handleToggleAnalyzer}
-              className={`md:hidden fixed bottom-6 right-6 z-40 bg-[#5865F2] hover:bg-[#4752C4] text-white p-3.5 rounded-full flex items-center justify-center transition-all active:scale-95 ${
-                isMainStep3 || (isDictionaryActive && !isAnalyzerOpen) ? '!z-[99999] animate-pulse ring-4 ring-[#5865F2]/60 shadow-[0_0_30px_rgba(88,101,242,0.8)]' : 'z-40 shadow-[0_4px_20px_rgba(88,101,242,0.5)]'
-              }`}
-              title="Open Calculator"
-            >
-              <Calculator className="w-6 h-6" />
-              {activeItemsCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#ed4245] text-white font-mono font-bold text-[10px] w-5 h-5 rounded-full flex items-center justify-center shadow-md">
-                  {activeItemsCount}
-                </span>
-              )}
-            </button>
-          )}
+          <TradeAnalyzerPanel 
+            isOpen={isAnalyzerOpen}
+            onClose={() => setIsAnalyzerOpen(false)}
+            guideState={guideState}
+            startGuide={startGuide}
+            analyzerZ={analyzerZ}
+          />
 
-          <div 
-            className={`fixed md:relative top-0 bottom-0 right-0 flex-shrink-0 overflow-hidden transition-all duration-300 ease-out shadow-2xl md:shadow-none will-change-[width,transform] ${isAnalyzerOpen ? 'w-[90vw] max-w-[400px] md:w-[400px] translate-x-0 pointer-events-auto' : 'w-0 translate-x-full md:translate-x-0 pointer-events-none'} ${analyzerZ}`}
-            style={{ opacity: isAnalyzerOpen ? 1 : 0 }}
-          >
-            <div className="w-[90vw] max-w-[400px] md:w-[400px] h-full bg-[#2B2D31]">
-              <TradeAnalyzerPanel 
-                isOpen={isAnalyzerOpen}
-                onClose={() => setIsAnalyzerOpen(false)}
-                guideState={guideState}
-                startGuide={startGuide}
-              />
-            </div>
-          </div>
         </Suspense>
       </div>
     </>

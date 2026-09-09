@@ -1,6 +1,31 @@
 import { MasterUnit } from "../types";
 import { RARITY_SCALE } from "./config";
 
+// --- HAPTIC FEEDBACK ENGINE ---
+export function triggerHaptic(type: 'light' | 'medium' | 'heavy' | 'success') {
+  if (typeof window !== "undefined" && navigator.vibrate) {
+    try {
+      switch (type) {
+        case 'light':
+          navigator.vibrate(10);
+          break;
+        case 'medium':
+          navigator.vibrate(25);
+          break;
+        case 'heavy':
+          navigator.vibrate(40);
+          break;
+        case 'success':
+          // Double tap
+          navigator.vibrate([30, 60, 30]);
+          break;
+      }
+    } catch (e) {
+      // Ignore gracefully if the device restricts it
+    }
+  }
+}
+
 export function getTier(u: MasterUnit): "S" | "A" | "B" | "C" | "Pure" | "Oddities" | "Untiered" {
   return (u.tier as "S" | "A" | "B" | "C" | "Pure" | "Oddities" | "Untiered") || "S";
 }
@@ -27,7 +52,7 @@ export function getProxyImage(unitId: string, fallbackUrl?: string) {
   // Fallback for brand-new units added to the sheet with raw Wikia URLs
   if (!fallbackUrl || fallbackUrl === "PLACEHOLDER_URL") return null;
   if (fallbackUrl.includes("imgur.com")) return fallbackUrl;
-  
+
   const cleanUrl = fallbackUrl.split("/revision/")[0];
   return `https://wsrv.nl/?url=${encodeURIComponent(cleanUrl)}&output=webp&w=150&fit=cover`;
 }
@@ -57,7 +82,7 @@ const UNOB_BLACKLIST = [
 
 export function getObtainability(unit?: MasterUnit): "OBT" | "UNOB" {
   if (!unit) return "UNOB";
-  
+
   const note = (unit.notice || "").toLowerCase();
   const name = (unit.name || "").toLowerCase();
   const subtitle = (unit.subtitle || "").toLowerCase();
@@ -74,7 +99,7 @@ export function getObtainability(unit?: MasterUnit): "OBT" | "UNOB" {
 
   if (UNOB_BLACKLIST.some(item => id.includes(item) || name.includes(item) || subtitle.includes(item))) return "UNOB";
   if (note.includes("evolv") || note.includes("evolution")) return "UNOB";
-  
+
   if (note.includes("unobtainable") || note.includes("unob") || note.includes("retired") || note.includes("code") || note.includes("dungeon") || note.includes("raid") || note.includes("event")) return "UNOB";
   if (note.includes("capsule") || note.includes("egg") || note.includes("firework") || note.includes("leaderboard") || note.includes("tournament") || note.includes("pvp set")) return "OBT";
 

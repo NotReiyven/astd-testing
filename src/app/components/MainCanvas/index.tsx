@@ -27,13 +27,14 @@ type VirtualItem =
   | { type: 'space-bottom'; id: string };
 
 export const MainCanvas = memo(function MainCanvas({
-  activeTierFilter, setActiveTierFilter, searchQuery, setSearchQuery, scrollToSection, startGuide, guideState
+  activeTierFilter, setActiveTierFilter, searchQuery, setSearchQuery, scrollToSection, startGuide, guideState, isMobile
 }: {
   activeTierFilter: FilterKey; setActiveTierFilter: (f: FilterKey) => void;
   searchQuery: string; setSearchQuery: (s: string) => void;
   scrollToSection?: { tier: string; sectionId: string } | null;
   startGuide: (type: GuideType) => void;
   guideState?: { type: GuideType | null; step: number };
+  isMobile: boolean;
 }) {
   const { units: ALL_UNITS, isLoading } = useUnits(); 
 
@@ -49,6 +50,10 @@ export const MainCanvas = memo(function MainCanvas({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const skipNextResetRef = useRef(false);
+
+  // Dynamic Header State
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const lastScrollY = useRef(0);
 
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
@@ -73,12 +78,33 @@ export const MainCanvas = memo(function MainCanvas({
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const currentScroll = e.currentTarget.scrollTop;
+    
+    // Top button logic
     if (currentScroll > 400 && !showScrollTop) setShowScrollTop(true);
     else if (currentScroll <= 400 && showScrollTop) setShowScrollTop(false);
+
+    // Mobile Dynamic Header Logic (only trigger when actually scrolling beyond the top area to prevent jitter)
+    if (isMobile) {
+      if (currentScroll > 150) {
+        if (currentScroll > lastScrollY.current + 10 && isHeaderVisible) {
+          // Scrolling down
+          setIsHeaderVisible(false);
+        } else if (currentScroll < lastScrollY.current - 10 && !isHeaderVisible) {
+          // Scrolling up
+          setIsHeaderVisible(true);
+        }
+      } else if (!isHeaderVisible) {
+        // Force show if near top
+        setIsHeaderVisible(true);
+      }
+    }
+    
+    lastScrollY.current = currentScroll;
   };
 
   const scrollToTop = () => {
     scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    setIsHeaderVisible(true);
   };
 
   const handleResetFilters = () => {
@@ -234,6 +260,7 @@ export const MainCanvas = memo(function MainCanvas({
       return;
     }
     scrollRef.current?.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    setIsHeaderVisible(true);
   }, [deferredSearchQuery, statusFilter, sortMode, activeTierFilter]);
 
   const dismissWelcome = () => {
@@ -244,8 +271,11 @@ export const MainCanvas = memo(function MainCanvas({
 
   const isStatsTarget = guideState?.type === "stats";
 
+  // Height of the mobile controls bar to offset correctly
+  const headerHeight = 60;
+
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#313338] relative">
+    <div className="flex-1 flex flex-col overflow-hidden bg-[#313338] relative z-10">
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #2B2D31; }
@@ -260,8 +290,10 @@ export const MainCanvas = memo(function MainCanvas({
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
       `}</style>
 
-      {/* Filter Highlight Wrap */}
-      <div className={`flex flex-col relative transition-all duration-300 ${guideState?.type === "filters" ? "ring-2 ring-[#5865F2] rounded-[8px] bg-[rgba(88,101,242,0.15)] shadow-[0_0_20px_rgba(88,101,242,0.4)] z-[100005] mx-4 mb-2 animate-pulse" : "z-[45]"}`}>
+      {/* Filter Highlight Wrap (Dynamic Header on Mobile) */}
+      <div 
+        className={`flex flex-col absolute top-0 left-0 right-0 w-full transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${guideState?.type === "filters" ? "ring-2 ring-[#5865F2] rounded-[8px] bg-[rgba(88,101,242,0.15)] shadow-[0_0_20px_rgba(88,101,242,0.4)] z-[100005] animate-pulse" : "z-30 shadow-md"} ${!isHeaderVisible ? '-translate-y-full' : 'translate-y-0'}`}
+      >
         <CanvasControls 
           activeTierFilter={activeTierFilter}
           setActiveTierFilter={setActiveTierFilter}
@@ -278,7 +310,7 @@ export const MainCanvas = memo(function MainCanvas({
         
         {/* Global Sticky List Header */}
         {viewMode === "list" && !isLoading && (
-          <div className="hidden md:block w-full border-b border-[rgba(0,0,0,0.5)] shadow-md z-[45] bg-[#1E1F22]">
+          <div className="hidden md:block w-full border-b border-[rgba(0,0,0,0.5)] bg-[#1E1F22]">
             <ListHeaderRow />
           </div>
         )}
@@ -288,12 +320,15 @@ export const MainCanvas = memo(function MainCanvas({
         id="main-scroll-container"
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-2 md:px-8 custom-scrollbar relative" 
-        style={{ WebkitOverflowScrolling: "touch" }}
+        className="flex-1 overflow-y-auto px-2 md:px-8 custom-scrollbar relative z-0 h-full" 
+        style={{ 
+          WebkitOverflowScrolling: "touch",
+          paddingTop: isMobile ? headerHeight : headerHeight + (viewMode === 'list' ? 36 : 0) // Give space for the absolute header
+        }}
       >
         {isLoading ? (
           <div className="pt-4 md:pt-6">
-            <div className={`${STICKY_HEADER_CLASS} relative z-30 mb-4 shadow-[0_12px_20px_-15px_rgba(0,0,0,0.8)]`}>
+            <div className={`${STICKY_HEADER_CLASS} relative z-20 mb-4 shadow-[0_12px_20px_-15px_rgba(0,0,0,0.8)]`}>
               <TierBanner tier={TIER_CONFIG[activeTierFilter] ?? TIER_CONFIG["S"]} />
             </div>
             <CanvasSkeleton viewMode={viewMode} />
@@ -329,7 +364,7 @@ export const MainCanvas = memo(function MainCanvas({
                       <div className="flex flex-col justify-center max-w-2xl">
                         <h2 className="hidden md:block text-[20px] font-black text-[#F2F3F5] mb-1 tracking-tight">Stop getting scammed.</h2>
                         <p className="text-[12px] md:text-[13px] text-[#B5BAC1] mb-2 md:mb-2.5 leading-relaxed">
-                          This is the value list. <strong>Left-click</strong> any unit card's 'plus' button to instantly throw it into <i>You Give</i>, and <strong>Right-click</strong> to put it in <i>You Get</i>. Check your stats before you open your mouth in trade chat.
+                          This is the value list. Tap any unit card to instantly throw it into <i>You Give</i> or <i>You Get</i>. Check your stats before you open your mouth in trade chat.
                         </p>
                         <div className="flex flex-wrap items-center gap-1.5 md:gap-3 text-[9px] md:text-[11px] font-bold text-[#949BA4]">
                           <span className="bg-[#1E1F22] px-2 py-1 rounded border border-[rgba(255,255,255,0.04)]">R = Rarity (/20)</span>
@@ -356,7 +391,7 @@ export const MainCanvas = memo(function MainCanvas({
                   )}
 
                   {item.type === 'tier-banner' && (
-                    <div className={`${STICKY_HEADER_CLASS} relative z-30 mb-4 shadow-[0_12px_20px_-15px_rgba(0,0,0,0.8)]`}>
+                    <div className={`${STICKY_HEADER_CLASS} relative z-20 mb-4 shadow-[0_12px_20px_-15px_rgba(0,0,0,0.8)]`}>
                       <TierBanner tier={item.tier} />
                     </div>
                   )}
@@ -383,7 +418,6 @@ export const MainCanvas = memo(function MainCanvas({
         )}
       </div>
 
-      {/* Adjust bottom-[90px] on mobile to prevent overlapping with the floating calculator button */}
       <button
         onClick={scrollToTop}
         className={`absolute bottom-[90px] right-6 md:bottom-8 md:right-8 w-[46px] h-[46px] md:w-[52px] md:h-[52px] bg-[#5865F2] text-white rounded-full flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.4)] transition-all duration-300 ease-out hover:bg-[#4752C4] hover:-translate-y-1 z-50 ${

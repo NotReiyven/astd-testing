@@ -1,26 +1,29 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Calculator, RotateCcw, Share2, Check, ArrowUpDown, Wand2, X, Info } from "lucide-react";
+import { Calculator, RotateCcw, Share2, Check, ArrowUpDown, Wand2, X, Info, ChevronUp } from "lucide-react";
 import { TradeCard } from "../../../types";
 import { TradeSectionPanel } from "./TradeSectionPanel";
 import { TradeNotices } from "./TradeNotices";
 import { SmartParserMenu } from "./SmartParserMenu";
 import { TradeSummaryBox } from "./TradeSummaryBox";
 import { usePanelResize } from "../../../hooks/usePanelResize";
-import { getShareText } from "./summaryUtils";
+import { getShareText, getTradeForecast } from "./summaryUtils";
 import { useUnits } from "../../../context/UnitContext";
 import { GuideType } from "../guides/AquaGuideOverlay";
 import { useTradeStore } from "../../../store/useTradeStore";
+import { triggerHaptic } from "../../../data/helpers";
 
 export function TradeAnalyzerPanel({
   isOpen = true,
   onClose,
   guideState,
-  startGuide
+  startGuide,
+  analyzerZ = "z-50"
 }: {
   isOpen?: boolean;
   onClose?: () => void;
   guideState?: { type: string | null; step: number };
   startGuide: (type: GuideType) => void;
+  analyzerZ?: string;
 }) {
   const { units: ALL_UNITS } = useUnits();
   
@@ -49,33 +52,17 @@ export function TradeAnalyzerPanel({
   const [undoCache, setUndoCache] = useState<{give: TradeCard[], get: TradeCard[]} | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Bottom Sheet Mobile Drag State
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const [currentY, setCurrentY] = useState(0);
+
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-
-  useEffect(() => {
-    if (panelRef.current) {
-      const parent1 = panelRef.current.parentElement;
-      const parent2 = parent1?.parentElement;
-
-      if (parent1 && parent2) {
-        if (isOpen && !isMobile) {
-          parent1.style.width = `${panelWidth}px`;
-          parent1.style.maxWidth = 'none';
-          parent2.style.width = `${panelWidth}px`;
-          parent2.style.maxWidth = 'none';
-        } else {
-          parent1.style.width = '';
-          parent1.style.maxWidth = '';
-          parent2.style.width = '';
-          parent2.style.maxWidth = '';
-        }
-      }
-    }
-  }, [isOpen, panelWidth, isMobile, panelRef]);
 
   useEffect(() => {
     const handleDragStart = (e: DragEvent) => {
@@ -90,7 +77,6 @@ export function TradeAnalyzerPanel({
     };
   }, []);
 
-  // Global Paste Listener for instantly evaluating trades via Smart Parser
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       const activeEl = document.activeElement;
@@ -107,17 +93,19 @@ export function TradeAnalyzerPanel({
     return () => window.removeEventListener("paste", handlePaste);
   }, []);
 
-  const { giveTotal, getTotal, givePercent, getPercent } = useMemo(() => {
+  const { giveTotal, getTotal, givePercent, getPercent, forecastData } = useMemo(() => {
     const gTotal = giveItems.reduce((s, c) => s + c.value * c.qty, 0);
     const tTotal  = getItems.reduce((s, c) => s + c.value * c.qty, 0);
     const totalTradeValue = gTotal + tTotal;
+    const forecast = getTradeForecast(giveItems, getItems, ALL_UNITS);
     return {
       giveTotal: gTotal,
       getTotal: tTotal,
       givePercent: totalTradeValue === 0 ? 50 : (gTotal / totalTradeValue) * 100,
-      getPercent: totalTradeValue === 0 ? 50 : (tTotal / totalTradeValue) * 100
+      getPercent: totalTradeValue === 0 ? 50 : (tTotal / totalTradeValue) * 100,
+      forecastData: forecast
     };
-  }, [giveItems, getItems]);
+  }, [giveItems, getItems, ALL_UNITS]);
 
   const saveUndoState = useCallback(() => {
     setUndoCache({ give: [...giveItems], get: [...getItems] });
@@ -146,7 +134,6 @@ export function TradeAnalyzerPanel({
 
   const handleShare = useCallback(() => {
     const text = getShareText(giveItems, getItems, giveTotal, getTotal, ALL_UNITS);
-
     const tryWrite = async () => {
       try {
         await navigator.clipboard.writeText(text);
@@ -163,25 +150,59 @@ export function TradeAnalyzerPanel({
     tryWrite();
   }, [giveItems, getItems, giveTotal, getTotal, ALL_UNITS]);
 
+  // Mobile Bottom Sheet Handlers
+  const openSheet = () => {
+    triggerHaptic('light');
+    window.dispatchEvent(new Event("open-analyzer")); 
+  };
+  
+  const closeSheet = () => {
+    triggerHaptic('light');
+    if (onClose) onClose();
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (!isMobile || !isOpen) return;
+    setTouchStartY(e.touches[0].clientY);
+    if (sheetRef.current) sheetRef.current.style.transition = 'none';
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!isMobile || !isOpen || touchStartY === null) return;
+    const dy = e.touches[0].clientY - touchStartY;
+    if (dy > 0) {
+      setCurrentY(dy);
+      if (sheetRef.current) sheetRef.current.style.transform = `translateY(${dy}px)`;
+    }
+  };
+
+  const onTouchEnd = () => {
+    if (!isMobile || !isOpen || touchStartY === null) return;
+    if (sheetRef.current) {
+      sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+      if (currentY > 100) {
+        closeSheet();
+        sheetRef.current.style.transform = 'translateY(100%)';
+      } else {
+        sheetRef.current.style.transform = 'translateY(0px)';
+      }
+    }
+    setTouchStartY(null);
+    setCurrentY(0);
+  };
+
+  const isMainStep3 = guideState?.type === "main" && guideState?.step === 3;
   const isMainStep4 = guideState?.type === "main" && guideState?.step === 4;
   const isWandTarget = guideState?.type === "dictionary" || guideState?.type === "advanced";
   const isClearTarget = guideState?.type === "management";
 
-  return (
-    <div 
-      ref={panelRef} 
-      className="flex flex-col h-full w-full select-none border-l border-[rgba(0,0,0,0.32)] shadow-[-12px_0_40px_rgba(0,0,0,0.5)]" 
-      style={{ width: isMobile ? "100%" : `${panelWidth}px`, minWidth: isMobile ? "100%" : "400px", background: "#2B2D31", fontFamily: "'Inter', sans-serif" }}
-    >
-      {!isMobile && (
-        <div 
-          className="absolute top-0 left-0 w-1.5 h-full cursor-col-resize hover:bg-[#5865F2] z-[100000] transition-colors"
-          onMouseDown={startResize}
-          title="Drag to resize panel"
-        />
-      )}
-
+  const renderCalculatorContent = () => (
+    <>
       <div className="flex-shrink-0 flex items-center gap-2 px-3 md:px-4 py-3 md:py-4 border-b border-[rgba(0,0,0,0.28)]">
+        {isMobile && (
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-[rgba(255,255,255,0.2)] rounded-full pointer-events-none" />
+        )}
+        
         <div className="w-7 h-7 flex-shrink-0 rounded-[6px] flex items-center justify-center bg-[#1E1F22] border border-[rgba(255,255,255,0.04)]">
           <Calculator className="w-3.5 h-3.5 text-[#DBDEE1]" />
         </div>
@@ -216,9 +237,9 @@ export function TradeAnalyzerPanel({
           {copied ? "Copied!" : "Share"}
         </button>
 
-        {onClose && (
+        {(!isMobile && onClose) && (
           <button 
-            onClick={onClose} 
+            onClick={closeSheet} 
             className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] text-[#B5BAC1] hover:bg-[rgba(237,66,69,0.1)] hover:text-[#ed4245] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ed4245]" 
             title="Close Analyzer"
           >
@@ -285,8 +306,7 @@ export function TradeAnalyzerPanel({
         
         <TradeNotices giveItems={giveItems} getItems={getItems} ALL_UNITS={ALL_UNITS} />
 
-        {/* --- HOW IT WORKS EXPLANATION BLOCK --- */}
-        <div className="mx-3 md:mx-4 mt-1 mb-4 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-3 md:p-4 shadow-sm">
+        <div className="mx-3 md:mx-4 mt-1 mb-4 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-3 md:p-4 shadow-sm pb-10">
           <div className="flex items-center gap-2 mb-2">
             <Info className="w-4 h-4 text-[#5865F2]" />
             <h4 className="text-[11px] font-bold text-[#F2F3F5] uppercase tracking-wider">How the Forecast Works</h4>
@@ -308,7 +328,7 @@ export function TradeAnalyzerPanel({
       </div>
 
       {undoCache && (
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[1000] bg-[#111214] border border-[rgba(255,255,255,0.08)] px-4 py-2.5 rounded-[8px] shadow-[0_8px_16px_rgba(0,0,0,0.4)] flex items-center gap-4 animate-fade-in">
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[1000] bg-[#111214] border border-[rgba(255,255,255,0.08)] px-4 py-2.5 rounded-[8px] shadow-[0_8px_16px_rgba(0,0,0,0.4)] flex items-center gap-4 animate-fade-in w-max max-w-[90vw]">
           <span className="text-[13px] font-medium text-[#DBDEE1]">Trade cleared.</span>
           <div className="flex items-center gap-2">
             <button 
@@ -327,6 +347,94 @@ export function TradeAnalyzerPanel({
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <>
+        {isOpen && (
+          <div 
+            className="fixed inset-0 bg-black/60 z-[90] animate-fade-in" 
+            onClick={closeSheet}
+            aria-hidden="true"
+          />
+        )}
+        
+        {/* Mobile Resting State (Bottom Bar) */}
+        <div 
+          className={`fixed left-0 right-0 bg-[#2B2D31] border-t border-[rgba(255,255,255,0.08)] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer 
+          ${isOpen ? 'translate-y-[100%] opacity-0 pointer-events-none z-[80]' : 'bottom-0 translate-y-0 opacity-100'} 
+          ${isMainStep3 && !isOpen ? '!z-[100005] ring-4 ring-[#5865F2] shadow-[0_0_30px_rgba(88,101,242,0.8)] animate-pulse' : 'z-[80]'}`}
+          onClick={openSheet}
+        >
+          <div className="flex items-center justify-between px-4 py-3 pb-safe">
+            <div className="flex flex-col min-w-0 flex-1 border-r border-[rgba(255,255,255,0.06)] pr-3">
+              <span className="text-[10px] font-bold text-[#949BA4] uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#FAA61A]" /> You Give</span>
+              <span className="text-[14px] font-black text-[#F2F3F5] font-mono truncate">{giveTotal.toLocaleString()}</span>
+            </div>
+            
+            <div className="flex flex-col min-w-0 flex-1 pl-3">
+              <span className="text-[10px] font-bold text-[#949BA4] uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#5865F2]" /> You Get</span>
+              <span className="text-[14px] font-black text-[#F2F3F5] font-mono truncate">{getTotal.toLocaleString()}</span>
+            </div>
+
+            <div className="flex items-center gap-2 pl-3">
+               {forecastData.calculable ? (
+                 <div className={`px-2 py-1 rounded-[4px] font-black font-mono text-[12px] border ${forecastData.st > 0 ? 'bg-[#23a559]/10 text-[#23a559] border-[#23a559]/30' : forecastData.st < 0 ? 'bg-[#ed4245]/10 text-[#ed4245] border-[#ed4245]/30' : 'bg-[#1E1F22] text-[#80848E] border-[rgba(255,255,255,0.06]'}`}>
+                   {forecastData.st > 0 ? '+' : ''}{forecastData.st.toFixed(0)}
+                 </div>
+               ) : (
+                 <Calculator className="w-5 h-5 text-[#80848E]" />
+               )}
+               <ChevronUp className="w-5 h-5 text-[#80848E] ml-1 animate-bounce" />
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Full Expanded Sheet */}
+        <div 
+          ref={sheetRef}
+          className="fixed left-0 right-0 bottom-0 z-[100] bg-[#2B2D31] flex flex-col shadow-[0_-12px_40px_rgba(0,0,0,0.8)] rounded-t-[16px] overflow-hidden transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+          style={{ 
+            height: '92vh',
+            transform: isOpen ? 'translateY(0%)' : 'translateY(100%)'
+          }}
+        >
+          <div 
+            className="w-full h-8 absolute top-0 left-0 right-0 z-10 cursor-grab active:cursor-grabbing touch-none"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          />
+          {renderCalculatorContent()}
+        </div>
+      </>
+    );
+  }
+
+  // Desktop Side Panel View
+  return (
+    <div 
+      className={`hidden md:block relative top-0 bottom-0 right-0 flex-shrink-0 overflow-hidden transition-all duration-300 ease-out will-change-[width,transform] ${isOpen ? 'translate-x-0 pointer-events-auto' : 'translate-x-full pointer-events-none'} ${analyzerZ}`}
+      style={{ opacity: isOpen ? 1 : 0, width: isOpen ? `${panelWidth}px` : '0px' }}
+    >
+      <div className="w-full h-full">
+        <div className="w-full h-full">
+          <div 
+            ref={panelRef} 
+            className="flex flex-col h-full w-full select-none border-l border-[rgba(0,0,0,0.32)] shadow-[-12px_0_40px_rgba(0,0,0,0.5)] bg-[#2B2D31]" 
+            style={{ width: `${panelWidth}px`, minWidth: "400px", fontFamily: "'Inter', sans-serif" }}
+          >
+            <div 
+              className="absolute top-0 left-0 w-1.5 h-full cursor-col-resize hover:bg-[#5865F2] z-[100000] transition-colors"
+              onMouseDown={startResize}
+              title="Drag to resize panel"
+            />
+            {renderCalculatorContent()}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

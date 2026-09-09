@@ -5,6 +5,7 @@ import { parseSmartTrade, AmbiguousToken, getSlangCache, removeSlang, learnSlang
 import { getAvatarStyle, getInitials } from "./summaryUtils";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { getProxyImage } from "../../../data";
+import { triggerHaptic } from "../../../data/helpers";
 
 interface SmartParserMenuProps {
   ALL_UNITS: MasterUnit[];
@@ -29,7 +30,6 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
-  // Ref to prevent infinite re-render loops on auto-import
   const lastProcessedText = useRef<string | null>(null);
 
   useEffect(() => {
@@ -66,7 +66,7 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
       setSmartInputError(result.error);
       setTimeout(() => setSmartInputError(""), 3000);
     } else {
-      onSaveUndo?.(); // Trigger the global undo snapshot before overwriting
+      onSaveUndo?.();
       
       const mergeCards = (arr1: TradeCard[], arr2: TradeCard[]) => {
         const map = new Map<string, TradeCard>();
@@ -87,6 +87,7 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
       setSmartInput("");
       
       if (result.ambiguous.length === 0) {
+        triggerHaptic('success');
         window.dispatchEvent(new Event("academy-used-parser"));
         onClose();
       }
@@ -111,7 +112,6 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
           demand: resolvedUnit.demand, qty
       });
       learnSlang(ambiguousItems[index].rawName, resolvedUnit.id);
-
       window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: resolvedUnit.name, type: col } }));
     }
 
@@ -119,6 +119,7 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
       const newAmbiguous = [...prev];
       newAmbiguous.splice(index, 1);
       if (newAmbiguous.length === 0) {
+        triggerHaptic('success');
         window.dispatchEvent(new Event("academy-used-parser"));
         onClose();
       }
