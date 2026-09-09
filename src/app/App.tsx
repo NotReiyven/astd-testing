@@ -155,14 +155,18 @@ export default function App() {
       }
     };
 
+    const handleOpenAnalyzer = () => setIsAnalyzerOpen(true);
+
     window.addEventListener("trade-added", handleTradeAdded);
     window.document.addEventListener("navigate", handleNavigate);
+    window.addEventListener("open-analyzer", handleOpenAnalyzer);
 
     return () => {
       window.removeEventListener("trade-added", handleTradeAdded);
       window.document.removeEventListener("navigate", handleNavigate);
+      window.removeEventListener("open-analyzer", handleOpenAnalyzer);
     };
-  }, [setActiveChannel, setIsRosterOpen]);
+  }, [setActiveChannel, setIsRosterOpen, setIsAnalyzerOpen]);
 
   const startGuide = useCallback((type: GuideType, force: boolean = false) => {
     if (!force && type && completedGuides[type]) return;
@@ -406,7 +410,7 @@ export default function App() {
         <Suspense fallback={null}>
 
           <WelcomeModal />
-          <HistoryModal /> {/* <-- ADD IT HERE */}
+          <HistoryModal />
           
           <AquaGuideOverlay guideState={guideState} onEndGuide={endGuide} />
 
@@ -515,7 +519,6 @@ export default function App() {
                 onClose={() => setIsAnalyzerOpen(false)}
                 guideState={guideState}
                 startGuide={startGuide}
-                isDictionaryActive={isDictionaryActive}
               />
             </div>
           </div>

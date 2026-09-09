@@ -9,9 +9,11 @@ import { getProxyImage } from "../../../data";
 interface SmartParserMenuProps {
   ALL_UNITS: MasterUnit[];
   onClose: () => void;
+  onSaveUndo?: () => void;
+  initialText?: string;
 }
 
-export function SmartParserMenu({ ALL_UNITS, onClose }: SmartParserMenuProps) {
+export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }: SmartParserMenuProps) {
   const { giveItems, getItems, pinnedIds, overwrite, addCard } = useTradeStore();
 
   const [activeMenuTab, setActiveMenuTab] = useState<"import" | "dictionary">("import");
@@ -26,6 +28,9 @@ export function SmartParserMenu({ ALL_UNITS, onClose }: SmartParserMenuProps) {
   const [newSlangTargetId, setNewSlangTargetId] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Ref to prevent infinite re-render loops on auto-import
+  const lastProcessedText = useRef<string | null>(null);
 
   useEffect(() => {
     setSlangDict(getSlangCache());
@@ -55,12 +60,14 @@ export function SmartParserMenu({ ALL_UNITS, onClose }: SmartParserMenuProps) {
     ).slice(0, 30);
   }, [searchQuery, ALL_UNITS]);
 
-  const handleSmartImport = useCallback(() => {
-    const result = parseSmartTrade(smartInput, ALL_UNITS); 
+  const processImport = useCallback((textToParse: string) => {
+    const result = parseSmartTrade(textToParse, ALL_UNITS); 
     if (result.error) {
       setSmartInputError(result.error);
       setTimeout(() => setSmartInputError(""), 3000);
     } else {
+      onSaveUndo?.(); // Trigger the global undo snapshot before overwriting
+      
       const mergeCards = (arr1: TradeCard[], arr2: TradeCard[]) => {
         const map = new Map<string, TradeCard>();
         arr1.forEach(c => map.set(c.id, { ...c }));
@@ -78,12 +85,23 @@ export function SmartParserMenu({ ALL_UNITS, onClose }: SmartParserMenuProps) {
       overwrite(mergeCards(pinnedGive, result.giveCards), mergeCards(pinnedGet, result.getCards));
       setAmbiguousItems(result.ambiguous);
       setSmartInput("");
+      
       if (result.ambiguous.length === 0) {
         window.dispatchEvent(new Event("academy-used-parser"));
         onClose();
       }
     }
-  }, [smartInput, giveItems, getItems, pinnedIds, overwrite, ALL_UNITS, onClose]);
+  }, [giveItems, getItems, pinnedIds, overwrite, ALL_UNITS, onClose, onSaveUndo]);
+
+  const handleSmartImport = useCallback(() => processImport(smartInput), [processImport, smartInput]);
+
+  useEffect(() => {
+    if (initialText && initialText.trim().length > 0 && lastProcessedText.current !== initialText) {
+      lastProcessedText.current = initialText;
+      setSmartInput(initialText);
+      processImport(initialText);
+    }
+  }, [initialText, processImport]);
 
   const resolveAmbiguity = useCallback((index: number, resolvedUnit: MasterUnit | null, col: "give" | "get", qty: number) => {
     if (resolvedUnit && qty > 0) {

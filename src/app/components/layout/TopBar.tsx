@@ -49,6 +49,21 @@ export function TopBar({
     }
   }, [mobileSearchOpen]);
 
+  // Global Escape Listener to drop focus and clear search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" || e.key === "Esc") {
+        setGlobalSearchQuery("");
+        setMobileSearchOpen(false);
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [setGlobalSearchQuery]);
+
   const handleHelpClick = () => {
     const now = Date.now();
     if (now - lastClickTime > 10000) {
@@ -80,6 +95,14 @@ export function TopBar({
             type="text" 
             value={globalSearchQuery}
             onChange={(e) => setGlobalSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape" || e.key === "Esc") {
+                e.preventDefault();
+                setGlobalSearchQuery("");
+                setMobileSearchOpen(false);
+                e.currentTarget.blur();
+              }
+            }}
             placeholder="Search all units..."
             className="flex-1 bg-transparent outline-none text-[#DBDEE1] text-[14px] px-2 h-full"
           />
@@ -176,7 +199,14 @@ export function TopBar({
             type="text" 
             placeholder="Search..." 
             value={globalSearchQuery} 
-            onChange={(e) => setGlobalSearchQuery(e.target.value)} 
+            onChange={(e) => setGlobalSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape" || e.key === "Esc") {
+                e.preventDefault();
+                setGlobalSearchQuery("");
+                e.currentTarget.blur();
+              }
+            }}
             className="bg-transparent text-[13px] text-[#DBDEE1] w-full h-full outline-none placeholder-[#80848E] font-medium tracking-wide" 
           />
           {globalSearchQuery ? (

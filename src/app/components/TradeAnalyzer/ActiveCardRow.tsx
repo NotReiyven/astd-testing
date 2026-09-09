@@ -56,8 +56,18 @@ export const ActiveCardRow = memo(function ActiveCardRow({
   const proxyUrl = getProxyImage(card.id, masterData?.imageUrl);
 
   const handleQtyInput = useCallback((newQty: number) => onQtyChange(card.id, Math.min(newQty, 9999)), [card.id, onQtyChange]);
-  const handleMinus = useCallback(() => onQtyChange(card.id, Math.max(1, card.qty - 1)), [card.id, card.qty, onQtyChange]);
-  const handlePlus = useCallback(() => onQtyChange(card.id, Math.min(card.qty + 1, 9999)), [card.id, card.qty, onQtyChange]);
+  
+  // Shift+Click checks for bulk modification
+  const handleMinus = useCallback((e: React.MouseEvent) => {
+    const delta = e.shiftKey ? 10 : 1;
+    onQtyChange(card.id, Math.max(1, card.qty - delta));
+  }, [card.id, card.qty, onQtyChange]);
+  
+  const handlePlus = useCallback((e: React.MouseEvent) => {
+    const delta = e.shiftKey ? 10 : 1;
+    onQtyChange(card.id, Math.min(card.qty + delta, 9999));
+  }, [card.id, card.qty, onQtyChange]);
+  
   const handleRemove = useCallback(() => onRemove(card.id), [card.id, onRemove]);
   const handlePin = useCallback(() => onTogglePin(card.id), [card.id, onTogglePin]);
 
@@ -112,6 +122,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
          <div className="flex items-center bg-[#1E1F22] rounded-[4px] p-0.5 border border-[rgba(255,255,255,0.04)] shadow-inner flex-shrink-0">
            <button 
              onClick={handleMinus} 
+             title="Shift+Click to remove 10"
              className="w-5 h-5 flex items-center justify-center text-[#949BA4] hover:text-[#DBDEE1] hover:bg-[#2B2D31] rounded-[3px] transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2]"
            >
              <Minus className="w-3 h-3" />
@@ -121,6 +132,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
 
            <button 
              onClick={handlePlus} 
+             title="Shift+Click to add 10"
              className="w-5 h-5 flex items-center justify-center text-[#949BA4] hover:text-[#DBDEE1] hover:bg-[#2B2D31] rounded-[3px] transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2]"
            >
              <Plus className="w-3 h-3" />

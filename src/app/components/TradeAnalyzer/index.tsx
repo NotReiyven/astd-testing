@@ -41,6 +41,7 @@ export function TradeAnalyzerPanel({
   const [copied, setCopied] = useState(false);
   const [isGlobalDragging, setIsGlobalDragging] = useState(false);
   const [smartMenuOpen, setSmartMenuOpen] = useState(false);
+  const [initialParserText, setInitialParserText] = useState("");
 
   const [isMobile, setIsMobile] = useState(false);
   const { panelWidth, startResize, panelRef } = usePanelResize(400, 400, 800);
@@ -89,6 +90,23 @@ export function TradeAnalyzerPanel({
     };
   }, []);
 
+  // Global Paste Listener for instantly evaluating trades via Smart Parser
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) return;
+      
+      const text = e.clipboardData?.getData("text");
+      if (text && text.trim().length > 0) {
+        window.dispatchEvent(new Event("open-analyzer"));
+        setInitialParserText(text);
+        setSmartMenuOpen(true);
+      }
+    };
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, []);
+
   const { giveTotal, getTotal, givePercent, getPercent } = useMemo(() => {
     const gTotal = giveItems.reduce((s, c) => s + c.value * c.qty, 0);
     const tTotal  = getItems.reduce((s, c) => s + c.value * c.qty, 0);
@@ -99,6 +117,12 @@ export function TradeAnalyzerPanel({
       givePercent: totalTradeValue === 0 ? 50 : (gTotal / totalTradeValue) * 100,
       getPercent: totalTradeValue === 0 ? 50 : (tTotal / totalTradeValue) * 100
     };
+  }, [giveItems, getItems]);
+
+  const saveUndoState = useCallback(() => {
+    setUndoCache({ give: [...giveItems], get: [...getItems] });
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = setTimeout(() => setUndoCache(null), 4000);
   }, [giveItems, getItems]);
 
   const handleGlobalClear = useCallback(() => {
@@ -206,7 +230,9 @@ export function TradeAnalyzerPanel({
       {smartMenuOpen && (
         <SmartParserMenu 
           ALL_UNITS={ALL_UNITS} 
-          onClose={() => setSmartMenuOpen(false)} 
+          onClose={() => { setSmartMenuOpen(false); setInitialParserText(""); }} 
+          onSaveUndo={saveUndoState}
+          initialText={initialParserText}
         />
       )}
 
@@ -259,7 +285,7 @@ export function TradeAnalyzerPanel({
         
         <TradeNotices giveItems={giveItems} getItems={getItems} ALL_UNITS={ALL_UNITS} />
 
-        {/* --- NEW HOW IT WORKS EXPLANATION BLOCK --- */}
+        {/* --- HOW IT WORKS EXPLANATION BLOCK --- */}
         <div className="mx-3 md:mx-4 mt-1 mb-4 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-3 md:p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <Info className="w-4 h-4 text-[#5865F2]" />
