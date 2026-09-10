@@ -1,5 +1,4 @@
 import React from "react";
-import { TooltipText } from "./TutorialUI";
 
 const STATUS_TAGS = [
   { tag: "Stable", bg: "#3b3924", border: "#6b5f2a", color: "#E6D8A1", def: "Fair and consistently decent offers. Units that are stable are most likely not to move unless something happens." },
@@ -56,49 +55,48 @@ export function TheoryTab() {
   return (
     <div className="flex flex-col gap-8 max-w-5xl mx-auto animate-fade-in pb-8 font-sans">
       
-      <div className="bg-[#1E1F22] border border-[#5865F2]/30 rounded-[12px] p-5 md:p-6 shadow-sm flex items-start gap-4">
-        <img src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" className="w-12 h-12 rounded-full border-2 border-[#5865F2] object-cover flex-shrink-0" alt="Aqua" />
+      <div className="bg-[#111214] border-l-4 border-l-[#ed4245] border-y border-y-[rgba(255,255,255,0.04)] border-r border-r-[rgba(255,255,255,0.04)] rounded-r-[8px] p-5 shadow-sm flex items-start gap-4">
+        <img src={FIRE_ZIO_AVATAR} className="w-12 h-12 rounded-full border border-[#ed4245] object-cover flex-shrink-0" alt="Fire Zio" />
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <h3 className="text-[#F2F3F5] font-black text-[16px] tracking-wide">Goddess Aqua</h3>
-            <span className="bg-[#5865F2] text-white text-[9px] px-1.5 py-0.5 rounded-[4px] font-black uppercase tracking-wider">Theory Class</span>
-          </div>
-          <p className="text-[#B5BAC1] text-[13px] leading-relaxed">Listen up! Raw value isn't everything. Memorize these market definitions or you'll get completely scammed. The data below is pulled directly from the official value team's internal documentation.</p>
+          <span className="text-[11px] font-black uppercase tracking-widest text-[#ed4245]">Fire Zio's Market Theory Briefing</span>
+          <p className="text-[#949BA4] text-[13px] italic font-medium leading-relaxed">
+            "Raw value isn't everything. Memorize these market definitions or you'll get completely scammed. The data below is pulled directly from our internal documentation."
+          </p>
         </div>
       </div>
 
       <div className="flex flex-col gap-4">
-        <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[12px] overflow-hidden shadow-sm">
+        <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[8px] overflow-hidden shadow-sm">
            <div className="bg-[#1E1F22] px-5 py-3 border-b border-[rgba(255,255,255,0.04)]">
               <h3 className="text-[#F2F3F5] font-bold text-[14px] uppercase tracking-wider">Unit Tags</h3>
            </div>
            <div className="w-full overflow-x-auto">
               <table className="w-full text-left border-collapse">
                  <thead>
-                    <tr className="bg-[rgba(255,255,255,0.02)] text-[#80848E] text-[10px] uppercase tracking-widest">
-                       <th className="px-5 py-2.5 font-bold border-b border-[rgba(255,255,255,0.04)] w-[140px]">Units Tags</th>
-                       <th className="px-5 py-2.5 font-bold border-b border-[rgba(255,255,255,0.04)]">What do they mean</th>
+                    <tr className="bg-[#111214] text-[#80848E] text-[10px] uppercase tracking-widest border-b border-[rgba(255,255,255,0.04)]">
+                       <th className="px-5 py-3 font-bold w-[140px]">Units Tags</th>
+                       <th className="px-5 py-3 font-bold">What do they mean</th>
                     </tr>
                  </thead>
                  <tbody>
                     {STATUS_TAGS.map((t) => (
                        <tr key={t.tag} className="border-b border-[rgba(255,255,255,0.02)] last:border-0 hover:bg-[rgba(255,255,255,0.01)] transition-colors">
                           <td className="px-5 py-3 align-middle">
-                             <span className="text-[10px] font-bold uppercase px-2 py-1 rounded-[4px] border shadow-sm block text-center w-full" style={{ backgroundColor: t.bg, color: t.color, borderColor: t.border }}>
+                             <span className="text-[10px] font-bold uppercase px-2 py-1 rounded-[4px] border block text-center w-full" style={{ backgroundColor: t.bg, color: t.color, borderColor: t.border }}>
                                 {t.tag}
                              </span>
                           </td>
                           <td className="px-5 py-3 text-[#B5BAC1] text-[13px] leading-relaxed">{t.def}</td>
                        </tr>
                     ))}
-                    <tr className="bg-[rgba(255,255,255,0.02)] text-[#80848E] text-[10px] uppercase tracking-widest">
-                       <td className="px-5 py-2.5 font-bold border-y border-[rgba(255,255,255,0.04)] text-center">Secondary Tags</td>
-                       <td className="px-5 py-2.5 font-bold border-y border-[rgba(255,255,255,0.04)]">Tags placed with Values or Supply/Demand to better define a situation</td>
+                    <tr className="bg-[#111214] text-[#80848E] text-[10px] uppercase tracking-widest border-y border-[rgba(255,255,255,0.04)]">
+                       <td className="px-5 py-3 font-bold text-center">Secondary Tags</td>
+                       <td className="px-5 py-3 font-bold">Tags placed with Values or Supply/Demand to better define a situation</td>
                     </tr>
                     {SECONDARY_TAGS.map((t) => (
                        <tr key={t.tag} className="border-b border-[rgba(255,255,255,0.02)] last:border-0 hover:bg-[rgba(255,255,255,0.01)] transition-colors">
                           <td className="px-5 py-3 align-middle">
-                             <span className="text-[10px] font-bold uppercase px-2 py-1 rounded-[4px] border shadow-sm block text-center w-full" style={{ backgroundColor: t.bg, color: t.color, borderColor: t.border }}>
+                             <span className="text-[10px] font-bold uppercase px-2 py-1 rounded-[4px] border block text-center w-full" style={{ backgroundColor: t.bg, color: t.color, borderColor: t.border }}>
                                 {t.tag}
                              </span>
                           </td>
@@ -111,34 +109,34 @@ export function TheoryTab() {
         </div>
 
         <div className="bg-[#111214] border-l-4 border-l-[#ed4245] border-y border-y-[rgba(255,255,255,0.04)] border-r border-r-[rgba(255,255,255,0.04)] rounded-r-[8px] p-4 shadow-inner flex items-start gap-4">
-           <img src={FIRE_ZIO_AVATAR} className="w-10 h-10 rounded-full border border-[#ed4245] object-cover shrink-0 bg-[#1e1f22]" alt="Fire Zio" />
-           <div className="flex flex-col gap-1">
-             <span className="text-[11px] font-black uppercase tracking-widest text-[#ed4245]">Fire Zio's Reality Check</span>
-             <p className="text-[#949BA4] text-[13px] italic font-medium leading-relaxed">
-               "Read the tags. If you blindly accept an 'Inflated' or 'Dropping' unit just because the raw value looks like a win, you're an idiot. Enjoy holding a brick."
-             </p>
-           </div>
+            <img src={FIRE_ZIO_AVATAR} className="w-10 h-10 rounded-full border border-[#ed4245] object-cover shrink-0 bg-[#1e1f22]" alt="Fire Zio" />
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-black uppercase tracking-widest text-[#ed4245]">Fire Zio's Reality Check</span>
+              <p className="text-[#949BA4] text-[13px] italic font-medium leading-relaxed">
+                "Read the tags. If you blindly accept an 'Inflated' or 'Dropping' unit just because the raw value looks like a win, you're an idiot. Enjoy holding a brick."
+              </p>
+            </div>
         </div>
       </div>
 
       <div className="flex flex-col gap-4">
-        <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[12px] overflow-hidden shadow-sm">
+        <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[8px] overflow-hidden shadow-sm">
            <div className="bg-[#1E1F22] px-5 py-3 border-b border-[rgba(255,255,255,0.04)]">
               <h3 className="text-[#F2F3F5] font-bold text-[14px] uppercase tracking-wider">Unit Rarity (0 - 20)</h3>
            </div>
            <div className="w-full overflow-x-auto">
               <table className="w-full text-left border-collapse">
                  <thead>
-                    <tr className="bg-[rgba(255,255,255,0.02)] text-[#80848E] text-[10px] uppercase tracking-widest">
-                       <th className="px-5 py-2.5 font-bold border-b border-[rgba(255,255,255,0.04)] w-[100px] text-center">Rarity</th>
-                       <th className="px-5 py-2.5 font-bold border-b border-[rgba(255,255,255,0.04)]">What does it mean</th>
+                    <tr className="bg-[#111214] text-[#80848E] text-[10px] uppercase tracking-widest border-b border-[rgba(255,255,255,0.04)]">
+                       <th className="px-5 py-3 font-bold w-[100px] text-center">Rarity</th>
+                       <th className="px-5 py-3 font-bold">What does it mean</th>
                     </tr>
                  </thead>
                  <tbody>
                     {RARITY_SCALE.map((r) => (
                        <tr key={r.val} className="border-b border-[rgba(255,255,255,0.02)] last:border-0 hover:bg-[rgba(255,255,255,0.01)] transition-colors">
-                          <td className="px-5 py-2.5 align-middle text-center" style={{ backgroundColor: r.color }}>
-                             <span className="text-[12px] font-black font-mono" style={{ color: r.textColor }}>{r.val}</span>
+                          <td className="px-5 py-2.5 align-middle text-center bg-[#1E1F22] border-r border-[rgba(255,255,255,0.02)]">
+                             <span className="text-[12px] font-black font-mono px-2 py-1 rounded-[4px]" style={{ backgroundColor: r.color, color: r.textColor }}>{r.val}</span>
                           </td>
                           <td className="px-5 py-2.5 text-[#B5BAC1] text-[13px] leading-relaxed font-medium">{r.def}</td>
                        </tr>
@@ -149,27 +147,27 @@ export function TheoryTab() {
         </div>
 
         <div className="bg-[#111214] border-l-4 border-l-[#ed4245] border-y border-y-[rgba(255,255,255,0.04)] border-r border-r-[rgba(255,255,255,0.04)] rounded-r-[8px] p-4 shadow-inner flex items-start gap-4">
-           <img src={FIRE_ZIO_AVATAR} className="w-10 h-10 rounded-full border border-[#ed4245] object-cover shrink-0 bg-[#1e1f22]" alt="Fire Zio" />
-           <div className="flex flex-col gap-1">
-             <span className="text-[11px] font-black uppercase tracking-widest text-[#ed4245]">Fire Zio's Market Note</span>
-             <p className="text-[#949BA4] text-[13px] italic font-medium leading-relaxed">
-               "Rarity 20 means there are literally less than 20 copies in existence. If you ever pull one, lock your inventory and don't accept any trades until you consult an actual analyst. Don't throw away a unicorn."
-             </p>
-           </div>
+            <img src={FIRE_ZIO_AVATAR} className="w-10 h-10 rounded-full border border-[#ed4245] object-cover shrink-0 bg-[#1e1f22]" alt="Fire Zio" />
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-black uppercase tracking-widest text-[#ed4245]">Fire Zio's Market Note</span>
+              <p className="text-[#949BA4] text-[13px] italic font-medium leading-relaxed">
+                "Rarity 20 means there are literally less than 20 copies in existence. If you ever pull one, lock your inventory and don't accept any trades until you consult an actual analyst. Don't throw away a unicorn."
+              </p>
+            </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
          <div className="flex flex-col gap-4">
-           <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[12px] overflow-hidden shadow-sm h-full flex flex-col">
+           <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[8px] overflow-hidden shadow-sm h-full flex flex-col">
               <div className="bg-[#1E1F22] px-5 py-3 border-b border-[rgba(255,255,255,0.04)]">
                  <h3 className="text-[#F2F3F5] font-bold text-[14px] uppercase tracking-wider">Unit Supply</h3>
               </div>
               <table className="w-full text-left border-collapse flex-1">
                  <thead>
-                    <tr className="bg-[rgba(255,255,255,0.02)] text-[#80848E] text-[10px] uppercase tracking-widest">
-                       <th className="px-5 py-2.5 font-bold border-b border-[rgba(255,255,255,0.04)] w-[80px] text-center">Value</th>
-                       <th className="px-5 py-2.5 font-bold border-b border-[rgba(255,255,255,0.04)]">Definition</th>
+                    <tr className="bg-[#111214] text-[#80848E] text-[10px] uppercase tracking-widest border-b border-[rgba(255,255,255,0.04)]">
+                       <th className="px-5 py-3 font-bold w-[80px] text-center">Value</th>
+                       <th className="px-5 py-3 font-bold">Definition</th>
                     </tr>
                  </thead>
                  <tbody>
@@ -183,22 +181,22 @@ export function TheoryTab() {
                     ))}
                  </tbody>
               </table>
-              <div className="p-4 bg-[rgba(255,255,255,0.02)] border-t border-[rgba(255,255,255,0.04)] text-[11px] text-[#949BA4] leading-relaxed">
+              <div className="p-4 bg-[#111214] border-t border-[rgba(255,255,255,0.04)] text-[11px] text-[#949BA4] leading-relaxed">
                  <strong>Note:</strong> Supply is based on the amount of units in circulation (taking into account its rarity).
               </div>
            </div>
          </div>
 
          <div className="flex flex-col gap-4">
-           <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[12px] overflow-hidden shadow-sm h-full flex flex-col">
+           <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[8px] overflow-hidden shadow-sm h-full flex flex-col">
               <div className="bg-[#1E1F22] px-5 py-3 border-b border-[rgba(255,255,255,0.04)]">
                  <h3 className="text-[#F2F3F5] font-bold text-[14px] uppercase tracking-wider">Unit Demand</h3>
               </div>
               <table className="w-full text-left border-collapse flex-1">
                  <thead>
-                    <tr className="bg-[rgba(255,255,255,0.02)] text-[#80848E] text-[10px] uppercase tracking-widest">
-                       <th className="px-5 py-2.5 font-bold border-b border-[rgba(255,255,255,0.04)] w-[80px] text-center">Value</th>
-                       <th className="px-5 py-2.5 font-bold border-b border-[rgba(255,255,255,0.04)]">Definition</th>
+                    <tr className="bg-[#111214] text-[#80848E] text-[10px] uppercase tracking-widest border-b border-[rgba(255,255,255,0.04)]">
+                       <th className="px-5 py-3 font-bold w-[80px] text-center">Value</th>
+                       <th className="px-5 py-3 font-bold">Definition</th>
                     </tr>
                  </thead>
                  <tbody>
@@ -212,7 +210,7 @@ export function TheoryTab() {
                     ))}
                  </tbody>
               </table>
-              <div className="p-4 bg-[rgba(255,255,255,0.02)] border-t border-[rgba(255,255,255,0.04)] text-[11px] text-[#949BA4] leading-relaxed">
+              <div className="p-4 bg-[#111214] border-t border-[rgba(255,255,255,0.04)] text-[11px] text-[#949BA4] leading-relaxed">
                  <strong>Note:</strong> Demand <strong className="text-[#DBDEE1]">CAN</strong> influence a unit's value, but it is <strong className="text-[#DBDEE1]">NOT</strong> a direct relation. It merely means how easy it is to find someone interested.
               </div>
            </div>
@@ -220,13 +218,13 @@ export function TheoryTab() {
       </div>
 
       <div className="bg-[#111214] border-l-4 border-l-[#ed4245] border-y border-y-[rgba(255,255,255,0.04)] border-r border-r-[rgba(255,255,255,0.04)] rounded-r-[8px] p-4 shadow-inner flex items-start gap-4">
-         <img src={FIRE_ZIO_AVATAR} className="w-10 h-10 rounded-full border border-[#ed4245] object-cover shrink-0 bg-[#1e1f22]" alt="Fire Zio" />
-         <div className="flex flex-col gap-1">
-           <span className="text-[11px] font-black uppercase tracking-widest text-[#ed4245]">Fire Zio's Final Warning</span>
-           <p className="text-[#949BA4] text-[13px] italic font-medium leading-relaxed">
-             "A unit with 10k value and 'Very Low' demand is functionally worthless. It's a dead asset. Stop asking in the trading channels why nobody wants your garbage. Value means nothing without liquidity."
-           </p>
-         </div>
+          <img src={FIRE_ZIO_AVATAR} className="w-10 h-10 rounded-full border border-[#ed4245] object-cover shrink-0 bg-[#1e1f22]" alt="Fire Zio" />
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-black uppercase tracking-widest text-[#ed4245]">Fire Zio's Final Warning</span>
+            <p className="text-[#949BA4] text-[13px] italic font-medium leading-relaxed">
+              "A unit with 10k value and 'Very Low' demand is functionally worthless. It's a dead asset. Stop asking in the trading channels why nobody wants your garbage. Value means nothing without liquidity."
+            </p>
+          </div>
       </div>
 
     </div>

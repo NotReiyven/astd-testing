@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { ExternalLink, Users, Wrench, ChevronRight, Code2, Check, Sparkles, Terminal, Eye } from "lucide-react";
+import { ExternalLink, Users, Wrench, ChevronRight, Code2, Check, Sparkles, Terminal, MessageSquarePlus, FileSpreadsheet } from "lucide-react";
 import { useUnits } from "../../context/UnitContext";
 import { TiltCard } from "./ui/TiltCard";
 
@@ -40,14 +40,12 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
   const { changelog } = useUnits();
   const [devSpin, setDevSpin] = useState(0);
   
-  // Force tab switch if developer guide is active
   useEffect(() => {
     if (guideState?.type === "developer") {
       setActiveHomeTab("credits");
     }
   }, [guideState]);
 
-  // Easter Egg States
   const [secretClicks, setSecretClicks] = useState(0);
   const [secretUnlocked, setSecretUnlocked] = useState(false);
   const [secretQuoteIndex, setSecretQuoteIndex] = useState(0);
@@ -156,48 +154,99 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-              <TiltCard color="#8b7a7a">
-                <div className="p-5 md:p-6 flex flex-col h-full relative z-10">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-9 h-9 rounded-[8px] flex items-center justify-center bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] shadow-inner flex-shrink-0 overflow-hidden">
-                      <img src={generalInformationIcon} alt="" draggable={false} className="w-full h-full object-cover rounded-[8px]" />
+              
+              {/* COLUMN 1: GENERAL INFO & SPREADSHEET RELIANCE */}
+              <div className="flex flex-col gap-4">
+                <TiltCard color="#8b7a7a">
+                  <div className="p-5 md:p-6 flex flex-col h-full relative z-10">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-9 h-9 rounded-[8px] flex items-center justify-center bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] shadow-inner flex-shrink-0 overflow-hidden">
+                        <img src={generalInformationIcon} alt="" draggable={false} className="w-full h-full object-cover rounded-[8px]" />
+                      </div>
+                      <h3 className="text-[15px] font-extrabold text-[#F2F3F5] tracking-tight leading-tight uppercase">General Information</h3>
                     </div>
-                    <h3 className="text-[15px] font-extrabold text-[#F2F3F5] tracking-tight leading-tight uppercase">General Information</h3>
-                  </div>
-                  <p className="text-[13px] text-[#DBDEE1] leading-[1.65] mb-6">
-                    Everything shown in this Value List is an estimation from this Value List's Team made from community's trades, our changes can be innacurate sometimes, although, this Value List is currently the most reliable source of values for ASTD.
-                  </p>
-                  <div className="mt-auto flex flex-col gap-3">
-                    <a href="https://discord.gg/Q7JTvPUEM" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1.5 text-[12px] font-bold text-white bg-[#5865F2] hover:bg-[#4752C4] px-4 py-2.5 rounded-[6px] transition-colors active:scale-[0.98]">
-                      Join the Value List Discord <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                    <p className="text-[11px] text-[#949BA4] text-center">Think any information is wrong? Make a Support Ticket in our Discord!</p>
-                  </div>
-                </div>
-              </TiltCard>
-
-              <TiltCard color="#8b7a7a">
-                <div className="p-5 md:p-6 flex flex-col h-full relative z-10">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-9 h-9 rounded-[8px] flex items-center justify-center bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] shadow-inner flex-shrink-0 overflow-hidden">
-                      <img src={teamNotesIcon} alt="" draggable={false} className="w-full h-full object-cover rounded-[8px]" />
-                    </div>
-                    <h3 className="text-[15px] font-extrabold text-[#F2F3F5] tracking-tight leading-tight uppercase">Value List Team's Note</h3>
-                  </div>
-                  <p className="text-[13px] text-[#DBDEE1] leading-[1.65] mb-4">
-                    Recently, it has been common of traders on win/loss, in our discord server, associating one bad offer/trade, which can come from a multitude of reasons, with the specific unit dropping, creating a trend which other traders follow, causing the unit to be panic traded and dropped.
-                  </p>
-                  <div className="bg-[#111214] p-3.5 rounded-[8px] border border-[rgba(250,166,26,0.2)] mb-4">
-                    <p className="text-[11.5px] text-[#FAA61A] font-medium leading-relaxed italic">
-                      "We would like to remind such behavior causes the market to be extremely unstable, causing many units to crash without any previous reason, so we from the Value List Team recommend traders to analyse the market before wrongly assuming the situation of the unit."
+                    <p className="text-[13px] text-[#DBDEE1] leading-[1.65]">
+                      Everything shown in this Value List is an estimation from this Value List's Team made from community's trades. Our changes can be inaccurate sometimes, although this Value List is currently the most reliable source of values for ASTD.
                     </p>
                   </div>
-                  <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.04)]">
-                    <span className="text-[11px] font-bold text-[#80848E] uppercase tracking-widest">Recommendation:</span>
-                    <span className="ml-2 text-[12px] text-[#DBDEE1]">Stay calm and verify trades with the analyzer!</span>
+                </TiltCard>
+
+                {/* DEDICATED SECTION: SPREADSHEET RELIANCE & ALTERNATIVE USAGE */}
+                <TiltCard color="#5865F2">
+                  <div className="p-5 md:p-6 flex flex-col h-full relative z-10">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-9 h-9 rounded-[8px] flex items-center justify-center bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] shadow-inner flex-shrink-0 text-[#5865F2] flex items-center justify-center">
+                        <FileSpreadsheet className="w-5 h-5" />
+                      </div>
+                      <h3 className="text-[15px] font-extrabold text-[#F2F3F5] tracking-tight leading-tight uppercase">Spreadsheet Reliance & Usage</h3>
+                    </div>
+                    <p className="text-[13px] text-[#DBDEE1] leading-[1.65] mb-4">
+                      This web platform operates entirely in reliance on the official value list spreadsheet as its live data backend. <strong>The original spreadsheet remains fully active and continues to be updated regularly</strong> by the team. 
+                    </p>
+                    <div className="bg-[#111214] p-3.5 rounded-[8px] border border-[rgba(88,101,242,0.2)] mb-4">
+                      <p className="text-[12px] text-[#949BA4] leading-relaxed">
+                        This website is provided purely as an <strong>alternative interface</strong> featuring built-in calculators and search tools. Veteran users who prefer the traditional spreadsheet are never forced to use this website.
+                      </p>
+                    </div>
+                    <div className="mt-auto pt-2">
+                      <a href="https://docs.google.com/spreadsheets/d/1Z20NUscF9Id2Sss-osT-Xq06gz9ooikt6Kjtianeg0I/edit?gid=163005933#gid=163005933" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1.5 text-[12px] font-bold text-white bg-[#23a559] hover:bg-[#1f914e] px-4 py-2.5 rounded-[6px] transition-colors active:scale-[0.98] w-full">
+                        Access Original Google Spreadsheet <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
                   </div>
-                </div>
-              </TiltCard>
+                </TiltCard>
+              </div>
+
+              {/* COLUMN 2: TEAM'S NOTE & FEEDBACK FORM */}
+              <div className="flex flex-col gap-4">
+                <TiltCard color="#8b7a7a">
+                  <div className="p-5 md:p-6 flex flex-col h-full relative z-10">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-9 h-9 rounded-[8px] flex items-center justify-center bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] shadow-inner flex-shrink-0 overflow-hidden">
+                        <img src={teamNotesIcon} alt="" draggable={false} className="w-full h-full object-cover rounded-[8px]" />
+                      </div>
+                      <h3 className="text-[15px] font-extrabold text-[#F2F3F5] tracking-tight leading-tight uppercase">Value List Team's Note</h3>
+                    </div>
+                    <p className="text-[13px] text-[#DBDEE1] leading-[1.65] mb-4">
+                      Recently, it has been common of traders on win/loss, in our discord server, associating one bad offer/trade, which can come from a multitude of reasons, with the specific unit dropping, creating a trend which other traders follow, causing the unit to be panic traded and dropped.
+                    </p>
+                    <div className="bg-[#111214] p-3.5 rounded-[8px] border border-[rgba(250,166,26,0.2)] mb-4">
+                      <p className="text-[11.5px] text-[#FAA61A] font-medium leading-relaxed italic">
+                        "We would like to remind such behavior causes the market to be extremely unstable, causing many units to crash without any previous reason, so we from the Value List Team recommend traders to analyse the market before wrongly assuming the situation of the unit."
+                      </p>
+                    </div>
+                    <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.04)]">
+                      <span className="text-[11px] font-bold text-[#80848E] uppercase tracking-widest">Recommendation:</span>
+                      <span className="ml-2 text-[12px] text-[#DBDEE1]">Stay calm and verify trades with the analyzer!</span>
+                    </div>
+                  </div>
+                </TiltCard>
+
+                {/* DEDICATED SECTION: COMMUNITY LINKS & FEEDBACK FORM */}
+                <TiltCard color="#5865F2">
+                  <div className="p-5 md:p-6 flex flex-col h-full relative z-10">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-9 h-9 rounded-[8px] flex items-center justify-center bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] shadow-inner flex-shrink-0 text-[#5865F2] flex items-center justify-center">
+                        <MessageSquarePlus className="w-5 h-5" />
+                      </div>
+                      <h3 className="text-[15px] font-extrabold text-[#F2F3F5] tracking-tight leading-tight uppercase">Community & Feedback</h3>
+                    </div>
+                    <p className="text-[13px] text-[#DBDEE1] leading-[1.65] mb-6">
+                      Engage with the trading community on Discord or submit bug reports, data corrections, and feature suggestions directly to the team via our feedback form.
+                    </p>
+                    <div className="mt-auto flex flex-col gap-3">
+                      <a href="https://discord.gg/Q7JTvPUEM" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1.5 text-[12px] font-bold text-white bg-[#5865F2] hover:bg-[#4752C4] px-4 py-2.5 rounded-[6px] transition-colors active:scale-[0.98]">
+                        Join the Value List Discord <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                      <a href="https://docs.google.com/forms/d/e/1FAIpQLSeUAAvBHod23it13WYD8XK61K2C-BFCWJ8tGwJxA7c0sCCVvA/viewform?usp=header" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1.5 text-[12px] font-bold text-[#DBDEE1] bg-[#1E1F22] hover:bg-[#2B2D31] border border-[rgba(255,255,255,0.06)] px-4 py-2.5 rounded-[6px] transition-colors active:scale-[0.98]">
+                        <MessageSquarePlus className="w-3.5 h-3.5 text-[#5865F2]" /> Bugs, Reports & Suggestions Form
+                      </a>
+                      <p className="text-[11px] text-[#949BA4] text-center mt-1">Think any information is wrong? Make a Support Ticket or submit the form!</p>
+                    </div>
+                  </div>
+                </TiltCard>
+              </div>
+
             </div>
           </div>
         )}

@@ -37,7 +37,6 @@ export function SandboxTab({
     }
   }, [allTasksDone, hasTriggeredGraduation, startGuide, isGraduated]);
 
-  // If Aqua just finished talking, immediately pop the certificate
   useEffect(() => {
     if (isGraduated && !localStorage.getItem("astd_seen_cert")) {
       setShowCertificate(true);
@@ -79,42 +78,31 @@ export function SandboxTab({
                   <X className="w-5 h-5" />
                </button>
                
-               <div className="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 border-[#5865F2] pointer-events-none"></div>
-               <div className="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 border-[#5865F2] pointer-events-none"></div>
+               <div className="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 border-[#ed4245] pointer-events-none"></div>
+               <div className="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 border-[#ed4245] pointer-events-none"></div>
                
-               <GraduationCap className="w-16 h-16 text-[#5865F2] mb-6 drop-shadow-[0_0_15px_rgba(88,101,242,0.4)]" />
-               <h1 className="text-2xl md:text-3xl font-black text-[#F2F3F5] uppercase tracking-[0.2em] mb-2 font-serif text-shadow-sm">Certificate of Mastery</h1>
+               <h1 className="text-2xl md:text-3xl font-black text-[#F2F3F5] uppercase tracking-[0.2em] mb-2 font-serif text-shadow-sm">Official Trader License</h1>
                <p className="text-[#949BA4] text-[12px] md:text-[14px] uppercase tracking-widest mb-1">ASTD Value List Academy</p>
-               <p className="text-[#5865F2] text-[10px] md:text-[11px] font-mono tracking-widest mb-8 uppercase">Issued: {issueDate}</p>
+               <p className="text-[#ed4245] text-[10px] md:text-[11px] font-mono tracking-widest mb-8 uppercase">Issued: {issueDate}</p>
                
                <p className="text-[#DBDEE1] text-[14px] md:text-[16px] italic mb-8 max-w-lg leading-relaxed">
                  This certifies that the user has successfully completed the rigorous Trade Simulator and Technical Parsing protocol, demonstrating an elite understanding of market dynamics, liquidity forecasting, and platform UI navigation.
                </p>
-
-               <div className="bg-[#111214] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-4 mb-8 w-full max-w-lg shadow-inner flex flex-col gap-2">
-                  <div className="flex items-center justify-center gap-2 text-[#ed4245]">
-                    <Eye className="w-4 h-4" />
-                    <span className="text-[11px] font-black uppercase tracking-widest">Fire Zio's Observation</span>
-                  </div>
-                  <p className="text-[#949BA4] text-[13px] italic font-medium">
-                    "I have been observing your trades... You are no longer getting completely scammed. Your inventory is finally acceptable. I approve."
-                  </p>
-               </div>
                
                <div className="mt-2 pt-6 border-t border-[rgba(255,255,255,0.06)] w-full flex justify-between items-end relative">
                   <div className="flex items-center gap-3 md:gap-4">
                      <img 
-                       src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" 
-                       alt="Aqua" 
+                       src={FIRE_ZIO_AVATAR} 
+                       alt="Fire Zio" 
                        className="w-12 h-12 md:w-14 md:h-14 rounded-full border border-[rgba(255,255,255,0.1)] object-cover shadow-sm"
                      />
                      <div className="flex flex-col items-start md:items-start">
-                        <span className="font-serif text-xl md:text-2xl text-[#F2F3F5] italic tracking-tight">Goddess Aqua</span>
-                        <span className="text-[9px] md:text-[10px] text-[#80848E] uppercase tracking-widest mt-1">Lead Instructor</span>
+                        <span className="font-serif text-xl md:text-2xl text-[#ed4245] italic tracking-tight">Fire Zio</span>
+                        <span className="text-[9px] md:text-[10px] text-[#80848E] uppercase tracking-widest mt-1">Chief Market Analyst</span>
                      </div>
                   </div>
-                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-[3px] md:border-4 border-[#FAA61A] flex items-center justify-center text-[#FAA61A] font-black text-[10px] md:text-[12px] rotate-[-15deg] shadow-[0_0_20px_rgba(250,166,26,0.3)] select-none">
-                     OFFICIAL
+                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-[3px] md:border-4 border-[#ed4245] flex items-center justify-center text-[#ed4245] font-black text-[10px] md:text-[12px] rotate-[-15deg] shadow-[0_0_20px_rgba(237,66,69,0.3)] select-none">
+                     VERIFIED
                   </div>
                </div>
             </div>
@@ -122,36 +110,39 @@ export function SandboxTab({
       )}
 
       {isGraduated ? (
-        <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[12px] p-8 md:p-12 shadow-xl flex flex-col items-center text-center animate-fade-in max-w-3xl mx-auto mt-6">
-           <div className="w-20 h-20 bg-[rgba(88,101,242,0.1)] rounded-full flex items-center justify-center mb-6 border border-[#5865F2]/20">
-             <Award className="w-10 h-10 text-[#5865F2]" />
+        <div className="bg-[#111214] border-l-4 border-l-[#ed4245] border-y border-y-[rgba(255,255,255,0.04)] border-r border-r-[rgba(255,255,255,0.04)] rounded-r-[8px] p-6 shadow-xl flex flex-col items-start gap-4 max-w-3xl mx-auto mt-6">
+           <div className="flex items-center gap-3 w-full border-b border-[rgba(255,255,255,0.04)] pb-4">
+             <img src={FIRE_ZIO_AVATAR} className="w-12 h-12 rounded-full border-2 border-[#ed4245] object-cover shrink-0" alt="Fire Zio" />
+             <div className="flex flex-col">
+               <h2 className="text-[18px] font-black text-[#F2F3F5] uppercase tracking-wide">Academy Completed</h2>
+               <span className="text-[11px] font-bold text-[#ed4245] uppercase tracking-widest">Clearance Granted</span>
+             </div>
            </div>
-           <h2 className="text-[24px] md:text-[28px] font-black text-[#F2F3F5] uppercase tracking-wide mb-3">Academy Completed</h2>
-           <p className="text-[#B5BAC1] text-[14px] leading-relaxed mb-8 max-w-lg">
-             You've mastered the interface and the parser. Now it's time to put your market knowledge to the test. Will you survive Fire Zio's real-world trading scenarios?
+           <p className="text-[#949BA4] text-[13px] italic font-medium leading-relaxed mb-2">
+             "You've mastered the interface and the parser. Now it's time to put your market knowledge to the test. Will you survive my real-world trading scenarios?"
            </p>
            
-           <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
+           <div className="flex flex-col sm:flex-row items-center gap-4 w-full pt-4 border-t border-[rgba(255,255,255,0.04)]">
              <button 
                onClick={() => setShowCertificate(true)} 
-               className="w-full sm:w-auto px-6 py-3.5 rounded-[6px] bg-[#1E1F22] hover:bg-[#3F4147] text-[#DBDEE1] font-bold text-[13px] uppercase tracking-wider transition-colors border border-[rgba(255,255,255,0.04)] focus-visible:outline-none"
+               className="w-full sm:w-auto px-6 py-2.5 rounded-[4px] bg-[#1E1F22] hover:bg-[#2B2D31] text-[#DBDEE1] font-bold text-[12px] uppercase tracking-wider transition-colors border border-[rgba(255,255,255,0.04)] focus-visible:outline-none"
              >
                View Honors
              </button>
              <button 
                onClick={switchToSimulator} 
-               className="w-full sm:w-auto px-6 py-3.5 rounded-[6px] bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold text-[13px] uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(88,101,242,0.4)] hover:shadow-[0_0_25px_rgba(88,101,242,0.6)] flex items-center justify-center gap-2 border border-[#5865F2] focus-visible:outline-none"
+               className="w-full sm:w-auto px-6 py-2.5 rounded-[4px] bg-[#1E1F22] hover:bg-[#2B2D31] text-[#F2F3F5] font-bold text-[12px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 border border-[rgba(255,255,255,0.06)] focus-visible:outline-none"
              >
                Start Simulator <ArrowRight className="w-4 h-4" />
              </button>
            </div>
         </div>
       ) : (
-        <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[12px] p-5 md:p-6 shadow-md relative overflow-hidden animate-fade-in">
+        <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-5 md:p-6 shadow-sm relative overflow-hidden animate-fade-in">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-[rgba(255,255,255,0.04)] pb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-[8px] bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] flex items-center justify-center shadow-inner">
-                <GraduationCap className="w-5 h-5 text-[#5865F2]" />
+              <div className="w-10 h-10 rounded-[6px] bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] flex items-center justify-center shadow-inner">
+                <GraduationCap className="w-5 h-5 text-[#80848E]" />
               </div>
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">Academy</span>
@@ -181,7 +172,7 @@ export function SandboxTab({
               isDone={hasGiveGet}
               accent="#80848E"
               action={
-                <button onClick={() => handleNavigate("value-list")} className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(255,255,255,0.05)] hover:bg-[#5865F2] text-[#DBDEE1] hover:text-white rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors">
+                <button onClick={() => handleNavigate("value-list")} className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(255,255,255,0.02)] hover:bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] text-[#DBDEE1] hover:text-white rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors">
                   Value List <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               }
@@ -193,7 +184,7 @@ export function SandboxTab({
               isDone={hasPinned}
               accent="#80848E"
               action={
-                <button onClick={handleOpenCalc} className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(255,255,255,0.05)] hover:bg-[#5865F2] text-[#DBDEE1] hover:text-white rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors">
+                <button onClick={handleOpenCalc} className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(255,255,255,0.02)] hover:bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] text-[#DBDEE1] hover:text-white rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors">
                   <Calculator className="w-3.5 h-3.5" /> Open Calc
                 </button>
               }
@@ -205,7 +196,7 @@ export function SandboxTab({
               isDone={hasFiltered}
               accent="#80848E"
               action={
-                <button onClick={() => handleNavigate("value-list")} className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(255,255,255,0.05)] hover:bg-[#5865F2] text-[#DBDEE1] hover:text-white rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors">
+                <button onClick={() => handleNavigate("value-list")} className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(255,255,255,0.02)] hover:bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] text-[#DBDEE1] hover:text-white rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors">
                   Value List <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               }
@@ -217,7 +208,7 @@ export function SandboxTab({
               isDone={hasUsedParser}
               accent="#80848E"
               action={
-                <button onClick={handleOpenCalc} className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(255,255,255,0.05)] hover:bg-[#5865F2] text-[#DBDEE1] hover:text-white rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors">
+                <button onClick={handleOpenCalc} className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(255,255,255,0.02)] hover:bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] text-[#DBDEE1] hover:text-white rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors">
                   <Calculator className="w-3.5 h-3.5" /> Open Calc
                 </button>
               }
