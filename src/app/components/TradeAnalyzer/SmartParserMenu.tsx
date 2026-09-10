@@ -142,7 +142,7 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
   };
 
   return (
-    <div className="relative z-50 mx-3 md:mx-4 mt-3 p-4 bg-[#2B2D31] border border-[#1E1F22] rounded-[8px] animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.15)] flex flex-col gap-4">
+    <div className="relative z-50 mx-3 md:mx-4 mt-3 p-4 bg-[#2B2D31] border border-[#1E1F22] rounded-[8px] animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.15)] flex flex-col gap-4 max-h-[calc(92vh-140px)] overflow-y-auto custom-scrollbar">
       <div className="flex items-center justify-between">
         <span className="text-[12px] font-bold text-[#F2F3F5] uppercase tracking-wider flex items-center gap-1.5">
           <Wand2 className="w-4 h-4 text-[#5865F2]"/> Smart Parser

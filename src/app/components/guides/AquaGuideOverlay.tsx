@@ -7,8 +7,8 @@ export const AQUA_DIALOGUES: Record<string, string[]> = {
   main: [
     "",
     "Listen up, you shut-in NEET! I, the beautiful and wise Goddess Aqua, have descended to save you from getting !!completely scammed!!! First, click the ^^Value List^^ channel in the sidebar so we can begin!",
-    "Hmph, even someone with your pitiful intelligence stat can do this part. Let's build a mock trade. If you're on a PC, ^^Left-click^^ a unit for your *Give* side, or ^^Right-click^^ for your *Get* side! On mobile? Just ^^tap^^ the card! !!Don't mess this up!!!",
-    "!!W-Wait! Don't just accept a trade blindly!!! Are you trying to lose all your value?! Use the divine tool I've graciously bestowed upon you! Click that glowing ^^Calculator^^ button right now to open the Analyzer!",
+    "Hmph, even someone with your pitiful intelligence stat can do this part. Let's build a mock trade. ^^Click or tap^^ any unit card to open its menu, then toss it into your *Give* or *Get* side! !!Don't mess this up!!!",
+    "!!W-Wait! Don't just accept a trade blindly!!! Are you trying to lose all your value?! Use the divine tool I've graciously bestowed upon you! Click that glowing ^^Calculator^^ button up top—or tap the ^^Trade Bar^^ at the bottom on your phone—to open the Analyzer!",
     "See?! It instantly breaks down the value differences and market momentum! But wait—you're not done! I've enrolled you in the Academy to finish your training. Go complete your Graduation Checklist!"
   ],
   channels: [
@@ -60,7 +60,9 @@ export function AquaGuideOverlay({
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [boxShake, setBoxShake] = useState(false);
+  
   const fullTextRef = useRef("");
+  const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!guideState.type || guideState.step === 0) return;
@@ -75,21 +77,27 @@ export function AquaGuideOverlay({
     setDisplayedText("");
     setIsTyping(true);
 
+    // Clear any existing intervals before starting a new one
+    if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+
     let i = 0;
-    const interval = setInterval(() => {
+    typingIntervalRef.current = setInterval(() => {
       setDisplayedText(fullText.substring(0, i + 1));
       i++;
       if (i >= fullText.length) {
-        clearInterval(interval);
+        if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
         setIsTyping(false);
       }
     }, 22);
 
-    return () => clearInterval(interval);
+    return () => {
+      if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+    };
   }, [guideState]);
 
   const handleSkipOrFastForward = () => {
     if (isTyping) {
+      if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
       setDisplayedText(fullTextRef.current);
       setIsTyping(false);
     }
@@ -130,10 +138,24 @@ export function AquaGuideOverlay({
   let actionPrompt = "";
   if (!isTyping && guideState.type === "main") {
     if (guideState.step === 1) actionPrompt = "Click 'Value List' in the sidebar";
-    if (guideState.step === 2) actionPrompt = "Add any unit to your trade";
-    if (guideState.step === 3) actionPrompt = "Click the Calculator button";
+    if (guideState.step === 2) actionPrompt = "Click a unit card to add it";
+    if (guideState.step === 3) actionPrompt = "Open the Analyzer";
   }
   const needsInteraction = !!actionPrompt;
+
+  // Dynamic Alignment Logic for Mobile
+  let dynamicAlignment = "items-center md:items-end pb-0 md:pb-12";
+  if (guideState.type === "main") {
+    if (guideState.step === 1 || guideState.step === 2) {
+      dynamicAlignment = "items-end pb-[90px] md:pb-12"; // Place above bottom Trade Bar
+    } else {
+      dynamicAlignment = "items-center md:items-end md:pb-12"; // Center
+    }
+  } else if (guideState.type === "filters" || guideState.type === "stats" || guideState.type === "channels") {
+    dynamicAlignment = "items-end pb-[90px] md:pb-12"; // Avoid top headers
+  } else if (guideState.type === "dictionary" || guideState.type === "management" || guideState.type === "advanced") {
+    dynamicAlignment = "items-start pt-[110px] md:pt-0 md:items-end md:pb-12"; // Avoid bottom sheet
+  }
 
   return (
     <>
@@ -172,25 +194,22 @@ export function AquaGuideOverlay({
         onClick={handleSkipOrFastForward} 
       />
 
-      <div className="fixed inset-0 z-[100005] pointer-events-none flex items-end justify-center pb-8 md:pb-12 px-4">
-        <div className={`relative w-full max-w-[800px] flex items-end drop-shadow-2xl animate-slide-up ${needsInteraction ? 'pointer-events-none' : 'pointer-events-auto'}`} onClick={handleSkipOrFastForward}>
+      {/* Dynamic Overlay Container */}
+      <div className={`fixed inset-0 z-[100005] pointer-events-none flex justify-center px-4 md:px-8 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${dynamicAlignment}`}>
+        <div className={`relative w-full max-w-[700px] flex items-center md:items-end drop-shadow-2xl animate-slide-up ${needsInteraction ? 'pointer-events-none' : 'pointer-events-auto'}`} onClick={handleSkipOrFastForward}>
 
-           {/* Integrated Aqua Sprite with CSS Mask Gradient */}
-           <div className="hidden md:block w-[240px] shrink-0 relative z-20 pointer-events-none animate-aqua-float">
+           {/* Integrated Aqua Sprite - NO CSS MASK, FULL IMAGE */}
+           <div className="hidden md:block relative z-20 pointer-events-none animate-aqua-float shrink-0 -mr-6 -mb-2">
               <img 
                  src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" 
-                 className="absolute bottom-[-10px] right-[-20px] w-[300px] max-w-none object-contain drop-shadow-2xl"
-                 style={{ 
-                   WebkitMaskImage: 'linear-gradient(to bottom, black 65%, transparent 95%)', 
-                   maskImage: 'linear-gradient(to bottom, black 65%, transparent 95%)' 
-                 }}
+                 className="w-[220px] object-contain drop-shadow-[10px_10px_20px_rgba(0,0,0,0.5)]"
                  alt="Aqua"
               />
            </div>
 
            {/* Discord-Themed Dialog Box */}
            <div 
-             className={`bg-[#2B2D31] border border-[rgba(255,255,255,0.06)] p-6 md:p-8 rounded-[12px] flex-1 relative z-10 min-h-[160px] flex flex-col transition-all duration-300 pointer-events-auto shadow-[0_20px_60px_rgba(0,0,0,0.6)] ${boxShake ? 'animate-box-shake ring-2 ring-[#ed4245]/50' : ''}`}
+             className={`bg-[#2B2D31] border border-[rgba(255,255,255,0.06)] p-5 sm:p-6 md:p-8 rounded-[12px] flex-1 relative z-10 w-full min-h-[160px] flex flex-col transition-all duration-300 pointer-events-auto shadow-[0_20px_60px_rgba(0,0,0,0.6)] ${boxShake ? 'animate-box-shake ring-2 ring-[#ed4245]/50' : ''}`}
            >
 
              {/* Integrated Nameplate */}
@@ -214,27 +233,28 @@ export function AquaGuideOverlay({
              </div>
 
              {/* Dialogue Text */}
-             <p className="text-[#B5BAC1] text-[15px] md:text-[16px] leading-[1.7] min-h-[70px] pt-2 select-none">
+             <p className="text-[#B5BAC1] text-[14px] sm:text-[15px] md:text-[16px] leading-[1.7] min-h-[70px] pt-2 select-none">
                {renderDialogue(displayedText)}
                {isTyping && <span className="inline-block w-1.5 h-4 bg-[#5865F2] animate-pulse ml-1 align-middle" />}
              </p>
 
              {/* Footer Actions */}
-             <div className="mt-5 pt-4 border-t border-[rgba(255,255,255,0.04)] flex items-center justify-between">
-               <div className="flex-1 flex items-center gap-3">
+             <div className="mt-5 pt-4 border-t border-[rgba(255,255,255,0.04)] flex items-center justify-between gap-3">
+               <div className="flex-1 flex items-center gap-3 min-w-0">
 
                  {/* State 1: Typing Indicator */}
                  {isTyping && (
-                   <span className="text-[12px] font-medium text-[#80848E] flex items-center gap-1.5 animate-pulse cursor-pointer">
-                     <Zap className="w-3.5 h-3.5 text-[#5865F2]" /> Click anywhere to skip text...
+                   <span className="text-[11px] sm:text-[12px] font-medium text-[#80848E] flex items-center gap-1.5 animate-pulse cursor-pointer truncate">
+                     <Zap className="w-3.5 h-3.5 text-[#5865F2] shrink-0" /> 
+                     <span className="truncate">Click anywhere to skip text...</span>
                    </span>
                  )}
 
                  {/* State 2: Requires UI Interaction (Event-Driven) */}
                  {needsInteraction && !isTyping && (
-                   <div className="flex items-center gap-2 text-[#FAA61A] text-[12.5px] font-bold tracking-wide animate-pulse">
-                     <MousePointer2 className="w-4 h-4" />
-                     {actionPrompt}...
+                   <div className="flex items-center gap-1.5 sm:gap-2 text-[#FAA61A] text-[11px] sm:text-[12.5px] font-bold tracking-wide animate-pulse truncate">
+                     <MousePointer2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                     <span className="truncate">{actionPrompt}...</span>
                    </div>
                  )}
 
@@ -242,9 +262,9 @@ export function AquaGuideOverlay({
                  {!needsInteraction && !isTyping && (
                    <button 
                      onClick={(e) => { e.stopPropagation(); handleEndMainGuide(); }} 
-                     className="group flex items-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-2 px-5 rounded-[6px] transition-all duration-300 active:scale-95 shadow-md focus-visible:outline-none animate-fade-in"
+                     className="group flex items-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-2 px-4 sm:px-5 rounded-[6px] transition-all duration-300 active:scale-95 shadow-md focus-visible:outline-none animate-fade-in shrink-0"
                    >
-                     <span>{isMainStep4 ? "Go to Academy" : guideState.type === "academy_grad" ? "Praise Aqua! (Finish)" : "Got it!"}</span>
+                     <span className="text-[13px] sm:text-[14px]">{isMainStep4 ? "Go to Academy" : guideState.type === "academy_grad" ? "Praise Aqua! (Finish)" : "Got it!"}</span>
                      <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                    </button>
                  )}
@@ -253,7 +273,7 @@ export function AquaGuideOverlay({
                {/* Optional Skip Button */}
                <button 
                  onClick={(e) => { e.stopPropagation(); onEndGuide(); }} 
-                 className="text-[#80848E] hover:text-[#DBDEE1] text-[11.5px] font-bold uppercase tracking-wider transition-colors px-3 py-1.5 rounded-[4px] hover:bg-[rgba(255,255,255,0.05)] focus-visible:outline-none"
+                 className="text-[#80848E] hover:text-[#DBDEE1] text-[10px] sm:text-[11.5px] font-bold uppercase tracking-wider transition-colors px-2 sm:px-3 py-1.5 rounded-[4px] hover:bg-[rgba(255,255,255,0.05)] focus-visible:outline-none shrink-0"
                >
                  Skip
                </button>

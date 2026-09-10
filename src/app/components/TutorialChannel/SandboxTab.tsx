@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { GraduationCap, Award, X, Eye } from "lucide-react";
+import { GraduationCap, Award, X, Eye, ArrowRight, Calculator } from "lucide-react";
 import { GuideType } from "../guides/AquaGuideOverlay";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { MissionCard } from "./TutorialUI";
@@ -26,15 +26,36 @@ export function SandboxTab({
 
   const completedCount = (hasGiveGet ? 1 : 0) + (hasPinned ? 1 : 0) + (hasFiltered ? 1 : 0) + (hasUsedParser ? 1 : 0);
   const allTasksDone = completedCount === 4;
+  const isGraduated = !!completedGuides["academy_grad"];
   
   const issueDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
   useEffect(() => {
-    if (allTasksDone && !hasTriggeredGraduation && !completedGuides["academy_grad"]) {
+    if (allTasksDone && !hasTriggeredGraduation && !isGraduated) {
       setHasTriggeredGraduation(true);
       startGuide("academy_grad");
     }
-  }, [allTasksDone, hasTriggeredGraduation, startGuide, completedGuides]);
+  }, [allTasksDone, hasTriggeredGraduation, startGuide, isGraduated]);
+
+  // If Aqua just finished talking, immediately pop the certificate
+  useEffect(() => {
+    if (isGraduated && !localStorage.getItem("astd_seen_cert")) {
+      setShowCertificate(true);
+      localStorage.setItem("astd_seen_cert", "true");
+    }
+  }, [isGraduated]);
+
+  const handleNavigate = (channel: string) => {
+    window.document.dispatchEvent(new CustomEvent('navigate', { detail: channel }));
+  };
+
+  const handleOpenCalc = () => {
+    window.dispatchEvent(new Event("open-analyzer"));
+  };
+
+  const switchToSimulator = () => {
+    window.dispatchEvent(new CustomEvent("set-tutorial-tab", { detail: "simulator" }));
+  };
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl mx-auto pb-8 font-sans select-none">
@@ -58,7 +79,6 @@ export function SandboxTab({
                   <X className="w-5 h-5" />
                </button>
                
-               {/* Decorative border corners */}
                <div className="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 border-[#5865F2] pointer-events-none"></div>
                <div className="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 border-[#5865F2] pointer-events-none"></div>
                
@@ -71,7 +91,6 @@ export function SandboxTab({
                  This certifies that the user has successfully completed the rigorous Trade Simulator and Technical Parsing protocol, demonstrating an elite understanding of market dynamics, liquidity forecasting, and platform UI navigation.
                </p>
 
-               {/* Fire Zio Dialogue Block */}
                <div className="bg-[#111214] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-4 mb-8 w-full max-w-lg shadow-inner flex flex-col gap-2">
                   <div className="flex items-center justify-center gap-2 text-[#ed4245]">
                     <Eye className="w-4 h-4" />
@@ -102,81 +121,110 @@ export function SandboxTab({
          </div>
       )}
 
-      <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[12px] p-5 md:p-6 shadow-md relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-[rgba(255,255,255,0.04)] pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[8px] bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] flex items-center justify-center shadow-inner">
-              <GraduationCap className="w-5 h-5 text-[#5865F2]" />
-            </div>
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">Academy</span>
-              <h2 className="text-[17px] font-black text-[#F2F3F5] tracking-tight">Graduation Checklist</h2>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 self-end sm:self-auto">
-            <div className="text-right">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#80848E] block mb-1">Progress</span>
-              <span className="text-[13px] font-mono font-black text-[#DBDEE1]">{completedCount}/4 Completed</span>
-            </div>
-            <div className="w-28 h-2 bg-[#1E1F22] rounded-full overflow-hidden border border-[rgba(255,255,255,0.04)] shadow-inner">
-              <div
-                className="h-full bg-[#5865F2] rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${(completedCount / 4) * 100}%` }}
-              />
-            </div>
-          </div>
+      {isGraduated ? (
+        <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[12px] p-8 md:p-12 shadow-xl flex flex-col items-center text-center animate-fade-in max-w-3xl mx-auto mt-6">
+           <div className="w-20 h-20 bg-[rgba(88,101,242,0.1)] rounded-full flex items-center justify-center mb-6 border border-[#5865F2]/20">
+             <Award className="w-10 h-10 text-[#5865F2]" />
+           </div>
+           <h2 className="text-[24px] md:text-[28px] font-black text-[#F2F3F5] uppercase tracking-wide mb-3">Academy Completed</h2>
+           <p className="text-[#B5BAC1] text-[14px] leading-relaxed mb-8 max-w-lg">
+             You've mastered the interface and the parser. Now it's time to put your market knowledge to the test. Will you survive Fire Zio's real-world trading scenarios?
+           </p>
+           
+           <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
+             <button 
+               onClick={() => setShowCertificate(true)} 
+               className="w-full sm:w-auto px-6 py-3.5 rounded-[6px] bg-[#1E1F22] hover:bg-[#3F4147] text-[#DBDEE1] font-bold text-[13px] uppercase tracking-wider transition-colors border border-[rgba(255,255,255,0.04)] focus-visible:outline-none"
+             >
+               View Honors
+             </button>
+             <button 
+               onClick={switchToSimulator} 
+               className="w-full sm:w-auto px-6 py-3.5 rounded-[6px] bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold text-[13px] uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(88,101,242,0.4)] hover:shadow-[0_0_25px_rgba(88,101,242,0.6)] flex items-center justify-center gap-2 border border-[#5865F2] focus-visible:outline-none"
+             >
+               Start Simulator <ArrowRight className="w-4 h-4" />
+             </button>
+           </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <MissionCard
-            title="1. First Trade"
-            instruction="Add any unit to Give or Get."
-            hint="Go to the Value List, left/right click a unit."
-            isDone={hasGiveGet}
-            accent="#80848E"
-          />
-          <MissionCard
-            title="2. Vault Lockout"
-            instruction="Pin an active card inside the Calculator."
-            hint="Click the Pin icon on an active trade card."
-            isDone={hasPinned}
-            accent="#80848E"
-          />
-          <MissionCard
-            title="3. Market Analyst"
-            instruction="Filter the Value List by Tier or Status."
-            hint="Use the top dropdowns in the Value List."
-            isDone={hasFiltered}
-            accent="#80848E"
-          />
-          <MissionCard
-            title="4. Advanced Telecom"
-            instruction="Import a trade using the Smart Parser."
-            hint="Click the Wand icon in the Calculator."
-            isDone={hasUsedParser}
-            accent="#80848E"
-          />
-        </div>
-
-        {allTasksDone && (
-          <div className="mt-4 p-4 rounded-[8px] bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-fade-in">
-            <div className="flex items-center gap-3.5">
-              <img src={FIRE_ZIO_AVATAR} className="w-10 h-10 rounded-full border border-[#ed4245] object-cover shrink-0 bg-[#1e1f22]" alt="Fire Zio" />
-              <div className="flex flex-col">
-                <span className="text-[13px] font-black text-[#ed4245] uppercase tracking-wide block">Fire Zio Approved</span>
-                <span className="text-[12px] text-[#949BA4] italic">"You survived the academy. Claim your license before I change my mind."</span>
+      ) : (
+        <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[12px] p-5 md:p-6 shadow-md relative overflow-hidden animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-[rgba(255,255,255,0.04)] pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-[8px] bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] flex items-center justify-center shadow-inner">
+                <GraduationCap className="w-5 h-5 text-[#5865F2]" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">Academy</span>
+                <h2 className="text-[17px] font-black text-[#F2F3F5] tracking-tight">Graduation Checklist</h2>
               </div>
             </div>
-            <button
-              onClick={() => setShowCertificate(true)}
-              className="w-full sm:w-auto px-6 py-2.5 rounded-[4px] bg-[#5865F2] hover:bg-[#4752C4] text-white text-[12px] font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(88,101,242,0.4)] transition-all active:scale-95 shrink-0 border border-[#5865F2]"
-            >
-              View Honors
-            </button>
+
+            <div className="flex items-center gap-3 self-end sm:self-auto">
+              <div className="text-right">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#80848E] block mb-1">Progress</span>
+                <span className="text-[13px] font-mono font-black text-[#DBDEE1]">{completedCount}/4 Completed</span>
+              </div>
+              <div className="w-28 h-2 bg-[#1E1F22] rounded-full overflow-hidden border border-[rgba(255,255,255,0.04)] shadow-inner">
+                <div
+                  className="h-full bg-[#5865F2] rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${(completedCount / 4) * 100}%` }}
+                />
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <MissionCard
+              title="1. First Trade"
+              instruction="Add any unit to Give or Get."
+              hint="Click or tap any unit card to open its menu."
+              isDone={hasGiveGet}
+              accent="#80848E"
+              action={
+                <button onClick={() => handleNavigate("value-list")} className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(255,255,255,0.05)] hover:bg-[#5865F2] text-[#DBDEE1] hover:text-white rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors">
+                  Value List <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              }
+            />
+            <MissionCard
+              title="2. Vault Lockout"
+              instruction="Pin an active card inside the Calculator."
+              hint="Click the Pin icon on an active trade card."
+              isDone={hasPinned}
+              accent="#80848E"
+              action={
+                <button onClick={handleOpenCalc} className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(255,255,255,0.05)] hover:bg-[#5865F2] text-[#DBDEE1] hover:text-white rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors">
+                  <Calculator className="w-3.5 h-3.5" /> Open Calc
+                </button>
+              }
+            />
+            <MissionCard
+              title="3. Market Analyst"
+              instruction="Filter the Value List by Tier or Status."
+              hint="Use the dropdowns/buttons at the top of the Value List."
+              isDone={hasFiltered}
+              accent="#80848E"
+              action={
+                <button onClick={() => handleNavigate("value-list")} className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(255,255,255,0.05)] hover:bg-[#5865F2] text-[#DBDEE1] hover:text-white rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors">
+                  Value List <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              }
+            />
+            <MissionCard
+              title="4. Advanced Telecom"
+              instruction="Import a trade using the Smart Parser."
+              hint="Click the Wand icon in the Calculator."
+              isDone={hasUsedParser}
+              accent="#80848E"
+              action={
+                <button onClick={handleOpenCalc} className="flex items-center gap-1.5 px-3 py-1.5 bg-[rgba(255,255,255,0.05)] hover:bg-[#5865F2] text-[#DBDEE1] hover:text-white rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors">
+                  <Calculator className="w-3.5 h-3.5" /> Open Calc
+                </button>
+              }
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

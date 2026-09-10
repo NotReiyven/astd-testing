@@ -163,6 +163,7 @@ export function TradeAnalyzerPanel({
 
   const onTouchStart = (e: React.TouchEvent) => {
     if (!isMobile || !isOpen) return;
+    if ((e.target as HTMLElement).closest('button, input, textarea, a, select')) return;
     setTouchStartY(e.touches[0].clientY);
     if (sheetRef.current) sheetRef.current.style.transition = 'none';
   };
@@ -195,24 +196,26 @@ export function TradeAnalyzerPanel({
   const isMainStep4 = guideState?.type === "main" && guideState?.step === 4;
   const isWandTarget = guideState?.type === "dictionary" || guideState?.type === "advanced";
   const isClearTarget = guideState?.type === "management";
+  const isElevated = isMainStep4 || guideState?.type === "advanced" || guideState?.type === "dictionary" || guideState?.type === "management";
 
   const renderCalculatorContent = () => (
     <>
-      <div className="flex-shrink-0 flex items-center gap-2 px-3 md:px-4 py-3 md:py-4 border-b border-[rgba(0,0,0,0.28)]">
-        {isMobile && (
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-[rgba(255,255,255,0.2)] rounded-full pointer-events-none" />
-        )}
-        
+      <div 
+        className="flex-shrink-0 flex items-center gap-2 px-3 md:px-4 py-3 md:py-4 border-b border-[rgba(0,0,0,0.28)] relative z-20"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         <div className="w-7 h-7 flex-shrink-0 rounded-[6px] flex items-center justify-center bg-[#1E1F22] border border-[rgba(255,255,255,0.04)]">
           <Calculator className="w-3.5 h-3.5 text-[#DBDEE1]" />
         </div>
-        <span className="text-[14px] md:text-[15px] font-bold flex-1 text-[#F2F3F5] truncate">Trade Analyzer</span>
+        <span className="text-[14px] md:text-[15px] font-bold flex-1 text-[#F2F3F5] truncate select-none">Trade Analyzer</span>
 
         <button 
           onClick={() => { setSmartMenuOpen(!smartMenuOpen); startGuide("dictionary"); }} 
-          className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+          className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-30 pointer-events-auto ${
             isWandTarget 
-              ? "bg-[#5865F2] text-white shadow-[0_0_20px_rgba(88,101,242,0.8)] ring-2 ring-[#5865F2] z-[100005] relative animate-pulse" 
+              ? "bg-[#5865F2] text-white shadow-[0_0_20px_rgba(88,101,242,0.8)] ring-2 ring-[#5865F2] z-[100005] animate-pulse" 
               : smartMenuOpen 
                 ? "bg-[rgba(88,101,242,0.15)] text-[#5865F2]" 
                 : "text-[#B5BAC1] hover:bg-[rgba(255,255,255,0.05)] hover:text-[#F2F3F5]"
@@ -223,16 +226,20 @@ export function TradeAnalyzerPanel({
         </button>
         <button 
           onClick={handleGlobalClear} 
-          className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+          className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-30 pointer-events-auto ${
             isClearTarget 
-              ? "bg-[#ed4245] text-white shadow-[0_0_20px_rgba(237,66,69,0.8)] ring-2 ring-[#ed4245] z-[100005] relative animate-pulse" 
+              ? "bg-[#ed4245] text-white shadow-[0_0_20px_rgba(237,66,69,0.8)] ring-2 ring-[#ed4245] z-[100005] animate-pulse" 
               : "text-[#B5BAC1] hover:bg-[rgba(255,255,255,0.05)] hover:text-[#F2F3F5]"
           }`} 
           title="Clear trade"
         >
           <RotateCcw className="w-3.5 h-3.5" />
         </button>
-        <button onClick={handleShare} className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" style={{ background: copied ? "#23a559" : "#5865F2", fontFamily: "'Inter', sans-serif" }}>
+        <button 
+          onClick={handleShare} 
+          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-30 pointer-events-auto" 
+          style={{ background: copied ? "#23a559" : "#5865F2", fontFamily: "'Inter', sans-serif" }}
+        >
           {copied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
           {copied ? "Copied!" : "Share"}
         </button>
@@ -240,7 +247,7 @@ export function TradeAnalyzerPanel({
         {(!isMobile && onClose) && (
           <button 
             onClick={closeSheet} 
-            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] text-[#B5BAC1] hover:bg-[rgba(237,66,69,0.1)] hover:text-[#ed4245] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ed4245]" 
+            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] text-[#B5BAC1] hover:bg-[rgba(237,66,69,0.1)] hover:text-[#ed4245] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ed4245] relative z-30 pointer-events-auto" 
             title="Close Analyzer"
           >
             <X className="w-4 h-4" />
@@ -395,18 +402,22 @@ export function TradeAnalyzerPanel({
         {/* Mobile Full Expanded Sheet */}
         <div 
           ref={sheetRef}
-          className="fixed left-0 right-0 bottom-0 z-[100] bg-[#2B2D31] flex flex-col shadow-[0_-12px_40px_rgba(0,0,0,0.8)] rounded-t-[16px] overflow-hidden transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+          className={`fixed left-0 right-0 bottom-0 bg-[#2B2D31] flex flex-col shadow-[0_-12px_40px_rgba(0,0,0,0.8)] rounded-t-[16px] overflow-hidden transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isElevated ? "!z-[100000]" : "z-[100]"}`}
           style={{ 
             height: '92vh',
             transform: isOpen ? 'translateY(0%)' : 'translateY(100%)'
           }}
         >
+          {/* Dedicated Grab Bar (No longer overlaps the action buttons) */}
           <div 
-            className="w-full h-8 absolute top-0 left-0 right-0 z-10 cursor-grab active:cursor-grabbing touch-none"
+            className="w-full pt-3 pb-1 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none flex-shrink-0 select-none"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
-          />
+          >
+            <div className="w-12 h-1.5 bg-[rgba(255,255,255,0.2)] rounded-full pointer-events-none" />
+          </div>
+
           {renderCalculatorContent()}
         </div>
       </>

@@ -1,5 +1,5 @@
 import { useState, useEffect, Suspense, lazy, useRef, useCallback } from "react";
-import { Hash, Check } from "lucide-react";
+import { Hash, Check, GraduationCap } from "lucide-react";
 import { FilterKey, PopupUnit } from "../types";
 import { useStickyState, isBoolean, isNonEmptyString } from "../hooks/useStickyState";
 import { AquaGuideOverlay, GuideType } from "./components/guides/AquaGuideOverlay";
@@ -36,6 +36,7 @@ export default function App() {
 
   const giveItems = useTradeStore((s) => s.giveItems);
   const getItems = useTradeStore((s) => s.getItems);
+  const pinnedIds = useTradeStore((s) => s.pinnedIds);
 
   const [activeChannel, setActiveChannel] = useStickyState("home", "astd_channel", isNonEmptyString);
   const [tutorialTab, setTutorialTab] = useState<"sandbox" | "simulator" | "theory" | "dictionary">("sandbox");
@@ -53,18 +54,45 @@ export default function App() {
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
 
   const touchStartPos = useRef<{x: number, y: number} | null>(null);
+  
+  // Toasts
   const [toast, setToast] = useState<{ id: number; unitName: string; type: "give" | "get" } | null>(null);
-  const activeItemsCount = giveItems.reduce((acc, c) => acc + c.qty, 0) + getItems.reduce((acc, c) => acc + c.qty, 0);
+  const [academyToast, setAcademyToast] = useState<{ step: number } | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+  const prevCompletedCount = useRef(0);
 
+  const activeItemsCount = giveItems.reduce((acc, c) => acc + c.qty, 0) + getItems.reduce((acc, c) => acc + c.qty, 0);
   const isDictionaryActive = activeChannel === "tutorial" && tutorialTab === "dictionary";
 
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
+    setIsMounted(true);
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Global Academy Task Watcher
+  useEffect(() => {
+    const currentCompletedCount = (
+      (giveItems.length > 0 || getItems.length > 0 ? 1 : 0) + 
+      (pinnedIds.length > 0 ? 1 : 0) + 
+      (completedGuides.hasFiltered ? 1 : 0) + 
+      (completedGuides.hasUsedParser ? 1 : 0)
+    );
+
+    if (isMounted && currentCompletedCount > prevCompletedCount.current && currentCompletedCount < 4) {
+      setAcademyToast({ step: currentCompletedCount });
+    }
+    prevCompletedCount.current = currentCompletedCount;
+  }, [giveItems.length, getItems.length, pinnedIds.length, completedGuides.hasFiltered, completedGuides.hasUsedParser, isMounted]);
+
+  useEffect(() => {
+    if (!academyToast) return;
+    const timer = setTimeout(() => setAcademyToast(null), 3500);
+    return () => clearTimeout(timer);
+  }, [academyToast]);
 
   useEffect(() => {
     if (globalSearchQuery.trim().length > 0) {
@@ -140,7 +168,7 @@ export default function App() {
     const handleTradeAdded = (e: Event) => {
       const customEvent = e as CustomEvent<{ name: string; type: "give" | "get" }>;
       if (!customEvent.detail) return;
-      triggerHaptic('medium'); // HAPTIC FEEDBACK: Unit added
+      triggerHaptic('medium'); 
       setToast({ id: Date.now(), unitName: customEvent.detail.name, type: customEvent.detail.type });
       setGuideState(prev => (prev.type === "main" && prev.step === 2) ? { ...prev, step: 3 } : prev);
     };
@@ -270,7 +298,7 @@ export default function App() {
   const isMainStep4 = guideState.type === "main" && guideState.step === 4;
 
   const sidebarZ = isMainStep1 || guideState.type === "channels" ? "!z-[100000] shadow-[15px_0_50px_rgba(0,0,0,0.8)]" : "z-50";
-  const mainContentZ = isMainStep2 || guideState.type === "developer" || guideState.type === "filters" || guideState.type === "stats" ? "!z-[100000] relative shadow-[0_0_50px_rgba(0,0,0,0.8)]" : "z-10";
+  const mainContentZ = isMainStep2 || guideState.type === "developer" || guideState.type === "filters" || guideState.type === "stats" ? "!z-[100000] relative shadow-[0_0_50px_rgba(0,0,0,0.8)]" : "z-auto";
   const calcHeaderZ = helpMenuOpen || isMainStep3 ? "!z-[99999] shadow-[0_0_50px_rgba(0,0,0,0.8)]" : "z-50";
   const analyzerZ = isMainStep4 || guideState.type === "advanced" || guideState.type === "dictionary" || guideState.type === "management" ? "!z-[100000] shadow-[-20px_0_50px_rgba(0,0,0,0.8)]" : "z-50";
 
@@ -377,20 +405,31 @@ export default function App() {
           {isRosterOpen && <div className="md:hidden fixed inset-0 bg-black/60 z-40 animate-fade-in" onClick={() => setIsRosterOpen(false)} />}
 
           <div 
-            className={`fixed bottom-[140px] md:bottom-8 left-1/2 -translate-x-1/2 pointer-events-none transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${guideState.type ? 'z-[100002]' : 'z-[9999]'} ${
-              toast ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-6 scale-90"
-            }`}
+            className={`fixed bottom-[140px] md:bottom-8 left-1/2 -translate-x-1/2 pointer-events-none transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col gap-2 items-center ${guideState.type ? 'z-[100002]' : 'z-[9999]'}`}
           >
-            {toast && (
-              <div className="flex items-center gap-3 px-5 py-3.5 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.6)] border border-[rgba(255,255,255,0.1)] bg-[#2B2D31]/95 backdrop-blur-md">
-                 <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 bg-[#23a559] shadow-sm">
-                   <Check className="w-4 h-4 text-white" />
+            {academyToast && (
+              <div className="flex items-center gap-3 px-5 py-3.5 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.6)] border border-[#5865F2]/30 bg-[#2B2D31]/95 backdrop-blur-md animate-slide-up">
+                 <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 bg-[#5865F2] shadow-sm">
+                   <GraduationCap className="w-4 h-4 text-white" />
                  </div>
                  <span className="text-[#F2F3F5] text-[13.5px] font-medium tracking-wide whitespace-nowrap">
-                   Added <strong className="font-black text-white">{toast.unitName}</strong> to {toast.type === "give" ? "Give" : "Get"}
+                   Academy Task Complete! <strong className="font-black text-[#5865F2]">({academyToast.step}/4)</strong>
                  </span>
               </div>
             )}
+            
+            <div className={`transition-all duration-300 ${toast ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-6 scale-90"}`}>
+              {toast && (
+                <div className="flex items-center gap-3 px-5 py-3.5 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.6)] border border-[rgba(255,255,255,0.1)] bg-[#2B2D31]/95 backdrop-blur-md">
+                   <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 bg-[#23a559] shadow-sm">
+                     <Check className="w-4 h-4 text-white" />
+                   </div>
+                   <span className="text-[#F2F3F5] text-[13.5px] font-medium tracking-wide whitespace-nowrap">
+                     Added <strong className="font-black text-white">{toast.unitName}</strong> to {toast.type === "give" ? "Give" : "Get"}
+                   </span>
+                </div>
+              )}
+            </div>
           </div>
 
           <div 
@@ -403,7 +442,7 @@ export default function App() {
           </div>
 
           <div className={`flex-1 flex flex-col min-w-0 bg-[#313338] md:pb-0 pb-[80px] ${mainContentZ}`}>
-            <div className="relative z-40">
+            <div className={`relative ${helpMenuOpen || isMainStep3 ? '!z-[100002] shadow-[0_20px_50px_rgba(0,0,0,0.8)]' : 'z-40'}`}>
               <TopBar 
                 calcHeaderZ={calcHeaderZ}
                 isRosterOpen={isRosterOpen}
