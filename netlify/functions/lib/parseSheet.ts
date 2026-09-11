@@ -32,7 +32,7 @@ const COLOR_TARGETS = [
   { tag: "stable", r: 255, g: 242, b: 204 },
   { tag: "stable", r: 255, g: 229, b: 153 },
   { tag: "stable", r: 207, g: 226, b: 243 },
-  { tag: "stable", r: 234, g: 209, b: 220 }, // FIXED: B-Tier Pastel Pink is now mapped to Stable
+  { tag: "stable", r: 234, g: 209, b: 220 },
   { tag: "stable", r: 255, g: 255, b: 255 }
 ];
 
@@ -206,8 +206,21 @@ export function parseSpreadsheet(data: SpreadsheetData) {
       let parsedTag = getTagFromColor(nameColor);
       if (parsedTag === "stable") parsedTag = getTagFromColor(valColor);
 
+      // --- CRITICAL FIX START ---
+      // These tiers do not have a Status column, but their default row background colors 
+      // falsely match the RGB values for "Varies" (purple) and "Black-Marketed" (grey).
+      if (tierKey === "Oddities" && parsedTag === "varies") {
+        parsedTag = "stable";
+      }
+      if ((tierKey === "Pure" || tierKey === "Untiered") && parsedTag === "black-marketed") {
+        parsedTag = "stable";
+      }
+      // --- CRITICAL FIX END ---
+
       const rawStatusText = colMap.statusTxt !== -1 ? cleanText(getCellStr(colMap.statusTxt).toLowerCase().trim().replace(" ", "-")) : "";
       const validStatuses = ["stable", "unstable", "rising", "dropping", "inflated", "deflated", "varies", "lowballed", "highballed", "hyped", "gatekept", "black-marketed"];
+      
+      // Explicit text overrides the background color logic
       const unitStatus = validStatuses.includes(rawStatusText) ? rawStatusText : parsedTag;
 
       const secondaryTagsSet = new Set<string>();

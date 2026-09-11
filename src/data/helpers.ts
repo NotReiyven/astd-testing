@@ -87,21 +87,43 @@ export function getObtainability(unit?: MasterUnit): "OBT" | "UNOB" {
   const name = (unit.name || "").toLowerCase();
   const subtitle = (unit.subtitle || "").toLowerCase();
   const id = (unit.id || "").toLowerCase();
+  const subCat = (unit.subCategory || "").toLowerCase();
 
-  if (note.includes("(obtainable)") || note.includes("(obtainable from")) return "OBT";
-  if (id.startsWith("gp-") || name.includes("gamepass") || name.includes("star pass") || name.includes("unit mount") || note.includes("gamepass")) return "OBT";
+  // 1. Explicit notice overrides
+  if (note.includes("(unobtainable)") || note.includes("[unobtainable]") || note.includes("unobtainable") || note.includes("retired") || note.includes("unob")) return "UNOB";
+  if (note.includes("(obtainable)") || note.includes("[obtainable]")) return "OBT";
 
-  const isSkin = unit.subCategory?.toLowerCase().includes("skin") || subtitle.includes("skin") || note.includes("skin");
+  // 2. Gamepasses & Mounts (Exact match for "unit mount" prevents "Mountain" false positives)
+  if (id.startsWith("gp-") || name.includes("gamepass") || name.includes("star pass") || name.includes("starpass") || name.includes("unit mount") || note.includes("gamepass") || name.includes("premium pass") || subCat.includes("gamepass")) {
+    return "OBT";
+  }
+
+  // 3. Skins & Gifts
+  const isSkin = subCat.includes("skin") || subtitle.includes("skin") || note.includes("skin") || note.includes("gift");
   if (isSkin) {
     if (note.includes("easter capsule")) return "OBT";
     return "UNOB";
   }
 
+  // 4. Blacklisted Terms & PvP/Tournament/Leaderboard
   if (UNOB_BLACKLIST.some(item => id.includes(item) || name.includes(item) || subtitle.includes(item))) return "UNOB";
   if (note.includes("evolv") || note.includes("evolution")) return "UNOB";
+  if (note.includes("pvp set") || note.includes("tournament") || note.includes("leaderboard") || note.includes("event") || note.includes("raid") || note.includes("dungeon") || note.includes("code")) {
+    return "UNOB";
+  }
 
-  if (note.includes("unobtainable") || note.includes("unob") || note.includes("retired") || note.includes("code") || note.includes("dungeon") || note.includes("raid") || note.includes("event")) return "UNOB";
-  if (note.includes("capsule") || note.includes("egg") || note.includes("firework") || note.includes("leaderboard") || note.includes("tournament") || note.includes("pvp set")) return "OBT";
+  // 5. Banners
+  if (getTier(unit) === "C" && note.includes("banner") && !name.includes("snowman")) {
+    return "OBT";
+  }
+
+  // 6. Capsules
+  if (note.includes("starpass capsule") || note.includes("star pass capsule")) return "UNOB";
+  if (note.includes("lucky capsule") || note.includes("nested capsule")) return "OBT";
+  if (note.includes("capsule") || note.includes("egg") || note.includes("firework")) return "OBT";
+
+  // 7. Fallback regex
+  if (/\bobtainable\b/.test(note.replace(/unobtainable/g, ''))) return "OBT";
 
   return "UNOB";
 }

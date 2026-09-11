@@ -106,12 +106,12 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
     "Ded_Sen", "Crimson Desire", "Brysans", "SquidyMotion", "Luk", "Hero", "soupermunki", "dennis.67", "hopper duper", "Poxie", "Iridescent Equinox", "Pchongle", "unobium", "Demonfox", "GorillaTactics92", "MicroJillyWilly", "Doggod", "kosu", "Paker", "Kiwami", "brogee", "Leo", "arkss", "Trvz", "Up", "Vantagehgc", "fortnitekid", "Mikoto", "En Thobias12", "Miro_y", "arkysesh", "brickz7", "Venus", "AdamSBDG7", "halw", "NathanPlayz", "orangehairfunnyman", "olivia.rodrigo", "Felta", "VerotObelyn", "Kyo"
   ];
 
-  const foundedByIcon = "https://media.discordapp.net/attachments/1538970612947615744/1543314410746155150/image.png?ex=6a946b0c&is=6a93198c&hm=51430aa6e9cd47b68758c044e97cf0489e0bbaabd594aa63189d08d49450d890&=&format=webp&quality=lossless";
-  const valueListTeamIcon = "https://media.discordapp.net/attachments/1538970612947615744/1543314384023986226/image.png?ex=6a946b06&is=6a931986&hm=60138cd9ac5603cc1387293edb084c6dc68b972b154fb59d6de4ac4861e4e160&=&format=webp&quality=lossless";
-  const qualityAssuranceIcon = "https://media.discordapp.net/attachments/1538970612947615744/1543314746856575107/thumb-up-emoticon.png?ex=6a946b5d&is=6a9319dd&hm=1460be857471c25b9e78c5292074bdfc01ce9ae89f27cfc985187f064386af73&=&format=webp&quality=lossless";
-  const creditsBottomImage = "https://media.discordapp.net/attachments/1538970612947615744/1543311617964384398/noFilter.png?ex=6a946873&is=6a9316f3&hm=6d880653890bffc43446aaae20d6fa3da0854ea129516382498a674b48498124&=&format=webp&quality=lossless";
-  const generalInformationIcon = "https://media.discordapp.net/attachments/1538970612947615744/1543320682430074971/image.png?ex=6a9470e4&is=6a931f64&hm=d97c87c7af214b524fdd41b313db6a4d45d5cf435046fc9a8a14fb307d258165&=&format=webp&quality=lossless";
-  const teamNotesIcon = "https://media.discordapp.net/attachments/1039078990557757471/1543320704269815838/image.png?ex=6a9470e9&is=6a931f69&hm=3d9b2883ec207eb7baa82134c83bfc317160e734e9bfcbdfc7116b6e90f516b1&=&format=webp&quality=lossless";
+  const foundedByIcon = "/units/astd.webp";
+  const valueListTeamIcon = "/units/value-list.webp";
+  const qualityAssuranceIcon = "/units/quality-assurance.webp";
+  const creditsBottomImage = "/units/all-star.webp";
+  const generalInformationIcon = "/units/firezio.webp";
+  const teamNotesIcon = "/units/firezio.webp";
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#313338] h-full select-none font-sans">
@@ -287,7 +287,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
               {/* DEVELOPER */}
               <div className={`col-span-1 md:col-span-2 xl:col-span-3 bg-[#1E1F22] border rounded-[6px] flex flex-col sm:flex-row items-center sm:items-start p-6 gap-6 ${guideState?.type === "developer" ? "border-[#5865F2]" : "border-[rgba(255,255,255,0.04)]"}`}>
                 <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-[#2B2D31] overflow-hidden shrink-0">
-                  <img src="https://media.discordapp.net/attachments/1543674169173221520/1543674222495399936/568438777_4285260958469405_5495238692606870157_n.png?ex=6a95ba26&is=6a9468a6&hm=dd0babf47070b8017b1fb83cb00e9ac41366029d8b9480a7f940faba90b7bc6e&=&format=webp&quality=lossless" alt="Reiyven" draggable={false} className="w-full h-full object-cover" />
+                  <img src="/units/reiyven.webp" alt="Reiyven" draggable={false} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex flex-col items-center sm:items-start text-center sm:text-left flex-1">
                   <div className="flex flex-wrap justify-center sm:justify-start items-center gap-2 mb-1.5">
