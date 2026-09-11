@@ -94,7 +94,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
       if (existing) {
         onQtyChange(existing.id, existing.qty + 1);
       } else {
-        onAdd({ id: u.id, name: u.name, subtitle: u.subtitle, value: u.value, demand: u.demand, qty: 1 });
+        onAdd({ id: u.id, name: u.name, subtitle: u.subtitle, value: u.value, qty: 1 });
       }
     } catch { /* malformed payload */ }
   };
@@ -115,7 +115,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
       onQtyChange(existing.id, existing.qty + 1);
     } else {
       const numericValue = typeof u.value === "number" ? u.value : 0;
-      onAdd({ id: u.id, name: u.name, subtitle: u.subtitle, value: numericValue, demand: u.demand, qty: 1 });
+      onAdd({ id: u.id, name: u.name, subtitle: u.subtitle, value: numericValue, qty: 1 });
     }
     setQuery("");
     setOpen(false);
@@ -256,7 +256,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
             {results.map((u, i) => {
               const dropCfg = u?.status ? GRID_STATUS_CFG[u.status as keyof typeof GRID_STATUS_CFG] : null;
               const isSelected = i === selectedIndex;
-              const proxyUrl = getProxyImage(u.imageUrl);
+              const proxyUrl = getProxyImage(u.id, u.imageUrl);
 
               return (
                 <button

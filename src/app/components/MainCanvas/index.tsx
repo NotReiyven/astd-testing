@@ -14,6 +14,7 @@ import { GuideType } from "../guides/AquaGuideOverlay";
 
 const STICKY_HEADER_CLASS = "bg-[#313338] pt-2 md:pt-3 pb-3 -mx-2 px-2 md:-mx-8 md:px-8";
 const FIRE_ZIO_AVATAR = "/units/firezio.webp";
+
 type VirtualItem = 
   | { type: 'space-top'; id: string }
   | { type: 'welcome'; id: string }
@@ -50,9 +51,10 @@ export const MainCanvas = memo(function MainCanvas({
   const [showScrollTop, setShowScrollTop] = useState(false);
   const skipNextResetRef = useRef(false);
 
-  // Dynamic Header State
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
+  const scrollDeltaRef = useRef(0);
+  const lastToggleTimeRef = useRef(0);
 
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
@@ -78,32 +80,51 @@ export const MainCanvas = memo(function MainCanvas({
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const currentScroll = e.currentTarget.scrollTop;
     
-    // Top button logic
     if (currentScroll > 400 && !showScrollTop) setShowScrollTop(true);
     else if (currentScroll <= 400 && showScrollTop) setShowScrollTop(false);
 
-    // Mobile Dynamic Header Logic (only trigger when actually scrolling beyond the top area to prevent jitter)
     if (isMobile) {
-      if (currentScroll > 150) {
-        if (currentScroll > lastScrollY.current + 10 && isHeaderVisible) {
-          // Scrolling down
-          setIsHeaderVisible(false);
-        } else if (currentScroll < lastScrollY.current - 10 && !isHeaderVisible) {
-          // Scrolling up
+      const now = Date.now();
+      if (now - lastToggleTimeRef.current < 400) {
+        lastScrollY.current = currentScroll;
+        return;
+      }
+
+      const delta = currentScroll - lastScrollY.current;
+      lastScrollY.current = currentScroll;
+
+      if (currentScroll < 40) {
+        if (!isHeaderVisible) {
           setIsHeaderVisible(true);
+          lastToggleTimeRef.current = now;
         }
-      } else if (!isHeaderVisible) {
-        // Force show if near top
+        scrollDeltaRef.current = 0;
+        return;
+      }
+
+      if ((delta > 0 && scrollDeltaRef.current < 0) || (delta < 0 && scrollDeltaRef.current > 0)) {
+        scrollDeltaRef.current = 0;
+      }
+      scrollDeltaRef.current += delta;
+
+      if (scrollDeltaRef.current > 40 && isHeaderVisible) {
+        setIsHeaderVisible(false);
+        lastToggleTimeRef.current = now;
+        scrollDeltaRef.current = 0;
+      } else if (scrollDeltaRef.current < -40 && !isHeaderVisible) {
         setIsHeaderVisible(true);
+        lastToggleTimeRef.current = now;
+        scrollDeltaRef.current = 0;
       }
     }
-    
-    lastScrollY.current = currentScroll;
   };
 
   const scrollToTop = () => {
-    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    lastToggleTimeRef.current = Date.now();
     setIsHeaderVisible(true);
+    lastScrollY.current = 0;
+    scrollDeltaRef.current = 0;
+    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleResetFilters = () => {
@@ -189,11 +210,11 @@ export const MainCanvas = memo(function MainCanvas({
 
                  if (viewMode === 'grid') {
                     for (let i = 0; i < sec.processedUnits.length; i += cols) {
-                       items.push({ type: 'grid-row', id: `grid-${sec.label}-${i}`, units: sec.processedUnits.slice(i, i + cols), cols });
+                        items.push({ type: 'grid-row', id: `grid-${sec.label}-${i}`, units: sec.processedUnits.slice(i, i + cols), cols });
                     }
                  } else {
                     sec.processedUnits.forEach((u, i) => {
-                       items.push({ type: 'list-row', id: `list-${u.id}`, unit: u, isLast: i === sec.processedUnits.length - 1 });
+                        items.push({ type: 'list-row', id: `list-${u.id}`, unit: u, isLast: i === sec.processedUnits.length - 1 });
                     });
                  }
               });
@@ -218,22 +239,23 @@ export const MainCanvas = memo(function MainCanvas({
   const virtualizer = useVirtualizer({
     count: flattenedItems.length,
     getScrollElement: () => scrollRef.current,
+    getItemKey: (index) => flattenedItems[index]?.id ?? index,
     estimateSize: (index) => {
        const item = flattenedItems[index];
        switch(item.type) {
-         case 'space-top': return 16;
-         case 'welcome': return window.innerWidth < 768 ? 160 : 120;
-         case 'search-stats': return 40;
-         case 'no-results': return 200;
-         case 'tier-banner': return 120; 
-         case 'sub-header': return 60;
-         case 'grid-row': return 272;
-         case 'list-row': return 57;
-         case 'space-bottom': return 100;
-         default: return 50;
+          case 'space-top': return 16;
+          case 'welcome': return window.innerWidth < 768 ? 180 : 120;
+          case 'search-stats': return 40;
+          case 'no-results': return 200;
+          case 'tier-banner': return 110; 
+          case 'sub-header': return 50;
+          case 'grid-row': return window.innerWidth < 640 ? 290 : 272;
+          case 'list-row': return 57;
+          case 'space-bottom': return 100;
+          default: return 50;
        }
     },
-    overscan: 12,
+    overscan: 14,
   });
 
   useEffect(() => {
@@ -260,6 +282,8 @@ export const MainCanvas = memo(function MainCanvas({
     }
     scrollRef.current?.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     setIsHeaderVisible(true);
+    lastScrollY.current = 0;
+    scrollDeltaRef.current = 0;
   }, [deferredSearchQuery, statusFilter, sortMode, activeTierFilter]);
 
   const dismissWelcome = () => {
@@ -269,9 +293,7 @@ export const MainCanvas = memo(function MainCanvas({
   };
 
   const isStatsTarget = guideState?.type === "stats";
-
-  // Height of the mobile controls bar to offset correctly
-  const headerHeight = 60;
+  const headerHeight = isMobile ? 110 : 60;
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#313338] relative z-10">
@@ -289,7 +311,6 @@ export const MainCanvas = memo(function MainCanvas({
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
       `}</style>
 
-      {/* Filter Highlight Wrap (Dynamic Header on Mobile) */}
       <div 
         className={`flex flex-col absolute top-0 left-0 right-0 w-full transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${guideState?.type === "filters" ? "ring-2 ring-[#5865F2] rounded-[8px] bg-[rgba(88,101,242,0.15)] shadow-[0_0_20px_rgba(88,101,242,0.4)] z-[100005] animate-pulse" : "z-30 shadow-md"} ${!isHeaderVisible ? '-translate-y-full' : 'translate-y-0'}`}
       >
@@ -307,7 +328,6 @@ export const MainCanvas = memo(function MainCanvas({
           setViewMode={setViewMode}
         />
         
-        {/* Global Sticky List Header */}
         {viewMode === "list" && !isLoading && (
           <div className="hidden md:block w-full border-b border-[rgba(0,0,0,0.5)] bg-[#1E1F22]">
             <ListHeaderRow />
@@ -321,8 +341,9 @@ export const MainCanvas = memo(function MainCanvas({
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto px-2 md:px-8 custom-scrollbar relative z-0 h-full" 
         style={{ 
-          WebkitOverflowScrolling: "touch",
-          paddingTop: isMobile ? headerHeight : headerHeight + (viewMode === 'list' ? 36 : 0) // Give space for the absolute header
+          paddingTop: headerHeight + (viewMode === 'list' && !isMobile ? 36 : 0),
+          overflowAnchor: "none",
+          touchAction: "pan-y"
         }}
       >
         {isLoading ? (

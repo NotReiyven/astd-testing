@@ -21,8 +21,8 @@ const COLOR_TARGETS = [
   { tag: "highballed", r: 0, g: 255, b: 255 },
   { tag: "hyped", r: 11, g: 83, b: 148 },
   { tag: "hyped", r: 7, g: 55, b: 99 },
+  // Removed light purple theme background ({ tag: "varies", r: 217, g: 210, b: 233 }) so it doesn't override Oddities rows
   { tag: "varies", r: 142, g: 124, b: 195 },
-  { tag: "varies", r: 217, g: 210, b: 233 },
   { tag: "gatekept", r: 166, g: 77, b: 121 },
   { tag: "gatekept", r: 255, g: 0, b: 255 },
   { tag: "inflated", r: 180, g: 95, b: 6 },
@@ -133,9 +133,6 @@ export function parseSpreadsheet(data: SpreadsheetData) {
       if (hasValue || hasNotices) {
         currentSubCategory = colB;
         
-        // --- ODDITIES COLUMN MISALIGNMENT FIX ---
-        // The spreadsheet editors forgot to include 'Liquidity' in the header rows for 
-        // Capsules, Eggs, and Skins, which breaks the standard column mapping.
         if (tierKey === "Oddities") {
           colMap = { value: 2, rarity: 3, liquidity: 4, notices: 5, statusTxt: -1 };
           continue;
@@ -218,18 +215,11 @@ export function parseSpreadsheet(data: SpreadsheetData) {
       const rawStatusText = colMap.statusTxt !== -1 ? cleanText(getCellStr(colMap.statusTxt).toLowerCase().trim().replace(" ", "-")) : "";
       const validStatuses = ["stable", "unstable", "rising", "dropping", "inflated", "deflated", "varies", "lowballed", "highballed", "hyped", "gatekept", "black-marketed"];
       
-      // Explicit text overrides the background color logic
       let unitStatus = validStatuses.includes(rawStatusText) ? rawStatusText : parsedTag;
 
-      // --- CRITICAL FIX START ---
-      // Force all Oddities to be 'stable' because they don't use the standard market momentum tags
-      if (tierKey === "Oddities") {
-        unitStatus = "stable";
-      }
       if ((tierKey === "Pure" || tierKey === "Untiered") && (unitStatus === "black-marketed" || unitStatus === "varies")) {
         unitStatus = "stable";
       }
-      // --- CRITICAL FIX END ---
 
       const secondaryTagsSet = new Set<string>();
       const validSecondaryTags = ["hyped", "gatekept", "black-marketed", "black marketed"];

@@ -9,6 +9,7 @@
     "dev": "vite --open"
   },
   "dependencies": {
+    "@netlify/functions": "^2.8.0",
     "@supabase/supabase-js": "^2.115.0",
     "@tanstack/react-virtual": "^3.14.10",
     "@upstash/ratelimit": "^2.0.8",
@@ -26,7 +27,6 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "@types/sanitize-html": "^2.16.1",
-    "@vercel/node": "^13.0.0",
     "@vitejs/plugin-react": "4.7.0",
     "sharp": "^0.35.4",
     "tailwindcss": "4.1.12",
