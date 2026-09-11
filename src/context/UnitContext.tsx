@@ -15,7 +15,7 @@ type UnitContextType = {
   isError: boolean;
 };
 
-const CACHE_VERSION = "astd_cache_v9";
+const CACHE_VERSION = "astd_cache_v10"; // BUMPED CACHE VERSION TO FORCE REFRESH
 
 const UnitContext = createContext<UnitContextType>({
   units: LOCAL_FALLBACK_UNITS,

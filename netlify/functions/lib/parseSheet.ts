@@ -132,6 +132,15 @@ export function parseSpreadsheet(data: SpreadsheetData) {
 
       if (hasValue || hasNotices) {
         currentSubCategory = colB;
+        
+        // --- ODDITIES COLUMN MISALIGNMENT FIX ---
+        // The spreadsheet editors forgot to include 'Liquidity' in the header rows for 
+        // Capsules, Eggs, and Skins, which breaks the standard column mapping.
+        if (tierKey === "Oddities") {
+          colMap = { value: 2, rarity: 3, liquidity: 4, notices: 5, statusTxt: -1 };
+          continue;
+        }
+
         const prevMap = { ...colMap };
         colMap = { value: -1, rarity: -1, liquidity: -1, notices: -1, statusTxt: -1 };
 
@@ -206,22 +215,21 @@ export function parseSpreadsheet(data: SpreadsheetData) {
       let parsedTag = getTagFromColor(nameColor);
       if (parsedTag === "stable") parsedTag = getTagFromColor(valColor);
 
-      // --- CRITICAL FIX START ---
-      // These tiers do not have a Status column, but their default row background colors 
-      // falsely match the RGB values for "Varies" (purple) and "Black-Marketed" (grey).
-      if (tierKey === "Oddities" && parsedTag === "varies") {
-        parsedTag = "stable";
-      }
-      if ((tierKey === "Pure" || tierKey === "Untiered") && parsedTag === "black-marketed") {
-        parsedTag = "stable";
-      }
-      // --- CRITICAL FIX END ---
-
       const rawStatusText = colMap.statusTxt !== -1 ? cleanText(getCellStr(colMap.statusTxt).toLowerCase().trim().replace(" ", "-")) : "";
       const validStatuses = ["stable", "unstable", "rising", "dropping", "inflated", "deflated", "varies", "lowballed", "highballed", "hyped", "gatekept", "black-marketed"];
       
       // Explicit text overrides the background color logic
-      const unitStatus = validStatuses.includes(rawStatusText) ? rawStatusText : parsedTag;
+      let unitStatus = validStatuses.includes(rawStatusText) ? rawStatusText : parsedTag;
+
+      // --- CRITICAL FIX START ---
+      // Force all Oddities to be 'stable' because they don't use the standard market momentum tags
+      if (tierKey === "Oddities") {
+        unitStatus = "stable";
+      }
+      if ((tierKey === "Pure" || tierKey === "Untiered") && (unitStatus === "black-marketed" || unitStatus === "varies")) {
+        unitStatus = "stable";
+      }
+      // --- CRITICAL FIX END ---
 
       const secondaryTagsSet = new Set<string>();
       const validSecondaryTags = ["hyped", "gatekept", "black-marketed", "black marketed"];
