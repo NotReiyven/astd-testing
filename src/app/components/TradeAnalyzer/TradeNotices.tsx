@@ -2,14 +2,14 @@ import { TriangleAlert, Info, CornerDownRight, BookOpen } from "lucide-react";
 import { TradeCard, MasterUnit } from "../../../types";
 import { GRID_STATUS_CFG } from "../../../data";
 
-// Extracted definitions based on community trading terms
 const STATUS_DEFS: Record<string, string> = {
   stable: "Fair and consistently decent offers. Units that are stable are most likely not to move unless something happens.",
   deflated: "If a unit is underpriced, they are deflated and are way cheaper than they should be worth.",
   inflated: "If a unit has this tag, they are inflated and cost way more than they should be worth.",
   rising: "If a unit is rising, it means the unit is being consistently overpaid.",
   dropping: "If a unit is dropping, it means owners are constantly taking underpays.",
-  maximum: "If a unit has this tag, it can get fair at most, but also gets lowballs.",
+  lowballed: "If a unit has this tag, it can get fair at most, but also gets lowballs.",
+  highballed: "If a unit has this tag, it can get fair at minimum, but also gets highballs.",
   gatekept: "If a unit is gatekept, it means owners are refusing to trade this unit for any reason, waiting for rise.",
   "black-marketed": "If a unit has this tag, it means that people who buy units with outside-game currency are heavily impacting it.",
   varies: "If a unit varies, then it can get fair but it can also get lowballs or highballs."

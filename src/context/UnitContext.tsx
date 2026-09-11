@@ -15,7 +15,7 @@ type UnitContextType = {
   isError: boolean;
 };
 
-const CACHE_VERSION = "astd_cache_v5"; // Bump to v5 to invalidate stale hardcoded caches
+const CACHE_VERSION = "astd_cache_v9";
 
 const UnitContext = createContext<UnitContextType>({
   units: LOCAL_FALLBACK_UNITS,

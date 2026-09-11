@@ -1,6 +1,6 @@
 export type UnitStatus =
   | "stable" | "unstable" | "rising" | "dropping"
-  | "inflated" | "deflated" | "varies" | "maximum"
+  | "inflated" | "deflated" | "varies" | "lowballed" | "highballed"
   | "hyped" | "gatekept" | "black-marketed";
 
 export type FilterKey = "All" | "S" | "A" | "B" | "C" | "Pure" | "Oddities" | "Untiered";
@@ -13,11 +13,10 @@ export interface MasterUnit {
   valueDisplay?: string;
   valueMin?: number;        
   rarity: number;
-  supply: number;
+  liquidity?: string;
   aliases?: string[];
-  demand: number;
   status?: UnitStatus;
-  secondaryTags?: string[]; // <-- ADDED THIS LINE to catch the (Hyped), (Gatekept) tags
+  secondaryTags?: string[];
   isNew?: boolean;
   notice?: string;
   imageUrl?: string;
@@ -35,7 +34,6 @@ export interface PopupUnit {
   name: string;
   subtitle: string;
   value: number;
-  demand: number;
 }
 
 export interface PopupState {
@@ -58,6 +56,5 @@ export interface TradeCard {
   name: string;
   subtitle: string;
   value: number;
-  demand: number;
   qty: number;
 }

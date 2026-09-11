@@ -5,20 +5,21 @@ const STATUS_TAGS = [
   { tag: "Unstable", bg: "#1e3040", border: "#3a6480", color: "#6B9EB5", def: "If a unit is unstable, it means it could rise or drop at any moment, or stabilize." },
   { tag: "Rising", bg: "#153324", border: "#246640", color: "#30A163", def: "If a unit is rising, it means the unit is being consistently overpaid." },
   { tag: "Dropping", bg: "#3d0a09", border: "#7a1410", color: "#E60A18", def: "If a unit is dropping, it means owners are constantly taking underpays." },
-  { tag: "Inflated", bg: "#2d1a0a", border: "#5c3515", color: "#c27a40", def: "If a unit is has this tag, they are inflated and cost way more than they should be worth." },
+  { tag: "Inflated", bg: "#2d1a0a", border: "#5c3515", color: "#c27a40", def: "If a unit has this tag, they are inflated and cost way more than they should be worth." },
   { tag: "Deflated", bg: "#0e2345", border: "#1e4a8a", color: "#3C81F3", def: "If a unit is underpriced, they are deflated and are way cheaper than they should be worth." },
   { tag: "Varies", bg: "#201b42", border: "#3d3480", color: "#9b8de8", def: "If a unit varies, then it can get fair but it can also get lowballs or highballs." },
-  { tag: "Maximum", bg: "#3d220a", border: "#7a4412", color: "#E66C19", def: "If a unit has this tag, it can get fair at most, but also gets lowballs." }
+  { tag: "Lowballed", bg: "#3d220a", border: "#7a4412", color: "#E66C19", def: "If a unit has this tag, it can get fair at most, but also gets lowballs." },
+  { tag: "Highballed", bg: "#003d40", border: "#007a80", color: "#01EFFD", def: "If a unit has this tag, it can get fair at minimum, but also gets highballs." }
 ];
 
 const SECONDARY_TAGS = [
-  { tag: "Hyped", bg: "#003d40", border: "#007a80", color: "#01EFFD", def: "If a unit is hyped, then it can either be a new unit, or something big changed, skyrocketing a units value and demand." },
-  { tag: "Gatekept", bg: "#30202e", border: "#603d5a", color: "#AF78A8", def: "If a unit is gatekept, it means owners are refusing to trade this unit for any reason, waiting for rise or huge overpay, usually." },
-  { tag: "Black Marketed", bg: "#1e2228", border: "#3a4250", color: "#9aa3b2", def: "If a unit has this tag, it means that people who buy units with outside-game currency are heavily impacting this unit." }
+  { tag: "Hyped", bg: "#0e1f3a", border: "#1a3a6b", color: "#3A7CE6", def: "If a unit is hyped, then it can either be a new unit, or something big changed, skyrocketing a units value and demand." },
+  { tag: "Gatekept", bg: "#30202e", border: "#603d5a", color: "#AF78A8", def: "If a unit is gatekept, it means owners are refusing to trade this unit for any reason, waiting for a rise or huge overpay, usually." },
+  { tag: "Black Market", bg: "#1e2228", border: "#3a4250", color: "#9aa3b2", def: "If a unit has this tag, it means that people who buy units with outside-game currency are heavily impacting this unit." }
 ];
 
 const RARITY_SCALE = [
-  { val: 0, def: "Forever Obtained", color: "#8B0000", textColor: "#fff" },
+  { val: 0, def: "Forever Obtainable", color: "#8B0000", textColor: "#fff" },
   { val: 1, def: "Extremely Common", color: "#FF0000", textColor: "#fff" },
   { val: 2, def: "Very Common", color: "#FF0000", textColor: "#fff" },
   { val: 3, def: "Common", color: "#FF0000", textColor: "#fff" },
@@ -35,18 +36,16 @@ const RARITY_SCALE = [
   { val: 14, def: "Very very Rare", color: "#90EE90", textColor: "#000" },
   { val: 15, def: "Extremely rare - About as Rare as Mai/Douma (500 Copies)", color: "#90EE90", textColor: "#000" },
   { val: 16, def: "Absurdly Rare", color: "#90EE90", textColor: "#000" },
-  { val: 17, def: "Super Rare - About as Rare as Gold LBS (Expected around 100-150 Copies)", color: "#32CD32", textColor: "#fff" },
+  { val: 17, def: "Super Rare - About as Rare as Gold Muramasa (Expected around 100-150 Copies)", color: "#32CD32", textColor: "#fff" },
   { val: 18, def: "Mega Rare", color: "#32CD32", textColor: "#fff" },
   { val: 19, def: "Ultra Rare", color: "#00FFFF", textColor: "#000" },
   { val: 20, def: "Ultra Mega Rare (20 Copies or Less)", color: "#00FFFF", textColor: "#000" }
 ];
 
-const SUPPLY_DEMAND = [
-  { val: 1, def: "Very Low" },
-  { val: 2, def: "Low" },
-  { val: 3, def: "Average" },
-  { val: 4, def: "High" },
-  { val: 5, def: "Very high" }
+const LIQUIDITY_SCALE = [
+  { val: "Low", def: "Hard to trade the unit (Supply > Demand)", color: "#E57373", bg: "#111214" },
+  { val: "Average", def: "Average difficulty to trade the unit", color: "#B5BAC1", bg: "#111214" },
+  { val: "High", def: "Easy to trade the unit (Supply < Demand)", color: "#4DB6AC", bg: "#111214" }
 ];
 
 const FIRE_ZIO_AVATAR = "https://media.discordapp.net/attachments/1538970612947615744/1543320682430074971/image.png?ex=6a9470e4&is=6a931f64&hm=d97c87c7af214b524fdd41b313db6a4d45d5cf435046fc9a8a14fb307d258165&=&format=webp&quality=lossless";
@@ -91,7 +90,7 @@ export function TheoryTab() {
                     ))}
                     <tr className="bg-[#111214] text-[#80848E] text-[10px] uppercase tracking-widest border-y border-[rgba(255,255,255,0.04)]">
                        <td className="px-5 py-3 font-bold text-center">Secondary Tags</td>
-                       <td className="px-5 py-3 font-bold">Tags placed with Values or Supply/Demand to better define a situation</td>
+                       <td className="px-5 py-3 font-bold">Tags placed with Values or Liquidity to better define a situation</td>
                     </tr>
                     {SECONDARY_TAGS.map((t) => (
                        <tr key={t.tag} className="border-b border-[rgba(255,255,255,0.02)] last:border-0 hover:bg-[rgba(255,255,255,0.01)] transition-colors">
@@ -157,74 +156,43 @@ export function TheoryTab() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-         <div className="flex flex-col gap-4">
-           <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[8px] overflow-hidden shadow-sm h-full flex flex-col">
-              <div className="bg-[#1E1F22] px-5 py-3 border-b border-[rgba(255,255,255,0.04)]">
-                 <h3 className="text-[#F2F3F5] font-bold text-[14px] uppercase tracking-wider">Unit Supply</h3>
-              </div>
-              <table className="w-full text-left border-collapse flex-1">
-                 <thead>
-                    <tr className="bg-[#111214] text-[#80848E] text-[10px] uppercase tracking-widest border-b border-[rgba(255,255,255,0.04)]">
-                       <th className="px-5 py-3 font-bold w-[80px] text-center">Value</th>
-                       <th className="px-5 py-3 font-bold">Definition</th>
-                    </tr>
-                 </thead>
-                 <tbody>
-                    {SUPPLY_DEMAND.map((s) => (
-                       <tr key={s.val} className="border-b border-[rgba(255,255,255,0.02)] last:border-0">
-                          <td className="px-5 py-2.5 align-middle text-center bg-[#1E1F22] border-r border-[rgba(255,255,255,0.04)]">
-                             <span className="text-[12px] font-black text-[#F2F3F5] font-mono">{s.val}</span>
-                          </td>
-                          <td className="px-5 py-2.5 text-[#B5BAC1] text-[13px]">{s.def}</td>
-                       </tr>
-                    ))}
-                 </tbody>
-              </table>
-              <div className="p-4 bg-[#111214] border-t border-[rgba(255,255,255,0.04)] text-[11px] text-[#949BA4] leading-relaxed">
-                 <strong>Note:</strong> Supply is based on the amount of units in circulation (taking into account its rarity).
-              </div>
-           </div>
+      <div className="flex flex-col gap-4">
+         <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[8px] overflow-hidden shadow-sm h-full flex flex-col">
+            <div className="bg-[#1E1F22] px-5 py-3 border-b border-[rgba(255,255,255,0.04)]">
+               <h3 className="text-[#F2F3F5] font-bold text-[14px] uppercase tracking-wider">Unit Liquidity</h3>
+            </div>
+            <table className="w-full text-left border-collapse flex-1">
+               <thead>
+                  <tr className="bg-[#111214] text-[#80848E] text-[10px] uppercase tracking-widest border-b border-[rgba(255,255,255,0.04)]">
+                     <th className="px-5 py-3 font-bold w-[120px] text-center">Value</th>
+                     <th className="px-5 py-3 font-bold">Definition</th>
+                  </tr>
+               </thead>
+               <tbody>
+                  {LIQUIDITY_SCALE.map((s) => (
+                     <tr key={s.val} className="border-b border-[rgba(255,255,255,0.02)] last:border-0">
+                        <td className="px-5 py-2.5 align-middle text-center bg-[#1E1F22] border-r border-[rgba(255,255,255,0.04)]">
+                           <span className="text-[12px] font-black font-mono px-2 py-1 rounded-[4px]" style={{ color: s.color }}>{s.val.toUpperCase()}</span>
+                        </td>
+                        <td className="px-5 py-2.5 text-[#B5BAC1] text-[13px]">{s.def}</td>
+                     </tr>
+                  ))}
+               </tbody>
+            </table>
+            <div className="p-4 bg-[#111214] border-t border-[rgba(255,255,255,0.04)] text-[11px] text-[#949BA4] leading-relaxed">
+               <strong>Note:</strong> Liquidity is Supply & Demand fused. It dictates how easy a unit is to trade off to others.
+            </div>
          </div>
 
-         <div className="flex flex-col gap-4">
-           <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[8px] overflow-hidden shadow-sm h-full flex flex-col">
-              <div className="bg-[#1E1F22] px-5 py-3 border-b border-[rgba(255,255,255,0.04)]">
-                 <h3 className="text-[#F2F3F5] font-bold text-[14px] uppercase tracking-wider">Unit Demand</h3>
-              </div>
-              <table className="w-full text-left border-collapse flex-1">
-                 <thead>
-                    <tr className="bg-[#111214] text-[#80848E] text-[10px] uppercase tracking-widest border-b border-[rgba(255,255,255,0.04)]">
-                       <th className="px-5 py-3 font-bold w-[80px] text-center">Value</th>
-                       <th className="px-5 py-3 font-bold">Definition</th>
-                    </tr>
-                 </thead>
-                 <tbody>
-                    {SUPPLY_DEMAND.map((s) => (
-                       <tr key={s.val} className="border-b border-[rgba(255,255,255,0.02)] last:border-0">
-                          <td className="px-5 py-2.5 align-middle text-center bg-[#1E1F22] border-r border-[rgba(255,255,255,0.04)]">
-                             <span className="text-[12px] font-black text-[#F2F3F5] font-mono">{s.val}</span>
-                          </td>
-                          <td className="px-5 py-2.5 text-[#B5BAC1] text-[13px]">{s.def}</td>
-                    </tr>
-                    ))}
-                 </tbody>
-              </table>
-              <div className="p-4 bg-[#111214] border-t border-[rgba(255,255,255,0.04)] text-[11px] text-[#949BA4] leading-relaxed">
-                 <strong>Note:</strong> Demand <strong className="text-[#DBDEE1]">CAN</strong> influence a unit's value, but it is <strong className="text-[#DBDEE1]">NOT</strong> a direct relation. It merely means how easy it is to find someone interested.
-              </div>
-           </div>
+         <div className="bg-[#111214] border-l-4 border-l-[#ed4245] border-y border-y-[rgba(255,255,255,0.04)] border-r border-r-[rgba(255,255,255,0.04)] rounded-r-[8px] p-4 shadow-inner flex items-start gap-4">
+            <img src={FIRE_ZIO_AVATAR} className="w-10 h-10 rounded-full border border-[#ed4245] object-cover shrink-0 bg-[#1e1f22]" alt="Fire Zio" />
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-black uppercase tracking-widest text-[#ed4245]">Fire Zio's Final Warning</span>
+              <p className="text-[#949BA4] text-[13px] italic font-medium leading-relaxed">
+                "A unit with 10k value and 'Low' liquidity is functionally worthless. It's a dead asset. Stop asking in the trading channels why nobody wants your garbage. Value means nothing without liquidity."
+              </p>
+            </div>
          </div>
-      </div>
-
-      <div className="bg-[#111214] border-l-4 border-l-[#ed4245] border-y border-y-[rgba(255,255,255,0.04)] border-r border-r-[rgba(255,255,255,0.04)] rounded-r-[8px] p-4 shadow-inner flex items-start gap-4">
-          <img src={FIRE_ZIO_AVATAR} className="w-10 h-10 rounded-full border border-[#ed4245] object-cover shrink-0 bg-[#1e1f22]" alt="Fire Zio" />
-          <div className="flex flex-col gap-1">
-            <span className="text-[11px] font-black uppercase tracking-widest text-[#ed4245]">Fire Zio's Final Warning</span>
-            <p className="text-[#949BA4] text-[13px] italic font-medium leading-relaxed">
-              "A unit with 10k value and 'Very Low' demand is functionally worthless. It's a dead asset. Stop asking in the trading channels why nobody wants your garbage. Value means nothing without liquidity."
-            </p>
-          </div>
       </div>
 
     </div>

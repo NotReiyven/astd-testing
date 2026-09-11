@@ -122,26 +122,28 @@ export function SimulatorTab() {
       let match: { unit: MasterUnit; q2: number } | null = null;
       let title = ""; let desc = "";
 
+      const getLiq = (u: MasterUnit) => (u.liquidity || "Average").toLowerCase();
+
       if (type === 0) {
-        g1 = getByCondition(u => u.status === 'stable' && u.demand >= 3);
-        match = findPairedUnit(g1, q1, u => u.status === 'dropping' || u.demand <= 2, 0.9, 1.4);
+        g1 = getByCondition(u => u.status === 'stable' && getLiq(u) === 'high');
+        match = findPairedUnit(g1, q1, u => u.status === 'dropping' || getLiq(u) === 'low', 0.9, 1.4);
         title = "The Falling Knife"; desc = "They are overpaying with a dropping asset. Does the raw value justify it?";
       } else if (type === 1) {
         g1 = getByCondition(u => u.status === 'stable');
-        match = findPairedUnit(g1, q1, u => u.status === 'inflated', 0.9, 1.4);
-        title = "The Inflated Bait"; desc = "A trader is using an inflated unit to overpay. Check the true value metrics.";
+        match = findPairedUnit(g1, q1, u => u.status === 'inflated' || u.status === 'highballed', 0.9, 1.4);
+        title = "The Inflated Bait"; desc = "A trader is using an inflated/highballed unit to overpay. Check the true value metrics.";
       } else if (type === 2) {
-        g1 = getByCondition(u => u.status === 'gatekept' || u.demand <= 2);
-        match = findPairedUnit(g1, q1, u => u.status === 'rising' || u.demand >= 4, 0.65, 0.95);
+        g1 = getByCondition(u => u.status === 'gatekept' || getLiq(u) === 'low');
+        match = findPairedUnit(g1, q1, u => u.status === 'rising' || getLiq(u) === 'high', 0.65, 0.95);
         title = "The Liquidity Flip"; desc = "Taking a raw value underpay to get rid of a hard-to-trade unit.";
       } else if (type === 3) {
         g1 = getByCondition(u => u.status === 'unstable' || u.status === 'hyped');
-        match = findPairedUnit(g1, q1, u => u.status === 'stable' && (u.supply <= 2 || u.rarity >= 13), 0.75, 1.1);
+        match = findPairedUnit(g1, q1, u => u.status === 'stable' && u.rarity >= 13, 0.75, 1.1);
         title = "The Long-Term Play"; desc = "Trading down in raw value for extreme scarcity and stability.";
       } else {
         g1 = getByCondition(u => true);
         match = findPairedUnit(g1, q1, u => true, 0.8, 1.2);
-        title = "The Standard Exchange"; desc = "Evaluate the raw stats, tags, and demand to determine if this trade is a win.";
+        title = "The Standard Exchange"; desc = "Evaluate the raw stats, tags, and liquidity to determine if this trade is a win.";
       }
 
       if (!g1 || !match) continue;
@@ -149,8 +151,8 @@ export function SimulatorTab() {
       const g2 = match.unit;
       const q2 = match.q2;
 
-      const giveCards: TradeCard[] = [{ id: g1.id, name: g1.name, subtitle: g1.subtitle, value: g1.value as number, demand: g1.demand, qty: q1 }];
-      const getCards: TradeCard[] = [{ id: g2.id, name: g2.name, subtitle: g2.subtitle, value: g2.value as number, demand: g2.demand, qty: q2 }];
+      const giveCards: TradeCard[] = [{ id: g1.id, name: g1.name, subtitle: g1.subtitle, value: g1.value as number, qty: q1 }];
+      const getCards: TradeCard[] = [{ id: g2.id, name: g2.name, subtitle: g2.subtitle, value: g2.value as number, qty: q2 }];
       
       const fc = getTradeForecast(giveCards, getCards, ALL_UNITS);
       if (!fc.calculable) continue;
@@ -164,12 +166,9 @@ export function SimulatorTab() {
       // Unreasonable structure checks
       let correctAns: "WIN" | "LOSS" | "UNREASONABLE" = isWin ? "WIN" : "LOSS";
       if (isWin) {
-         // Massive downgrade penalty (Breaking 1 high unit into 3+ for a loss)
          if (q2 >= 3 && q1 === 1 && vw < 0.85) correctAns = "UNREASONABLE";
-         // Completely terrible raw value loss despite tags
          if (vw < 0.65) correctAns = "UNREASONABLE";
       } else {
-         // Fake overpay trap (Lots of trash units given to equal massive raw value)
          if (vw > 1.3 && q2 >= 4) correctAns = "UNREASONABLE";
       }
 
@@ -189,10 +188,11 @@ export function SimulatorTab() {
   }, [ALL_UNITS]);
 
   // Load a specific trade directly into the global Zustand store
+  // Load a specific trade directly into the global Zustand store
   const loadScenarioIntoAnalyzer = useCallback((scenario: Scenario) => {
     if (!scenario) return;
-    const giveCard = { id: scenario.give.unit.id, name: scenario.give.unit.name, subtitle: scenario.give.unit.subtitle, value: scenario.give.unit.value as number, demand: scenario.give.unit.demand, qty: scenario.give.qty };
-    const getCard = { id: scenario.get.unit.id, name: scenario.get.unit.name, subtitle: scenario.get.unit.subtitle, value: scenario.get.unit.value as number, demand: scenario.get.unit.demand, qty: scenario.get.qty };
+    const giveCard = { id: scenario.give.unit.id, name: scenario.give.unit.name, subtitle: scenario.give.unit.subtitle, value: scenario.give.unit.value as number, qty: scenario.give.qty };
+    const getCard = { id: scenario.get.unit.id, name: scenario.get.unit.name, subtitle: scenario.get.unit.subtitle, value: scenario.get.unit.value as number, qty: scenario.get.qty };
     overwrite([giveCard], [getCard]);
   }, [overwrite]);
 

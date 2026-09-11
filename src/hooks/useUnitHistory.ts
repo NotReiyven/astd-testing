@@ -11,8 +11,8 @@ export interface HistorySnapshot {
   value_min: number | null;
   status: string;
   rarity: number;
-  supply: number;
-  demand: number;
+  liquidity: string | null;
+  notice: string | null;
 }
 
 const memoryCache = new Map<string, HistorySnapshot[]>();

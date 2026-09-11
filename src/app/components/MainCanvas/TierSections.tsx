@@ -11,6 +11,14 @@ export function processUnits(units: MasterUnit[], sortMode: string, statusFilter
   let processed = [...units];
   if (statusFilter !== "all") processed = processed.filter(u => u.status === statusFilter);
   
+  const liqScore = (l: string | undefined) => {
+    if (!l) return 2;
+    const low = l.toLowerCase();
+    if (low === 'high') return 3;
+    if (low === 'low') return 1;
+    return 2;
+  };
+
   processed.sort((a, b) => {
     const valA = getSortValue(a);
     const valB = getSortValue(b);
@@ -23,13 +31,17 @@ export function processUnits(units: MasterUnit[], sortMode: string, statusFilter
       if (valA === Infinity && valB === Infinity) return a.name.localeCompare(b.name);
       return valA - valB;
     }
-    if (sortMode === "demand-desc") {
-      if (b.demand !== a.demand) return b.demand - a.demand;
+    if (sortMode === "liq-desc") {
+      const la = liqScore(a.liquidity);
+      const lb = liqScore(b.liquidity);
+      if (lb !== la) return lb - la;
       if (valA === Infinity && valB === Infinity) return a.name.localeCompare(b.name);
       return valB - valA;
     }
-    if (sortMode === "supply-asc") {
-      if (a.supply !== b.supply) return a.supply - b.supply;
+    if (sortMode === "liq-asc") {
+      const la = liqScore(a.liquidity);
+      const lb = liqScore(b.liquidity);
+      if (la !== lb) return la - lb;
       if (valA === Infinity && valB === Infinity) return a.name.localeCompare(b.name);
       return valB - valA;
     }

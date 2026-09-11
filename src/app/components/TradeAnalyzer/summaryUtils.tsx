@@ -63,7 +63,6 @@ export const avgStat = (items: TradeCard[], key: "rarity" | "supply" | "demand",
   return (weightedSum / totalWeight).toFixed(1);
 };
 
-// MARKET PREDICTION ALGORITHM
 const TAG_WEIGHTS: Record<string, { st: number, lt: number }> = {
   stable: { st: 1.0, lt: 1.0 },
   unstable: { st: 0.7, lt: 0.4 },
@@ -72,10 +71,29 @@ const TAG_WEIGHTS: Record<string, { st: number, lt: number }> = {
   inflated: { st: 1.05, lt: 0.85 },
   deflated: { st: 0.95, lt: 1.15 },
   varies: { st: 0.95, lt: 0.9 },
-  maximum: { st: 0.85, lt: 0.8 },
+  lowballed: { st: 0.85, lt: 0.8 },
+  highballed: { st: 1.15, lt: 1.1 },
   hyped: { st: 1.15, lt: 0.7 },
   gatekept: { st: 1.1, lt: 1.1 },
   "black-marketed": { st: 0.8, lt: 0.85 }
+};
+
+const LIQUIDITY_MULTIPLIERS: Record<string, number> = { low: 0.2, average: 1.0, high: 5.0 };
+
+export const getLiquidityScore = (items: TradeCard[], ALL_UNITS: MasterUnit[]) => {
+  if (items.length === 0) return 1.0;
+  let weightedSum = 0;
+  let totalWeight = 0;
+
+  items.forEach(c => {
+    const master = ALL_UNITS.find(u => u.id === c.id);
+    const liq = (master?.liquidity || "Average").toLowerCase();
+    const weight = getItemWeight(c, master);
+    weightedSum += (LIQUIDITY_MULTIPLIERS[liq] || 1.0) * weight;
+    totalWeight += weight;
+  });
+
+  return totalWeight > 0 ? weightedSum / totalWeight : 1.0;
 };
 
 export const getTradeForecast = (giveItems: TradeCard[], getItems: TradeCard[], ALL_UNITS: MasterUnit[]) => {
@@ -116,16 +134,7 @@ export const getTradeForecast = (giveItems: TradeCard[], getItems: TradeCard[], 
   const vt_st = vw * (tm_st_received / tm_st_given);
   const vt_lt = vw * (tm_lt_received / tm_lt_given);
 
-  const getL = (items: TradeCard[]) => {
-    let d = parseFloat(avgStat(items, "demand", ALL_UNITS));
-    let s = parseFloat(avgStat(items, "supply", ALL_UNITS));
-    if (isNaN(d)) d = 3;
-    if (isNaN(s) || s === 0) s = 3;
-    return d / s;
-  };
-
-  const l_given = getL(giveItems);
-  const ld = getL(getItems) / Math.max(l_given, 0.01);
+  const ld = getLiquidityScore(getItems, ALL_UNITS) / Math.max(getLiquidityScore(giveItems, ALL_UNITS), 0.01);
 
   const getRa = (items: TradeCard[]) => {
     let r = parseFloat(avgStat(items, "rarity", ALL_UNITS));
@@ -150,13 +159,11 @@ export const getShareText = (giveItems: TradeCard[], getItems: TradeCard[], give
   const diffStr = (giveTotal > 0 && getTotal > 0) ? `${sign}${valDiff.toLocaleString()} (${sign}${((valDiff / giveTotal) * 100).toFixed(1)}%)` : "N/A";
 
   const rShift = `${avgStat(giveItems, "rarity", ALL_UNITS)} ➔ ${avgStat(getItems, "rarity", ALL_UNITS)}`;
-  const sShift = `${avgStat(giveItems, "supply", ALL_UNITS)} ➔ ${avgStat(getItems, "supply", ALL_UNITS)}`;
-  const dShift = `${avgStat(giveItems, "demand", ALL_UNITS)} ➔ ${avgStat(getItems, "demand", ALL_UNITS)}`;
   
   const forecast = getTradeForecast(giveItems, getItems, ALL_UNITS);
   const forecastStr = forecast.calculable 
       ? `Short Term: ${forecast.st > 0 ? '+' : ''}${forecast.st.toFixed(1)} | Long Term: ${forecast.lt > 0 ? '+' : ''}${forecast.lt.toFixed(1)}` 
       : "Unavailable (Missing or O/C units)";
 
-  return `**[I GIVE]**\n> ${giveParts || "Nothing"}\n\n**[I GET]**\n> ${getParts || "Nothing"}\n\n**Raw Value Diff:** ${diffStr}\n**Market Forecast:** ${forecastStr}\n**Rarity, Supply, Demand shift:**\n> R: ${rShift} | S: ${sShift} | D: ${dShift}\n\nw/l`;
+  return `**[I GIVE]**\n> ${giveParts || "Nothing"}\n\n**[I GET]**\n> ${getParts || "Nothing"}\n\n**Raw Value Diff:** ${diffStr}\n**Market Forecast:** ${forecastStr}\n**Rarity shift:**\n> R: ${rShift}\n\nw/l`;
 };

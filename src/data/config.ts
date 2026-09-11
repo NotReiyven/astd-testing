@@ -22,17 +22,18 @@ export const TIER_STYLES: Record<string, string> = {
 };
 
 export const GRID_STATUS_CFG: Record<UnitStatus, { label: string; tip: string; bg: string; border: string; color: string }> = {
-  stable:          { label: "Stable",       tip: "Fair and consistently decent offers. Units that are stable are most likely not to move unless something happens.",  bg: "#3b3924", border: "#6b5f2a", color: "#E6D8A1" },
-  unstable:        { label: "Unstable",     tip: "Could rise or drop at any moment, or stabilize.",                                                                 bg: "#1e3040", border: "#3a6480", color: "#6B9EB5" },
-  rising:          { label: "Rising",       tip: "If a unit is rising, it means the unit is being consistently overpaid.",                                          bg: "#153324", border: "#246640", color: "#30A163" },
-  dropping:        { label: "Dropping",     tip: "If a unit is dropping, it means owners are constantly taking underpays.",                                         bg: "#3d0a09", border: "#7a1410", color: "#E60A18" },
-  inflated:        { label: "Inflated",     tip: "If a unit has this tag, they are inflated and cost way more than they should be worth.",                          bg: "#2d1a0a", border: "#5c3515", color: "#c27a40" },
-  deflated:        { label: "Deflated",     tip: "If a unit is underpriced, they are deflated and are way cheaper than they should be worth.",                      bg: "#0e2345", border: "#1e4a8a", color: "#3C81F3" },
-  varies:          { label: "Varies",       tip: "If a unit varies, then it can get fair but it can also get lowballs or highballs.",                               bg: "#201b42", border: "#3d3480", color: "#9b8de8" },
-  maximum:         { label: "Maximum",      tip: "If a unit has this tag, it can get fair at most, but also gets lowballs.",                                        bg: "#3d220a", border: "#7a4412", color: "#E66C19" },
-  hyped:           { label: "Hyped",        tip: "If a unit is hyped, then it can either be a new unit, or something big changed, skyrocketing a units value.",     bg: "#003d40", border: "#007a80", color: "#01EFFD" },
-  gatekept:        { label: "Gatekept",     tip: "If a unit is gatekept, it means owners are refusing to trade this unit for any reason, waiting for rise.",        bg: "#30202e", border: "#603d5a", color: "#AF78A8" },
-  "black-marketed":{ label: "Black Market", tip: "If a unit has this tag, it means that people who buy units with outside-game currency are heavily impacting it.", bg: "#1e2228", border: "#3a4250", color: "#9aa3b2" },
+  stable:          { label: "Stable",        tip: "Fair and consistently decent offers. Most likely won't move unless something happens.", bg: "#3b3924", border: "#6b5f2a", color: "#E6D8A1" },
+  unstable:        { label: "Unstable",      tip: "Could rise or drop at any moment, or stabilize.",                                       bg: "#1e3040", border: "#3a6480", color: "#6B9EB5" },
+  rising:          { label: "Rising",        tip: "If a unit is rising, it means the unit is being consistently overpaid.",                bg: "#153324", border: "#246640", color: "#30A163" },
+  dropping:        { label: "Dropping",      tip: "If a unit is dropping, it means owners are constantly taking underpays.",               bg: "#3d0a09", border: "#7a1410", color: "#E60A18" },
+  inflated:        { label: "Inflated",      tip: "If a unit has this tag, they are inflated and cost way more than they should be worth.", bg: "#2d1a0a", border: "#5c3515", color: "#c27a40" },
+  deflated:        { label: "Deflated",      tip: "If a unit is underpriced, they are deflated and are way cheaper than they should be.",   bg: "#0e2345", border: "#1e4a8a", color: "#3C81F3" },
+  varies:          { label: "Varies",        tip: "If a unit varies, then it can get fair but it can also get lowballs or highballs.",      bg: "#201b42", border: "#3d3480", color: "#9b8de8" },
+  lowballed:       { label: "Lowballed",     tip: "If a unit has this tag, it can get fair at most, but also gets lowballs.",               bg: "#3d220a", border: "#7a4412", color: "#E66C19" },
+  highballed:      { label: "Highballed",    tip: "If a unit has this tag, it can get fair at minimum, but also gets highballs.",           bg: "#003d40", border: "#007a80", color: "#01EFFD" },
+  hyped:           { label: "Hyped",         tip: "If a unit is hyped, something big changed, skyrocketing value and demand.",              bg: "#0e1f3a", border: "#1a3a6b", color: "#3A7CE6" },
+  gatekept:        { label: "Gatekept",      tip: "If a unit is gatekept, owners are refusing to trade this unit waiting for a rise.",      bg: "#30202e", border: "#603d5a", color: "#AF78A8" },
+  "black-marketed":{ label: "Black Market",  tip: "People who buy units with outside-game currency are heavily impacting it.",              bg: "#1e2228", border: "#3a4250", color: "#9aa3b2" },
 };
 
 export const RARITY_SCALE: { min: number; max: number; label: string }[] = [
@@ -49,37 +50,27 @@ export const RARITY_SCALE: { min: number; max: number; label: string }[] = [
   { min: 20, max: 20, label: "Ultra Mega Rare – 20 Copies or Less" },
 ];
 
-export const SUPPLY_SCALE: Record<number, string> = {
-  1: "Very Low – Barely anyone is selling",
-  2: "Low – Few sellers available",
-  3: "Medium – Some availability",
-  4: "High – Plenty of sellers",
-  5: "Very High – Flooded market",
-};
-
-export const DEMAND_SCALE: Record<number, string> = {
-  1: "Very Low – Almost no buyers",
-  2: "Low – Few people want it",
-  3: "Medium – Moderate interest",
-  4: "High – Many buyers competing",
-  5: "Very High – Everyone wants it",
+export const LIQUIDITY_SCALE: Record<string, string> = {
+  Low: "Hard to trade the unit (Supply > Demand)",
+  Average: "Average difficulty to trade the unit",
+  High: "Easy to trade the unit (Supply < Demand)",
 };
 
 export const MODAL_GIVE_SEED: TradeCard[] = [
-  { id: "ultra-kovegu", name: "Ultra Kovegu", subtitle: "SSJ3 Gogeta", value: 20000, demand: 4, qty: 1 },
+  { id: "ultra-kovegu", name: "Ultra Kovegu", subtitle: "SSJ3 Gogeta", value: 20000, qty: 1 },
 ];
 
 export const MODAL_GET_SEED: TradeCard[] = [
-  { id: "death", name: "Death", subtitle: "Ryuk", value: 160000, demand: 3, qty: 1 },
+  { id: "death", name: "Death", subtitle: "Ryuk", value: 160000, qty: 1 },
 ];
 
-export const SEARCHABLE_UNITS: { id: string; name: string; subtitle: string; value: number; demand: number }[] = [
-  { id: "koku-drip",     name: "Koku (Drip)",   subtitle: "Goku Drip",    value: 34000,  demand: 3 },
-  { id: "ultra-kovegu",  name: "Ultra Kovegu",  subtitle: "SSJ3 Gogeta",  value: 20000,  demand: 4 },
-  { id: "death",         name: "Death",         subtitle: "Ryuk",         value: 160000, demand: 3 },
-  { id: "beardcutter",   name: "Beardcutter",   subtitle: "Goblin Slayer", value: 210000, demand: 1 },
-  { id: "slayer-mage",   name: "Slayer Mage",   subtitle: "Frieren",       value: 40000,  demand: 2.5 },
-  { id: "galaxy-girl",   name: "Galaxy Girl",   subtitle: "Sasaki Miyo",   value: 350000, demand: 1 },
-  { id: "azure-specter", name: "Azure Specter", subtitle: "Neon Edge",     value: 3200,   demand: 2 },
-  { id: "ember-shard",   name: "Ember Shard",   subtitle: "Classic Pure",  value: 900,    demand: 3 },
+export const SEARCHABLE_UNITS: { id: string; name: string; subtitle: string; value: number }[] = [
+  { id: "koku-drip",     name: "Koku (Drip)",   subtitle: "Goku Drip",    value: 34000 },
+  { id: "ultra-kovegu",  name: "Ultra Kovegu",  subtitle: "SSJ3 Gogeta",  value: 20000 },
+  { id: "death",         name: "Death",         subtitle: "Ryuk",         value: 160000 },
+  { id: "beardcutter",   name: "Beardcutter",   subtitle: "Goblin Slayer", value: 210000 },
+  { id: "slayer-mage",   name: "Slayer Mage",   subtitle: "Frieren",       value: 40000 },
+  { id: "galaxy-girl",   name: "Galaxy Girl",   subtitle: "Sasaki Miyo",   value: 350000 },
+  { id: "azure-specter", name: "Azure Specter", subtitle: "Neon Edge",     value: 3200 },
+  { id: "ember-shard",   name: "Ember Shard",   subtitle: "Classic Pure",  value: 900 },
 ];

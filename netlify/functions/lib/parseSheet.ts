@@ -1,7 +1,11 @@
-
-
 export interface ColorObj { red?: number; green?: number; blue?: number; }
-export interface CellData { formattedValue?: string; effectiveFormat?: { backgroundColor?: ColorObj; }; }
+export interface CellData { 
+  formattedValue?: string; 
+  effectiveFormat?: { 
+    backgroundColor?: ColorObj; 
+    backgroundColorStyle?: { rgbColor?: ColorObj };
+  }; 
+}
 export interface RowData { values?: CellData[]; }
 export interface SheetProperties { title?: string; }
 export interface Sheet { properties?: SheetProperties; data?: { rowData?: RowData[] }[]; }
@@ -12,10 +16,13 @@ const COLOR_TARGETS = [
   { tag: "rising", r: 0, g: 255, b: 0 },
   { tag: "rising", r: 56, g: 118, b: 29 },
   { tag: "deflated", r: 74, g: 134, b: 232 },
-  { tag: "maximum", r: 255, g: 153, b: 0 },
-  { tag: "maximum", r: 230, g: 145, b: 56 },
-  { tag: "hyped", r: 0, g: 255, b: 255 },
+  { tag: "lowballed", r: 255, g: 153, b: 0 },
+  { tag: "lowballed", r: 230, g: 145, b: 56 },
+  { tag: "highballed", r: 0, g: 255, b: 255 },
+  { tag: "hyped", r: 11, g: 83, b: 148 },
+  { tag: "hyped", r: 7, g: 55, b: 99 },
   { tag: "varies", r: 142, g: 124, b: 195 },
+  { tag: "varies", r: 217, g: 210, b: 233 },
   { tag: "gatekept", r: 166, g: 77, b: 121 },
   { tag: "gatekept", r: 255, g: 0, b: 255 },
   { tag: "inflated", r: 180, g: 95, b: 6 },
@@ -23,7 +30,9 @@ const COLOR_TARGETS = [
   { tag: "black-marketed", r: 67, g: 67, b: 67 },
   { tag: "stable", r: 252, g: 229, b: 205 },
   { tag: "stable", r: 255, g: 242, b: 204 },
+  { tag: "stable", r: 255, g: 229, b: 153 },
   { tag: "stable", r: 207, g: 226, b: 243 },
+  { tag: "stable", r: 234, g: 209, b: 220 }, // FIXED: B-Tier Pastel Pink is now mapped to Stable
   { tag: "stable", r: 255, g: 255, b: 255 }
 ];
 
@@ -32,18 +41,19 @@ export function getTagFromColor(colorObj?: ColorObj) {
   const r = Math.round((colorObj.red || 0) * 255);
   const g = Math.round((colorObj.green || 0) * 255);
   const b = Math.round((colorObj.blue || 0) * 255);
+
   let bestTag = "stable", minDistance = Infinity;
 
   for (const target of COLOR_TARGETS) {
     const distance = Math.sqrt(Math.pow(r - target.r, 2) + Math.pow(g - target.g, 2) + Math.pow(b - target.b, 2));
     if (distance < minDistance) { minDistance = distance; bestTag = target.tag; }
   }
+  
   return minDistance < 100 ? bestTag : "stable";
 }
 
 export function cleanText(input: string | undefined): string {
   if (!input) return "";
-  // Strip any stray HTML tags natively, bypassing the ESM crash
   return input.replace(/<[^>]*>?/gm, '').trim();
 }
 
@@ -105,7 +115,7 @@ export function parseSpreadsheet(data: SpreadsheetData) {
     else if (tabName.includes("Untiered")) tierKey = "Untiered";
 
     let currentSubCategory = tabName, currentSubCategoryRange = "All";
-    let colMap = { value: 2, rarity: 3, supply: 4, demand: 5, notices: 6, statusTxt: 7 };
+    let colMap: { value: number; rarity: number; liquidity: number; notices: number; statusTxt: number } = { value: 2, rarity: 3, liquidity: -1, notices: 6, statusTxt: 7 };
 
     for (let i = 0; i < rowData.length; i++) {
       const row = rowData[i].values;
@@ -116,26 +126,35 @@ export function parseSpreadsheet(data: SpreadsheetData) {
       if (!colB) continue;
 
       const rawRowStrs = row.map((c: CellData | undefined) => cleanText(c?.formattedValue?.toString().toLowerCase().trim()));
-      const hasValue = rawRowStrs.some((s: string) => s.includes("value"));
-      const hasNotices = rawRowStrs.some((s: string) => s.includes("notices"));
+      
+      const hasValue = rawRowStrs.some((s: string) => s.startsWith("value"));
+      const hasNotices = rawRowStrs.some((s: string) => s === "notices" || s === "notice");
 
-      if (hasValue || (hasNotices && !colB.includes("/"))) {
+      if (hasValue || hasNotices) {
         currentSubCategory = colB;
-        colMap = { value: -1, rarity: -1, supply: -1, demand: -1, notices: -1, statusTxt: -1 };
+        const prevMap = { ...colMap };
+        colMap = { value: -1, rarity: -1, liquidity: -1, notices: -1, statusTxt: -1 };
 
         for (let j = 2; j < row.length; j++) {
           const headerText = rawRowStrs[j];
-          if (headerText.includes("value")) {
+          if (headerText.startsWith("value")) {
             colMap.value = j;
             currentSubCategoryRange = headerText.replace(/value/i, "").replace(/\s+/g, " ").trim() || "Misc";
           }
-          else if (headerText.includes("rarity")) colMap.rarity = j;
-          else if (headerText.includes("supply")) colMap.supply = j;
-          else if (headerText.includes("demand")) colMap.demand = j;
-          else if (headerText.includes("notices")) {
+          else if (headerText.startsWith("rarity")) colMap.rarity = j;
+          else if (headerText.startsWith("liquidity")) colMap.liquidity = j;
+          else if (headerText.startsWith("notices") || headerText === "notice") {
             colMap.notices = j;
             colMap.statusTxt = j + 1; 
           }
+        }
+        
+        if (colMap.value === -1) colMap.value = prevMap.value;
+        if (colMap.rarity === -1) colMap.rarity = prevMap.rarity;
+        if (colMap.liquidity === -1) colMap.liquidity = prevMap.liquidity;
+        if (colMap.notices === -1) {
+            colMap.notices = prevMap.notices;
+            colMap.statusTxt = prevMap.statusTxt;
         }
         continue;
       }
@@ -178,13 +197,17 @@ export function parseSpreadsheet(data: SpreadsheetData) {
         numericValue = parseInt(rawValue.replace(/[^0-9]/g, "")) || 0;
       }
 
-      const nameColor = row[1]?.effectiveFormat?.backgroundColor;
-      const valColor = colMap.value !== -1 ? row[colMap.value]?.effectiveFormat?.backgroundColor : undefined;
+      const nameFormat = row[1]?.effectiveFormat;
+      const nameColor = nameFormat?.backgroundColorStyle?.rgbColor || nameFormat?.backgroundColor;
+      
+      const valFormat = colMap.value !== -1 ? row[colMap.value]?.effectiveFormat : undefined;
+      const valColor = valFormat?.backgroundColorStyle?.rgbColor || valFormat?.backgroundColor;
+
       let parsedTag = getTagFromColor(nameColor);
       if (parsedTag === "stable") parsedTag = getTagFromColor(valColor);
 
       const rawStatusText = colMap.statusTxt !== -1 ? cleanText(getCellStr(colMap.statusTxt).toLowerCase().trim().replace(" ", "-")) : "";
-      const validStatuses = ["stable", "unstable", "rising", "dropping", "inflated", "deflated", "varies", "maximum", "hyped", "gatekept", "black-marketed"];
+      const validStatuses = ["stable", "unstable", "rising", "dropping", "inflated", "deflated", "varies", "lowballed", "highballed", "hyped", "gatekept", "black-marketed"];
       const unitStatus = validStatuses.includes(rawStatusText) ? rawStatusText : parsedTag;
 
       const secondaryTagsSet = new Set<string>();
@@ -192,8 +215,7 @@ export function parseSpreadsheet(data: SpreadsheetData) {
       
       const rsdStrings = [
         colMap.rarity !== -1 ? getCellStr(colMap.rarity) : "",
-        colMap.supply !== -1 ? getCellStr(colMap.supply) : "",
-        colMap.demand !== -1 ? getCellStr(colMap.demand) : "",
+        colMap.liquidity !== -1 ? getCellStr(colMap.liquidity) : "",
         colMap.value !== -1 ? getCellStr(colMap.value) : ""
       ];
 
@@ -210,13 +232,14 @@ export function parseSpreadsheet(data: SpreadsheetData) {
         }
       });
 
+      const rawNotice = colMap.notices !== -1 ? cleanText(getCellStr(colMap.notices)) : "";
+
       parsedUnits.push({
         id: unitId,
         name, subtitle, value: numericValue, valueMin, valueDisplay,
         rarity: colMap.rarity !== -1 ? parseFloat(getCellStr(colMap.rarity)) || 0 : 0,
-        supply: colMap.supply !== -1 ? parseFloat(getCellStr(colMap.supply)) || 0 : 0,
-        demand: colMap.demand !== -1 ? parseFloat(getCellStr(colMap.demand)) || 0 : 0,
-        notice: colMap.notices !== -1 ? cleanText(getCellStr(colMap.notices)) : "",
+        liquidity: colMap.liquidity !== -1 ? cleanText(getCellStr(colMap.liquidity)) : "Average",
+        notice: rawNotice,
         status: unitStatus, 
         secondaryTags: Array.from(secondaryTagsSet),
         tier: tierKey, subCategory: currentSubCategory, subCategoryRange: currentSubCategoryRange

@@ -8,38 +8,35 @@ import { useTradeStore } from "../../../store/useTradeStore";
 import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 import { triggerHaptic } from "../../../data/helpers";
 
-export const getStatColor = (label: string, value: number) => {
+export const getStatColor = (label: string, value: number | string) => {
   if (label === "R") {
-    if (value >= 19) return "#4DB6AC";
-    if (value >= 9) return "#81C784";
-    if (value >= 6) return "#FFB74D";
+    const numVal = Number(value) || 0;
+    if (numVal >= 19) return "#4DB6AC";
+    if (numVal >= 9) return "#81C784";
+    if (numVal >= 6) return "#FFB74D";
     return "#E57373";
   }
-  if (label === "S") {
-    if (value <= 1.5) return "#4DB6AC";
-    if (value <= 2.5) return "#81C784";
-    if (value <= 3.5) return "#B5BAC1";
-    return "#E57373";
-  }
-  if (label === "D") {
-    if (value >= 4) return "#4DB6AC";
-    if (value >= 3) return "#81C784";
-    if (value >= 2) return "#B5BAC1";
+  if (label === "L") {
+    const stringVal = String(value).toLowerCase();
+    if (stringVal === "high") return "#4DB6AC";
+    if (stringVal === "average") return "#B5BAC1";
     return "#E57373";
   }
   return "#DBDEE1";
 };
 
+// Unified grid layout string to guarantee perfect 1:1 column alignment
+const GRID_COLS = "md:grid-cols-[60px_minmax(200px,1.2fr)_140px_60px_70px_minmax(200px,2fr)]";
+
 export const ListHeaderRow = memo(function ListHeaderRow() {
   return (
-    <div className="hidden md:grid grid-cols-[52px_240px_130px_55px_55px_55px_minmax(180px,1fr)] items-center bg-[#1E1F22] text-[#80848E] text-[10px] font-black uppercase tracking-widest select-none w-full border-b border-[rgba(0,0,0,0.5)] shadow-sm">
-      <div className="px-3 py-3 h-full flex items-center justify-center">Icon</div>
-      <div className="px-3 py-3 h-full flex items-center">Units</div>
-      <div className="px-3 py-3 h-full flex items-center justify-end">Value</div>
-      <div className="px-3 py-3 h-full flex items-center justify-center" title="Rarity (0-20)">R</div>
-      <div className="px-3 py-3 h-full flex items-center justify-center" title="Supply (1-5)">S</div>
-      <div className="px-3 py-3 h-full flex items-center justify-center" title="Demand (1-5)">D</div>
-      <div className="px-3 py-3 h-full flex items-center">Notices</div>
+    <div className={`hidden md:grid ${GRID_COLS} items-stretch bg-[#18191C] text-[#80848E] text-[10px] font-black uppercase tracking-widest select-none w-full border-y border-[rgba(255,255,255,0.06)] shadow-sm sticky top-0 z-20`}>
+      <div className="px-3 py-3 flex items-center justify-center">Icon</div>
+      <div className="px-3 py-3 flex items-center justify-start border-l border-[rgba(255,255,255,0.02)]">Units</div>
+      <div className="px-3 py-3 flex items-center justify-end border-l border-[rgba(255,255,255,0.02)]">Value</div>
+      <div className="px-2 py-3 flex items-center justify-center border-l border-[rgba(255,255,255,0.02)]" title="Rarity (0-20)">R</div>
+      <div className="px-2 py-3 flex items-center justify-center border-l border-[rgba(255,255,255,0.02)]" title="Liquidity (Low/Avg/High)">Liq</div>
+      <div className="px-3 py-3 flex items-center justify-start border-l border-[rgba(255,255,255,0.02)]">Notices</div>
     </div>
   );
 });
@@ -52,12 +49,28 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
   const addCard = useTradeStore(state => state.addCard);
   const openModal = useHistoryModalStore(state => state.openModal);
 
-  const popupUnit: PopupUnit = { id: unit.id, name: unit.name, subtitle: unit.subtitle, value: typeof unit.value === "number" ? unit.value : 0, demand: unit.demand };
+  const popupUnit: PopupUnit = { id: unit.id, name: unit.name, subtitle: unit.subtitle, value: typeof unit.value === "number" ? unit.value : 0 };
   const sCfg = unit.status ? GRID_STATUS_CFG[unit.status] : null;
   const tierKey = getTier(unit);
   const tierColor = TIER_CONFIG[tierKey]?.badgeColor || "#5865F2";
   const proxyUrl = getProxyImage(unit.id, unit.imageUrl);
-  const obtainability = unit.obtainability || "UNOB";
+
+  const obtainability = (() => {
+    const lowerName = (unit.name || "").toLowerCase();
+    const lowerNotice = (unit.notice || "").toLowerCase();
+    const subCat = (unit.subCategory || "").toLowerCase();
+
+    if (lowerNotice.includes("(unobtainable)") || lowerNotice.includes("[unobtainable]")) return "UNOB";
+    if (lowerNotice.includes("(obtainable)") || lowerNotice.includes("[obtainable]")) return "OBN";
+
+    if (unit.tier === "Oddities" || subCat.includes("gamepass") || lowerName.includes("premium pass") || lowerName.includes("star pass")) return "OBN";
+    if (unit.tier === "C" && lowerNotice.includes("banner") && !lowerName.includes("snowman")) return "OBN";
+    if (lowerNotice.includes("capsule")) return "OBN";
+
+    if (/\bobtainable\b/.test(lowerNotice.replace(/unobtainable/g, ''))) return "OBN";
+
+    return "UNOB";
+  })();
 
   const triggerAddedGlow = () => {
     setIsAdded(true);
@@ -87,6 +100,9 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
       ? <span className="text-[12.5px] md:text-[13.5px] font-bold tracking-tight text-[#DBDEE1] font-mono">{unit.valueDisplay}</span>
       : <span className="text-[13px] md:text-[14px] font-bold tracking-tight text-[#F2F3F5] font-mono">{(unit.value as number).toLocaleString()}</span>;
 
+  const liqString = unit.liquidity || "Average";
+  const liqDisplay = liqString.toLowerCase() === "black marketed" ? "BM" : liqString.substring(0, 3).toUpperCase();
+
   return (
     <>
       <div className={`relative group w-full overflow-hidden bg-[#2B2D31] ${isLast ? '' : 'border-b border-[rgba(255,255,255,0.03)]'}`} style={{ contentVisibility: "auto", containIntrinsicSize: "56px" }}>
@@ -97,7 +113,7 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
           onContextMenu={(e) => e.preventDefault()}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
-          className="relative flex flex-col md:grid md:grid-cols-[52px_240px_130px_55px_55px_55px_minmax(180px,1fr)] items-stretch cursor-pointer select-none even:bg-[rgba(255,255,255,0.015)] bg-[#2B2D31] hover:bg-[rgba(255,255,255,0.04)] z-10 will-change-transform"
+          className={`relative flex flex-col md:grid ${GRID_COLS} items-stretch cursor-pointer select-none even:bg-[rgba(255,255,255,0.015)] bg-[#2B2D31] hover:bg-[rgba(255,255,255,0.04)] z-10 will-change-transform`}
           style={{ 
             background: isAdded ? `${tierColor}40` : "",
             transform: isAdded ? "scale(0.98)" : "scale(1)",
@@ -145,7 +161,7 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
           </div>
 
           {/* Desktop View Content */}
-          <div className="hidden md:flex flex-col justify-center min-w-0 px-3 py-2 border-r border-[rgba(255,255,255,0.03)]">
+          <div className="hidden md:flex flex-col justify-center min-w-0 px-3 py-2 border-l border-r border-[rgba(255,255,255,0.03)]">
             <span className="text-[13.5px] font-extrabold tracking-tight text-[#F2F3F5] truncate transition-colors duration-300" style={{ color: hovered ? "#FFF" : "#F2F3F5" }}>{unit.name}</span>
             <span className="text-[10px] font-bold uppercase tracking-wider leading-none text-[#949BA4] truncate mt-1 mb-1.5">{unit.subtitle}</span>
             <div className="flex items-center gap-1.5">
@@ -168,19 +184,16 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
             <div className="group-hover:opacity-0 transition-opacity duration-300">
               {valDisplay}
             </div>
-            <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-center pr-3">
-              <span className="text-[10px] font-black text-[#80848E]">Click for Options</span>
+            <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-center justify-end pr-3 inset-0">
+              <span className="text-[10px] font-black text-[#DBDEE1] drop-shadow-md">Click for Options</span>
             </div>
           </div>
 
           <div className="hidden md:flex px-2 py-2 border-r border-[rgba(255,255,255,0.03)] items-center justify-center font-mono font-bold text-[12px]" style={{ color: getStatColor("R", unit.rarity) }}>
             {unit.rarity}
           </div>
-          <div className="hidden md:flex px-2 py-2 border-r border-[rgba(255,255,255,0.03)] items-center justify-center font-mono font-bold text-[12px]" style={{ color: getStatColor("S", unit.supply) }}>
-            {unit.supply}
-          </div>
-          <div className="hidden md:flex px-2 py-2 border-r border-[rgba(255,255,255,0.03)] items-center justify-center font-mono font-bold text-[12px]" style={{ color: getStatColor("D", unit.demand) }}>
-            {unit.demand}
+          <div className="hidden md:flex px-2 py-2 border-r border-[rgba(255,255,255,0.03)] items-center justify-center font-mono font-bold text-[12px]" style={{ color: getStatColor("L", liqString) }}>
+            {liqDisplay}
           </div>
 
           <div className="hidden md:flex px-3 py-2 items-center min-w-0">
@@ -192,9 +205,7 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
             <div className="flex items-center gap-2 text-[12px] font-mono">
               <span className="text-[#80848E]">R <span style={{ color: getStatColor("R", unit.rarity) }}>{unit.rarity}</span></span>
               <span className="text-[#3F4147]">|</span>
-              <span className="text-[#80848E]">S <span style={{ color: getStatColor("S", unit.supply) }}>{unit.supply}</span></span>
-              <span className="text-[#3F4147]">|</span>
-              <span className="text-[#80848E]">D <span style={{ color: getStatColor("D", unit.demand) }}>{unit.demand}</span></span>
+              <span className="text-[#80848E]">L <span style={{ color: getStatColor("L", liqString) }}>{liqDisplay}</span></span>
             </div>
             {unit.notice && <div className="flex-1 px-3 text-[11px] text-[#949BA4] italic leading-snug truncate">{unit.notice}</div>}
           </div>

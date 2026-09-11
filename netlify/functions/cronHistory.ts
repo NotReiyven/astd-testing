@@ -54,8 +54,7 @@ export default async (req: Request) => {
         value_display: u.valueDisplay || null,
         value_min: dbValueMin,
         rarity: u.rarity,
-        supply: u.supply,
-        demand: u.demand,
+        liquidity: u.liquidity || 'Average',
         status: u.status,
         notice: u.notice || null,
         tier: u.tier
@@ -73,8 +72,7 @@ export default async (req: Request) => {
           oldState.value_display !== newState.value_display ||
           Number(oldState.value_min) !== Number(dbValueMin) ||
           Number(oldState.rarity) !== Number(u.rarity) ||
-          Number(oldState.supply) !== Number(u.supply) ||
-          Number(oldState.demand) !== Number(u.demand) ||
+          oldState.liquidity !== u.liquidity ||
           oldState.status !== u.status ||
           oldState.notice !== newState.notice ||
           oldState.tier !== u.tier

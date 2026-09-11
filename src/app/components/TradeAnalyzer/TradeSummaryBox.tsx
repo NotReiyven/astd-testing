@@ -1,4 +1,4 @@
-import { avgStat, getTradeForecast } from "./summaryUtils";
+import { avgStat, getTradeForecast, getLiquidityScore } from "./summaryUtils";
 import { TradeCard, MasterUnit } from "../../../types";
 import { TrendingUp, Clock, AlertTriangle } from "lucide-react"; 
 
@@ -17,6 +17,14 @@ export function TradeSummaryBox({
   isMainStep4, giveTotal, getTotal, givePercent, getPercent, giveItems, getItems, ALL_UNITS
 }: TradeSummaryBoxProps) {
   const forecast = getTradeForecast(giveItems, getItems, ALL_UNITS);
+
+  const getLiqLabel = (items: TradeCard[]) => {
+    if (items.length === 0) return "—";
+    const score = getLiquidityScore(items, ALL_UNITS);
+    if (score >= 3.0) return "High";
+    if (score <= 0.6) return "Low";
+    return "Avg";
+  };
 
   return (
     <div className={`flex-shrink-0 mx-3 md:mx-4 mt-4 rounded-[8px] px-4 py-3 md:px-5 md:py-4 relative bg-[#1E1F22] border transition-all duration-300 z-20 ${isMainStep4 ? 'border-[#5865F2] shadow-[0_0_20px_rgba(88,101,242,0.4)] ring-4 ring-[#5865F2]/30' : 'border-[rgba(255,255,255,0.04)]'}`}>
@@ -52,7 +60,6 @@ export function TradeSummaryBox({
         <div className="bg-[#111214] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-3 shadow-inner">
           {forecast.calculable ? (
             <div className="flex justify-between items-stretch">
-               {/* SHORT TERM FLIP (With Tooltip) */}
                <div className="flex flex-col flex-1 border-r border-[rgba(255,255,255,0.06)] pr-3 py-1 relative group cursor-help">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <TrendingUp className="w-3.5 h-3.5 text-[#FAA61A]" />
@@ -63,14 +70,12 @@ export function TradeSummaryBox({
                        {forecast.st > 0 ? '+' : ''}{forecast.st.toFixed(1)}
                      </span>
                   </div>
-                  {/* Tooltip */}
                   <div className="absolute top-full mt-2 left-0 w-[200px] bg-[#111214] border border-[rgba(255,255,255,0.08)] text-[#DBDEE1] text-[11px] p-3 rounded-[6px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-[100]">
                     <strong className="text-[#FAA61A] block mb-1">Short-Term Flip</strong>
-                    Scores &gt; 0 are wins. Calculated using Raw Value, Liquidity (Demand ÷ Supply), and immediate Market Tag momentum.
+                    Scores &gt; 0 are wins. Calculated using Raw Value, Liquidity, and immediate Market Tag momentum.
                   </div>
                </div>
                
-               {/* LONG TERM HOLD (With Tooltip) */}
                <div className="flex flex-col flex-1 pl-4 py-1 relative group cursor-help">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <Clock className="w-3.5 h-3.5 text-[#5865F2]" />
@@ -81,10 +86,9 @@ export function TradeSummaryBox({
                        {forecast.lt > 0 ? '+' : ''}{forecast.lt.toFixed(1)}
                      </span>
                   </div>
-                  {/* Tooltip */}
                   <div className="absolute top-full mt-2 right-0 w-[200px] bg-[#111214] border border-[rgba(255,255,255,0.08)] text-[#DBDEE1] text-[11px] p-3 rounded-[6px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-[100]">
                     <strong className="text-[#5865F2] block mb-1">Long-Term Hold</strong>
-                    Scores &gt; 0 are wins. Weighs Rarity heavily and mathematically punishes "Hyped" or "Unstable" units that may crash over time.
+                    Scores &gt; 0 are wins. Weighs Rarity heavily and mathematically punishes "Hyped" or "Unstable" units.
                   </div>
                </div>
             </div>
@@ -103,7 +107,7 @@ export function TradeSummaryBox({
 
       </div>
 
-      <div className="grid grid-cols-3 gap-1.5 md:gap-2">
+      <div className="grid grid-cols-2 gap-1.5 md:gap-2">
         {/* RARITY */}
         <div className="flex flex-col items-center p-1.5 md:p-2 rounded-[6px] bg-[#111214] border border-[rgba(255,255,255,0.03)] transition-all duration-300 hover:-translate-y-1 hover:shadow-md relative group cursor-help">
           <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-widest text-[#949BA4] mb-0.5 md:mb-1">Rarity</span>
@@ -113,22 +117,13 @@ export function TradeSummaryBox({
             <span className="text-[#23a559] font-bold">Higher is better.</span> Determines absolute scarcity. Impacts Long-Term hold scores heavily.
           </div>
         </div>
-        {/* SUPPLY */}
+        {/* LIQUIDITY */}
         <div className="flex flex-col items-center p-1.5 md:p-2 rounded-[6px] bg-[#111214] border border-[rgba(255,255,255,0.03)] transition-all duration-300 hover:-translate-y-1 hover:shadow-md relative group cursor-help">
-          <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-widest text-[#949BA4] mb-0.5 md:mb-1">Supply</span>
-          <span className="text-[10px] md:text-[12px] font-bold text-[#DBDEE1] font-mono flex items-center gap-1">{avgStat(giveItems, "supply", ALL_UNITS)} <span className="text-[#80848E] text-[8px] md:text-[10px]">➔</span> {avgStat(getItems, "supply", ALL_UNITS)}</span>
-          <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[160px] bg-[#111214] border border-[rgba(255,255,255,0.08)] text-[#DBDEE1] text-[11px] p-2.5 rounded-[6px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-[100] text-center">
-            <strong className="text-[#F2F3F5] block mb-1">Supply (1-5)</strong>
-            <span className="text-[#23a559] font-bold">Lower is better.</span> Fewer copies in circulation creates higher liquidity.
-          </div>
-        </div>
-        {/* DEMAND */}
-        <div className="flex flex-col items-center p-1.5 md:p-2 rounded-[6px] bg-[#111214] border border-[rgba(255,255,255,0.03)] transition-all duration-300 hover:-translate-y-1 hover:shadow-md relative group cursor-help">
-          <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-widest text-[#949BA4] mb-0.5 md:mb-1">Demand</span>
-          <span className="text-[10px] md:text-[12px] font-bold text-[#DBDEE1] font-mono flex items-center gap-1">{avgStat(giveItems, "demand", ALL_UNITS)} <span className="text-[#80848E] text-[8px] md:text-[10px]">➔</span> {avgStat(getItems, "demand", ALL_UNITS)}</span>
+          <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-widest text-[#949BA4] mb-0.5 md:mb-1">Liquidity</span>
+          <span className="text-[10px] md:text-[12px] font-bold text-[#DBDEE1] font-mono flex items-center gap-1">{getLiqLabel(giveItems)} <span className="text-[#80848E] text-[8px] md:text-[10px]">➔</span> {getLiqLabel(getItems)}</span>
           <div className="absolute top-full mt-2 right-0 md:left-1/2 md:-translate-x-1/2 w-[160px] bg-[#111214] border border-[rgba(255,255,255,0.08)] text-[#DBDEE1] text-[11px] p-2.5 rounded-[6px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-[100] text-right md:text-center">
-            <strong className="text-[#F2F3F5] block mb-1">Demand (1-5)</strong>
-            <span className="text-[#23a559] font-bold">Higher is better.</span> Defines how easy a unit is to trade off to others.
+            <strong className="text-[#F2F3F5] block mb-1">Liquidity</strong>
+            <span className="text-[#23a559] font-bold">High is better.</span> How fast you can find a buyer. Dictates short-term viability.
           </div>
         </div>
       </div>

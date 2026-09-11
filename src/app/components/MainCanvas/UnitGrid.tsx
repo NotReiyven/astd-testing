@@ -2,7 +2,7 @@ import { useState, useRef, memo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, ArrowUpCircle, ArrowDownCircle, History } from "lucide-react";
 import { PopupUnit, GridUnit, MasterUnit, UnitStatus } from "../../../types";
-import { GRID_STATUS_CFG, getRarityLabel, SUPPLY_SCALE, DEMAND_SCALE, getTier, TIER_CONFIG, getProxyImage } from "../../../data";
+import { GRID_STATUS_CFG, getRarityLabel, LIQUIDITY_SCALE, getTier, TIER_CONFIG, getProxyImage } from "../../../data";
 import { getAvatarStyle, getInitials, handleImageError } from "../TradeAnalyzer/summaryUtils"; 
 import { useTradeStore } from "../../../store/useTradeStore";
 import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
@@ -28,10 +28,54 @@ export const TierGridCard = memo(function TierGridCard({ unit }: { unit: GridUni
 
   const popupUnit: PopupUnit = {
     id: unit.id, name: unit.name, subtitle: unit.subtitle,
-    value: typeof unit.value === "number" ? unit.value : 0, demand: unit.demand,
+    value: typeof unit.value === "number" ? unit.value : 0
   };
 
-  const obtainability = unit.obtainability || "UNOB";
+  const getObtainability = () => {
+    // 1. Database sync fallback
+    if (unit.obtainability) return unit.obtainability;
+    
+    const lowerName = unit.name.toLowerCase();
+    const lowerNotice = (unit.notice || "").toLowerCase();
+    const subCat = (unit.subCategory || "").toLowerCase();
+
+    // 2. Hardcoded Exceptions
+    if (unit.tier === "Oddities" || subCat.includes("gamepass") || lowerName.includes("premium pass") || lowerName.includes("star pass")) {
+      return "OBN";
+    }
+    if (unit.tier === "C" && lowerNotice.includes("banner") && !lowerName.includes("snowman")) {
+      return "OBN";
+    }
+    if (lowerNotice.includes("capsule")) {
+      return "OBN";
+    }
+
+    // 3. Standard Spreadsheet Tags
+    if (lowerNotice.includes("(obtainable)") || lowerNotice.includes("[obtainable]")) return "OBN";
+    if (lowerNotice.includes("(unobtainable)") || lowerNotice.includes("[unobtainable]")) return "UNOB";
+    if (/\bobtainable\b/.test(lowerNotice.replace(/unobtainable/g, ''))) return "OBN";
+
+    return "UNOB";
+  };
+  const obtainability = (() => {
+    const lowerName = (unit.name || "").toLowerCase();
+    const lowerNotice = (unit.notice || "").toLowerCase();
+    const subCat = (unit.subCategory || "").toLowerCase();
+
+    // 1. Explicit Spreadsheet Overrides (Absolute Priority)
+    if (lowerNotice.includes("(unobtainable)") || lowerNotice.includes("[unobtainable]")) return "UNOB";
+    if (lowerNotice.includes("(obtainable)") || lowerNotice.includes("[obtainable]")) return "OBN";
+
+    // 2. Hardcoded Exceptions (Gamepasses, Oddities, Banners, missing Capsule tags)
+    if (unit.tier === "Oddities" || subCat.includes("gamepass") || lowerName.includes("premium pass") || lowerName.includes("star pass")) return "OBN";
+    if (unit.tier === "C" && lowerNotice.includes("banner") && !lowerName.includes("snowman")) return "OBN";
+    if (lowerNotice.includes("capsule")) return "OBN";
+
+    // 3. Fallback regex (strips 'unobtainable' to prevent false overlaps)
+    if (/\bobtainable\b/.test(lowerNotice.replace(/unobtainable/g, ''))) return "OBN";
+
+    return "UNOB";
+  })();
 
   const triggerAddedGlow = () => {
     setIsAdded(true);
@@ -121,21 +165,22 @@ export const TierGridCard = memo(function TierGridCard({ unit }: { unit: GridUni
             </div>
 
             <div className="flex flex-col mt-auto pt-3 md:pt-5 w-full">
-              <div className="pl-2 md:pl-3 border-l-[3px] transition-colors duration-300 w-full min-w-0" style={{ borderColor: hovered ? tierColor : "#5865F2" }}>
+              <div className="pl-2 md:pl-3 border-l-[3px] transition-colors duration-300 w-full min-w-0 mb-3 md:mb-4" style={{ borderColor: hovered ? tierColor : "#5865F2" }}>
                 <GridValueDisplay unit={unit} />
               </div>
 
-              <div className="relative w-full mt-3 md:mt-4 pt-3 md:pt-4 border-t border-[rgba(255,255,255,0.06)] min-h-[34px] md:min-h-[38px] flex items-center justify-between">
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-1 flex-nowrap flex-1 min-w-0 overflow-hidden">
-                    <GridStatItem label="R" value={unit.rarity} />
-                    <GridStatItem label="S" value={unit.supply} />
-                    <GridStatItem label="D" value={unit.demand} />
-                  </div>
-                </div>
+              <div className="hidden md:grid grid-cols-2 gap-2 w-full">
+                <GridStatBox label="RARITY" value={unit.rarity} type="rarity" />
+                <GridStatBox label="LIQUIDITY" value={unit.liquidity || "Average"} type="liquidity" />
               </div>
             </div>
           </div>
+
+          <div className="grid md:hidden grid-cols-2 gap-2 w-full px-3 pb-3 relative min-h-[28px] bg-[#2B2D31]">
+             <GridStatBox label="RARITY" value={unit.rarity} type="rarity" />
+             <GridStatBox label="LIQUIDITY" value={unit.liquidity || "Average"} type="liquidity" />
+          </div>
+
         </div>
       </div>
 
@@ -217,33 +262,40 @@ function GridStatusBadge({ status }: { status: UnitStatus }) {
   );
 }
 
-function GridStatItem({ label, value }: { label: string; value: number }) {
-  const btnRef = useRef<HTMLSpanElement>(null);
+function GridStatBox({ label, value, type }: { label: string; value: number | string; type: "rarity" | "liquidity" }) {
+  const btnRef = useRef<HTMLDivElement>(null);
   const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
-  const fmt = (v: number) => (v % 1 === 0 ? String(v) : v.toFixed(1));
 
   useEffect(() => {
     return () => setTipPos(null);
   }, []);
 
-  let tipTitle = ""; let tipBody = ""; let tipNote = "";
+  let tipTitle = ""; let tipBody = ""; 
   let textColor = "#DBDEE1";
+  let displayValue = String(value);
 
-  if (label === "R") {
-    tipTitle = `Rarity ${fmt(value)} / 20`; tipBody = getRarityLabel(value);
-    if (value >= 19) textColor = "#4DB6AC"; else if (value >= 9) textColor = "#81C784"; else if (value >= 6) textColor = "#FFB74D"; else textColor = "#E57373";
-  } else if (label === "S") {
-    tipTitle = `Supply ${fmt(value)} / 5`; tipBody = SUPPLY_SCALE[Math.round(value)] ?? "Unknown";
-    if (value <= 1.5) textColor = "#4DB6AC"; else if (value <= 2.5) textColor = "#81C784"; else if (value <= 3.5) textColor = "#B5BAC1"; else textColor = "#E57373";
-  } else if (label === "D") {
-    tipTitle = `Demand ${fmt(value)} / 5`; tipBody = DEMAND_SCALE[Math.round(value)] ?? "Unknown"; tipNote = "Note: Demand does not directly drive value.";
-    if (value >= 4) textColor = "#4DB6AC"; else if (value >= 3) textColor = "#81C784"; else if (value >= 2) textColor = "#B5BAC1"; else textColor = "#E57373";
+  if (type === "rarity") {
+    const numVal = Number(value) || 0;
+    displayValue = numVal % 1 === 0 ? String(numVal) : numVal.toFixed(1);
+    tipTitle = `Rarity ${displayValue} / 20`; 
+    tipBody = getRarityLabel(numVal);
+    if (numVal >= 19) textColor = "#4DB6AC"; else if (numVal >= 9) textColor = "#81C784"; else if (numVal >= 6) textColor = "#FFB74D"; else textColor = "#E57373";
+  } else {
+    const stringVal = String(value);
+    const liqKey = stringVal.charAt(0).toUpperCase() + stringVal.slice(1).toLowerCase();
+    displayValue = stringVal.toLowerCase() === "black marketed" ? "BM" : stringVal.toUpperCase();
+    tipTitle = `Liquidity: ${liqKey}`; 
+    tipBody = LIQUIDITY_SCALE[liqKey] ?? "Unknown trading difficulty.";
+    
+    if (liqKey === "High") textColor = "#4DB6AC"; 
+    else if (liqKey === "Average") textColor = "#B5BAC1"; 
+    else textColor = "#E57373";
   }
 
   return (
-    <span
+    <div
       ref={btnRef}
-      className="relative flex items-center gap-0.5 md:gap-1 cursor-default group flex-shrink-0"
+      className="flex flex-col justify-center bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[6px] p-2 hover:bg-[rgba(255,255,255,0.02)] transition-colors cursor-help shadow-inner"
       onMouseEnter={() => {
         if (!btnRef.current) return;
         const r = btnRef.current.getBoundingClientRect();
@@ -251,17 +303,17 @@ function GridStatItem({ label, value }: { label: string; value: number }) {
       }}
       onMouseLeave={() => setTipPos(null)}
     >
-      <span className="text-[8.5px] md:text-[10px] font-bold text-[#80848E] font-mono">{label}</span>
-      <span className="text-[9.5px] md:text-[11px] font-bold px-[3px] py-[1px] rounded-[3px] leading-none font-mono bg-[#2B2D31] border border-[rgba(255,255,255,0.04)]" style={{ color: textColor }}>{fmt(value)}</span>
+      <span className="text-[8px] md:text-[9px] font-bold text-[#80848E] uppercase tracking-widest mb-0.5">{label}</span>
+      <span className="text-[10px] md:text-[12px] font-black tracking-wide truncate" style={{ color: textColor }}>{displayValue}</span>
+      
       {tipPos && createPortal(
         <div className="rounded-[8px] px-3 py-2.5 pointer-events-none fixed z-[99999] -translate-x-1/2 animate-fade-in" style={{ top: tipPos.y, left: tipPos.x, minWidth: 200, maxWidth: 240, background: "#111214", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
           <p className="text-[12px] font-bold mb-0.5" style={{ color: textColor }}>{tipTitle}</p>
           <p className="text-[11px] font-medium leading-snug text-[#DBDEE1]">{tipBody}</p>
-          {tipNote && <p className="text-[10px] font-medium mt-1.5 leading-snug text-[#80848E]">{tipNote}</p>}
         </div>,
         document.body
       )}
-    </span>
+    </div>
   );
 }
 

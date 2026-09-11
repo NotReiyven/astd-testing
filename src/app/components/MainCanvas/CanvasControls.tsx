@@ -5,15 +5,15 @@ import { CustomDropdown } from "./CustomDropdown";
 
 const SORT_OPTIONS = {
   "value-desc": "Value: High to Low", "value-asc": "Value: Low to High",
-  "demand-desc": "Demand: High to Low", "supply-asc": "Supply: Rarest First",
+  "liq-desc": "Liquidity: High to Low", "liq-asc": "Liquidity: Low to High",
   "rarity-desc": "Rarity: Rarest First", "alpha-asc": "Alphabetical: A-Z"
 };
 
 const FILTER_OPTIONS = {
   "all": "All Statuses", "stable": "Stable", "unstable": "Unstable",
   "rising": "Rising", "dropping": "Dropping", "inflated": "Inflated",
-  "deflated": "Deflated", "varies": "Varies", "maximum": "Maximum",
-  "gatekept": "Gatekept", "hyped": "Hyped", "black-marketed": "Black Market"
+  "deflated": "Deflated", "varies": "Varies", "lowballed": "Lowballed",
+  "highballed": "Highballed", "gatekept": "Gatekept", "hyped": "Hyped", "black-marketed": "Black Market"
 };
 
 interface CanvasControlsProps {
@@ -31,33 +31,18 @@ interface CanvasControlsProps {
 }
 
 export function CanvasControls({
-  activeTierFilter,
-  setActiveTierFilter,
-  deferredSearchQuery,
-  hasFiltersApplied,
-  handleResetFilters,
-  statusFilter,
-  setStatusFilter,
-  sortMode,
-  setSortMode,
-  viewMode,
-  setViewMode
+  activeTierFilter, setActiveTierFilter, deferredSearchQuery, hasFiltersApplied,
+  handleResetFilters, statusFilter, setStatusFilter, sortMode, setSortMode,
+  viewMode, setViewMode
 }: CanvasControlsProps) {
   return (
     <div className="flex-shrink-0 flex flex-col xl:flex-row xl:items-center justify-between px-4 md:px-6 py-3 md:py-4 z-40 relative gap-4 bg-[#2B2D31] border-b border-[rgba(0,0,0,0.22)] shadow-sm">
-      
-      {/* Tier Pill Navigation */}
       <div 
         className="flex flex-nowrap gap-2 overflow-x-auto hide-scrollbar pb-1 -mb-1 mask-fade-edges w-full xl:w-auto"
         onTouchStart={e => e.stopPropagation()}
         onTouchMove={e => e.stopPropagation()}
       >
-        <style>{`
-          .mask-fade-edges {
-            mask-image: linear-gradient(to right, black 90%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%);
-          }
-        `}</style>
+        <style>{`.mask-fade-edges { mask-image: linear-gradient(to right, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%); }`}</style>
         {FILTERS.map((f) => (
           <button
             key={f}
@@ -77,7 +62,6 @@ export function CanvasControls({
         ))}
       </div>
 
-      {/* Action Toolbar */}
       <div 
         className="flex items-center gap-2.5 w-full xl:w-auto flex-wrap"
         onTouchStart={e => e.stopPropagation()}
@@ -94,34 +78,15 @@ export function CanvasControls({
           </button>
         )}
 
-        <CustomDropdown 
-          icon={Filter} 
-          value={statusFilter} 
-          options={FILTER_OPTIONS} 
-          onChange={(s: string) => {
-            setStatusFilter(s);
-            if (s !== "all") window.dispatchEvent(new Event("academy-used-filter"));
-          }} 
-          defaultLabel="All Statuses" 
-        />
-        
+        <CustomDropdown icon={Filter} value={statusFilter} options={FILTER_OPTIONS} onChange={(s: string) => { setStatusFilter(s); if (s !== "all") window.dispatchEvent(new Event("academy-used-filter")); }} defaultLabel="All Statuses" />
         <CustomDropdown icon={ArrowUpDown} value={sortMode} options={SORT_OPTIONS} onChange={setSortMode} />
-        
         <div className="hidden md:block w-px h-5 mx-1 flex-shrink-0" style={{ background: "rgba(255,255,255,0.08)" }} />
         
         <div className="flex bg-[#1E1F22] rounded-[6px] p-[3px] border border-[rgba(255,255,255,0.06)] flex-shrink-0 ml-auto md:ml-0 shadow-inner">
-          <button 
-            onClick={() => setViewMode("grid")} 
-            className={`p-1.5 rounded-[4px] transition-all duration-200 ease-out ${viewMode === "grid" ? "bg-[#4e5058] text-white shadow-sm" : "text-[#80848E] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)]"}`} 
-            title="Grid View"
-          >
+          <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-[4px] transition-all duration-200 ease-out ${viewMode === "grid" ? "bg-[#4e5058] text-white shadow-sm" : "text-[#80848E] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)]"}`} title="Grid View">
             <LayoutGrid className="w-4 h-4" />
           </button>
-          <button 
-            onClick={() => setViewMode("list")} 
-            className={`p-1.5 rounded-[4px] transition-all duration-200 ease-out ${viewMode === "list" ? "bg-[#4e5058] text-white shadow-sm" : "text-[#80848E] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)]"}`} 
-            title="List View"
-          >
+          <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-[4px] transition-all duration-200 ease-out ${viewMode === "list" ? "bg-[#4e5058] text-white shadow-sm" : "text-[#80848E] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)]"}`} title="List View">
             <List className="w-4 h-4" />
           </button>
         </div>
