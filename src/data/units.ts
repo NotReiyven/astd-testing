@@ -93,7 +93,7 @@ export const UNIT_METADATA: Record<string, UnitMeta> = {
   "fire-king": { subtitle: "Sabo", aliases: ["sabo", "flame emperor"], obtainability: "UNOB" },
   "cursed-brothers-enraged": { subtitle: "Itadori and Todo (Enraged)", aliases: ["itadori and todo (enraged)", "itadori", "todo"], obtainability: "UNOB" },
   "gankai": { subtitle: "Kaos", aliases: ["kaos", "godus"], obtainability: "UNOB" },
-  "overlord": { name: "The Overlord", subtitle: "The Overlord", aliases: ["the overlord", "ainz ooal gown"], obtainability: "UNOB" },
+  "the-overlord": { name: "The Overlord", subtitle: "The Overlord", aliases: ["the overlord", "ainz ooal gown"], obtainability: "UNOB" },
 
   // ── Low A Tier ──
   "jangiku": { subtitle: "Rangiku", aliases: ["rangiku"], obtainability: "UNOB" },

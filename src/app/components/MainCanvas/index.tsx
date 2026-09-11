@@ -13,8 +13,7 @@ import { CanvasControls } from "./CanvasControls";
 import { GuideType } from "../guides/AquaGuideOverlay";
 
 const STICKY_HEADER_CLASS = "bg-[#313338] pt-2 md:pt-3 pb-3 -mx-2 px-2 md:-mx-8 md:px-8";
-const FIRE_ZIO_AVATAR = "https://media.discordapp.net/attachments/1538970612947615744/1543320682430074971/image.png?ex=6a9470e4&is=6a931f64&hm=d97c87c7af214b524fdd41b313db6a4d45d5cf435046fc9a8a14fb307d258165&=&format=webp&quality=lossless";
-
+const FIRE_ZIO_AVATAR = "/units/firezio.webp";
 type VirtualItem = 
   | { type: 'space-top'; id: string }
   | { type: 'welcome'; id: string }

@@ -48,8 +48,7 @@ const LIQUIDITY_SCALE = [
   { val: "High", def: "Easy to trade the unit (Supply < Demand)", color: "#4DB6AC", bg: "#111214" }
 ];
 
-const FIRE_ZIO_AVATAR = "https://media.discordapp.net/attachments/1538970612947615744/1543320682430074971/image.png?ex=6a9470e4&is=6a931f64&hm=d97c87c7af214b524fdd41b313db6a4d45d5cf435046fc9a8a14fb307d258165&=&format=webp&quality=lossless";
-
+const FIRE_ZIO_AVATAR = "/units/firezio.webp";
 export function TheoryTab() {
   return (
     <div className="flex flex-col gap-8 max-w-5xl mx-auto animate-fade-in pb-8 font-sans">
