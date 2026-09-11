@@ -12,6 +12,7 @@
     "packageJson": {
       "dependencies": [
         "npm:@netlify/functions@^2.8.0",
+        "npm:@supabase/supabase-js@^2.115.0",
         "npm:@tailwindcss/vite@4.1.12",
         "npm:@tanstack/react-virtual@^3.14.10",
         "npm:@types/node@^26.4.0",
@@ -23,6 +24,7 @@
         "npm:@vitejs/plugin-react@4.7.0",
         "npm:idb-keyval@^6.3.0",
         "npm:lucide-react@0.487.0",
+        "npm:recharts@^3.10.1",
         "npm:sanitize-html@^2.17.7",
         "npm:sharp@~0.35.4",
         "npm:tailwindcss@4.1.12",
