@@ -11,7 +11,7 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
-        "npm:@netlify/functions@^2.8.0",
+        "npm:@netlify/functions@6",
         "npm:@supabase/supabase-js@^2.115.0",
         "npm:@tailwindcss/vite@4.1.12",
         "npm:@tanstack/react-virtual@^3.14.10",

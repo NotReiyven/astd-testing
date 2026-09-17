@@ -381,7 +381,7 @@ const executeNERPipeline = (rawInput: string, ALL_UNITS: MasterUnit[]): ParseRes
                 const u = span.options[0];
                 const existing = exact.find(e => e.id === u.id);
                 if (existing) existing.qty += span.qty;
-                else exact.push({ id: u.id, name: u.name, subtitle: u.subtitle, value: typeof u.value === 'number' ? u.value : 0, demand: u.demand, qty: span.qty });
+                else exact.push({ id: u.id, name: u.name, subtitle: u.subtitle, value: typeof u.value === 'number' ? u.value : 0, qty: span.qty });
             } else {
                 const uniqueOptions = Array.from(new Map(span.options.map(u => [u.id, u])).values());
                 ambig.push({ rawName: span.text, qty: span.qty, col, options: uniqueOptions });

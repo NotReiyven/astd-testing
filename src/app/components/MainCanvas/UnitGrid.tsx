@@ -26,9 +26,17 @@ export const TierGridCard = memo(function TierGridCard({ unit }: { unit: GridUni
   const addCard = useTradeStore(state => state.addCard);
   const openModal = useHistoryModalStore(state => state.openModal);
 
+  const numericValue = typeof unit.value === "number" 
+    ? unit.value 
+    : typeof unit.valueMin === "number" && unit.valueMin > 0 
+      ? unit.valueMin 
+      : 0;
+
   const popupUnit: PopupUnit = {
-    id: unit.id, name: unit.name, subtitle: unit.subtitle,
-    value: typeof unit.value === "number" ? unit.value : 0
+    id: unit.id, 
+    name: unit.name, 
+    subtitle: unit.subtitle,
+    value: numericValue
   };
 
   const getObtainability = () => {
@@ -57,6 +65,7 @@ export const TierGridCard = memo(function TierGridCard({ unit }: { unit: GridUni
 
     return "UNOB";
   };
+  
   const obtainability = (() => {
     const lowerName = (unit.name || "").toLowerCase();
     const lowerNotice = (unit.notice || "").toLowerCase();
@@ -318,6 +327,13 @@ function GridStatBox({ label, value, type }: { label: string; value: number | st
 }
 
 function GridValueDisplay({ unit }: { unit: GridUnit }) {
+  if (getTier(unit as MasterUnit) === "Untiered") {
+    return (
+      <span className="text-[14px] md:text-[17px] font-black tracking-tighter truncate text-[#80848E] font-mono block w-full">
+        N/A
+      </span>
+    );
+  }
   if (unit.value === "owner" || unit.valueDisplay === "Owner's Choice" || unit.valueDisplay === "O/C") {
     return (
       <span className="text-[13px] md:text-[16px] font-black tracking-tight truncate block w-full" style={{ background: "linear-gradient(90deg, #a78bfa, #f472b6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
@@ -325,10 +341,22 @@ function GridValueDisplay({ unit }: { unit: GridUnit }) {
       </span>
     );
   }
-  if (unit.valueDisplay) {
+  
+  if (unit.valueDisplay && unit.valueDisplay !== "N/A" && !unit.valueDisplay.toLowerCase().startsWith("obtained")) {
     return <span className="text-[14px] md:text-[17px] font-black tracking-tighter truncate text-[#DBDEE1] font-mono block w-full">{unit.valueDisplay}</span>;
   }
-  return <span className="text-[16px] md:text-[20px] font-black tracking-tighter tabular-nums text-[#F2F3F5] font-mono block w-full truncate">{(unit.value as number).toLocaleString()}</span>;
+
+  const displayNum = typeof unit.value === "number" && unit.value > 0 
+    ? unit.value 
+    : typeof unit.valueMin === "number" && unit.valueMin > 0 
+      ? unit.valueMin 
+      : null;
+
+  if (displayNum !== null) {
+    return <span className="text-[16px] md:text-[20px] font-black tracking-tighter tabular-nums text-[#F2F3F5] font-mono block w-full truncate">{displayNum.toLocaleString()}</span>;
+  }
+
+  return <span className="text-[14px] font-bold text-[#80848E] font-mono block w-full">N/A</span>;
 }
 
 function NoticeTooltip({ notice }: { notice?: string }) {

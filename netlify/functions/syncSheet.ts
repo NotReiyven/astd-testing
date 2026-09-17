@@ -1,4 +1,4 @@
-import { Handler, HandlerResponse } from "@netlify/functions";
+import { Handler, HandlerEvent, HandlerContext, HandlerResponse } from "@netlify/functions";
 import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
 import { parseSpreadsheet, SpreadsheetData } from "./lib/parseSheet";
@@ -34,7 +34,7 @@ if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) 
   });
 }
 
-export const handler: Handler = async (event, context) => {
+export const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
   if (event.httpMethod === "OPTIONS") {
     return jsonResponse(204, "");
   }
@@ -59,8 +59,8 @@ export const handler: Handler = async (event, context) => {
   const SHEET_ID = process.env.SPREADSHEET_ID;
 
   const ranges = [
-    "S Tier!A:H", "A Tier!A:H", "B Tier!A:H", "C Tier!A:H",
-    "Pure Tier!A:H", "Oddities!A:H", "Untiered!A:H",
+    "S Tier!A:I", "A Tier!A:I", "B Tier!A:I", "C Tier!A:I",
+    "Pure Tier!A:I", "Oddities!A:I", "Untiered!A:I",
     "Home!A:K", "Extra Notices!A:B"
   ];
   const batchRanges = ranges.map(r => `ranges=${encodeURIComponent(r)}`).join("&");

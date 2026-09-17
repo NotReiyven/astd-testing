@@ -15,8 +15,8 @@ export default async (req: Request) => {
 
   try {
     const ranges = [
-      "S Tier!A:H", "A Tier!A:H", "B Tier!A:H", "C Tier!A:H", 
-      "Pure Tier!A:H", "Oddities!A:H", "Untiered!A:H"
+      "S Tier!A:I", "A Tier!A:I", "B Tier!A:I", "C Tier!A:I", 
+      "Pure Tier!A:I", "Oddities!A:I", "Untiered!A:I"
     ];
     const batchRanges = ranges.map(r => `ranges=${encodeURIComponent(r)}`).join("&");
     
@@ -66,8 +66,11 @@ export default async (req: Request) => {
       if (!oldState) {
         hasChanged = true;
       } else {
+        const oldValSafe = String(oldState.value);
+        const newValSafe = String(dbValue);
+
         if (
-          Number(oldState.value) !== Number(dbValue) ||
+          oldValSafe !== newValSafe ||
           oldState.value_type !== dbValueType ||
           oldState.value_display !== newState.value_display ||
           Number(oldState.value_min) !== Number(dbValueMin) ||

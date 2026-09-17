@@ -71,6 +71,8 @@ export const ActiveCardRow = memo(function ActiveCardRow({
   const handleRemove = useCallback(() => onRemove(card.id), [card.id, onRemove]);
   const handlePin = useCallback(() => onTogglePin(card.id), [card.id, onTogglePin]);
 
+  const isOwnerChoice = masterData?.value === "owner" || masterData?.valueDisplay === "Owner's Choice" || masterData?.valueDisplay === "O/C";
+
   return (
     <div 
       className={`flex items-center gap-2 bg-[#2B2D31] hover:bg-[rgba(255,255,255,0.04)] p-2 rounded-[8px] border transition-colors group ${isPinned ? "border-[#5865F2] shadow-[0_0_8px_rgba(88,101,242,0.15)]" : "border-[rgba(255,255,255,0.04)]"}`}
@@ -114,9 +116,9 @@ export const ActiveCardRow = memo(function ActiveCardRow({
       <div className="flex items-center gap-2 flex-shrink-0 min-w-0">
          <span 
            className="text-[13px] md:text-[14px] font-bold text-[#F2F3F5] font-mono tracking-tight text-right mr-1 flex-shrink-1 min-w-0 truncate max-w-[80px]" 
-           title={card.value === 0 ? "O/C" : (card.value * card.qty).toLocaleString()}
+           title={isOwnerChoice ? "Owner's Choice" : (card.value * card.qty).toLocaleString()}
          >
-           {card.value === 0 ? "O/C" : (card.value * card.qty).toLocaleString()}
+           {isOwnerChoice ? "O/C" : (card.value * card.qty).toLocaleString()}
          </span>
 
          <div className="flex items-center bg-[#1E1F22] rounded-[4px] p-0.5 border border-[rgba(255,255,255,0.04)] shadow-inner flex-shrink-0">

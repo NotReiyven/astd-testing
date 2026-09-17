@@ -186,22 +186,40 @@ export function parseSpreadsheet(data: SpreadsheetData) {
         unitId = "eis";
       }
 
-      const rawValue = colMap.value !== -1 ? cleanText(getCellStr(colMap.value).toLowerCase()) : "";
-      let numericValue: number | "owner" | "range" = 0, valueMin: number | undefined = undefined, valueDisplay: string | undefined = undefined;
+      // netlify/functions/lib/parseSheet.ts
 
-      if (rawValue.includes("owner") || rawValue.includes("o/c")) {
-        numericValue = "owner"; valueDisplay = "Owner's Choice";
-      } else if (rawValue.includes("-") || rawValue.includes("k") || rawValue.includes("m") || rawValue.includes("?")) {
-        numericValue = "range";
-        valueDisplay = rawValue ? cleanText(getCellStr(colMap.value)) : "0";
-        const firstPart = rawValue.split("-")[0].replace("?", "0").trim();
-        let multiplier = 1;
-        if (firstPart.includes("k")) multiplier = 1000;
-        if (firstPart.includes("m")) multiplier = 1000000;
-        valueMin = (parseFloat(firstPart.replace(/[^0-9.]/g, "")) || 0) * multiplier;
-      } else {
-        numericValue = parseInt(rawValue.replace(/[^0-9]/g, "")) || 0;
-      }
+// Replace the rawValue parsing block around line 170:
+const rawValue = colMap.value !== -1 ? cleanText(getCellStr(colMap.value).toLowerCase()) : "";
+let numericValue: number | "owner" | "range" = 0;
+let valueMin: number | undefined = undefined;
+let valueDisplay: string | undefined = undefined;
+
+if (rawValue.includes("owner") || rawValue.includes("o/c")) {
+  numericValue = "owner";
+  valueDisplay = "Owner's Choice";
+} else if (rawValue.includes("-") || rawValue.includes("k") || rawValue.includes("m") || rawValue.includes("?")) {
+  // Check if it's actual notes or sentences rather than a value pattern
+  const hasDigits = /\d/.test(rawValue);
+  if (!hasDigits || rawValue.split(" ").length > 3) {
+    // It's a note mistakenly parsed as value (e.g., "Obtained through...")
+    numericValue = 0;
+    valueDisplay = "N/A";
+  } else {
+    // Parse things like "5,000-?" or "1,000-2,000"
+    const firstPart = rawValue.split("-")[0].replace("?", "0").trim();
+    let multiplier = 1;
+    if (firstPart.includes("k")) multiplier = 1000;
+    if (firstPart.includes("m")) multiplier = 1000000;
+    const baseNum = (parseFloat(firstPart.replace(/[^0-9.]/g, "")) || 0) * multiplier;
+    
+    // Set numericValue directly to baseNum so calculators and sorting use the initial floor
+    numericValue = baseNum;
+    valueMin = baseNum;
+    valueDisplay = cleanText(getCellStr(colMap.value));
+  }
+} else {
+  numericValue = parseInt(rawValue.replace(/[^0-9]/g, "")) || 0;
+}
 
       const nameFormat = row[1]?.effectiveFormat;
       const nameColor = nameFormat?.backgroundColorStyle?.rgbColor || nameFormat?.backgroundColor;

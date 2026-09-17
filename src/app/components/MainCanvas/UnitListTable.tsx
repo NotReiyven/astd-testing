@@ -25,7 +25,6 @@ export const getStatColor = (label: string, value: number | string) => {
   return "#DBDEE1";
 };
 
-// Unified grid layout string to guarantee perfect 1:1 column alignment
 const GRID_COLS = "md:grid-cols-[60px_minmax(200px,1.2fr)_140px_60px_70px_minmax(200px,2fr)]";
 
 export const ListHeaderRow = memo(function ListHeaderRow() {
@@ -49,7 +48,19 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
   const addCard = useTradeStore(state => state.addCard);
   const openModal = useHistoryModalStore(state => state.openModal);
 
-  const popupUnit: PopupUnit = { id: unit.id, name: unit.name, subtitle: unit.subtitle, value: typeof unit.value === "number" ? unit.value : 0 };
+  const numericValue = typeof unit.value === "number" 
+    ? unit.value 
+    : typeof unit.valueMin === "number" && unit.valueMin > 0 
+      ? unit.valueMin 
+      : 0;
+
+  const popupUnit: PopupUnit = { 
+    id: unit.id, 
+    name: unit.name, 
+    subtitle: unit.subtitle, 
+    value: numericValue 
+  };
+
   const sCfg = unit.status ? GRID_STATUS_CFG[unit.status] : null;
   const tierKey = getTier(unit);
   const tierColor = TIER_CONFIG[tierKey]?.badgeColor || "#5865F2";
@@ -94,12 +105,13 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
     setMenuOpen(true);
   };
 
-  const valDisplay = unit.value === "owner" || unit.valueDisplay === "Owner's Choice" || unit.valueDisplay === "O/C"
-    ? <span className="text-[12.5px] md:text-[13.5px] font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400 font-mono">Owner's Choice</span>
-    : unit.valueDisplay 
-      ? <span className="text-[12.5px] md:text-[13.5px] font-bold tracking-tight text-[#DBDEE1] font-mono">{unit.valueDisplay}</span>
-      : <span className="text-[13px] md:text-[14px] font-bold tracking-tight text-[#F2F3F5] font-mono">{(unit.value as number).toLocaleString()}</span>;
-
+  const valDisplay = tierKey === "Untiered"
+    ? <span className="text-[13px] md:text-[14px] font-bold tracking-tight text-[#80848E] font-mono">N/A</span>
+    : unit.value === "owner" || unit.valueDisplay === "Owner's Choice" || unit.valueDisplay === "O/C"
+      ? <span className="text-[12.5px] md:text-[13.5px] font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400 font-mono">Owner's Choice</span>
+      : unit.valueDisplay 
+        ? <span className="text-[12.5px] md:text-[13.5px] font-bold tracking-tight text-[#DBDEE1] font-mono">{unit.valueDisplay}</span>
+        : <span className="text-[13px] md:text-[14px] font-bold tracking-tight text-[#F2F3F5] font-mono">{(unit.value as number).toLocaleString()}</span>;
   const liqString = unit.liquidity || "Average";
   const liqDisplay = liqString.toLowerCase() === "black marketed" ? "BM" : liqString.substring(0, 3).toUpperCase();
 
@@ -136,7 +148,6 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
             </div>
           </div>
 
-          {/* Mobile View Content */}
           <div className="flex md:hidden items-center justify-between w-full px-4 py-3">
             <div className="flex items-center gap-3 min-w-0 pr-2">
               <div className="relative w-10 h-10 rounded-full overflow-hidden bg-[#111214] border shadow-sm flex-shrink-0 flex items-center justify-center" style={{ borderColor: hovered ? `${tierColor}60` : "rgba(255,255,255,0.08)" }}>
@@ -160,7 +171,6 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
             <div className="flex-shrink-0 text-right">{valDisplay}</div>
           </div>
 
-          {/* Desktop View Content */}
           <div className="hidden md:flex flex-col justify-center min-w-0 px-3 py-2 border-l border-r border-[rgba(255,255,255,0.03)]">
             <span className="text-[13.5px] font-extrabold tracking-tight text-[#F2F3F5] truncate transition-colors duration-300" style={{ color: hovered ? "#FFF" : "#F2F3F5" }}>{unit.name}</span>
             <span className="text-[10px] font-bold uppercase tracking-wider leading-none text-[#949BA4] truncate mt-1 mb-1.5">{unit.subtitle}</span>
@@ -173,7 +183,6 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
             </div>
           </div>
 
-          {/* Value Column with Status Tag Color Fill */}
           <div 
             className="hidden md:flex px-3 py-2 border-r border-[rgba(255,255,255,0.03)] items-center justify-end relative transition-colors"
             style={{
@@ -200,7 +209,6 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast }: { unit: M
             {unit.notice ? <span className="text-[11.5px] font-medium text-[#B5BAC1] line-clamp-2 leading-snug">{unit.notice}</span> : <span className="text-[11.5px] font-medium text-[#4e5058] italic">No notes</span>}
           </div>
 
-          {/* Mobile Condensed Stats Bar */}
           <div className="flex md:hidden items-center justify-between w-full px-4 pb-3 relative min-h-[28px]">
             <div className="flex items-center gap-2 text-[12px] font-mono">
               <span className="text-[#80848E]">R <span style={{ color: getStatColor("R", unit.rarity) }}>{unit.rarity}</span></span>
