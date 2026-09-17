@@ -2,7 +2,7 @@
   base = "."
   command = "npm install && npm run build"
   publish = "dist"
-  
+
 [functions]
   directory = "netlify/functions"
 
@@ -19,3 +19,9 @@
     X-Content-Type-Options = "nosniff"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     Referrer-Policy = "strict-origin-when-cross-origin"
+
+# FIX: Crucial header to ensure PWA and React updates propagate instantly
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate, max-age=0"

@@ -11,7 +11,7 @@ export function HistoryModal() {
   const { isOpen, unitId, closeModal } = useHistoryModalStore();
   const { history, loading, error } = useUnitHistory(unitId);
   const { units } = useUnits();
-  
+
   const [activeMetric, setActiveMetric] = useState<'value' | 'rarity' | 'liquidity'>('value');
   const [isScrolled, setIsScrolled] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -20,7 +20,7 @@ export function HistoryModal() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeModal();
     };
-    
+
     if (isOpen) {
       document.body.style.overflow = "hidden";
       window.addEventListener("keydown", handleKeyDown);
@@ -30,7 +30,7 @@ export function HistoryModal() {
     } else {
       document.body.style.overflow = "auto";
     }
-    
+
     return () => { 
       document.body.style.overflow = "auto";
       window.removeEventListener("keydown", handleKeyDown);
@@ -49,7 +49,38 @@ export function HistoryModal() {
   const tierKey = getTier(currentUnit);
   const tierCfg = TIER_CONFIG[tierKey] || { badgeColor: "#5865F2", label: tierKey };
   const proxyUrl = getProxyImage(currentUnit.id, currentUnit.imageUrl);
-  const latestSnap: HistorySnapshot | undefined = history[history.length - 1];
+
+  // FIX: Inject live frontend state into history timeline to bridge the 6-hour cron gap.
+  const displayHistory = [...history];
+  if (!loading && !error) {
+    const latestDbSnap = history[history.length - 1];
+    const currentValNum = typeof currentUnit.value === 'number' ? currentUnit.value : currentUnit.valueMin || 0;
+    
+    const isLiveDifferent = !latestDbSnap || (
+      (latestDbSnap.value_type === 'range' ? latestDbSnap.value_min : latestDbSnap.value) !== currentValNum ||
+      latestDbSnap.status !== currentUnit.status ||
+      latestDbSnap.rarity !== currentUnit.rarity ||
+      (latestDbSnap.liquidity || 'Average') !== (currentUnit.liquidity || 'Average')
+    );
+
+    if (isLiveDifferent) {
+      displayHistory.push({
+        id: "live-now",
+        unit_id: currentUnit.id,
+        recorded_at: new Date().toISOString(),
+        value: typeof currentUnit.value === 'number' ? currentUnit.value : null,
+        value_type: typeof currentUnit.value === 'number' ? 'number' : currentUnit.value,
+        value_display: currentUnit.valueDisplay,
+        value_min: currentUnit.valueMin,
+        status: currentUnit.status,
+        rarity: currentUnit.rarity,
+        liquidity: currentUnit.liquidity,
+        notice: currentUnit.notice
+      } as HistorySnapshot);
+    }
+  }
+
+  const latestSnap: HistorySnapshot | undefined = displayHistory[displayHistory.length - 1];
 
   const metricConfigs = {
     value: { label: "Value Trend History", color: "#5865F2", gradientId: "valueGrad", unitLabel: "Value" },
@@ -59,14 +90,14 @@ export function HistoryModal() {
 
   const currentConfig = metricConfigs[activeMetric];
 
-  const chartData = history.map(snap => {
+  const chartData = displayHistory.map(snap => {
     const dateObj = new Date(snap.recorded_at);
     const isToday = new Date().toDateString() === dateObj.toDateString();
-    
+
     const dateStr = isToday 
       ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       : dateObj.toLocaleDateString([], { month: 'short', day: 'numeric' });
-      
+
     const fullDateStr = dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
     let plotVal = 0;
@@ -98,7 +129,7 @@ export function HistoryModal() {
   const maxVal = validChartData.length > 0 ? Math.max(...validChartData.map(d => d.value)) : 0;
   const minVal = validChartData.length > 0 ? Math.min(...validChartData.map(d => d.value)) : 0;
 
-  const oldestSnap = history[0];
+  const oldestSnap = displayHistory[0];
   const oldestSnapVal = oldestSnap ? (oldestSnap.value_type === 'range' ? oldestSnap.value_min : oldestSnap.value) : null;
   const latestSnapVal = latestSnap ? (latestSnap.value_type === 'range' ? latestSnap.value_min : latestSnap.value) : null;
   const pctChange = (oldestSnapVal && latestSnapVal && oldestSnapVal > 0)
@@ -106,9 +137,9 @@ export function HistoryModal() {
     : 0;
 
   const timeline: { snap: HistorySnapshot, prev: HistorySnapshot, date: string, changed: string[] }[] = [];
-  for (let i = history.length - 1; i > 0; i--) {
-    const curr = history[i];
-    const prev = history[i - 1];
+  for (let i = displayHistory.length - 1; i > 0; i--) {
+    const curr = displayHistory[i];
+    const prev = displayHistory[i - 1];
     const changes = [];
     if (curr.value !== prev.value || curr.value_display !== prev.value_display) changes.push("Value");
     if (curr.status !== prev.status) changes.push("Status");
@@ -154,9 +185,9 @@ export function HistoryModal() {
   return (
     <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-0 sm:p-5 animate-fade-in">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={closeModal} />
-      
+
       <div className="bg-[#18191C] border border-[rgba(255,255,255,0.06)] rounded-none sm:rounded-[8px] w-full h-full sm:h-auto sm:max-w-5xl sm:max-h-[94vh] flex flex-col relative shadow-2xl overflow-hidden animate-slide-up">
-        
+
         <div className="absolute top-0 left-0 right-0 h-[4px] z-[200]" style={{ background: tierCfg.badgeColor }} />
 
         <div className={`px-5 sm:px-6 pt-6 pb-4 shrink-0 z-[100] bg-[#1E1F22] transition-all duration-300 ${isScrolled ? 'border-b border-[rgba(255,255,255,0.08)] shadow-sm' : 'border-b border-transparent'}`}>
@@ -191,7 +222,7 @@ export function HistoryModal() {
                     </span>
                   )}
                 </div>
-                
+
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                   <span className="text-[#949BA4] text-[11px] sm:text-[12px] font-bold uppercase tracking-wider">{currentUnit.subtitle || "Official Unit"}</span>
                   <span className="text-[#4e5058]">•</span>
@@ -217,7 +248,7 @@ export function HistoryModal() {
           className="flex-1 overflow-y-auto custom-scrollbar relative bg-[#18191C]"
         >
           <div className="p-5 sm:p-6 flex flex-col lg:flex-row gap-6 lg:gap-8">
-            
+
             <div className="w-full lg:w-[300px] flex flex-col gap-3 shrink-0">
               <div className="grid grid-cols-2 gap-3">
                 <div 
@@ -227,7 +258,7 @@ export function HistoryModal() {
                   {activeMetric === 'value' && <div className="absolute top-0 left-0 bottom-0 w-1 bg-[#5865F2]" />}
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4] group-hover:text-[#F2F3F5] transition-colors">Current Value</span>
-                    {history.length > 1 && oldestSnapVal && oldestSnapVal > 0 && (
+                    {displayHistory.length > 1 && oldestSnapVal && oldestSnapVal > 0 && (
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[3px] flex items-center gap-0.5 ${pctChange >= 0 ? 'bg-[#43b581]/10 text-[#43b581]' : 'bg-[#ed4245]/10 text-[#ed4245]'}`}>
                         {pctChange >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                         {pctChange >= 0 ? `+${pctChange.toFixed(1)}%` : `${pctChange.toFixed(1)}%`}
@@ -285,7 +316,7 @@ export function HistoryModal() {
             </div>
 
             <div className="flex-1 flex flex-col gap-6 min-w-0">
-              
+
               {loading ? (
                 <div className="h-[280px] flex flex-col items-center justify-center text-[#949BA4] animate-pulse gap-3 font-medium text-sm bg-[#1E1F22] rounded-[6px] border border-[rgba(255,255,255,0.04)]">
                   <Sparkles className="w-6 h-6 animate-spin text-[#5865F2]" />
@@ -293,7 +324,7 @@ export function HistoryModal() {
                 </div>
               ) : error ? (
                 <div className="text-[#ed4245] text-sm text-center py-8 bg-[#1E1F22] rounded-[6px] border border-[rgba(237,66,69,0.2)]">Failed to load history: {error}</div>
-              ) : history.length <= 1 ? (
+              ) : displayHistory.length <= 1 ? (
                 <div className="flex flex-col items-center justify-center h-[280px] text-center bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[6px]">
                   <TrendingUp className="w-10 h-10 text-[#949BA4] mb-3 opacity-50" />
                   <p className="text-[#F2F3F5] font-bold text-[14px]">Tracking Initiated</p>
@@ -311,11 +342,11 @@ export function HistoryModal() {
                         <span className="w-2 h-2 rounded-[2px] bg-[#ed4245] inline-block ml-1" /> Low
                       </div>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-[4px] bg-[#111214] text-[#949BA4] font-mono border border-[rgba(255,255,255,0.04)] uppercase tracking-wider">
-                        {history.length} Snapshots
+                        {displayHistory.length} Snapshots
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="h-[240px] sm:h-[260px] w-full bg-[#111214]/60 p-2 rounded-[4px] border border-[rgba(255,255,255,0.02)]">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -350,16 +381,16 @@ export function HistoryModal() {
                   <h3 className="text-[#949BA4] text-[12px] font-bold uppercase tracking-widest flex items-center gap-2">
                     <History className="w-4 h-4 text-[#5865F2]" /> Audit Timeline
                   </h3>
-                  
+
                   <div className="relative pl-6 ml-2 border-l border-[rgba(255,255,255,0.06)] flex flex-col gap-4 pb-4">
                     {timeline.map((t, idx) => {
                       const currCfg = GRID_STATUS_CFG[t.snap.status as keyof typeof GRID_STATUS_CFG];
                       const prevCfg = GRID_STATUS_CFG[t.prev.status as keyof typeof GRID_STATUS_CFG];
-                      
+
                       return (
                         <div key={idx} className="relative group">
                           <div className="absolute -left-[29px] top-1.5 w-2 h-2 bg-[#5865F2] rounded-sm ring-4 ring-[#18191C]" />
-                          
+
                           <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[6px] p-4 flex flex-col gap-3 hover:border-[rgba(255,255,255,0.08)] transition-colors">
                             <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.04)] pb-2 flex-wrap gap-2">
                               <span className="text-[#949BA4] text-[11px] font-mono font-bold uppercase tracking-wider">{t.date}</span>

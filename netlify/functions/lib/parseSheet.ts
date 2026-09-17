@@ -21,7 +21,6 @@ const COLOR_TARGETS = [
   { tag: "highballed", r: 0, g: 255, b: 255 },
   { tag: "hyped", r: 11, g: 83, b: 148 },
   { tag: "hyped", r: 7, g: 55, b: 99 },
-  // Removed light purple theme background ({ tag: "varies", r: 217, g: 210, b: 233 }) so it doesn't override Oddities rows
   { tag: "varies", r: 142, g: 124, b: 195 },
   { tag: "gatekept", r: 166, g: 77, b: 121 },
   { tag: "gatekept", r: 255, g: 0, b: 255 },
@@ -48,7 +47,7 @@ export function getTagFromColor(colorObj?: ColorObj) {
     const distance = Math.sqrt(Math.pow(r - target.r, 2) + Math.pow(g - target.g, 2) + Math.pow(b - target.b, 2));
     if (distance < minDistance) { minDistance = distance; bestTag = target.tag; }
   }
-  
+
   return minDistance < 100 ? bestTag : "stable";
 }
 
@@ -61,6 +60,7 @@ export function parseSpreadsheet(data: SpreadsheetData) {
   const parsedUnits: any[] = [];
   const changelog: string[] = [];
   const notices: any[] = [];
+  const idTracker = new Map<string, number>(); // Prevents duplicate IDs crashing Supabase
   const sheetTitle = data.properties?.title || "ASTD Official Value List";
 
   if (!data.sheets) return { units: parsedUnits, changelog, notices, sheetTitle };
@@ -123,16 +123,18 @@ export function parseSpreadsheet(data: SpreadsheetData) {
 
       const getCellStr = (idx: number) => row[idx]?.formattedValue?.toString().trim() || "";
       const colB = cleanText(getCellStr(1));
-      if (!colB) continue;
+      
+      // Prevent blank row poisoning
+      if (!colB || colB.length < 2) continue;
 
       const rawRowStrs = row.map((c: CellData | undefined) => cleanText(c?.formattedValue?.toString().toLowerCase().trim()));
-      
+
       const hasValue = rawRowStrs.some((s: string) => s.startsWith("value"));
       const hasNotices = rawRowStrs.some((s: string) => s === "notices" || s === "notice");
 
       if (hasValue || hasNotices) {
         currentSubCategory = colB;
-        
+
         if (tierKey === "Oddities") {
           colMap = { value: 2, rarity: 3, liquidity: 4, notices: 5, statusTxt: -1 };
           continue;
@@ -154,7 +156,7 @@ export function parseSpreadsheet(data: SpreadsheetData) {
             colMap.statusTxt = j + 1; 
           }
         }
-        
+
         if (colMap.value === -1) colMap.value = prevMap.value;
         if (colMap.rarity === -1) colMap.rarity = prevMap.rarity;
         if (colMap.liquidity === -1) colMap.liquidity = prevMap.liquidity;
@@ -180,50 +182,52 @@ export function parseSpreadsheet(data: SpreadsheetData) {
         name = `${name} (Pure)`;
       }
 
-      let unitId = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-
-      if (unitId === "ice-dragon" && subtitle.toLowerCase().includes("eis shenron")) {
-        unitId = "eis";
+      let baseId = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      if (baseId === "ice-dragon" && subtitle.toLowerCase().includes("eis shenron")) {
+        baseId = "eis";
       }
 
-      // netlify/functions/lib/parseSheet.ts
+      // Enforce Absolute Uniqueness
+      let unitId = baseId;
+      if (idTracker.has(baseId)) {
+        const count = idTracker.get(baseId)! + 1;
+        idTracker.set(baseId, count);
+        unitId = `${baseId}-${count}`;
+      } else {
+        idTracker.set(baseId, 1);
+      }
 
-// Replace the rawValue parsing block around line 170:
-const rawValue = colMap.value !== -1 ? cleanText(getCellStr(colMap.value).toLowerCase()) : "";
-let numericValue: number | "owner" | "range" = 0;
-let valueMin: number | undefined = undefined;
-let valueDisplay: string | undefined = undefined;
+      const rawValue = colMap.value !== -1 ? cleanText(getCellStr(colMap.value).toLowerCase()) : "";
+      let numericValue: number | "owner" | "range" = 0;
+      let valueMin: number | undefined = undefined;
+      let valueDisplay: string | undefined = undefined;
 
-if (rawValue.includes("owner") || rawValue.includes("o/c")) {
-  numericValue = "owner";
-  valueDisplay = "Owner's Choice";
-} else if (rawValue.includes("-") || rawValue.includes("k") || rawValue.includes("m") || rawValue.includes("?")) {
-  // Check if it's actual notes or sentences rather than a value pattern
-  const hasDigits = /\d/.test(rawValue);
-  if (!hasDigits || rawValue.split(" ").length > 3) {
-    // It's a note mistakenly parsed as value (e.g., "Obtained through...")
-    numericValue = 0;
-    valueDisplay = "N/A";
-  } else {
-    // Parse things like "5,000-?" or "1,000-2,000"
-    const firstPart = rawValue.split("-")[0].replace("?", "0").trim();
-    let multiplier = 1;
-    if (firstPart.includes("k")) multiplier = 1000;
-    if (firstPart.includes("m")) multiplier = 1000000;
-    const baseNum = (parseFloat(firstPart.replace(/[^0-9.]/g, "")) || 0) * multiplier;
-    
-    // Set numericValue directly to baseNum so calculators and sorting use the initial floor
-    numericValue = baseNum;
-    valueMin = baseNum;
-    valueDisplay = cleanText(getCellStr(colMap.value));
-  }
-} else {
-  numericValue = parseInt(rawValue.replace(/[^0-9]/g, "")) || 0;
-}
+      if (rawValue.includes("owner") || rawValue.includes("o/c")) {
+        numericValue = "owner";
+        valueDisplay = "Owner's Choice";
+      } else if (rawValue.includes("-") || rawValue.includes("k") || rawValue.includes("m") || rawValue.includes("?")) {
+        const hasDigits = /\d/.test(rawValue);
+        if (!hasDigits || rawValue.split(" ").length > 3) {
+          numericValue = 0;
+          valueDisplay = "N/A";
+        } else {
+          const firstPart = rawValue.split("-")[0].replace("?", "0").trim();
+          let multiplier = 1;
+          if (firstPart.includes("k")) multiplier = 1000;
+          if (firstPart.includes("m")) multiplier = 1000000;
+          const baseNum = (parseFloat(firstPart.replace(/[^0-9.]/g, "")) || 0) * multiplier;
+
+          numericValue = baseNum;
+          valueMin = baseNum;
+          valueDisplay = cleanText(getCellStr(colMap.value));
+        }
+      } else {
+        numericValue = parseInt(rawValue.replace(/[^0-9]/g, "")) || 0;
+      }
 
       const nameFormat = row[1]?.effectiveFormat;
       const nameColor = nameFormat?.backgroundColorStyle?.rgbColor || nameFormat?.backgroundColor;
-      
+
       const valFormat = colMap.value !== -1 ? row[colMap.value]?.effectiveFormat : undefined;
       const valColor = valFormat?.backgroundColorStyle?.rgbColor || valFormat?.backgroundColor;
 
@@ -232,7 +236,7 @@ if (rawValue.includes("owner") || rawValue.includes("o/c")) {
 
       const rawStatusText = colMap.statusTxt !== -1 ? cleanText(getCellStr(colMap.statusTxt).toLowerCase().trim().replace(" ", "-")) : "";
       const validStatuses = ["stable", "unstable", "rising", "dropping", "inflated", "deflated", "varies", "lowballed", "highballed", "hyped", "gatekept", "black-marketed"];
-      
+
       let unitStatus = validStatuses.includes(rawStatusText) ? rawStatusText : parsedTag;
 
       if ((tierKey === "Pure" || tierKey === "Untiered") && (unitStatus === "black-marketed" || unitStatus === "varies")) {
@@ -241,7 +245,7 @@ if (rawValue.includes("owner") || rawValue.includes("o/c")) {
 
       const secondaryTagsSet = new Set<string>();
       const validSecondaryTags = ["hyped", "gatekept", "black-marketed", "black marketed"];
-      
+
       const rsdStrings = [
         colMap.rarity !== -1 ? getCellStr(colMap.rarity) : "",
         colMap.liquidity !== -1 ? getCellStr(colMap.liquidity) : "",

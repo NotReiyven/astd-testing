@@ -19,7 +19,7 @@ export default async (req: Request) => {
       "Pure Tier!A:I", "Oddities!A:I", "Untiered!A:I"
     ];
     const batchRanges = ranges.map(r => `ranges=${encodeURIComponent(r)}`).join("&");
-    
+
     const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batchRanges}&includeGridData=true&key=${API_KEY}`);
     const data = (await response.json()) as SpreadsheetData;
     if (!data.sheets) throw new Error("No grid data returned from Google Sheets");
@@ -29,14 +29,28 @@ export default async (req: Request) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const { data: currentRows, error: fetchError } = await supabase
-      .from('unit_current_state')
-      .select('*');
-      
-    if (fetchError) throw fetchError;
+    // FIX: Paginate to bypass the 1000 row PostgREST limit
+    let allRows: any[] = [];
+    let from = 0;
+    let to = 999;
+    while (true) {
+      const { data: chunk, error: fetchError } = await supabase
+        .from('unit_current_state')
+        .select('*')
+        .range(from, to);
+      if (fetchError) throw fetchError;
+      if (chunk && chunk.length > 0) {
+        allRows.push(...chunk);
+        if (chunk.length < 1000) break;
+        from += 1000;
+        to += 1000;
+      } else {
+        break;
+      }
+    }
 
     const currentMap = new Map();
-    currentRows?.forEach(row => currentMap.set(row.unit_id, row));
+    allRows.forEach(row => currentMap.set(row.unit_id, row));
 
     const timestamp = new Date().toISOString();
     const snapshotsToInsert: any[] = [];
