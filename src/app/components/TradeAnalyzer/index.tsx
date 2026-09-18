@@ -26,7 +26,7 @@ export function TradeAnalyzerPanel({
   analyzerZ?: string;
 }) {
   const { units: ALL_UNITS } = useUnits();
-  
+
   const { 
     giveItems, 
     getItems, 
@@ -45,14 +45,17 @@ export function TradeAnalyzerPanel({
   const [isGlobalDragging, setIsGlobalDragging] = useState(false);
   const [smartMenuOpen, setSmartMenuOpen] = useState(false);
   const [initialParserText, setInitialParserText] = useState("");
+  
+  const [confirmClear, setConfirmClear] = useState(false);
 
   const [isMobile, setIsMobile] = useState(false);
-  const { panelWidth, startResize, panelRef } = usePanelResize(400, 400, 800);
+  
+  // FIXED: Bumped default width to 480px, minimum width to 420px.
+  const { panelWidth, startResize, panelRef } = usePanelResize(480, 420, 800);
 
   const [undoCache, setUndoCache] = useState<{give: TradeCard[], get: TradeCard[]} | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Bottom Sheet Mobile Drag State
   const sheetRef = useRef<HTMLDivElement>(null);
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [currentY, setCurrentY] = useState(0);
@@ -81,7 +84,7 @@ export function TradeAnalyzerPanel({
     const handlePaste = (e: ClipboardEvent) => {
       const activeEl = document.activeElement;
       if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) return;
-      
+
       const text = e.clipboardData?.getData("text");
       if (text && text.trim().length > 0) {
         window.dispatchEvent(new Event("open-analyzer"));
@@ -116,13 +119,22 @@ export function TradeAnalyzerPanel({
   const handleGlobalClear = useCallback(() => {
     const previousState = clearAllUnpinned();
     setUndoCache(previousState);
-
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-
     undoTimerRef.current = setTimeout(() => {
       setUndoCache(null);
     }, 4000);
   }, [clearAllUnpinned]);
+
+  const handleSafeClear = () => {
+    if (giveItems.length === 0 && getItems.length === 0) return;
+    if (!confirmClear) {
+      setConfirmClear(true);
+      setTimeout(() => setConfirmClear(false), 3000);
+    } else {
+      handleGlobalClear();
+      setConfirmClear(false);
+    }
+  };
 
   const handleUndo = useCallback(() => {
     if (undoCache) {
@@ -150,12 +162,11 @@ export function TradeAnalyzerPanel({
     tryWrite();
   }, [giveItems, getItems, giveTotal, getTotal, ALL_UNITS]);
 
-  // Mobile Bottom Sheet Handlers
   const openSheet = () => {
     triggerHaptic('light');
     window.dispatchEvent(new Event("open-analyzer")); 
   };
-  
+
   const closeSheet = () => {
     triggerHaptic('light');
     if (onClose) onClose();
@@ -225,15 +236,17 @@ export function TradeAnalyzerPanel({
           <Wand2 className="w-4 h-4" />
         </button>
         <button 
-          onClick={handleGlobalClear} 
+          onClick={handleSafeClear} 
           className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-30 pointer-events-auto ${
             isClearTarget 
               ? "bg-[#ed4245] text-white shadow-[0_0_20px_rgba(237,66,69,0.8)] ring-2 ring-[#ed4245] z-[100005] animate-pulse" 
-              : "text-[#B5BAC1] hover:bg-[rgba(255,255,255,0.05)] hover:text-[#F2F3F5]"
+              : confirmClear
+                ? "bg-[#ed4245] text-white shadow-md animate-pulse"
+                : "text-[#B5BAC1] hover:bg-[rgba(255,255,255,0.05)] hover:text-[#F2F3F5]"
           }`} 
-          title="Clear trade"
+          title={confirmClear ? "Click again to confirm" : "Clear trade"}
         >
-          <RotateCcw className="w-3.5 h-3.5" />
+          {confirmClear ? <Check className="w-4 h-4" /> : <RotateCcw className="w-3.5 h-3.5" />}
         </button>
         <button 
           onClick={handleShare} 
@@ -275,17 +288,26 @@ export function TradeAnalyzerPanel({
         ALL_UNITS={ALL_UNITS}
       />
 
-      <div className="flex-1 overflow-y-auto py-1 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto py-1 custom-scrollbar overscroll-y-contain">
         <div className={`relative transition-all duration-300 ${isClearTarget ? "ring-2 ring-[#5865F2] rounded-[8px] bg-[rgba(88,101,242,0.05)] shadow-[0_0_20px_rgba(88,101,242,0.2)] z-[100005]" : ""}`}>
           <TradeSectionPanel 
             label="You Give" 
             type="give" 
             items={giveItems} 
             isDraggingGlobal={isGlobalDragging} 
-            onQtyChange={(id, qty) => changeQty("give", id, qty)} 
+            onQtyChange={(id, qty) => {
+              const item = giveItems.find(i => i.id === id);
+              if (item && qty > item.qty) {
+                window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: item.name, type: "give" } }));
+              }
+              changeQty("give", id, qty);
+            }} 
             onRemove={(id) => removeCard("give", id)} 
             onClear={() => clearSection("give")} 
-            onAdd={(card) => addCard("give", card)} 
+            onAdd={(card) => {
+              addCard("give", card);
+              window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: card.name, type: "give" } }));
+            }} 
             pinnedIds={new Set(pinnedIds)}
             onTogglePin={(id) => { togglePin("give", id); startGuide("management"); }}
           />
@@ -297,20 +319,29 @@ export function TradeAnalyzerPanel({
             <ArrowUpDown className="w-3 h-3 md:w-3.5 md:h-3.5" />
           </button>
         </div>
-        
+
         <TradeSectionPanel 
           label="You Get" 
           type="get" 
           items={getItems} 
           isDraggingGlobal={isGlobalDragging} 
-          onQtyChange={(id, qty) => changeQty("get", id, qty)} 
+          onQtyChange={(id, qty) => {
+            const item = getItems.find(i => i.id === id);
+            if (item && qty > item.qty) {
+              window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: item.name, type: "get" } }));
+            }
+            changeQty("get", id, qty);
+          }} 
           onRemove={(id) => removeCard("get", id)} 
           onClear={() => clearSection("get")} 
-          onAdd={(card) => addCard("get", card)} 
+          onAdd={(card) => {
+            addCard("get", card);
+            window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: card.name, type: "get" } }));
+          }} 
           pinnedIds={new Set(pinnedIds)}
           onTogglePin={(id) => { togglePin("get", id); startGuide("management"); }}
         />
-        
+
         <TradeNotices giveItems={giveItems} getItems={getItems} ALL_UNITS={ALL_UNITS} />
 
         <div className="mx-3 md:mx-4 mt-1 mb-4 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-3 md:p-4 shadow-sm pb-10">
@@ -367,7 +398,7 @@ export function TradeAnalyzerPanel({
             aria-hidden="true"
           />
         )}
-        
+
         {/* Mobile Resting State (Bottom Bar) */}
         <div 
           className={`fixed left-0 right-0 bg-[#2B2D31] border-t border-[rgba(255,255,255,0.08)] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer 
@@ -380,7 +411,7 @@ export function TradeAnalyzerPanel({
               <span className="text-[10px] font-bold text-[#949BA4] uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#FAA61A]" /> You Give</span>
               <span className="text-[14px] font-black text-[#F2F3F5] font-mono truncate">{giveTotal.toLocaleString()}</span>
             </div>
-            
+
             <div className="flex flex-col min-w-0 flex-1 pl-3">
               <span className="text-[10px] font-bold text-[#949BA4] uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#5865F2]" /> You Get</span>
               <span className="text-[14px] font-black text-[#F2F3F5] font-mono truncate">{getTotal.toLocaleString()}</span>
@@ -408,7 +439,7 @@ export function TradeAnalyzerPanel({
             transform: isOpen ? 'translateY(0%)' : 'translateY(100%)'
           }}
         >
-          {/* Dedicated Grab Bar (No longer overlaps the action buttons) */}
+          {/* Dedicated Grab Bar */}
           <div 
             className="w-full pt-3 pb-1 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none flex-shrink-0 select-none"
             onTouchStart={onTouchStart}
@@ -435,7 +466,8 @@ export function TradeAnalyzerPanel({
           <div 
             ref={panelRef} 
             className="flex flex-col h-full w-full select-none border-l border-[rgba(0,0,0,0.32)] shadow-[-12px_0_40px_rgba(0,0,0,0.5)] bg-[#2B2D31]" 
-            style={{ width: `${panelWidth}px`, minWidth: "400px", fontFamily: "'Inter', sans-serif" }}
+            // FIXED: Set minWidth to 420px to perfectly match the requested wider default constraint
+            style={{ width: `${panelWidth}px`, minWidth: "420px", fontFamily: "'Inter', sans-serif" }}
           >
             <div 
               className="absolute top-0 left-0 w-1.5 h-full cursor-col-resize hover:bg-[#5865F2] z-[100000] transition-colors"

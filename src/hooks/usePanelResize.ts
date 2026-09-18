@@ -1,57 +1,69 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from 'react';
 
-export function usePanelResize(initialWidth: number = 400, minWidth: number = 400, maxWidth: number = 800) {
-  const [panelWidth, setPanelWidth] = useState<number>(initialWidth);
+export function usePanelResize(defaultWidth: number, minWidth: number, maxWidth: number) {
+  // Initialize with localStorage to remember the user's preferred calculator width
+  const [panelWidth, setPanelWidth] = useState(() => {
+    try {
+      const saved = localStorage.getItem('astd_analyzer_width');
+      return saved ? Math.min(Math.max(parseInt(saved, 10), minWidth), maxWidth) : defaultWidth;
+    } catch {
+      return defaultWidth;
+    }
+  });
+
+  const isResizing = useRef(false);
+  const startX = useRef(0);
+  const startWidth = useRef(0);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const startResize = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startWidth = panelWidth;
-    let newWidth = startWidth;
-    let ticking = false;
-
-    const parent1 = panelRef.current?.parentElement;
-    const parent2 = parent1?.parentElement;
-    
-    if (parent2) parent2.style.transition = 'none';
-
-    const onMouseMove = (moveEvent: MouseEvent) => {
-       if (!ticking) {
-         window.requestAnimationFrame(() => {
-           const delta = startX - moveEvent.clientX; 
-           newWidth = Math.min(Math.max(minWidth, startWidth + delta), maxWidth); 
-           
-           if (panelRef.current) panelRef.current.style.width = `${newWidth}px`;
-           if (parent1 && parent2) {
-             parent1.style.width = `${newWidth}px`;
-             parent1.style.maxWidth = 'none';
-             parent2.style.width = `${newWidth}px`;
-             parent2.style.maxWidth = 'none';
-           }
-           ticking = false;
-         });
-         ticking = true;
-       }
-    };
-
-    const onMouseUp = () => {
-       document.removeEventListener("mousemove", onMouseMove);
-       document.removeEventListener("mouseup", onMouseUp);
-       document.body.style.cursor = 'default';
-       
-       if (parent2) parent2.style.transition = ''; 
-       setPanelWidth(newWidth);
-    };
-
+  const startResize = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    isResizing.current = true;
+    startX.current = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    startWidth.current = panelWidth;
     document.body.style.cursor = 'col-resize';
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-  }, [panelWidth, minWidth, maxWidth]);
+    document.body.style.userSelect = 'none';
+  }, [panelWidth]);
 
   useEffect(() => {
-    return () => { document.body.style.cursor = 'default'; };
-  }, []);
+    const handleMouseMove = (e: MouseEvent | TouchEvent) => {
+      if (!isResizing.current) return;
+      
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      
+      // FIXED: Since the panel is on the RIGHT side of the screen, 
+      // moving the mouse LEFT (negative delta) must INCREASE the width.
+      const delta = clientX - startX.current;
+      let newWidth = startWidth.current - delta;
 
-  return { panelWidth, setPanelWidth, startResize, panelRef };
+      if (newWidth < minWidth) newWidth = minWidth;
+      if (newWidth > maxWidth) newWidth = maxWidth;
+
+      setPanelWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      if (isResizing.current) {
+        isResizing.current = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        try {
+          localStorage.setItem('astd_analyzer_width', panelWidth.toString());
+        } catch {}
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', handleMouseMove, { passive: false });
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchend', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchend', handleMouseUp);
+    };
+  }, [minWidth, maxWidth, panelWidth]);
+
+  return { panelWidth, startResize, panelRef };
 }

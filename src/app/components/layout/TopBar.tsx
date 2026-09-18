@@ -38,7 +38,7 @@ export function TopBar({
 }: TopBarProps) {
   const [helpClicks, setHelpClicks] = useState(0);
   const [lastClickTime, setLastClickTime] = useState(0);
-  
+
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const mobileInputRef = useRef<HTMLInputElement>(null);
 
@@ -83,7 +83,7 @@ export function TopBar({
 
   return (
     <div className={`flex-shrink-0 flex items-center justify-between px-2 md:px-4 py-3 min-h-[48px] relative border-b border-[rgba(0,0,0,0.22)] shadow-sm bg-[#313338] ${calcHeaderZ}`}>
-      
+
       {mobileSearchOpen && (
         <div className="absolute inset-0 z-[100] bg-[#313338] px-3 flex items-center gap-2 animate-fade-in border-b border-[rgba(0,0,0,0.22)]">
           <Search className="w-4 h-4 text-[#80848E] ml-1 shrink-0" />
@@ -105,7 +105,7 @@ export function TopBar({
           />
           <button 
             onClick={() => { setMobileSearchOpen(false); setGlobalSearchQuery(""); }} 
-            className="p-2 text-[#80848E] hover:text-[#F2F3F5] active:scale-95 transition-colors"
+            className="p-3 text-[#80848E] hover:text-[#F2F3F5] active:scale-95 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -114,7 +114,7 @@ export function TopBar({
 
       <div className="flex items-center gap-1 md:gap-3 overflow-hidden pr-2">
         <button onClick={() => setIsRosterOpen(!isRosterOpen)} className={`p-2 transition-colors flex-shrink-0 ${isRosterOpen ? 'text-[#F2F3F5]' : 'text-[#80848E] hover:text-[#DBDEE1]'}`}>
-          <PanelLeft className="w-5 h-5 md:w-[20px] md:h-[20px]" />
+          <PanelLeft className="w-6 h-6 md:w-[20px] md:h-[20px]" />
         </button>
 
         <div className="w-px h-5 mx-0.5 md:mx-1 flex-shrink-0" style={{ background: "rgba(255,255,255,0.08)" }} />
@@ -135,7 +135,7 @@ export function TopBar({
         <div className="relative">
           <button 
             onClick={handleHelpClick}
-            className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-[6px] bg-[#5865F2] hover:bg-[#4752C4] text-white transition-all text-[12px] font-bold shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="flex items-center justify-center gap-2 px-3 py-2 md:py-1.5 rounded-[6px] bg-[#5865F2] hover:bg-[#4752C4] text-white transition-all text-[12px] font-bold shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             title="Need Help? Open Guides"
           >
             <HelpCircle className="w-4 h-4 sm:hidden flex-shrink-0" />
@@ -147,33 +147,33 @@ export function TopBar({
               <div className="absolute top-full right-0 mt-2 w-56 bg-[#2B2D31] border border-[rgba(255,255,255,0.08)] rounded-[8px] shadow-[0_8px_24px_rgba(0,0,0,0.5)] z-[99999] py-1.5 flex flex-col animate-fade-in max-h-[70vh] overflow-y-auto custom-scrollbar">
 
                 <span className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">Platform Basics</span>
-                <button onClick={() => startGuide("main")} className="flex items-center gap-3 px-4 py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("main")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
                   <GraduationCap className="w-4 h-4" /> Replay Tutorial
                 </button>
-                <button onClick={() => startGuide("channels")} className="flex items-center gap-3 px-4 py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("channels")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
                   <Map className="w-4 h-4" /> Channel Guide
                 </button>
-                <button onClick={() => startGuide("stats")} className="flex items-center gap-3 px-4 py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("stats")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
                   <Settings2 className="w-4 h-4" /> R / S / D Stats
                 </button>
 
                 <div className="w-full h-px bg-[rgba(255,255,255,0.04)] my-1" />
                 <span className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">Pro Tools</span>
-                <button onClick={() => startGuide("advanced")} className="flex items-center gap-3 px-4 py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("advanced")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
                   <Settings2 className="w-4 h-4" /> Academy Checklist
                 </button>
-                <button onClick={() => startGuide("filters")} className="flex items-center gap-3 px-4 py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("filters")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
                   <Search className="w-4 h-4" /> Market Status Filters
                 </button>
-                <button onClick={() => startGuide("dictionary")} className="flex items-center gap-3 px-4 py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("dictionary")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
                   <Book className="w-4 h-4" /> Smart Dictionary
                 </button>
-                <button onClick={() => startGuide("management")} className="flex items-center gap-3 px-4 py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("management")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
                   <Calculator className="w-4 h-4" /> Pinning & Clearing
                 </button>
 
                 <div className="w-full h-px bg-[rgba(255,255,255,0.04)] my-1" />
-                <button onClick={() => startGuide("developer")} className="flex items-center gap-3 px-4 py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("developer")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
                   <User className="w-4 h-4" /> About the Developer
                 </button>
               </div>
@@ -183,9 +183,9 @@ export function TopBar({
 
         <button 
           onClick={() => setMobileSearchOpen(true)}
-          className="md:hidden flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] text-[#80848E] hover:bg-[rgba(255,255,255,0.05)] hover:text-[#F2F3F5] transition-colors"
+          className="md:hidden flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-[4px] text-[#80848E] hover:bg-[rgba(255,255,255,0.05)] hover:text-[#F2F3F5] transition-colors"
         >
-          <Search className="w-4 h-4" />
+          <Search className="w-5 h-5" />
         </button>
 
         <div className="relative hidden md:flex items-center bg-[#1E1F22] rounded-[6px] px-2.5 h-[28px] w-[120px] focus-within:w-[180px] lg:w-48 lg:focus-within:w-64 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] border border-[rgba(255,255,255,0.04)] shadow-inner">
@@ -212,7 +212,6 @@ export function TopBar({
 
         <div className="hidden md:block w-px h-5 mx-0.5 md:mx-1 flex-shrink-0" style={{ background: "rgba(255,255,255,0.08)" }} />
 
-        {/* HIDDEN ON MOBILE: We now rely entirely on the Bottom Sheet for mobile */}
         <button 
           onClick={handleToggleAnalyzer} 
           className={`hidden md:flex relative items-center gap-2 px-3 py-1.5 rounded-[6px] transition-all duration-300 shadow-sm font-bold text-[12px] active:scale-95 ${

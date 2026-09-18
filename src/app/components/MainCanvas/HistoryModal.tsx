@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { X, TrendingUp, History, BarChart2, Sparkles, AlertCircle, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, ReferenceLine } from 'recharts';
 import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 import { useUnitHistory, HistorySnapshot } from "../../../hooks/useUnitHistory";
 import { useUnits } from "../../../context/UnitContext";
 import { GRID_STATUS_CFG, TIER_CONFIG, getProxyImage, getTier } from "../../../data";
-import { getAvatarStyle, getInitials, handleImageError } from "../TradeAnalyzer/summaryUtils";
+import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
+import { StatusIcon } from "./UnitGrid";
 
 export function HistoryModal() {
   const { isOpen, unitId, closeModal } = useHistoryModalStore();
@@ -50,7 +51,6 @@ export function HistoryModal() {
   const tierCfg = TIER_CONFIG[tierKey] || { badgeColor: "#5865F2", label: tierKey };
   const proxyUrl = getProxyImage(currentUnit.id, currentUnit.imageUrl);
 
-  // FIX: Inject live frontend state into history timeline to bridge the 6-hour cron gap.
   const displayHistory = [...history];
   if (!loading && !error) {
     const latestDbSnap = history[history.length - 1];
@@ -136,7 +136,7 @@ export function HistoryModal() {
     ? ((latestSnapVal - oldestSnapVal) / oldestSnapVal) * 100
     : 0;
 
-  const timeline: { snap: HistorySnapshot, prev: HistorySnapshot, date: string, changed: string[] }[] = [];
+  const timeline: { snap: HistorySnapshot, prev: HistorySnapshot, date: string, changed: string[], chartX: string }[] = [];
   for (let i = displayHistory.length - 1; i > 0; i--) {
     const curr = displayHistory[i];
     const prev = displayHistory[i - 1];
@@ -148,7 +148,13 @@ export function HistoryModal() {
     if (curr.notice !== prev.notice) changes.push("Notice");
 
     if (changes.length > 0) {
-      timeline.push({ snap: curr, prev, date: new Date(curr.recorded_at).toLocaleString(), changed: changes });
+      const dateObj = new Date(curr.recorded_at);
+      const isToday = new Date().toDateString() === dateObj.toDateString();
+      const chartXStr = isToday 
+        ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : dateObj.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        
+      timeline.push({ snap: curr, prev, date: dateObj.toLocaleString(), changed: changes, chartX: chartXStr });
     }
   }
 
@@ -205,7 +211,7 @@ export function HistoryModal() {
                       src={proxyUrl} 
                       alt={currentUnit.name} 
                       className="absolute inset-0 w-full h-full object-cover z-10 bg-[#111214]" 
-                      onError={(e) => handleImageError(e, currentUnit.id, currentUnit.imageUrl)}
+                      onError={(e) => { e.currentTarget.style.opacity = '0'; }}
                     />
                   )}
                 </div>
@@ -217,7 +223,8 @@ export function HistoryModal() {
                     {currentUnit.name}
                   </h2>
                   {statusCfg && (
-                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-[4px] border tracking-wider" style={{ backgroundColor: statusCfg.bg, color: statusCfg.color, borderColor: statusCfg.border }}>
+                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-[4px] border tracking-wider inline-flex items-center gap-1" style={{ backgroundColor: statusCfg.bg, color: statusCfg.color, borderColor: statusCfg.border }}>
+                      <StatusIcon status={currentUnit.status} />
                       {statusCfg.label}
                     </span>
                   )}
@@ -369,6 +376,18 @@ export function HistoryModal() {
                           formatter={(value: any, name: any, props: any) => [props.payload.label, currentConfig.unitLabel]}
                           labelFormatter={(label, payload) => payload.length > 0 ? payload[0].payload.fullDate : label}
                         />
+                        {timeline.map((t, idx) => {
+                          const hasMajorShift = t.changed.includes("Rarity") || t.changed.includes("Liquidity") || t.changed.includes("Status");
+                          if (!hasMajorShift) return null;
+                          return (
+                            <ReferenceLine 
+                              key={`ref-${idx}`} 
+                              x={t.chartX} 
+                              stroke="rgba(255,255,255,0.15)" 
+                              strokeDasharray="3 3" 
+                            />
+                          );
+                        })}
                         <Area type="monotone" dataKey="value" stroke={currentConfig.color} strokeWidth={2} fillOpacity={1} fill={`url(#${currentConfig.gradientId})`} dot={<CustomizedDot />} activeDot={{ r: 6, fill: currentConfig.color, stroke: '#111214', strokeWidth: 2 }} />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -419,11 +438,13 @@ export function HistoryModal() {
                                 <div className="flex items-center justify-between bg-[#111214] px-3 py-2 rounded-[4px] border border-[rgba(255,255,255,0.02)] flex-wrap gap-2">
                                   <span className="text-[11px] text-[#80848E] font-bold uppercase tracking-wider">Status Badge</span>
                                   <div className="flex items-center gap-3 text-[10px] font-bold tracking-wider">
-                                    <span className="px-2 py-0.5 rounded-[3px] border uppercase" style={{ backgroundColor: prevCfg?.bg || '#2B2D31', color: prevCfg?.color || '#949BA4', borderColor: prevCfg?.border || 'rgba(255,255,255,0.1)' }}>
+                                    <span className="px-2 py-0.5 rounded-[3px] border uppercase inline-flex items-center gap-1" style={{ backgroundColor: prevCfg?.bg || '#2B2D31', color: prevCfg?.color || '#949BA4', borderColor: prevCfg?.border || 'rgba(255,255,255,0.1)' }}>
+                                      <StatusIcon status={t.prev.status} />
                                       {prevCfg?.label || t.prev.status}
                                     </span>
                                     <span className="text-[#5865F2]">➔</span>
-                                    <span className="px-2 py-0.5 rounded-[3px] border uppercase" style={{ backgroundColor: currCfg?.bg || '#2B2D31', color: currCfg?.color || '#F2F3F5', borderColor: currCfg?.border || 'rgba(255,255,255,0.1)' }}>
+                                    <span className="px-2 py-0.5 rounded-[3px] border uppercase inline-flex items-center gap-1" style={{ backgroundColor: currCfg?.bg || '#2B2D31', color: currCfg?.color || '#F2F3F5', borderColor: currCfg?.border || 'rgba(255,255,255,0.1)' }}>
+                                      <StatusIcon status={t.snap.status} />
                                       {currCfg?.label || t.snap.status}
                                     </span>
                                   </div>

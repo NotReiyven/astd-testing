@@ -22,8 +22,8 @@ type VirtualItem =
   | { type: 'no-results'; id: string }
   | { type: 'tier-banner'; id: string; tier: any }
   | { type: 'sub-header'; id: string; label: string; range: string; count: number }
-  | { type: 'grid-row'; id: string; units: MasterUnit[]; cols: number }
-  | { type: 'list-row'; id: string; unit: MasterUnit; isLast: boolean }
+  | { type: 'grid-row'; id: string; units: MasterUnit[]; cols: number; searchQuery: string }
+  | { type: 'list-row'; id: string; unit: MasterUnit; isLast: boolean; searchQuery: string }
   | { type: 'space-bottom'; id: string };
 
 export const MainCanvas = memo(function MainCanvas({
@@ -48,10 +48,14 @@ export const MainCanvas = memo(function MainCanvas({
   const [statusFilter, setStatusFilter] = useState("all");
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [showScrollTop, setShowScrollTop] = useState(false);
   const skipNextResetRef = useRef(false);
 
-  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const headerVisibleRef = useRef(true);
+
+  const scrollTopBtnRef = useRef<HTMLButtonElement>(null);
+  const scrollTopVisibleRef = useRef(false);
+
   const lastScrollY = useRef(0);
   const scrollDeltaRef = useRef(0);
   const lastToggleTimeRef = useRef(0);
@@ -79,9 +83,20 @@ export const MainCanvas = memo(function MainCanvas({
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const currentScroll = e.currentTarget.scrollTop;
-    
-    if (currentScroll > 400 && !showScrollTop) setShowScrollTop(true);
-    else if (currentScroll <= 400 && showScrollTop) setShowScrollTop(false);
+
+    if (currentScroll > 400 && !scrollTopVisibleRef.current) {
+      scrollTopVisibleRef.current = true;
+      if (scrollTopBtnRef.current) {
+        scrollTopBtnRef.current.classList.remove("opacity-0", "translate-y-8", "pointer-events-none");
+        scrollTopBtnRef.current.classList.add("opacity-100", "translate-y-0");
+      }
+    } else if (currentScroll <= 400 && scrollTopVisibleRef.current) {
+      scrollTopVisibleRef.current = false;
+      if (scrollTopBtnRef.current) {
+        scrollTopBtnRef.current.classList.remove("opacity-100", "translate-y-0");
+        scrollTopBtnRef.current.classList.add("opacity-0", "translate-y-8", "pointer-events-none");
+      }
+    }
 
     if (isMobile) {
       const now = Date.now();
@@ -94,8 +109,12 @@ export const MainCanvas = memo(function MainCanvas({
       lastScrollY.current = currentScroll;
 
       if (currentScroll < 40) {
-        if (!isHeaderVisible) {
-          setIsHeaderVisible(true);
+        if (!headerVisibleRef.current) {
+          headerVisibleRef.current = true;
+          if (headerRef.current) {
+            headerRef.current.classList.remove("-translate-y-full");
+            headerRef.current.classList.add("translate-y-0");
+          }
           lastToggleTimeRef.current = now;
         }
         scrollDeltaRef.current = 0;
@@ -107,12 +126,20 @@ export const MainCanvas = memo(function MainCanvas({
       }
       scrollDeltaRef.current += delta;
 
-      if (scrollDeltaRef.current > 40 && isHeaderVisible) {
-        setIsHeaderVisible(false);
+      if (scrollDeltaRef.current > 40 && headerVisibleRef.current) {
+        headerVisibleRef.current = false;
+        if (headerRef.current) {
+          headerRef.current.classList.remove("translate-y-0");
+          headerRef.current.classList.add("-translate-y-full");
+        }
         lastToggleTimeRef.current = now;
         scrollDeltaRef.current = 0;
-      } else if (scrollDeltaRef.current < -40 && !isHeaderVisible) {
-        setIsHeaderVisible(true);
+      } else if (scrollDeltaRef.current < -40 && !headerVisibleRef.current) {
+        headerVisibleRef.current = true;
+        if (headerRef.current) {
+          headerRef.current.classList.remove("-translate-y-full");
+          headerRef.current.classList.add("translate-y-0");
+        }
         lastToggleTimeRef.current = now;
         scrollDeltaRef.current = 0;
       }
@@ -121,7 +148,11 @@ export const MainCanvas = memo(function MainCanvas({
 
   const scrollToTop = () => {
     lastToggleTimeRef.current = Date.now();
-    setIsHeaderVisible(true);
+    headerVisibleRef.current = true;
+    if (headerRef.current) {
+      headerRef.current.classList.remove("-translate-y-full");
+      headerRef.current.classList.add("translate-y-0");
+    }
     lastScrollY.current = 0;
     scrollDeltaRef.current = 0;
     scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
@@ -179,11 +210,11 @@ export const MainCanvas = memo(function MainCanvas({
 
           if (viewMode === 'grid') {
              for (let i = 0; i < unitsInTier.length; i += cols) {
-                items.push({ type: 'grid-row', id: `grid-${tKey}-${i}`, units: unitsInTier.slice(i, i + cols), cols });
+                items.push({ type: 'grid-row', id: `grid-${tKey}-${i}`, units: unitsInTier.slice(i, i + cols), cols, searchQuery: deferredSearchQuery });
              }
           } else {
              unitsInTier.forEach((u, i) => {
-                items.push({ type: 'list-row', id: `list-${u.id}`, unit: u, isLast: i === unitsInTier.length - 1 });
+                items.push({ type: 'list-row', id: `list-${u.id}`, unit: u, isLast: i === unitsInTier.length - 1, searchQuery: deferredSearchQuery });
              });
           }
        });
@@ -210,22 +241,22 @@ export const MainCanvas = memo(function MainCanvas({
 
                  if (viewMode === 'grid') {
                     for (let i = 0; i < sec.processedUnits.length; i += cols) {
-                        items.push({ type: 'grid-row', id: `grid-${sec.label}-${i}`, units: sec.processedUnits.slice(i, i + cols), cols });
+                        items.push({ type: 'grid-row', id: `grid-${sec.label}-${i}`, units: sec.processedUnits.slice(i, i + cols), cols, searchQuery: deferredSearchQuery });
                     }
                  } else {
                     sec.processedUnits.forEach((u, i) => {
-                        items.push({ type: 'list-row', id: `list-${u.id}`, unit: u, isLast: i === sec.processedUnits.length - 1 });
+                        items.push({ type: 'list-row', id: `list-${u.id}`, unit: u, isLast: i === sec.processedUnits.length - 1, searchQuery: deferredSearchQuery });
                     });
                  }
               });
           } else {
               if (viewMode === 'grid') {
                  for (let i = 0; i < processed.length; i += cols) {
-                    items.push({ type: 'grid-row', id: `grid-${tKey}-${i}`, units: processed.slice(i, i + cols), cols });
+                    items.push({ type: 'grid-row', id: `grid-${tKey}-${i}`, units: processed.slice(i, i + cols), cols, searchQuery: deferredSearchQuery });
                  }
               } else {
                  processed.forEach((u, i) => {
-                    items.push({ type: 'list-row', id: `list-${u.id}`, unit: u, isLast: i === processed.length - 1 });
+                    items.push({ type: 'list-row', id: `list-${u.id}`, unit: u, isLast: i === processed.length - 1, searchQuery: deferredSearchQuery });
                  });
               }
           }
@@ -246,7 +277,7 @@ export const MainCanvas = memo(function MainCanvas({
           case 'space-top': return 16;
           case 'welcome': return window.innerWidth < 768 ? 180 : 120;
           case 'search-stats': return 40;
-          case 'no-results': return 200;
+          case 'no-results': return 250; 
           case 'tier-banner': return 110; 
           case 'sub-header': return 50;
           case 'grid-row': return window.innerWidth < 640 ? 290 : 272;
@@ -281,7 +312,11 @@ export const MainCanvas = memo(function MainCanvas({
       return;
     }
     scrollRef.current?.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
-    setIsHeaderVisible(true);
+    headerVisibleRef.current = true;
+    if (headerRef.current) {
+      headerRef.current.classList.remove("-translate-y-full");
+      headerRef.current.classList.add("translate-y-0");
+    }
     lastScrollY.current = 0;
     scrollDeltaRef.current = 0;
   }, [deferredSearchQuery, statusFilter, sortMode, activeTierFilter]);
@@ -312,7 +347,8 @@ export const MainCanvas = memo(function MainCanvas({
       `}</style>
 
       <div 
-        className={`flex flex-col absolute top-0 left-0 right-0 w-full transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${guideState?.type === "filters" ? "ring-2 ring-[#5865F2] rounded-[8px] bg-[rgba(88,101,242,0.15)] shadow-[0_0_20px_rgba(88,101,242,0.4)] z-[100005] animate-pulse" : "z-30 shadow-md"} ${!isHeaderVisible ? '-translate-y-full' : 'translate-y-0'}`}
+        ref={headerRef}
+        className={`flex flex-col absolute top-0 left-0 right-0 w-full transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${guideState?.type === "filters" ? "ring-2 ring-[#5865F2] rounded-[8px] bg-[rgba(88,101,242,0.15)] shadow-[0_0_20px_rgba(88,101,242,0.4)] z-[100005] animate-pulse" : "z-30 shadow-md"} translate-y-0`}
       >
         <CanvasControls 
           activeTierFilter={activeTierFilter}
@@ -327,7 +363,7 @@ export const MainCanvas = memo(function MainCanvas({
           viewMode={viewMode}
           setViewMode={setViewMode}
         />
-        
+
         {viewMode === "list" && !isLoading && (
           <div className="hidden md:block w-full border-b border-[rgba(0,0,0,0.5)] bg-[#1E1F22]">
             <ListHeaderRow />
@@ -378,9 +414,9 @@ export const MainCanvas = memo(function MainCanvas({
                         </div>
                         <button onClick={dismissWelcome} className="text-[#80848E] hover:text-[#DBDEE1] p-1"><X className="w-4 h-4" /></button>
                       </div>
-                      
+
                       <img src={FIRE_ZIO_AVATAR} className="hidden md:block w-14 h-14 rounded-full border-2 border-[#ed4245] object-cover shrink-0 bg-[#1e1f22] shadow-md" alt="Fire Zio" />
-                      
+
                       <div className="flex flex-col justify-center max-w-2xl">
                         <h2 className="hidden md:block text-[20px] font-black text-[#F2F3F5] mb-1 tracking-tight">Stop getting scammed.</h2>
                         <p className="text-[12px] md:text-[13px] text-[#B5BAC1] mb-2 md:mb-2.5 leading-relaxed">
@@ -404,9 +440,18 @@ export const MainCanvas = memo(function MainCanvas({
                   )}
 
                   {item.type === 'no-results' && (
-                    <div className="flex flex-col items-center justify-center py-24 gap-4">
-                      <div className="w-14 h-14 rounded-[8px] flex items-center justify-center bg-[rgba(255,255,255,0.04)]"><Search className="w-6 h-6 text-[#4e5058]" /></div>
+                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                      <div className="w-14 h-14 rounded-[8px] flex items-center justify-center bg-[rgba(255,255,255,0.04)]">
+                        <Search className="w-6 h-6 text-[#4e5058]" />
+                      </div>
                       <p className="text-sm font-bold text-[#4e5058]">No units match your current filters.</p>
+                      
+                      <button 
+                        onClick={handleResetFilters}
+                        className="mt-2 px-6 py-2.5 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-[6px] text-[13px] font-bold transition-all active:scale-95 shadow-md flex items-center gap-2"
+                      >
+                        <X className="w-4 h-4" /> Clear Search & Filters
+                      </button>
                     </div>
                   )}
 
@@ -422,13 +467,13 @@ export const MainCanvas = memo(function MainCanvas({
 
                   {item.type === 'grid-row' && (
                     <div className={`grid gap-3 sm:gap-5 w-full pb-3 sm:pb-5 ${isStatsTarget && virtualRow.index === 1 ? 'animate-pulse' : ''}`} style={{ gridTemplateColumns: `repeat(${item.cols}, minmax(0, 1fr))` }}>
-                      {item.units.map(u => <TierGridCard key={u.id} unit={u} />)}
+                      {item.units.map(u => <TierGridCard key={u.id} unit={u} searchQuery={item.searchQuery} />)}
                     </div>
                   )}
 
                   {item.type === 'list-row' && (
                     <div className={`${isStatsTarget && virtualRow.index === 1 ? 'animate-pulse ring-2 ring-[#5865F2]' : ''}`}>
-                       <UnitListRow unit={item.unit} isLast={item.isLast} />
+                       <UnitListRow unit={item.unit} isLast={item.isLast} searchQuery={item.searchQuery} />
                     </div>
                   )}
                 </div>
@@ -439,10 +484,9 @@ export const MainCanvas = memo(function MainCanvas({
       </div>
 
       <button
+        ref={scrollTopBtnRef}
         onClick={scrollToTop}
-        className={`absolute bottom-[90px] right-6 md:bottom-8 md:right-8 w-[46px] h-[46px] md:w-[52px] md:h-[52px] bg-[#5865F2] text-white rounded-full flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.4)] transition-all duration-300 ease-out hover:bg-[#4752C4] hover:-translate-y-1 z-50 ${
-          showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8 pointer-events-none"
-        }`}
+        className="absolute bottom-[90px] right-6 md:bottom-8 md:right-8 w-[46px] h-[46px] md:w-[52px] md:h-[52px] bg-[#5865F2] text-white rounded-full flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.4)] transition-all duration-300 ease-out hover:bg-[#4752C4] hover:-translate-y-1 z-50 opacity-0 translate-y-8 pointer-events-none"
         title="Scroll to Top"
       >
         <ArrowUp className="w-5 h-5 md:w-6 md:h-6" />

@@ -15,12 +15,16 @@ interface SmartParserMenuProps {
 }
 
 export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }: SmartParserMenuProps) {
-  const { giveItems, getItems, pinnedIds, overwrite, addCard } = useTradeStore();
+  const { giveItems, getItems, pinnedIds, overwrite } = useTradeStore();
 
   const [activeMenuTab, setActiveMenuTab] = useState<"import" | "dictionary">("import");
   const [smartInput, setSmartInput] = useState("");
   const [smartInputError, setSmartInputError] = useState("");
   const [ambiguousItems, setAmbiguousItems] = useState<AmbiguousToken[]>([]);
+
+  // NEW: Staging Area State
+  const [stagedGive, setStagedGive] = useState<TradeCard[]>([]);
+  const [stagedGet, setStagedGet] = useState<TradeCard[]>([]);
 
   const [slangDict, setSlangDict] = useState<Record<string, string>>({});
   const [newSlangKey, setNewSlangKey] = useState("");
@@ -66,33 +70,47 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
       setSmartInputError(result.error);
       setTimeout(() => setSmartInputError(""), 3000);
     } else {
-      onSaveUndo?.();
-      
-      const mergeCards = (arr1: TradeCard[], arr2: TradeCard[]) => {
-        const map = new Map<string, TradeCard>();
-        arr1.forEach(c => map.set(c.id, { ...c }));
-        arr2.forEach(c => {
-          if (map.has(c.id)) map.get(c.id)!.qty += c.qty;
-          else map.set(c.id, { ...c });
-        });
-        return Array.from(map.values());
-      };
-
-      const pinnedSet = new Set(pinnedIds);
-      const pinnedGive = giveItems.filter(i => pinnedSet.has(`give-${i.id}`));
-      const pinnedGet = getItems.filter(i => pinnedSet.has(`get-${i.id}`));
-
-      overwrite(mergeCards(pinnedGive, result.giveCards), mergeCards(pinnedGet, result.getCards));
+      // Stage the items instead of instantly overwriting
+      setStagedGive(result.giveCards);
+      setStagedGet(result.getCards);
       setAmbiguousItems(result.ambiguous);
       setSmartInput("");
-      
-      if (result.ambiguous.length === 0) {
-        triggerHaptic('success');
-        window.dispatchEvent(new Event("academy-used-parser"));
-        onClose();
-      }
     }
-  }, [giveItems, getItems, pinnedIds, overwrite, ALL_UNITS, onClose, onSaveUndo]);
+  }, [ALL_UNITS]);
+
+  const handleConfirmReview = () => {
+    onSaveUndo?.();
+    
+    const mergeCards = (arr1: TradeCard[], arr2: TradeCard[]) => {
+      const map = new Map<string, TradeCard>();
+      arr1.forEach(c => map.set(c.id, { ...c }));
+      arr2.forEach(c => {
+        if (map.has(c.id)) map.get(c.id)!.qty += c.qty;
+        else map.set(c.id, { ...c });
+      });
+      return Array.from(map.values());
+    };
+
+    const pinnedSet = new Set(pinnedIds);
+    const pinnedGive = giveItems.filter(i => pinnedSet.has(`give-${i.id}`));
+    const pinnedGet = getItems.filter(i => pinnedSet.has(`get-${i.id}`));
+
+    overwrite(mergeCards(pinnedGive, stagedGive), mergeCards(pinnedGet, stagedGet));
+    
+    const totalAdded = stagedGive.length + stagedGet.length;
+    if (totalAdded > 0) {
+      window.dispatchEvent(new CustomEvent("trade-added", { 
+        detail: { name: `Imported ${totalAdded} item${totalAdded > 1 ? 's' : ''}`, type: stagedGet.length > stagedGive.length ? "get" : "give" } 
+      }));
+    }
+
+    triggerHaptic('success');
+    window.dispatchEvent(new Event("academy-used-parser"));
+    
+    setStagedGive([]);
+    setStagedGet([]);
+    onClose();
+  };
 
   const handleSmartImport = useCallback(() => processImport(smartInput), [processImport, smartInput]);
 
@@ -106,26 +124,26 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
 
   const resolveAmbiguity = useCallback((index: number, resolvedUnit: MasterUnit | null, col: "give" | "get", qty: number) => {
     if (resolvedUnit && qty > 0) {
-      addCard(col, {
-          id: resolvedUnit.id, name: resolvedUnit.name, subtitle: resolvedUnit.subtitle,
+      const newCard: TradeCard = {
+          id: resolvedUnit.id, 
+          name: resolvedUnit.name, 
+          subtitle: resolvedUnit.subtitle,
           value: typeof resolvedUnit.value === "number" ? resolvedUnit.value : 0,
-          demand: resolvedUnit.demand, qty
-      });
+          qty
+      };
+      
+      if (col === "give") setStagedGive(prev => [...prev, newCard]);
+      else setStagedGet(prev => [...prev, newCard]);
+
       learnSlang(ambiguousItems[index].rawName, resolvedUnit.id);
-      window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: resolvedUnit.name, type: col } }));
     }
 
     setAmbiguousItems(prev => {
       const newAmbiguous = [...prev];
       newAmbiguous.splice(index, 1);
-      if (newAmbiguous.length === 0) {
-        triggerHaptic('success');
-        window.dispatchEvent(new Event("academy-used-parser"));
-        onClose();
-      }
       return newAmbiguous;
     });
-  }, [addCard, ambiguousItems, onClose]);
+  }, [ambiguousItems]);
 
   const handleAddSlang = () => {
     if (!newSlangKey.trim() || !newSlangTargetId) return;
@@ -158,35 +176,7 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
       </div>
 
       {activeMenuTab === "import" ? (
-        ambiguousItems.length === 0 ? (
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-2.5 bg-[#111214] border border-[rgba(255,255,255,0.04)] rounded-[6px] p-3 shadow-inner">
-               <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#949BA4] uppercase tracking-wider">
-                 <HelpCircle className="w-3.5 h-3.5" /> How to format your trade
-               </div>
-               <ul className="text-[12px] text-[#B5BAC1] flex flex-col gap-1.5 list-disc pl-4 marker:text-[#5865F2] leading-snug">
-                 <li>Use <strong className="text-[#DBDEE1] font-semibold">"for"</strong> or <strong className="text-[#DBDEE1] font-semibold">"want"</strong> to separate your items from theirs.</li>
-                 <li>Keep quantities next to the unit name (e.g., <strong className="text-[#DBDEE1] font-semibold">"5 x3"</strong>).</li>
-                 <li>The AI will ask for clarification if a name matches multiple units.</li>
-               </ul>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 mt-1">
-              <input 
-                value={smartInput} 
-                onChange={e => setSmartInput(e.target.value)} 
-                onKeyDown={e => e.key === "Enter" && handleSmartImport()} 
-                placeholder="Paste offer here..." 
-                maxLength={500} 
-                className="flex-1 bg-[#1E1F22] border-none rounded-[4px] px-3 py-2.5 text-[14px] text-[#F2F3F5] outline-none placeholder-[#80848E] focus:ring-2 focus:ring-[#5865F2] transition-all" 
-                autoFocus 
-              />
-              <button onClick={handleSmartImport} className="bg-[#5865F2] hover:bg-[#4752C4] text-white px-5 py-2.5 rounded-[4px] text-[14px] font-medium transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
-                Import
-              </button>
-            </div>
-            {smartInputError && <p className="text-[12px] text-[#ed4245] mt-1 font-medium animate-fade-in flex items-center gap-1.5"><TriangleAlert className="w-3.5 h-3.5" /> {smartInputError}</p>}
-          </div>
-        ) : (
+        ambiguousItems.length > 0 ? (
           <div className="flex flex-col gap-3 animate-fade-in">
             <div className="flex items-start gap-3 bg-[rgba(250,166,26,0.1)] p-3 rounded-[6px] border border-[rgba(250,166,26,0.2)]">
               <TriangleAlert className="w-5 h-5 text-[#FAA61A] shrink-0 mt-0.5" />
@@ -240,6 +230,92 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
                 </div>
               ))}
             </div>
+          </div>
+        ) : (stagedGive.length > 0 || stagedGet.length > 0) ? (
+          <div className="flex flex-col gap-3 animate-fade-in">
+             <div className="bg-[#111214] p-3 rounded-[6px] border border-[rgba(255,255,255,0.04)] flex justify-between items-start">
+               <div className="flex flex-col gap-1">
+                 <h3 className="text-[12px] font-bold text-[#F2F3F5] uppercase tracking-wider">Review Import</h3>
+                 <p className="text-[11.5px] text-[#949BA4] leading-relaxed">Remove incorrect items before confirming.</p>
+               </div>
+               <button onClick={() => { setStagedGive([]); setStagedGet([]); }} className="text-[#80848E] hover:text-[#ed4245] text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(237,66,69,0.1)] rounded-[4px] transition-colors">Discard</button>
+             </div>
+             
+             <div className="max-h-[300px] overflow-y-auto custom-scrollbar flex flex-col gap-3 pr-1">
+               {stagedGive.length > 0 && (
+                  <div className="flex flex-col gap-1.5">
+                     <span className="text-[10px] font-bold text-[#FAA61A] uppercase tracking-widest pl-1">You Give</span>
+                     {stagedGive.map((card, i) => (
+                        <div key={`give-${card.id}-${i}`} className="flex items-center justify-between bg-[#1E1F22] p-2 rounded-[6px] border border-[rgba(255,255,255,0.04)]">
+                           <div className="flex items-center gap-2 overflow-hidden">
+                             <span className="text-[13px] font-bold text-[#F2F3F5] truncate">{card.name}</span>
+                             <span className="text-[10px] text-[#949BA4] font-medium tracking-wide bg-[#111214] px-1.5 py-0.5 rounded border border-[rgba(255,255,255,0.04)]">x{card.qty}</span>
+                           </div>
+                           <button onClick={() => setStagedGive(prev => prev.filter((_, idx) => idx !== i))} className="p-1.5 text-[#80848E] hover:text-[#ed4245] hover:bg-[rgba(237,66,69,0.1)] rounded-[4px] transition-colors focus-visible:outline-none">
+                             <Trash2 className="w-3.5 h-3.5" />
+                           </button>
+                        </div>
+                     ))}
+                  </div>
+               )}
+
+               {stagedGet.length > 0 && (
+                  <div className="flex flex-col gap-1.5">
+                     <span className="text-[10px] font-bold text-[#5865F2] uppercase tracking-widest pl-1">You Get</span>
+                     {stagedGet.map((card, i) => (
+                        <div key={`get-${card.id}-${i}`} className="flex items-center justify-between bg-[#1E1F22] p-2 rounded-[6px] border border-[rgba(255,255,255,0.04)]">
+                           <div className="flex items-center gap-2 overflow-hidden">
+                             <span className="text-[13px] font-bold text-[#F2F3F5] truncate">{card.name}</span>
+                             <span className="text-[10px] text-[#949BA4] font-medium tracking-wide bg-[#111214] px-1.5 py-0.5 rounded border border-[rgba(255,255,255,0.04)]">x{card.qty}</span>
+                           </div>
+                           <button onClick={() => setStagedGet(prev => prev.filter((_, idx) => idx !== i))} className="p-1.5 text-[#80848E] hover:text-[#ed4245] hover:bg-[rgba(237,66,69,0.1)] rounded-[4px] transition-colors focus-visible:outline-none">
+                             <Trash2 className="w-3.5 h-3.5" />
+                           </button>
+                        </div>
+                     ))}
+                  </div>
+               )}
+               
+               {stagedGive.length === 0 && stagedGet.length === 0 && (
+                   <p className="text-[12px] text-[#80848E] text-center py-4 italic">No items left to import.</p>
+               )}
+             </div>
+             
+             <button 
+               onClick={handleConfirmReview} 
+               disabled={stagedGive.length === 0 && stagedGet.length === 0}
+               className="w-full mt-2 py-3 bg-[#23a559] hover:bg-[#1f914e] disabled:bg-[#1E1F22] disabled:text-[#80848E] text-white text-[14px] font-bold rounded-[6px] transition-colors shadow-md flex items-center justify-center gap-2 focus-visible:outline-none"
+             >
+                <Check className="w-4 h-4" /> Confirm & Add to Trade
+             </button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2.5 bg-[#111214] border border-[rgba(255,255,255,0.04)] rounded-[6px] p-3 shadow-inner">
+               <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#949BA4] uppercase tracking-wider">
+                 <HelpCircle className="w-3.5 h-3.5" /> How to format your trade
+               </div>
+               <ul className="text-[12px] text-[#B5BAC1] flex flex-col gap-1.5 list-disc pl-4 marker:text-[#5865F2] leading-snug">
+                 <li>Use <strong className="text-[#DBDEE1] font-semibold">"for"</strong> or <strong className="text-[#DBDEE1] font-semibold">"want"</strong> to separate your items from theirs.</li>
+                 <li>Keep quantities next to the unit name (e.g., <strong className="text-[#DBDEE1] font-semibold">"5 x3"</strong>).</li>
+                 <li>The AI will ask for clarification if a name matches multiple units.</li>
+               </ul>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 mt-1">
+              <input 
+                value={smartInput} 
+                onChange={e => setSmartInput(e.target.value)} 
+                onKeyDown={e => e.key === "Enter" && handleSmartImport()} 
+                placeholder="Paste offer here..." 
+                maxLength={500} 
+                className="flex-1 bg-[#1E1F22] border-none rounded-[4px] px-3 py-2.5 text-[14px] text-[#F2F3F5] outline-none placeholder-[#80848E] focus:ring-2 focus:ring-[#5865F2] transition-all" 
+                autoFocus 
+              />
+              <button onClick={handleSmartImport} className="bg-[#5865F2] hover:bg-[#4752C4] text-white px-5 py-2.5 rounded-[4px] text-[14px] font-medium transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+                Import
+              </button>
+            </div>
+            {smartInputError && <p className="text-[12px] text-[#ed4245] mt-1 font-medium animate-fade-in flex items-center gap-1.5"><TriangleAlert className="w-3.5 h-3.5" /> {smartInputError}</p>}
           </div>
         )
       ) : (

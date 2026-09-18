@@ -54,9 +54,10 @@ export default function App() {
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
 
   const touchStartPos = useRef<{x: number, y: number} | null>(null);
+
+  const [toast, setToast] = useState<{ id: number; unitName: string; count: number; type: "give" | "get" } | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
-  // Toasts
-  const [toast, setToast] = useState<{ id: number; unitName: string; type: "give" | "get" } | null>(null);
   const [academyToast, setAcademyToast] = useState<{ step: number } | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const prevCompletedCount = useRef(0);
@@ -73,7 +74,6 @@ export default function App() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Global Academy Task Watcher
   useEffect(() => {
     const currentCompletedCount = (
       (giveItems.length > 0 || getItems.length > 0 ? 1 : 0) + 
@@ -169,7 +169,16 @@ export default function App() {
       const customEvent = e as CustomEvent<{ name: string; type: "give" | "get" }>;
       if (!customEvent.detail) return;
       triggerHaptic('medium'); 
-      setToast({ id: Date.now(), unitName: customEvent.detail.name, type: customEvent.detail.type });
+      
+      setToast(prev => {
+        const count = (prev && prev.type === customEvent.detail.type) ? prev.count + 1 : 1;
+        const nameToKeep = (prev && prev.type === customEvent.detail.type) ? prev.unitName : customEvent.detail.name;
+        return { id: Date.now(), unitName: nameToKeep, count, type: customEvent.detail.type };
+      });
+
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = setTimeout(() => setToast(null), 2500);
+
       setGuideState(prev => (prev.type === "main" && prev.step === 2) ? { ...prev, step: 3 } : prev);
     };
 
@@ -227,15 +236,10 @@ export default function App() {
   }, [guideState.type, setCompletedGuides]);
 
   useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 2500);
-    return () => clearTimeout(timer);
-  }, [toast]);
-
-  useEffect(() => {
     if (window.innerWidth < 768) setIsRosterOpen(false);
   }, [setIsRosterOpen]);
 
+  // NEW: Refined Mobile Touch Logic to respect OS gestures
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const x = e.touches[0].clientX;
     const y = e.touches[0].clientY;
@@ -243,7 +247,11 @@ export default function App() {
     const edgeWidth = 40;
     const isLeftEdge = x <= edgeWidth;
 
-    if (isLeftEdge || isRosterOpen) {
+    // Only allow custom swipe in the middle 60% of the screen.
+    // The top/bottom 20% are left alone so native iOS "Go Back" gestures aren't blocked.
+    const isSafeYZone = y > window.innerHeight * 0.2 && y < window.innerHeight * 0.8;
+
+    if ((isLeftEdge && isSafeYZone) || isRosterOpen) {
       touchStartPos.current = { x, y };
     } else {
       touchStartPos.current = null;
@@ -417,7 +425,7 @@ export default function App() {
                  </span>
               </div>
             )}
-            
+
             <div className={`transition-all duration-300 ${toast ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-6 scale-90"}`}>
               {toast && (
                 <div className="flex items-center gap-3 px-5 py-3.5 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.6)] border border-[rgba(255,255,255,0.1)] bg-[#2B2D31]/95 backdrop-blur-md">
@@ -425,7 +433,9 @@ export default function App() {
                      <Check className="w-4 h-4 text-white" />
                    </div>
                    <span className="text-[#F2F3F5] text-[13.5px] font-medium tracking-wide whitespace-nowrap">
-                     Added <strong className="font-black text-white">{toast.unitName}</strong> to {toast.type === "give" ? "Give" : "Get"}
+                     Added <strong className="font-black text-white">{toast.unitName}</strong>
+                     {toast.count > 1 && <span className="text-[#A1A5AC] ml-1 font-bold">({toast.count - 1} more)</span>}
+                     {" "}to {toast.type === "give" ? "Give" : "Get"}
                    </span>
                 </div>
               )}

@@ -1,6 +1,7 @@
 import { TriangleAlert, Info, CornerDownRight, BookOpen } from "lucide-react";
 import { TradeCard, MasterUnit } from "../../../types";
 import { GRID_STATUS_CFG } from "../../../data";
+import { StatusIcon } from "../MainCanvas/UnitGrid";
 
 const STATUS_DEFS: Record<string, string> = {
   stable: "Fair and consistently decent offers. Units that are stable are most likely not to move unless something happens.",
@@ -45,7 +46,6 @@ export function TradeNotices({ giveItems, getItems, ALL_UNITS }: { giveItems: Tr
 
   if (giveData.details.length === 0 && getData.details.length === 0) return null;
 
-  // Extract unique statuses from both sides to build the glossary at the bottom
   const uniqueStatuses = Array.from(
     new Set([
       ...giveData.details.map(d => d.status),
@@ -62,9 +62,10 @@ export function TradeNotices({ giveItems, getItems, ALL_UNITS }: { giveItems: Tr
         <span key={status} className="flex items-center gap-1.5">
           <span className="text-[12px] font-bold text-[#DBDEE1]">{count}x</span>
           <span 
-            className="text-[9px] font-bold uppercase px-1.5 py-[1px] rounded-[4px] border" 
+            className="text-[10px] font-bold uppercase px-1.5 py-[1px] rounded-[4px] border inline-flex items-center gap-1" 
             style={{ backgroundColor: cfg.bg, color: cfg.color, borderColor: cfg.border }}
           >
+            <StatusIcon status={status} />
             {cfg.label}
           </span>
           {i < counts.length - 1 && <span className="text-[#4E5058] ml-1 mr-0.5">•</span>}
@@ -88,7 +89,7 @@ export function TradeNotices({ giveItems, getItems, ALL_UNITS }: { giveItems: Tr
       >
         <div className="flex items-center gap-2 border-b border-[rgba(255,255,255,0.04)] pb-2.5 mb-1">
           <div className="w-1.5 h-1.5 rounded-full shadow-sm" style={{ backgroundColor: accentColor }} />
-          <h4 className="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: accentColor }}>{title}</h4>
+          <h4 className="text-[11px] font-extrabold uppercase tracking-widest" style={{ color: accentColor }}>{title}</h4>
         </div>
         
         <div className="flex flex-col gap-3.5">
@@ -100,14 +101,14 @@ export function TradeNotices({ giveItems, getItems, ALL_UNITS }: { giveItems: Tr
                    <span className="text-[13px] font-bold text-[#F2F3F5]">{item.name}</span>
                    {cfg && (
                      <span 
-                       className="text-[9px] font-bold uppercase px-1.5 py-[1px] rounded-[4px] border shadow-sm" 
+                       className="text-[10px] font-bold uppercase px-1.5 py-[1px] rounded-[4px] border shadow-sm inline-flex items-center gap-1" 
                        style={{ backgroundColor: cfg.bg, color: cfg.color, borderColor: cfg.border }}
                      >
+                       <StatusIcon status={item.status} />
                        {cfg.label}
                      </span>
                    )}
                  </div>
-                 {/* Visual Restructuring: Subtle, indented notice text */}
                  {item.notice && (
                    <div className="flex items-start gap-1.5 mt-1.5 opacity-90">
                      <CornerDownRight className="w-3.5 h-3.5 text-[#80848E] shrink-0 mt-0.5" />
@@ -136,7 +137,7 @@ export function TradeNotices({ giveItems, getItems, ALL_UNITS }: { giveItems: Tr
           <div className="flex flex-col gap-2.5 bg-[#111214] p-3 rounded-[6px] border border-[rgba(255,255,255,0.02)] mb-1 shadow-inner">
             <div className="flex items-center gap-1.5 mb-0.5">
               <Info className="w-3.5 h-3.5 text-[#5865F2]" />
-              <span className="text-[10px] font-bold text-[#949BA4] uppercase tracking-widest">Status Momentum Summary</span>
+              <span className="text-[11px] font-bold text-[#949BA4] uppercase tracking-widest">Status Momentum Summary</span>
             </div>
             
             <div className="flex items-center flex-wrap gap-x-3 gap-y-2">
@@ -158,12 +159,11 @@ export function TradeNotices({ giveItems, getItems, ALL_UNITS }: { giveItems: Tr
         {renderSection("give", giveData)}
         {renderSection("get", getData)}
 
-        {/* Dictionary Grouping: Consolidate all term definitions at the bottom */}
         {uniqueStatuses.length > 0 && (
           <div className="mt-5 pt-4 border-t border-[rgba(255,255,255,0.04)] flex flex-col gap-2.5">
             <div className="flex items-center gap-1.5 mb-1.5">
               <BookOpen className="w-3.5 h-3.5 text-[#949BA4]" />
-              <span className="text-[10px] font-bold text-[#949BA4] uppercase tracking-widest">Terms in this trade</span>
+              <span className="text-[11px] font-bold text-[#949BA4] uppercase tracking-widest">Terms in this trade</span>
             </div>
             <div className="flex flex-col gap-2">
               {uniqueStatuses.map(status => {
@@ -174,9 +174,10 @@ export function TradeNotices({ giveItems, getItems, ALL_UNITS }: { giveItems: Tr
                 return (
                   <div key={status} className="flex items-start gap-2.5 bg-[#111214] p-2.5 rounded-[6px] border border-[rgba(255,255,255,0.02)] shadow-inner">
                     <span 
-                      className="text-[9px] font-bold uppercase px-1.5 py-[1px] rounded-[4px] border shrink-0 mt-[1px] shadow-sm" 
+                      className="text-[10px] font-bold uppercase px-1.5 py-[1px] rounded-[4px] border shrink-0 mt-[1px] shadow-sm inline-flex items-center gap-1" 
                       style={{ backgroundColor: cfg.bg, color: cfg.color, borderColor: cfg.border }}
                     >
+                      <StatusIcon status={status} />
                       {cfg.label}
                     </span>
                     <p className="text-[11.5px] text-[#DBDEE1] leading-relaxed">
