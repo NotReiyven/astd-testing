@@ -2,7 +2,7 @@ import { useState, useRef, memo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { 
   X, ArrowUpCircle, ArrowDownCircle, History,
-  ChevronsUp, ChevronsDown, Activity, TrendingUp, TrendingDown, Flame, Lock, EyeOff
+  ChevronsUp, ChevronsDown, Activity, TrendingUp, TrendingDown, Flame, Lock, EyeOff, Package
 } from "lucide-react";
 import { PopupUnit, GridUnit, MasterUnit, UnitStatus } from "../../../types";
 import { GRID_STATUS_CFG, getRarityLabel, LIQUIDITY_SCALE, getTier, TIER_CONFIG, getProxyImage, getObtainability, handleImageError } from "../../../data";
@@ -10,6 +10,8 @@ import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 import { triggerHaptic } from "../../../data/helpers";
+import { useAuthStore } from "../../../store/useAuthStore";
+import { useInventoryStore } from "../../../store/useInventoryStore";
 
 export function JargonWrap({ title, tip, children }: { title: string; tip: string; children: React.ReactNode }) {
   const btnRef = useRef<HTMLSpanElement>(null);
@@ -45,7 +47,6 @@ export function JargonWrap({ title, tip, children }: { title: string; tip: strin
       {children}
       {tipPos && createPortal(
         <>
-          {/* md:hidden prevents infinite hover loops on desktop by only spawning the block layer on mobile */}
           <div className="md:hidden fixed inset-0 z-[99998]" onClick={(e) => { e.stopPropagation(); setTipPos(null); }} onTouchStart={(e) => { e.stopPropagation(); setTipPos(null); }} />
           <div className="rounded-[8px] px-3 py-2.5 pointer-events-none fixed z-[99999] -translate-x-1/2 -translate-y-full animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.6)]" style={{ top: tipPos.y, left: tipPos.x, minWidth: 200, maxWidth: 240, background: "#111214", border: "1px solid rgba(255,255,255,0.08)" }}>
             <p className="text-[12px] font-bold text-[#F2F3F5] mb-0.5">{title}</p>
@@ -112,6 +113,18 @@ export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { 
 
   const addCard = useTradeStore(state => state.addCard);
   const openModal = useHistoryModalStore(state => state.openModal);
+
+  const profile = useAuthStore(state => state.profile);
+  const addOrUpdateUnit = useInventoryStore(state => state.addOrUpdateUnit);
+
+  const handleSaveToInventory = () => {
+    if (!profile) {
+      alert("Please log in with Discord first to save items to your inventory.");
+      return;
+    }
+    addOrUpdateUnit(profile.id, unit.id, 1);
+    setMenuOpen(false);
+  };
 
   const numericValue = typeof unit.value === "number" 
     ? unit.value 
@@ -216,23 +229,24 @@ export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { 
             <div className="absolute inset-0 pointer-events-none z-20" style={{ background: "linear-gradient(to right, rgba(43,45,49,0.3) 0%, transparent 20%, transparent 80%, rgba(43,45,49,0.3) 100%)" }} />
             <div className="absolute -bottom-[2px] left-0 right-0 h-[calc(40%+2px)] md:h-[calc(45%+2px)] z-20" style={{ background: "linear-gradient(to bottom, transparent 0%, rgba(43,45,49,0.8) 60%, rgba(43,45,49,1) 100%)" }} />
             
-            {/* FIX: Status badge kept permanently at z-50 so it renders completely ABOVE the dark overlay */}
             {unit.status && (
               <div className="absolute top-2 left-2 md:top-3 md:left-3 z-50">
                 <GridStatusBadge status={unit.status} />
               </div>
             )}
 
-            {/* Desktop Quick-Add Overlay with pt-10 to physically push buttons down away from the Status Badge */}
-            <div className={`hidden md:flex absolute inset-0 bg-black/70 backdrop-blur-[2px] transition-opacity duration-200 z-40 flex-col items-center justify-center gap-2.5 p-5 pt-10 md:pt-12 ${hovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-              <button onClick={(e) => { e.stopPropagation(); handleAdd("give"); }} className="w-full bg-[#FAA61A] hover:bg-[#d98b14] text-white text-[14px] font-bold py-2.5 rounded-[6px] transition-transform active:scale-95 shadow-md flex items-center justify-center gap-2">
-                <ArrowUpCircle className="w-4 h-4" /> Add to Give
+            <div className={`hidden md:flex absolute inset-0 bg-black/70 backdrop-blur-[2px] transition-opacity duration-200 z-40 flex-col items-center justify-center gap-2 p-5 pt-10 md:pt-12 ${hovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+              <button onClick={(e) => { e.stopPropagation(); handleAdd("give"); }} className="w-full bg-[#FAA61A] hover:bg-[#d98b14] text-white text-[13px] font-bold py-2 rounded-[6px] transition-transform active:scale-95 shadow-md flex items-center justify-center gap-1.5">
+                <ArrowUpCircle className="w-3.5 h-3.5" /> Give
               </button>
-              <button onClick={(e) => { e.stopPropagation(); handleAdd("get"); }} className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white text-[14px] font-bold py-2.5 rounded-[6px] transition-transform active:scale-95 shadow-md flex items-center justify-center gap-2">
-                <ArrowDownCircle className="w-4 h-4" /> Add to Get
+              <button onClick={(e) => { e.stopPropagation(); handleAdd("get"); }} className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white text-[13px] font-bold py-2 rounded-[6px] transition-transform active:scale-95 shadow-md flex items-center justify-center gap-1.5">
+                <ArrowDownCircle className="w-3.5 h-3.5" /> Get
               </button>
-              <button onClick={(e) => { e.stopPropagation(); openModal(unit.id); }} className="w-full bg-[#1E1F22] hover:bg-[#3F4147] text-[#DBDEE1] border border-[rgba(255,255,255,0.08)] text-[12px] font-bold py-2 rounded-[6px] transition-transform active:scale-95 shadow-sm mt-1 flex items-center justify-center gap-2">
-                <History className="w-3.5 h-3.5" /> Market History
+              <button onClick={(e) => { e.stopPropagation(); handleSaveToInventory(); }} className="w-full bg-[#23a559] hover:bg-[#1f914e] text-white text-[12px] font-bold py-1.5 rounded-[6px] transition-transform active:scale-95 shadow-sm flex items-center justify-center gap-1.5">
+                <Package className="w-3.5 h-3.5" /> Save
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); openModal(unit.id); }} className="w-full bg-[#1E1F22] hover:bg-[#3F4147] text-[#DBDEE1] border border-[rgba(255,255,255,0.08)] text-[11px] font-bold py-1.5 rounded-[6px] transition-transform active:scale-95 shadow-sm flex items-center justify-center gap-1.5">
+                <History className="w-3 h-3" /> History
               </button>
             </div>
           </div>
@@ -290,7 +304,6 @@ export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { 
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setMenuOpen(false)} />
           <div className="relative w-full md:max-w-sm bg-[#1E1F22] rounded-t-[24px] md:rounded-[20px] p-5 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] md:shadow-[0_20px_60px_rgba(0,0,0,0.8)] animate-slide-up md:animate-fade-in border-t md:border border-[rgba(255,255,255,0.08)]">
 
-            {/* Mobile Drag Indicator */}
             <div className="md:hidden absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-[rgba(255,255,255,0.2)] rounded-full" />
 
             <div className="flex items-center justify-between mb-5 mt-2 md:mt-0">
@@ -311,14 +324,17 @@ export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { 
               </button>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <button onClick={() => handleAdd("give")} className="w-full flex items-center justify-center gap-2 bg-[#FAA61A] hover:bg-[#d98b14] transition-colors text-white text-[15px] font-bold h-[56px] md:h-[48px] rounded-[10px] active:scale-[0.98] shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
-                <ArrowUpCircle className="w-5 h-5" /> Add to 'You Give'
+            <div className="flex flex-col gap-2.5">
+              <button onClick={() => handleAdd("give")} className="w-full flex items-center justify-center gap-2 bg-[#FAA61A] hover:bg-[#d98b14] transition-colors text-white text-[14px] font-bold h-[48px] md:h-[44px] rounded-[10px] active:scale-[0.98] shadow-md focus-visible:outline-none">
+                <ArrowUpCircle className="w-4 h-4" /> Add to 'You Give'
               </button>
-              <button onClick={() => handleAdd("get")} className="w-full flex items-center justify-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] transition-colors text-white text-[15px] font-bold h-[56px] md:h-[48px] rounded-[10px] active:scale-[0.98] shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
-                <ArrowDownCircle className="w-5 h-5" /> Add to 'You Get'
+              <button onClick={() => handleAdd("get")} className="w-full flex items-center justify-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] transition-colors text-white text-[14px] font-bold h-[48px] md:h-[44px] rounded-[10px] active:scale-[0.98] shadow-md focus-visible:outline-none">
+                <ArrowDownCircle className="w-4 h-4" /> Add to 'You Get'
               </button>
-              <button onClick={() => { setMenuOpen(false); openModal(unit.id); }} className="w-full flex items-center justify-center gap-2 bg-[#2B2D31] hover:bg-[#3F4147] transition-colors text-[#DBDEE1] border border-[rgba(255,255,255,0.08)] text-[14px] font-bold h-[56px] md:h-[48px] rounded-[10px] active:scale-[0.98] mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DBDEE1]">
+              <button onClick={handleSaveToInventory} className="w-full flex items-center justify-center gap-2 bg-[#23a559] hover:bg-[#1f914e] transition-colors text-white text-[14px] font-bold h-[48px] md:h-[44px] rounded-[10px] active:scale-[0.98] shadow-md focus-visible:outline-none">
+                <Package className="w-4 h-4" /> Save to My Inventory
+              </button>
+              <button onClick={() => { setMenuOpen(false); openModal(unit.id); }} className="w-full flex items-center justify-center gap-2 bg-[#2B2D31] hover:bg-[#3F4147] transition-colors text-[#DBDEE1] border border-[rgba(255,255,255,0.08)] text-[13px] font-bold h-[48px] md:h-[44px] rounded-[10px] active:scale-[0.98] mt-0.5 focus-visible:outline-none">
                 <History className="w-4 h-4" /> View Market History
               </button>
             </div>

@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
-import { PanelLeft, Hash, Search, X, GraduationCap, Map, User, Settings2, Calculator, HelpCircle, Book } from "lucide-react";
+import { PanelLeft, Hash, Search, X, GraduationCap, Map, User, Settings2, Calculator, HelpCircle, Book, LogIn, LogOut } from "lucide-react";
 import { GuideType } from "../guides/AquaGuideOverlay";
 import { LiveAvatars } from "./LiveAvatars";
+import { useAuthStore } from "../../../store/useAuthStore";
 
 interface TopBarProps {
   calcHeaderZ: string;
@@ -41,8 +42,10 @@ export function TopBar({
 
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const mobileInputRef = useRef<HTMLInputElement>(null);
-  
   const desktopSearchRef = useRef<HTMLInputElement>(null);
+  
+  // Bring in our new Auth Store
+  const { profile, loginWithDiscord, logout, isLoading: isAuthLoading } = useAuthStore();
 
   useEffect(() => {
     if (mobileSearchOpen && mobileInputRef.current) {
@@ -150,14 +153,40 @@ export function TopBar({
       <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
         <LiveAvatars />
 
+        <div className="w-px h-5 mx-0.5 md:mx-1 flex-shrink-0 hidden md:block" style={{ background: "rgba(255,255,255,0.08)" }} />
+
+        {/* Auth Module */}
+        {!isAuthLoading && (
+          profile ? (
+            <button 
+              onClick={logout}
+              className="flex items-center gap-2 pl-1 pr-3 py-1 bg-[#1E1F22] hover:bg-[#ed4245]/20 border border-[rgba(255,255,255,0.06)] hover:border-[#ed4245]/50 rounded-full transition-all group"
+              title="Click to Logout"
+            >
+              <img src={profile.avatar_url} alt="Avatar" className="w-6 h-6 rounded-full" />
+              <span className="text-[12px] font-bold text-[#DBDEE1] group-hover:hidden hidden sm:block max-w-[80px] truncate">{profile.username}</span>
+              <span className="text-[12px] font-bold text-[#ed4245] hidden group-hover:block hidden sm:block">Logout</span>
+              <LogOut className="w-3.5 h-3.5 text-[#ed4245] sm:hidden hidden group-hover:block" />
+            </button>
+          ) : (
+            <button 
+              onClick={loginWithDiscord}
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-[6px] text-[12px] font-bold transition-all shadow-sm"
+            >
+              <LogIn className="w-4 h-4" />
+              <span className="hidden sm:inline">Login</span>
+            </button>
+          )
+        )}
+
         <div className="relative">
           <button 
             onClick={handleHelpClick}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 md:px-3 md:py-1.5 rounded-[6px] bg-[#5865F2] hover:bg-[#4752C4] text-white transition-all text-[12px] font-bold shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 md:px-3 md:py-1.5 rounded-[6px] bg-[#2B2D31] border border-[rgba(255,255,255,0.06)] hover:bg-[#3F4147] text-[#DBDEE1] transition-all text-[12px] font-bold shadow-sm active:scale-95 focus-visible:outline-none"
             title="Need Help? Open Guides"
           >
             <HelpCircle className="w-4 h-4 sm:hidden flex-shrink-0" />
-            <span className="hidden sm:inline">Need Help?</span>
+            <span className="hidden sm:inline">Help</span>
           </button>
           {helpMenuOpen && (
             <>

@@ -12,6 +12,7 @@ import {
 import { FilterKey } from "../../types";
 import { useUnits } from "../../context/UnitContext";
 import { getTier } from "../../data";
+import { Package } from "lucide-react";
 
 type ChannelConfig = { id: string; label: string; isLocked: boolean; hasThreads?: boolean; icon?: LucideIcon; };
 type CategoryConfig = { id: string; label: string; channels: ChannelConfig[]; };
@@ -22,6 +23,7 @@ const CATEGORIES: CategoryConfig[] = [
     channels: [
       { id: "home", label: "home", isLocked: true },
       { id: "tutorial", label: "tutorial", isLocked: true },
+      { id: "inventory", label: "my-inventory", isLocked: true, icon: Package },
       { id: "extra-notices", label: "extra-notices", isLocked: true, icon: Megaphone },
     ]
   },

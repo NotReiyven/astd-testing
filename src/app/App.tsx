@@ -1,5 +1,5 @@
 import { useState, useEffect, Suspense, lazy, useRef, useCallback } from "react";
-import { Hash, Check, GraduationCap } from "lucide-react";
+import { Hash, Check, GraduationCap, Package } from "lucide-react";
 import { FilterKey, PopupUnit } from "../types";
 import { useStickyState, isBoolean, isNonEmptyString } from "../hooks/useStickyState";
 import { AquaGuideOverlay, GuideType } from "./components/guides/AquaGuideOverlay";
@@ -8,13 +8,15 @@ import { WelcomeModal } from "./components/WelcomeModal";
 import { useTradeStore } from "../store/useTradeStore";
 import { HistoryModal } from "./components/MainCanvas/HistoryModal";
 import { triggerHaptic } from "../data/helpers";
+import { useAuthStore } from "../store/useAuthStore";
+import { useInventoryStore } from "../store/useInventoryStore";
 
 const TradeAnalyzerPanel = lazy(() => import("./components/TradeAnalyzer").then(module => ({ default: module.TradeAnalyzerPanel })));
 const Sidebar = lazy(() => import("./components/Sidebar").then(module => ({ default: module.Sidebar })));
 const MainCanvas = lazy(() => import("./components/MainCanvas").then(module => ({ default: module.MainCanvas })));
 const HomeChannel = lazy(() => import("./components/HomeChannel").then(module => ({ default: module.HomeChannel })));
 const TutorialChannel = lazy(() => import("./components/TutorialChannel").then(module => ({ default: module.TutorialChannel })));
-
+const InventoryChannel = lazy(() => import("./components/InventoryChannel").then(module => ({ default: module.InventoryChannel })));
 const ExtraNoticesChannel = lazy(() => import("./components/ExtraNoticesChannel").then(module => ({ default: module.ExtraNoticesChannel })));
 const LegalChannel = lazy(() => import("./components/LegalChannel").then(module => ({ default: module.LegalChannel })));
 
@@ -22,6 +24,7 @@ const CHANNEL_INFO: Record<string, { title: string; subtitle: string }> = {
   "home": { title: "home", subtitle: "Welcome to the ASTD Value List! Important information and update logs are posted here." },
   "value-list": { title: "value-list", subtitle: "ASTD unit values • Being Observed Live by Fire Zio" },
   "tutorial": { title: "tutorial", subtitle: "Learn how to use the ASTD trading calculator and value list." },
+  "inventory": { title: "my-inventory", subtitle: "Manage your personal unit collection and vault." },
   "extra-notices": { title: "extra-notices", subtitle: "Additional rules, exceptions, and community notes." },
   "terms-of-service": { title: "terms-of-service", subtitle: "Rules and guidelines for using the ASTD Value List." },
   "privacy-policy": { title: "privacy-policy", subtitle: "How we handle and protect your data." }
@@ -37,6 +40,10 @@ export default function App() {
   const giveItems = useTradeStore((s) => s.giveItems);
   const getItems = useTradeStore((s) => s.getItems);
   const pinnedIds = useTradeStore((s) => s.pinnedIds);
+  
+  const initializeAuth = useAuthStore((s) => s.initialize);
+  const fetchInventory = useInventoryStore((s) => s.fetchInventory);
+  const profile = useAuthStore((s) => s.profile);
 
   const [activeChannel, setActiveChannel] = useStickyState("home", "astd_channel", isNonEmptyString);
   const [tutorialTab, setTutorialTab] = useState<"sandbox" | "simulator" | "theory" | "dictionary">("sandbox");
@@ -66,13 +73,21 @@ export default function App() {
   const isDictionaryActive = activeChannel === "tutorial" && tutorialTab === "dictionary";
 
   const [isMobile, setIsMobile] = useState(false);
+  
   useEffect(() => {
+    initializeAuth();
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     setIsMounted(true);
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }, [initializeAuth]);
+
+  useEffect(() => {
+    if (profile) {
+      fetchInventory(profile.id);
+    }
+  }, [profile, fetchInventory]);
 
   useEffect(() => {
     const currentCompletedCount = (
@@ -109,6 +124,7 @@ export default function App() {
       import("./components/MainCanvas"),
       import("./components/HomeChannel"),
       import("./components/TutorialChannel"),
+      import("./components/InventoryChannel"),
       import("./components/ExtraNoticesChannel"),
       import("./components/LegalChannel")
     ]).then(() => {
@@ -239,7 +255,6 @@ export default function App() {
     if (window.innerWidth < 768) setIsRosterOpen(false);
   }, [setIsRosterOpen]);
 
-  // REFINED: Touch Logic completely bails out if it's primarily a vertical scroll
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const x = e.touches[0].clientX;
     const y = e.touches[0].clientY;
@@ -261,7 +276,6 @@ export default function App() {
     const dx = e.changedTouches[0].clientX - touchStartPos.current.x;
     const dy = e.changedTouches[0].clientY - touchStartPos.current.y;
 
-    // Strict Bailout: If vertical movement is greater than 80% of horizontal, it's a scroll, not a swipe.
     if (Math.abs(dy) > Math.abs(dx) * 0.8) {
       touchStartPos.current = null;
       return;
@@ -490,6 +504,7 @@ export default function App() {
                   guideState={guideState}
                   isMobile={isMobile}
                 />
+              ) : activeChannel === "inventory" ? ( <InventoryChannel />
               ) : activeChannel === "extra-notices" ? ( <ExtraNoticesChannel />
               ) : activeChannel === "terms-of-service" ? ( <LegalChannel type="tos" />
               ) : activeChannel === "privacy-policy" ? ( <LegalChannel type="privacy" />
