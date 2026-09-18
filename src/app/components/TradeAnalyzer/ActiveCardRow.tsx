@@ -4,7 +4,7 @@ import { TradeCard } from "../../../types";
 import { GRID_STATUS_CFG, getProxyImage } from "../../../data";
 import { useUnits } from "../../../context/UnitContext";
 import { getAvatarStyle, getInitials } from "./summaryUtils";
-import { StatusIcon } from "../MainCanvas/UnitGrid";
+import { StatusIcon, JargonWrap } from "../MainCanvas/UnitGrid";
 
 const QuantityInput = memo(({ qty, onChange }: { qty: number; onChange: (val: number) => void }) => {
   const [val, setVal] = useState(qty.toString());
@@ -30,7 +30,6 @@ const QuantityInput = memo(({ qty, onChange }: { qty: number; onChange: (val: nu
       onKeyDown={(e) => {
         if (e.key === 'Enter') e.currentTarget.blur();
         
-        // NEW: Arrow Key Nudge
         if (e.key === 'ArrowUp') {
           e.preventDefault();
           const delta = e.shiftKey ? 10 : 1;
@@ -47,7 +46,7 @@ const QuantityInput = memo(({ qty, onChange }: { qty: number; onChange: (val: nu
         }
       }}
       title="Up/Down arrows to adjust. Shift for ±10"
-      className="w-10 h-8 md:w-8 md:h-6 bg-transparent hover:bg-[rgba(255,255,255,0.04)] focus:bg-[#111214] text-center text-[14px] md:text-[12.5px] font-bold text-[#F2F3F5] outline-none focus:ring-1 focus:ring-[#5865F2] rounded-[3px] transition-all cursor-text select-all"
+      className="w-12 h-10 md:w-8 md:h-6 bg-transparent hover:bg-[rgba(255,255,255,0.04)] focus:bg-[#111214] text-center text-[15px] md:text-[12.5px] font-bold text-[#F2F3F5] outline-none focus:ring-1 focus:ring-[#5865F2] rounded-[3px] transition-all cursor-text select-all"
     />
   );
 });
@@ -117,7 +116,9 @@ export const ActiveCardRow = memo(function ActiveCardRow({
               >
                 <StatusIcon status={masterData?.status} />
                 <span className="text-[8px] font-bold leading-none uppercase tracking-wide" style={{ color: dropCfg.color, fontFamily: "'Inter', sans-serif" }}>
-                  {dropCfg.label}
+                  <JargonWrap title={dropCfg.label} tip={dropCfg.tip}>
+                    {dropCfg.label}
+                  </JargonWrap>
                 </span>
               </div>
            )}
@@ -132,18 +133,22 @@ export const ActiveCardRow = memo(function ActiveCardRow({
       <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0 min-w-0">
          <span 
            className="text-[13px] md:text-[14px] font-bold text-[#F2F3F5] font-mono tracking-tight text-right mr-1 flex-shrink-1 min-w-0 truncate max-w-[80px]" 
-           title={isOwnerChoice ? "Owner's Choice" : (card.value * card.qty).toLocaleString()}
+           title={isOwnerChoice ? "" : (card.value * card.qty).toLocaleString()}
          >
-           {isOwnerChoice ? "O/C" : (card.value * card.qty).toLocaleString()}
+           {isOwnerChoice ? (
+              <JargonWrap title="Owner's Choice (O/C)" tip="This unit is so rare the owner dictates the price. Value depends entirely on what they want.">
+                 O/C
+              </JargonWrap>
+           ) : (card.value * card.qty).toLocaleString()}
          </span>
 
          <div className="flex items-center bg-[#1E1F22] rounded-[6px] md:rounded-[4px] p-0.5 md:p-1 border border-[rgba(255,255,255,0.04)] shadow-inner flex-shrink-0">
            <button 
              onClick={handleMinus} 
              title="Shift+Click to remove 10"
-             className="w-8 h-8 md:w-6 md:h-6 flex items-center justify-center text-[#949BA4] hover:text-[#DBDEE1] hover:bg-[#2B2D31] rounded-[3px] transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2]"
+             className="w-10 h-10 md:w-6 md:h-6 flex items-center justify-center text-[#949BA4] hover:text-[#DBDEE1] hover:bg-[#2B2D31] rounded-[4px] md:rounded-[3px] transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2]"
            >
-             <Minus className="w-3.5 h-3.5 md:w-3 md:h-3" />
+             <Minus className="w-4 h-4 md:w-3 md:h-3" />
            </button>
 
            <QuantityInput qty={card.qty} onChange={handleQtyInput} />
@@ -151,26 +156,26 @@ export const ActiveCardRow = memo(function ActiveCardRow({
            <button 
              onClick={handlePlus} 
              title="Shift+Click to add 10"
-             className="w-8 h-8 md:w-6 md:h-6 flex items-center justify-center text-[#949BA4] hover:text-[#DBDEE1] hover:bg-[#2B2D31] rounded-[3px] transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2]"
+             className="w-10 h-10 md:w-6 md:h-6 flex items-center justify-center text-[#949BA4] hover:text-[#DBDEE1] hover:bg-[#2B2D31] rounded-[4px] md:rounded-[3px] transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2]"
            >
-             <Plus className="w-3.5 h-3.5 md:w-3 md:h-3" />
+             <Plus className="w-4 h-4 md:w-3 md:h-3" />
            </button>
          </div>
 
-         <div className="flex items-center ml-0.5 flex-shrink-0">
+         <div className="flex items-center ml-0.5 flex-shrink-0 gap-0.5">
            <button 
              onClick={handlePin} 
              title={isPinned ? "Unpin unit" : "Pin unit (prevents clearing)"}
-             className={`w-9 h-9 md:w-7 md:h-7 flex items-center justify-center transition-colors flex-shrink-0 active:scale-90 rounded-[4px] md:rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] ${isPinned ? "text-[#DBDEE1]" : "text-[#80848E] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)]"}`}
+             className={`w-10 h-10 md:w-7 md:h-7 flex items-center justify-center transition-colors flex-shrink-0 active:scale-90 rounded-[6px] md:rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] ${isPinned ? "text-[#DBDEE1]" : "text-[#80848E] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)]"}`}
            >
-             <Pin className="w-[15px] h-[15px] md:w-[14px] md:h-[14px]" style={{ fill: isPinned ? "currentColor" : "none" }} />
+             <Pin className="w-4 h-4 md:w-[14px] md:h-[14px]" style={{ fill: isPinned ? "currentColor" : "none" }} />
            </button>
 
            <button 
              onClick={handleRemove} 
-             className="w-9 h-9 md:w-7 md:h-7 flex items-center justify-center text-[#80848E] hover:text-[#ed4245] hover:bg-[rgba(237,66,69,0.1)] transition-colors flex-shrink-0 active:scale-90 rounded-[4px] md:rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ed4245]"
+             className="w-10 h-10 md:w-7 md:h-7 flex items-center justify-center text-[#80848E] hover:text-[#ed4245] hover:bg-[rgba(237,66,69,0.1)] transition-colors flex-shrink-0 active:scale-90 rounded-[6px] md:rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ed4245]"
            >
-             <X className="w-4 h-4 md:w-[15px] md:h-[15px]" />
+             <X className="w-5 h-5 md:w-[15px] md:h-[15px]" />
            </button>
          </div>
       </div>

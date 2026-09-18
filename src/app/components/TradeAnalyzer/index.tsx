@@ -50,15 +50,15 @@ export function TradeAnalyzerPanel({
 
   const [isMobile, setIsMobile] = useState(false);
   
-  // FIXED: Bumped default width to 480px, minimum width to 420px.
   const { panelWidth, startResize, panelRef } = usePanelResize(480, 420, 800);
 
   const [undoCache, setUndoCache] = useState<{give: TradeCard[], get: TradeCard[]} | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const sheetRef = useRef<HTMLDivElement>(null);
-  const [touchStartY, setTouchStartY] = useState<number | null>(null);
-  const [currentY, setCurrentY] = useState(0);
+  
+  const touchStartYRef = useRef<number | null>(null);
+  const currentYRef = useRef(0);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -174,33 +174,41 @@ export function TradeAnalyzerPanel({
 
   const onTouchStart = (e: React.TouchEvent) => {
     if (!isMobile || !isOpen) return;
-    if ((e.target as HTMLElement).closest('button, input, textarea, a, select')) return;
-    setTouchStartY(e.touches[0].clientY);
-    if (sheetRef.current) sheetRef.current.style.transition = 'none';
+    if ((e.target as HTMLElement).closest('.custom-scrollbar, button, input, textarea, a, select')) return;
+    
+    touchStartYRef.current = e.touches[0].clientY;
+    if (sheetRef.current) {
+      sheetRef.current.style.transition = 'none';
+    }
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
-    if (!isMobile || !isOpen || touchStartY === null) return;
-    const dy = e.touches[0].clientY - touchStartY;
+    if (!isMobile || !isOpen || touchStartYRef.current === null) return;
+    const dy = e.touches[0].clientY - touchStartYRef.current;
+    
     if (dy > 0) {
-      setCurrentY(dy);
-      if (sheetRef.current) sheetRef.current.style.transform = `translateY(${dy}px)`;
+      currentYRef.current = dy;
+      if (sheetRef.current) {
+        sheetRef.current.style.transform = `translateY(${dy}px)`;
+      }
     }
   };
 
   const onTouchEnd = () => {
-    if (!isMobile || !isOpen || touchStartY === null) return;
+    if (!isMobile || !isOpen || touchStartYRef.current === null) return;
+    
     if (sheetRef.current) {
       sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
-      if (currentY > 100) {
+      if (currentYRef.current > 120) {
         closeSheet();
         sheetRef.current.style.transform = 'translateY(100%)';
       } else {
         sheetRef.current.style.transform = 'translateY(0px)';
       }
     }
-    setTouchStartY(null);
-    setCurrentY(0);
+    
+    touchStartYRef.current = null;
+    currentYRef.current = 0;
   };
 
   const isMainStep3 = guideState?.type === "main" && guideState?.step === 3;
@@ -224,7 +232,7 @@ export function TradeAnalyzerPanel({
 
         <button 
           onClick={() => { setSmartMenuOpen(!smartMenuOpen); startGuide("dictionary"); }} 
-          className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-30 pointer-events-auto ${
+          className={`flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-30 pointer-events-auto ${
             isWandTarget 
               ? "bg-[#5865F2] text-white shadow-[0_0_20px_rgba(88,101,242,0.8)] ring-2 ring-[#5865F2] z-[100005] animate-pulse" 
               : smartMenuOpen 
@@ -233,11 +241,11 @@ export function TradeAnalyzerPanel({
           }`} 
           title="Context Recognition"
         >
-          <Wand2 className="w-4 h-4" />
+          <Wand2 className="w-4 h-4 md:w-4 md:h-4" />
         </button>
         <button 
           onClick={handleSafeClear} 
-          className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-30 pointer-events-auto ${
+          className={`flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-30 pointer-events-auto ${
             isClearTarget 
               ? "bg-[#ed4245] text-white shadow-[0_0_20px_rgba(237,66,69,0.8)] ring-2 ring-[#ed4245] z-[100005] animate-pulse" 
               : confirmClear
@@ -246,11 +254,11 @@ export function TradeAnalyzerPanel({
           }`} 
           title={confirmClear ? "Click again to confirm" : "Clear trade"}
         >
-          {confirmClear ? <Check className="w-4 h-4" /> : <RotateCcw className="w-3.5 h-3.5" />}
+          {confirmClear ? <Check className="w-4 h-4 md:w-4 md:h-4" /> : <RotateCcw className="w-4 h-4 md:w-3.5 md:h-3.5" />}
         </button>
         <button 
           onClick={handleShare} 
-          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-30 pointer-events-auto" 
+          className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 md:px-3 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-30 pointer-events-auto" 
           style={{ background: copied ? "#23a559" : "#5865F2", fontFamily: "'Inter', sans-serif" }}
         >
           {copied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
@@ -260,7 +268,7 @@ export function TradeAnalyzerPanel({
         {(!isMobile && onClose) && (
           <button 
             onClick={closeSheet} 
-            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] text-[#B5BAC1] hover:bg-[rgba(237,66,69,0.1)] hover:text-[#ed4245] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ed4245] relative z-30 pointer-events-auto" 
+            className="flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] text-[#B5BAC1] hover:bg-[rgba(237,66,69,0.1)] hover:text-[#ed4245] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ed4245] relative z-30 pointer-events-auto" 
             title="Close Analyzer"
           >
             <X className="w-4 h-4" />
@@ -315,8 +323,8 @@ export function TradeAnalyzerPanel({
 
         <div className="relative mx-3 md:mx-4 flex items-center justify-center my-1">
           <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[rgba(255,255,255,0.04)]" /></div>
-          <button onClick={swap} className="relative flex items-center justify-center w-7 h-7 rounded-full transition-all duration-300 ease-out hover:scale-110 z-10 bg-[#1E1F22] border border-[rgba(255,255,255,0.08)] text-[#80848E] hover:text-[#DBDEE1] hover:bg-[#2B2D31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2]" title="Swap Give and Get">
-            <ArrowUpDown className="w-3 h-3 md:w-3.5 md:h-3.5" />
+          <button onClick={swap} className="relative flex items-center justify-center w-10 h-10 md:w-7 md:h-7 rounded-full transition-all duration-300 ease-out hover:scale-110 z-10 bg-[#1E1F22] border border-[rgba(255,255,255,0.08)] text-[#80848E] hover:text-[#DBDEE1] hover:bg-[#2B2D31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2]" title="Swap Give and Get">
+            <ArrowUpDown className="w-4 h-4 md:w-3.5 md:h-3.5" />
           </button>
         </div>
 
@@ -378,7 +386,7 @@ export function TradeAnalyzerPanel({
             <div className="w-[1px] h-3 bg-[rgba(255,255,255,0.1)]"></div>
             <button 
               onClick={() => { setUndoCache(null); if (undoTimerRef.current) clearTimeout(undoTimerRef.current); }}
-              className="text-[#80848E] hover:text-[#DBDEE1] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] rounded-[3px]"
+              className="text-[#80848E] hover:text-[#DBDEE1] p-2 -m-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] rounded-[3px]"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -446,7 +454,7 @@ export function TradeAnalyzerPanel({
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
           >
-            <div className="w-12 h-1.5 bg-[rgba(255,255,255,0.2)] rounded-full pointer-events-none" />
+            <div className="w-16 h-1.5 bg-[rgba(255,255,255,0.2)] rounded-full pointer-events-none" />
           </div>
 
           {renderCalculatorContent()}
@@ -466,11 +474,10 @@ export function TradeAnalyzerPanel({
           <div 
             ref={panelRef} 
             className="flex flex-col h-full w-full select-none border-l border-[rgba(0,0,0,0.32)] shadow-[-12px_0_40px_rgba(0,0,0,0.5)] bg-[#2B2D31]" 
-            // FIXED: Set minWidth to 420px to perfectly match the requested wider default constraint
             style={{ width: `${panelWidth}px`, minWidth: "420px", fontFamily: "'Inter', sans-serif" }}
           >
             <div 
-              className="absolute top-0 left-0 w-1.5 h-full cursor-col-resize hover:bg-[#5865F2] z-[100000] transition-colors"
+              className="absolute top-0 left-0 w-2 h-full cursor-col-resize hover:bg-[#5865F2] z-[100000] transition-colors"
               onMouseDown={startResize}
               title="Drag to resize panel"
             />

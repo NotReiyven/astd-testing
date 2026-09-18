@@ -125,7 +125,6 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
   };
 
   const isGive = type === "give";
-  const themeColorRGB = isGive ? "250, 166, 26" : "88, 101, 242"; 
   const accentColorHex = isGive ? "#FAA61A" : "#5865F2";
   
   let dropZoneClasses = "flex flex-col justify-center rounded-[8px] transition-all duration-200 ";
@@ -162,7 +161,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
         <div className="flex items-center gap-3">
           {items.length > 0 && (
             <button
-              className="text-[11px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] rounded-[3px] px-2 py-1 bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(237,66,69,0.1)] hover:text-[#ed4245] active:scale-95"
+              className="text-[11px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] rounded-[4px] px-3 py-2 md:px-2 md:py-1 bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(237,66,69,0.1)] hover:text-[#ed4245] active:scale-95"
               style={{ color: "#949BA4" }}
               onClick={onClear}
             >
@@ -222,7 +221,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
           />
           {query.length > 0 && (
             <button
-              className="flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] rounded-[3px] p-0.5 hover:bg-[rgba(255,255,255,0.08)] transition-colors"
+              className="flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] rounded-[3px] p-2 -m-2 md:p-0.5 md:-m-0 hover:bg-[rgba(255,255,255,0.08)] transition-colors"
               style={{ color: "#80848E" }}
               onMouseDown={(e) => { e.preventDefault(); setQuery(""); }}
             >

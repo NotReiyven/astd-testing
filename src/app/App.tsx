@@ -239,7 +239,7 @@ export default function App() {
     if (window.innerWidth < 768) setIsRosterOpen(false);
   }, [setIsRosterOpen]);
 
-  // NEW: Refined Mobile Touch Logic to respect OS gestures
+  // REFINED: Touch Logic completely bails out if it's primarily a vertical scroll
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const x = e.touches[0].clientX;
     const y = e.touches[0].clientY;
@@ -247,8 +247,6 @@ export default function App() {
     const edgeWidth = 40;
     const isLeftEdge = x <= edgeWidth;
 
-    // Only allow custom swipe in the middle 60% of the screen.
-    // The top/bottom 20% are left alone so native iOS "Go Back" gestures aren't blocked.
     const isSafeYZone = y > window.innerHeight * 0.2 && y < window.innerHeight * 0.8;
 
     if ((isLeftEdge && isSafeYZone) || isRosterOpen) {
@@ -263,14 +261,15 @@ export default function App() {
     const dx = e.changedTouches[0].clientX - touchStartPos.current.x;
     const dy = e.changedTouches[0].clientY - touchStartPos.current.y;
 
-    if (Math.abs(dy) > Math.abs(dx) * 0.6) {
+    // Strict Bailout: If vertical movement is greater than 80% of horizontal, it's a scroll, not a swipe.
+    if (Math.abs(dy) > Math.abs(dx) * 0.8) {
       touchStartPos.current = null;
       return;
     }
 
-    if (dx > 90 && !isRosterOpen && window.innerWidth < 768) {
+    if (dx > 60 && !isRosterOpen && window.innerWidth < 768) {
       setIsRosterOpen(true);
-    } else if (dx < -90 && isRosterOpen) {
+    } else if (dx < -60 && isRosterOpen) {
       setIsRosterOpen(false);
     }
     touchStartPos.current = null;

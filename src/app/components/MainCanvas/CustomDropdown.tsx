@@ -30,7 +30,7 @@ export function CustomDropdown({ icon: Icon, value, options, onChange, defaultLa
     <div ref={ref} className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center bg-[#1E1F22] hover:bg-[rgba(255,255,255,0.04)] rounded-[4px] border border-[rgba(255,255,255,0.04)] px-3 h-[30px] transition-colors shadow-inner"
+        className="flex items-center bg-[#1E1F22] hover:bg-[rgba(255,255,255,0.04)] rounded-[4px] border border-[rgba(255,255,255,0.04)] px-3 h-[36px] md:h-[30px] transition-colors shadow-inner"
       >
         <Icon className="w-3.5 h-3.5 text-[#949BA4] mr-2" />
         <span className="text-[11px] font-bold text-[#DBDEE1] uppercase tracking-wider">
@@ -44,7 +44,7 @@ export function CustomDropdown({ icon: Icon, value, options, onChange, defaultLa
             <button
               key={k}
               onClick={() => { onChange(k); setIsOpen(false); }}
-              className={`flex items-center justify-between text-left px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${
+              className={`flex items-center justify-between text-left px-4 py-3 md:px-3 md:py-2 text-[12px] md:text-[11px] font-bold uppercase tracking-wider transition-colors ${
                 value === k ? "bg-[#5865F2] text-white" : "text-[#949BA4] hover:bg-[rgba(255,255,255,0.04)] hover:text-[#DBDEE1]"
               }`}
             >

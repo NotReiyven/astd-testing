@@ -11,6 +11,53 @@ import { useTradeStore } from "../../../store/useTradeStore";
 import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 import { triggerHaptic } from "../../../data/helpers";
 
+export function JargonWrap({ title, tip, children }: { title: string; tip: string; children: React.ReactNode }) {
+  const btnRef = useRef<HTMLSpanElement>(null);
+  const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    return () => setTipPos(null);
+  }, []);
+
+  const toggleTip = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (tipPos) {
+       setTipPos(null);
+    } else {
+       const r = btnRef.current?.getBoundingClientRect();
+       if (r) setTipPos({ x: r.left + r.width / 2, y: r.top - 8 });
+    }
+  };
+
+  return (
+    <span
+      ref={btnRef}
+      className="cursor-help border-b border-dashed border-[rgba(255,255,255,0.4)] hover:border-[rgba(255,255,255,0.8)] transition-colors relative z-50"
+      onMouseEnter={() => {
+        if (window.matchMedia('(hover: hover)').matches) toggleTip();
+      }}
+      onMouseLeave={() => setTipPos(null)}
+      onClick={toggleTip}
+    >
+      {children}
+      {tipPos && createPortal(
+        <>
+          {/* md:hidden prevents infinite hover loops on desktop by only spawning the block layer on mobile */}
+          <div className="md:hidden fixed inset-0 z-[99998]" onClick={(e) => { e.stopPropagation(); setTipPos(null); }} onTouchStart={(e) => { e.stopPropagation(); setTipPos(null); }} />
+          <div className="rounded-[8px] px-3 py-2.5 pointer-events-none fixed z-[99999] -translate-x-1/2 -translate-y-full animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.6)]" style={{ top: tipPos.y, left: tipPos.x, minWidth: 200, maxWidth: 240, background: "#111214", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <p className="text-[12px] font-bold text-[#F2F3F5] mb-0.5">{title}</p>
+            <p className="text-[11px] font-medium leading-snug text-[#DBDEE1] whitespace-normal" style={{ fontFamily: "'Inter', sans-serif" }}>{tip}</p>
+          </div>
+        </>,
+        document.body
+      )}
+    </span>
+  );
+}
+
 export const HighlightText = memo(({ text, query }: { text: string; query?: string }) => {
   if (!query || !text) return <>{text}</>;
   const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -126,7 +173,7 @@ export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { 
 
   return (
     <>
-      <div className="relative w-full overflow-hidden rounded-[8px] group">
+      <div className="relative w-full overflow-hidden rounded-[8px] active:scale-[0.98] transition-transform duration-150 touch-manipulation">
         <div
           draggable
           onDragStart={handleDragStart}
@@ -168,10 +215,16 @@ export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { 
 
             <div className="absolute inset-0 pointer-events-none z-20" style={{ background: "linear-gradient(to right, rgba(43,45,49,0.3) 0%, transparent 20%, transparent 80%, rgba(43,45,49,0.3) 100%)" }} />
             <div className="absolute -bottom-[2px] left-0 right-0 h-[calc(40%+2px)] md:h-[calc(45%+2px)] z-20" style={{ background: "linear-gradient(to bottom, transparent 0%, rgba(43,45,49,0.8) 60%, rgba(43,45,49,1) 100%)" }} />
-            {unit.status && <div className="absolute top-2 left-2 md:top-3 md:left-3 z-30"><GridStatusBadge status={unit.status} /></div>}
+            
+            {/* FIX: Status badge kept permanently at z-50 so it renders completely ABOVE the dark overlay */}
+            {unit.status && (
+              <div className="absolute top-2 left-2 md:top-3 md:left-3 z-50">
+                <GridStatusBadge status={unit.status} />
+              </div>
+            )}
 
-            {/* NEW: Desktop Quick-Add Overlay */}
-            <div className="hidden md:flex absolute inset-0 bg-black/70 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-40 flex-col items-center justify-center gap-2.5 p-5 pointer-events-none group-hover:pointer-events-auto">
+            {/* Desktop Quick-Add Overlay with pt-10 to physically push buttons down away from the Status Badge */}
+            <div className={`hidden md:flex absolute inset-0 bg-black/70 backdrop-blur-[2px] transition-opacity duration-200 z-40 flex-col items-center justify-center gap-2.5 p-5 pt-10 md:pt-12 ${hovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
               <button onClick={(e) => { e.stopPropagation(); handleAdd("give"); }} className="w-full bg-[#FAA61A] hover:bg-[#d98b14] text-white text-[14px] font-bold py-2.5 rounded-[6px] transition-transform active:scale-95 shadow-md flex items-center justify-center gap-2">
                 <ArrowUpCircle className="w-4 h-4" /> Add to Give
               </button>
@@ -197,9 +250,17 @@ export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { 
               </p>
               <div className="flex mt-1.5 md:mt-2.5">
                 {obtainability === "UNOB" ? (
-                  <span className="text-[10px] md:text-[11px] font-bold uppercase text-[#949BA4] bg-[#1E1F22] px-1.5 md:px-2 py-0.5 md:py-1 rounded-[3px] border border-[rgba(255,255,255,0.05)] tracking-widest leading-none">UNOBTAINABLE</span>
+                  <span className="text-[10px] md:text-[11px] font-bold uppercase text-[#949BA4] bg-[#1E1F22] px-1.5 md:px-2 py-0.5 md:py-1 rounded-[3px] border border-[rgba(255,255,255,0.05)] tracking-widest leading-none">
+                    <JargonWrap title="Unobtainable (UNOB)" tip="This unit can no longer be acquired through normal gameplay. Trading is the only way to get it.">
+                      UNOB
+                    </JargonWrap>
+                  </span>
                 ) : (
-                  <span className="text-[10px] md:text-[11px] font-bold uppercase text-[#DBDEE1] bg-[rgba(255,255,255,0.05)] px-1.5 md:px-2 py-0.5 md:py-1 rounded-[3px] border border-[rgba(255,255,255,0.1)] tracking-widest leading-none">OBTAINABLE</span>
+                  <span className="text-[10px] md:text-[11px] font-bold uppercase text-[#DBDEE1] bg-[rgba(255,255,255,0.05)] px-1.5 md:px-2 py-0.5 md:py-1 rounded-[3px] border border-[rgba(255,255,255,0.1)] tracking-widest leading-none">
+                    <JargonWrap title="Obtainable (OBN)" tip="This unit can still be acquired in-game through summons, capsules, or evolution.">
+                      OBN
+                    </JargonWrap>
+                  </span>
                 )}
               </div>
             </div>
@@ -227,9 +288,12 @@ export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { 
       {menuOpen && createPortal(
         <div className="fixed inset-0 z-[1000000] flex flex-col justify-end md:justify-center md:items-center">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setMenuOpen(false)} />
-          <div className="relative w-full md:max-w-sm bg-[#1E1F22] rounded-t-[20px] md:rounded-[20px] p-5 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] md:shadow-[0_20px_60px_rgba(0,0,0,0.8)] animate-slide-up md:animate-fade-in border-t md:border border-[rgba(255,255,255,0.08)]">
+          <div className="relative w-full md:max-w-sm bg-[#1E1F22] rounded-t-[24px] md:rounded-[20px] p-5 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] md:shadow-[0_20px_60px_rgba(0,0,0,0.8)] animate-slide-up md:animate-fade-in border-t md:border border-[rgba(255,255,255,0.08)]">
 
-            <div className="flex items-center justify-between mb-5">
+            {/* Mobile Drag Indicator */}
+            <div className="md:hidden absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-[rgba(255,255,255,0.2)] rounded-full" />
+
+            <div className="flex items-center justify-between mb-5 mt-2 md:mt-0">
               <div className="flex items-center gap-3 min-w-0 pr-4">
                 <div className="w-12 h-12 rounded-[10px] overflow-hidden bg-[#111214] border border-[rgba(255,255,255,0.1)] shadow-sm shrink-0 relative">
                   <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-[14px] z-0" style={getAvatarStyle(unit.name)}>
@@ -242,19 +306,19 @@ export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { 
                   <span className="text-[11px] font-bold uppercase tracking-wider text-[#949BA4] truncate">{unit.subtitle}</span>
                 </div>
               </div>
-              <button onClick={() => setMenuOpen(false)} className="w-10 h-10 md:w-8 md:h-8 rounded-full bg-[rgba(255,255,255,0.06)] flex items-center justify-center text-[#949BA4] shrink-0 active:scale-90 hover:bg-[rgba(255,255,255,0.1)] transition-colors">
+              <button onClick={() => setMenuOpen(false)} className="w-10 h-10 md:w-8 md:h-8 rounded-full bg-[rgba(255,255,255,0.06)] flex items-center justify-center text-[#949BA4] shrink-0 active:scale-90 hover:bg-[rgba(255,255,255,0.1)] transition-colors focus-visible:outline-none">
                 <X className="w-5 h-5 md:w-4 md:h-4" />
               </button>
             </div>
 
             <div className="flex flex-col gap-3">
-              <button onClick={() => handleAdd("give")} className="w-full flex items-center justify-center gap-2 bg-[#FAA61A] hover:bg-[#d98b14] transition-colors text-white text-[15px] font-bold h-[54px] md:h-[48px] rounded-[10px] active:scale-[0.98] shadow-md">
+              <button onClick={() => handleAdd("give")} className="w-full flex items-center justify-center gap-2 bg-[#FAA61A] hover:bg-[#d98b14] transition-colors text-white text-[15px] font-bold h-[56px] md:h-[48px] rounded-[10px] active:scale-[0.98] shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
                 <ArrowUpCircle className="w-5 h-5" /> Add to 'You Give'
               </button>
-              <button onClick={() => handleAdd("get")} className="w-full flex items-center justify-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] transition-colors text-white text-[15px] font-bold h-[54px] md:h-[48px] rounded-[10px] active:scale-[0.98] shadow-md">
+              <button onClick={() => handleAdd("get")} className="w-full flex items-center justify-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] transition-colors text-white text-[15px] font-bold h-[56px] md:h-[48px] rounded-[10px] active:scale-[0.98] shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
                 <ArrowDownCircle className="w-5 h-5" /> Add to 'You Get'
               </button>
-              <button onClick={() => { setMenuOpen(false); openModal(unit.id); }} className="w-full flex items-center justify-center gap-2 bg-[#2B2D31] hover:bg-[#3F4147] transition-colors text-[#DBDEE1] border border-[rgba(255,255,255,0.08)] text-[14px] font-bold h-[54px] md:h-[48px] rounded-[10px] active:scale-[0.98] mt-1">
+              <button onClick={() => { setMenuOpen(false); openModal(unit.id); }} className="w-full flex items-center justify-center gap-2 bg-[#2B2D31] hover:bg-[#3F4147] transition-colors text-[#DBDEE1] border border-[rgba(255,255,255,0.08)] text-[14px] font-bold h-[56px] md:h-[48px] rounded-[10px] active:scale-[0.98] mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DBDEE1]">
                 <History className="w-4 h-4" /> View Market History
               </button>
             </div>
@@ -278,26 +342,42 @@ function GridStatusBadge({ status }: { status: UnitStatus }) {
     return () => setTipPos(null);
   }, []);
 
+  const toggleTip = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (tipPos) {
+       setTipPos(null);
+    } else {
+       const r = badgeRef.current?.getBoundingClientRect();
+       if (r) setTipPos({ x: r.left + r.width / 2, y: r.top - 8 });
+    }
+  };
+
   return (
     <div
       ref={badgeRef}
-      className="relative inline-flex"
+      className="relative inline-flex cursor-help"
       onMouseEnter={() => {
         if (!window.matchMedia('(hover: hover)').matches) return;
-        if (!badgeRef.current) return;
-        const r = badgeRef.current.getBoundingClientRect();
-        setTipPos({ x: r.left, y: r.bottom + 6 });
+        const r = badgeRef.current?.getBoundingClientRect();
+        if (r) setTipPos({ x: r.left + r.width / 2, y: r.top - 8 });
       }}
       onMouseLeave={() => setTipPos(null)}
+      onClick={toggleTip}
     >
-      <div className="inline-flex items-center px-2 py-1 md:px-2.5 md:py-[5px] rounded-full cursor-default shadow-sm gap-1" style={{ background: c.bg, border: `1px solid ${c.border}`, color: c.color }}>
+      <div className="inline-flex items-center px-2 py-1 md:px-2.5 md:py-[5px] rounded-full shadow-sm gap-1" style={{ background: c.bg, border: `1px solid ${c.border}`, color: c.color }}>
         <StatusIcon status={status} />
-        <span className="text-[9px] md:text-[10px] font-bold tracking-wide">{c.label}</span>
+        <span className="text-[9px] md:text-[10px] font-bold tracking-wide border-b border-dashed border-[rgba(255,255,255,0.4)] hover:border-[rgba(255,255,255,0.8)] transition-colors">{c.label}</span>
       </div>
       {tipPos && createPortal(
-        <div className="rounded-xl px-3 py-2 pointer-events-none fixed z-[99999] animate-fade-in" style={{ top: tipPos.y, left: tipPos.x, minWidth: 210, maxWidth: 240, background: "#111214", border: `1px solid ${c.border}`, boxShadow: `0 8px 24px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,0,0,0.4)` }}>
-          <p className="text-[11px] font-bold leading-snug text-[#F2F3F5]">{c.tip}</p>
-        </div>,
+        <>
+          <div className="md:hidden fixed inset-0 z-[99998]" onClick={(e) => { e.stopPropagation(); setTipPos(null); }} onTouchStart={(e) => { e.stopPropagation(); setTipPos(null); }} />
+          <div className="rounded-xl px-3 py-2 pointer-events-none fixed z-[99999] animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.6)]" style={{ top: tipPos.y, left: tipPos.x, minWidth: 210, maxWidth: 240, background: "#111214", border: `1px solid ${c.border}` }}>
+            <p className="text-[11px] font-bold leading-snug text-[#F2F3F5]">{c.tip}</p>
+          </div>
+        </>,
         document.body
       )}
     </div>
@@ -334,26 +414,48 @@ function GridStatBox({ label, value, type }: { label: string; value: number | st
     else textColor = "#E57373";
   }
 
+  const toggleTip = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (tipPos) {
+       setTipPos(null);
+    } else {
+       const r = btnRef.current?.getBoundingClientRect();
+       if (r) setTipPos({ x: r.left + r.width / 2, y: r.top - 8 });
+    }
+  };
+
   return (
     <div
       ref={btnRef}
-      className="flex flex-col justify-center bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[6px] p-2 hover:bg-[rgba(255,255,255,0.02)] transition-colors cursor-help shadow-inner"
+      className="flex flex-col justify-center bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[6px] p-2 hover:bg-[rgba(255,255,255,0.02)] transition-colors cursor-help shadow-inner relative z-20"
       onMouseEnter={() => {
         if (!window.matchMedia('(hover: hover)').matches) return;
-        if (!btnRef.current) return;
-        const r = btnRef.current.getBoundingClientRect();
-        setTipPos({ x: r.left + r.width / 2, y: r.top - 8 });
+        const r = btnRef.current?.getBoundingClientRect();
+        if (r) setTipPos({ x: r.left + r.width / 2, y: r.top - 8 });
       }}
       onMouseLeave={() => setTipPos(null)}
+      onClick={toggleTip}
     >
       <span className="text-[8px] md:text-[9px] font-bold text-[#80848E] uppercase tracking-widest mb-0.5">{label}</span>
-      <span className="text-[10px] md:text-[14px] font-black tracking-wide truncate" style={{ color: textColor }}>{displayValue}</span>
+      <span className="text-[10px] md:text-[14px] font-black tracking-wide truncate" style={{ color: textColor }}>
+        {displayValue === "BM" ? (
+          <JargonWrap title="Black Marketed (BM)" tip="This unit's value is heavily manipulated by outside-game currency trades. Highly risky.">
+            BM
+          </JargonWrap>
+        ) : displayValue}
+      </span>
 
       {tipPos && createPortal(
-        <div className="rounded-[8px] px-3 py-2.5 pointer-events-none fixed z-[99999] -translate-x-1/2 animate-fade-in" style={{ top: tipPos.y, left: tipPos.x, minWidth: 200, maxWidth: 240, background: "#111214", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
-          <p className="text-[12px] font-bold mb-0.5" style={{ color: textColor }}>{tipTitle}</p>
-          <p className="text-[11px] font-medium leading-snug text-[#DBDEE1]">{tipBody}</p>
-        </div>,
+        <>
+          <div className="md:hidden fixed inset-0 z-[99998]" onClick={(e) => { e.stopPropagation(); setTipPos(null); }} onTouchStart={(e) => { e.stopPropagation(); setTipPos(null); }} />
+          <div className="rounded-[8px] px-3 py-2.5 pointer-events-none fixed z-[99999] -translate-x-1/2 -translate-y-full animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.6)]" style={{ top: tipPos.y, left: tipPos.x, minWidth: 200, maxWidth: 240, background: "#111214", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <p className="text-[12px] font-bold mb-0.5" style={{ color: textColor }}>{tipTitle}</p>
+            <p className="text-[11px] font-medium leading-snug text-[#DBDEE1] whitespace-normal">{tipBody}</p>
+          </div>
+        </>,
         document.body
       )}
     </div>
@@ -371,7 +473,9 @@ function GridValueDisplay({ unit }: { unit: GridUnit }) {
   if (unit.value === "owner" || unit.valueDisplay === "Owner's Choice" || unit.valueDisplay === "O/C") {
     return (
       <span className="text-[13px] md:text-[18px] font-black tracking-tight truncate block w-full" style={{ background: "linear-gradient(90deg, #a78bfa, #f472b6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-        Owner's Choice
+        <JargonWrap title="Owner's Choice (O/C)" tip="This unit is so rare the owner dictates the price. Value depends entirely on what they want.">
+          Owner's Choice
+        </JargonWrap>
       </span>
     );
   }
@@ -401,27 +505,43 @@ function NoticeTooltip({ notice }: { notice?: string }) {
     return () => setTipPos(null);
   }, []);
 
+  const toggleTip = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (tipPos) {
+       setTipPos(null);
+    } else {
+       const r = btnRef.current?.getBoundingClientRect();
+       if (r) setTipPos({ x: r.left + r.width / 2, y: r.top - 6 });
+    }
+  };
+
   if (!notice) return null;
 
   return (
     <div
       ref={btnRef}
-      className="relative flex items-center justify-center cursor-help"
+      className="relative flex items-center justify-center cursor-help p-2 -m-2 z-20"
       onMouseEnter={() => {
         if (!window.matchMedia('(hover: hover)').matches) return;
-        if (!btnRef.current) return;
-        const r = btnRef.current.getBoundingClientRect();
-        setTipPos({ x: r.left + r.width / 2, y: r.top - 6 });
+        const r = btnRef.current?.getBoundingClientRect();
+        if (r) setTipPos({ x: r.left + r.width / 2, y: r.top - 6 });
       }}
       onMouseLeave={() => setTipPos(null)}
+      onClick={toggleTip}
     >
-      <div className="flex items-center justify-center rounded-full transition-colors w-3.5 h-3.5 md:w-5 md:h-5" style={{ background: tipPos ? "rgba(255,255,255,0.1)" : "transparent" }}>
+      <div className="flex items-center justify-center rounded-full transition-colors w-4 h-4 md:w-5 md:h-5" style={{ background: tipPos ? "rgba(255,255,255,0.1)" : "transparent" }}>
         <span className="text-[9px] md:text-[12px] font-bold" style={{ color: tipPos ? "#DBDEE1" : "#80848E" }}>?</span>
       </div>
       {tipPos && createPortal(
-        <div className="px-3 py-2.5 rounded-[8px] pointer-events-none fixed z-[99999] -translate-x-1/2 -translate-y-full w-[220px] animate-fade-in" style={{ top: tipPos.y, left: tipPos.x, background: "#111214", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}>
-          <p className="text-[11px] font-medium leading-relaxed text-[#DBDEE1]">{notice}</p>
-        </div>,
+        <>
+          <div className="md:hidden fixed inset-0 z-[99998]" onClick={(e) => { e.stopPropagation(); setTipPos(null); }} onTouchStart={(e) => { e.stopPropagation(); setTipPos(null); }} />
+          <div className="px-3 py-2.5 rounded-[8px] pointer-events-none fixed z-[99999] -translate-x-1/2 -translate-y-full w-[220px] animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.5)]" style={{ top: tipPos.y, left: tipPos.x, background: "#111214", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <p className="text-[11px] font-medium leading-relaxed text-[#DBDEE1]">{notice}</p>
+          </div>
+        </>,
         document.body
       )}
     </div>

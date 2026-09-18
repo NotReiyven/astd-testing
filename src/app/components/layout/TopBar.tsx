@@ -42,7 +42,6 @@ export function TopBar({
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const mobileInputRef = useRef<HTMLInputElement>(null);
   
-  // NEW: Desktop search ref for global hotkeys
   const desktopSearchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -51,15 +50,12 @@ export function TopBar({
     }
   }, [mobileSearchOpen]);
 
-  // NEW: Global Hotkey Listener
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // Don't hijack if they are already typing in an input
       if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
         return;
       }
       
-      // Ctrl+K / Cmd+K or /
       if (((e.ctrlKey || e.metaKey) && e.key === 'k') || e.key === '/') {
         e.preventDefault();
         desktopSearchRef.current?.focus();
@@ -127,7 +123,7 @@ export function TopBar({
           />
           <button 
             onClick={() => { setMobileSearchOpen(false); setGlobalSearchQuery(""); }} 
-            className="p-3 text-[#80848E] hover:text-[#F2F3F5] active:scale-95 transition-colors"
+            className="p-3 text-[#80848E] hover:text-[#F2F3F5] active:scale-95 transition-colors focus-visible:outline-none"
           >
             <X className="w-5 h-5" />
           </button>
@@ -135,7 +131,7 @@ export function TopBar({
       )}
 
       <div className="flex items-center gap-1 md:gap-3 overflow-hidden pr-2">
-        <button onClick={() => setIsRosterOpen(!isRosterOpen)} className={`p-2 transition-colors flex-shrink-0 ${isRosterOpen ? 'text-[#F2F3F5]' : 'text-[#80848E] hover:text-[#DBDEE1]'}`}>
+        <button onClick={() => setIsRosterOpen(!isRosterOpen)} className={`p-2 transition-colors flex-shrink-0 focus-visible:outline-none ${isRosterOpen ? 'text-[#F2F3F5]' : 'text-[#80848E] hover:text-[#DBDEE1]'}`}>
           <PanelLeft className="w-6 h-6 md:w-[20px] md:h-[20px]" />
         </button>
 
@@ -157,7 +153,7 @@ export function TopBar({
         <div className="relative">
           <button 
             onClick={handleHelpClick}
-            className="flex items-center justify-center gap-2 px-3 py-2 md:py-1.5 rounded-[6px] bg-[#5865F2] hover:bg-[#4752C4] text-white transition-all text-[12px] font-bold shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 md:px-3 md:py-1.5 rounded-[6px] bg-[#5865F2] hover:bg-[#4752C4] text-white transition-all text-[12px] font-bold shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             title="Need Help? Open Guides"
           >
             <HelpCircle className="w-4 h-4 sm:hidden flex-shrink-0" />
@@ -205,7 +201,7 @@ export function TopBar({
 
         <button 
           onClick={() => setMobileSearchOpen(true)}
-          className="md:hidden flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-[4px] text-[#80848E] hover:bg-[rgba(255,255,255,0.05)] hover:text-[#F2F3F5] transition-colors"
+          className="md:hidden flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-[4px] text-[#80848E] hover:bg-[rgba(255,255,255,0.05)] hover:text-[#F2F3F5] transition-colors focus-visible:outline-none"
         >
           <Search className="w-5 h-5" />
         </button>
@@ -227,7 +223,9 @@ export function TopBar({
             className="bg-transparent text-[13px] text-[#DBDEE1] w-full h-full outline-none placeholder-[#80848E] font-medium tracking-wide" 
           />
           {globalSearchQuery ? (
-            <X className="w-3.5 h-3.5 flex-shrink-0 text-[#949BA4] cursor-pointer hover:text-[#DBDEE1] transition-colors" onClick={() => setGlobalSearchQuery("")} />
+            <button onClick={() => setGlobalSearchQuery("")} className="p-2 -mr-2 md:p-1 md:-mr-1 flex-shrink-0 text-[#949BA4] hover:text-[#DBDEE1] transition-colors focus-visible:outline-none">
+              <X className="w-3.5 h-3.5" />
+            </button>
           ) : (
             <Search className="w-3.5 h-3.5 flex-shrink-0 text-[#80848E]" />
           )}
@@ -237,7 +235,7 @@ export function TopBar({
 
         <button 
           onClick={handleToggleAnalyzer} 
-          className={`hidden md:flex relative items-center gap-2 px-3 py-1.5 rounded-[6px] transition-all duration-300 shadow-sm font-bold text-[12px] active:scale-95 ${
+          className={`hidden md:flex relative items-center gap-2 px-3 py-1.5 rounded-[6px] transition-all duration-300 shadow-sm font-bold text-[12px] active:scale-95 focus-visible:outline-none ${
             isAnalyzerOpen 
               ? 'bg-[#4752C4] text-white shadow-[0_0_12px_rgba(88,101,242,0.4)]' 
               : 'bg-[#5865F2] hover:bg-[#4752C4] text-white'

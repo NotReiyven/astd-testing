@@ -86,7 +86,7 @@ export function Sidebar({
         tier,
         color: colorMap[tier] || "#52525b",
         children: subCats.map(sub => ({ 
-          id: sub, // Send the exact raw label for the virtualizer match
+          id: sub,
           label: sub 
         }))
       };
@@ -121,7 +121,7 @@ export function Sidebar({
             return (
               <div key={cat.id} className="mt-4 flex flex-col rounded-[8px] transition-all">
                 <div 
-                  className="flex items-center justify-between px-0.5 mb-1 group cursor-pointer text-[#949BA4] hover:text-[#DBDEE1]"
+                  className="flex items-center justify-between px-1 py-2 md:px-0.5 md:py-1 mb-1 group cursor-pointer text-[#949BA4] hover:text-[#DBDEE1]"
                   onClick={() => toggleCategory(cat.id)}
                 >
                   <div className="flex items-center gap-0.5">
@@ -138,8 +138,6 @@ export function Sidebar({
                   <div className="overflow-visible flex flex-col min-h-0">
                     {cat.channels.map((channel) => {
                       const isActive = activeChannel === channel.id;
-
-                      // Identify if this is the active tutorial target
                       const isTarget = guideState?.type === "main" && guideState.step === 1 && channel.id === "value-list";
                       const Icon = channel.icon || Hash;
 
@@ -147,7 +145,7 @@ export function Sidebar({
                         <div key={channel.id} className="flex flex-col relative">
                           <button
                             onClick={() => setActiveChannel(channel.id)}
-                            className={`group w-full flex items-center justify-between px-2 py-1.5 mb-[2px] rounded-[4px] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                            className={`group w-full flex items-center justify-between px-2 py-2.5 md:py-1.5 mb-[2px] rounded-[4px] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                               isTarget 
                                 ? "bg-[#5865F2] text-white shadow-[0_0_20px_rgba(88,101,242,0.6)] ring-2 ring-[#5865F2] translate-x-1 z-50 relative animate-pulse"
                                 : isActive
@@ -173,8 +171,8 @@ export function Sidebar({
                               <div className="absolute left-[-16px] top-0 bottom-[14px] w-[2px] bg-[#3F4147]" />
                               {dynamicTierGroups.map((group) => (
                                 <div key={group.tier} className="relative flex flex-col mb-1.5">
-                                  <div className="relative flex items-center h-[24px]">
-                                    <div className="absolute left-[-16px] top-[-12px] w-[14px] h-[24px] border-l-2 border-b-2 border-[#3F4147] rounded-bl-[6px]" />
+                                  <div className="relative flex items-center min-h-[30px] md:min-h-[24px]">
+                                    <div className="absolute left-[-16px] top-[-10px] w-[14px] h-[24px] border-l-2 border-b-2 border-[#3F4147] rounded-bl-[6px]" />
                                     <span className="text-[12px] font-bold uppercase tracking-widest pl-1.5" style={{ color: group.color }}>
                                       {group.tier} {["Pure", "Oddities", "Untiered"].includes(group.tier) ? "" : "Tier"}
                                     </span>
@@ -187,10 +185,10 @@ export function Sidebar({
                                         <button
                                           key={`${group.tier}-${child.id}`}
                                           onClick={() => onThreadClick(group.tier as FilterKey, child.id)}
-                                          className="relative flex items-center h-[26px] hover:bg-[rgba(78,80,88,0.3)] rounded-[4px] px-2 text-[#80848E] hover:text-[#DBDEE1] text-left transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-x-1"
+                                          className="relative flex items-center min-h-[36px] md:min-h-[28px] hover:bg-[rgba(78,80,88,0.3)] rounded-[4px] px-2 text-[#80848E] hover:text-[#DBDEE1] text-left transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-x-1"
                                         >
                                           {isLastChild ? (
-                                            <div className="absolute left-[-10px] top-[-12px] w-[12px] h-[25px] border-l-2 border-b-2 border-[#3F4147] rounded-bl-[6px]" />
+                                            <div className="absolute left-[-10px] top-[-12px] w-[12px] h-[30px] md:h-[26px] border-l-2 border-b-2 border-[#3F4147] rounded-bl-[6px]" />
                                           ) : (
                                             <div className="absolute left-[-10px] top-1/2 w-[12px] h-[2px] bg-[#3F4147]" />
                                           )}
