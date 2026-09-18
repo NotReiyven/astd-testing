@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, memo, useMemo } from "react";
 import { Search, X } from "lucide-react";
 import { TradeCard } from "../../../types";
-import { GRID_STATUS_CFG, getProxyImage } from "../../../data";
+import { GRID_STATUS_CFG, getProxyImage, handleImageError } from "../../../data";
 import { useUnits } from "../../../context/UnitContext";
 import { ActiveCardRow } from "./ActiveCardRow";
 import { getAvatarStyle, getInitials } from "./summaryUtils";
@@ -268,6 +268,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
                       <img 
                         src={proxyUrl} 
                         alt={u.name} 
+                        onError={(e) => handleImageError(e, u.id)}
                         className="absolute inset-0 w-full h-full"
                         style={{ objectFit: "cover", objectPosition: "center 15%" }}
                       />

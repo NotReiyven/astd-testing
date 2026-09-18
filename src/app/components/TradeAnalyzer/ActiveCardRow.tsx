@@ -1,7 +1,7 @@
 import { useState, useEffect, memo, useCallback, useMemo } from "react";
 import { X, Plus, Minus, Pin } from "lucide-react";
 import { TradeCard } from "../../../types";
-import { GRID_STATUS_CFG, getProxyImage } from "../../../data";
+import { GRID_STATUS_CFG, getProxyImage, handleImageError } from "../../../data";
 import { useUnits } from "../../../context/UnitContext";
 import { getAvatarStyle, getInitials } from "./summaryUtils";
 import { StatusIcon, JargonWrap } from "../MainCanvas/UnitGrid";
@@ -99,7 +99,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
          <img 
            src={proxyUrl} 
            alt={card.name} 
-           onError={(e) => { e.currentTarget.style.opacity = '0'; }}
+           onError={(e) => handleImageError(e, card.id)}
            className="absolute inset-0 w-full h-full object-cover object-[center_15%] z-10 bg-[#111214] transition-opacity duration-300" 
          />
       </div>

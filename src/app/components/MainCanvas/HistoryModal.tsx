@@ -4,7 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 import { useUnitHistory, HistorySnapshot } from "../../../hooks/useUnitHistory";
 import { useUnits } from "../../../context/UnitContext";
-import { GRID_STATUS_CFG, TIER_CONFIG, getProxyImage, getTier } from "../../../data";
+import { GRID_STATUS_CFG, TIER_CONFIG, getProxyImage, getTier, handleImageError } from "../../../data";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 import { StatusIcon } from "./UnitGrid";
 
@@ -211,7 +211,7 @@ export function HistoryModal() {
                       src={proxyUrl} 
                       alt={currentUnit.name} 
                       className="absolute inset-0 w-full h-full object-cover z-10 bg-[#111214]" 
-                      onError={(e) => { e.currentTarget.style.opacity = '0'; }}
+                      onError={(e) => handleImageError(e, currentUnit.id)}
                     />
                   )}
                 </div>

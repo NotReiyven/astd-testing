@@ -39,23 +39,15 @@ export function getRarityLabel(v: number) {
   return entry ? entry.label : "Unknown";
 }
 
-// Resilient fallback proxy bridge: tries local WebP first, 
-// if missing or failed, dynamically resolves to the raw Nocookie source via wsrv.nl proxy.
+// Resilient fallback proxy bridge: tries local WebP first.
+// We append ?v=2 to bypass aggressive Service Worker or browser caches 
+// that might have trapped a previous 404 error when the image was missing.
 export function getProxyImage(unitId: string, fallbackUrl?: string) {
   if (!unitId) return null;
-  
-  // If an explicit fallback or images.ts mapping exists, provide a safe proxied URL option
-  const rawWikiaUrl = UNIT_IMAGES[unitId] || fallbackUrl;
-  if (rawWikiaUrl && rawWikiaUrl !== "PLACEHOLDER_URL" && rawWikiaUrl.startsWith("http")) {
-    const cleanUrl = rawWikiaUrl.split("/revision/")[0];
-    // Return local path first; components can handle onError or we can use a multi-stage approach.
-    // To ensure 100% load success right now, we can check if local exists or fallback to proxy via error handler.
-  }
-
-  return `/units/${unitId}.webp`;
+  return `/units/${unitId}.webp?v=2`;
 }
 
-// Updated error handler for image tags to switch to live proxy if local asset is absent
+// Updated error handler for image tags to switch to Fandom native scaling if local asset is absent
 export function handleImageError(e: React.SyntheticEvent<HTMLImageElement, Event>, id: string) {
   const target = e.currentTarget;
   const stage = target.getAttribute('data-fallback-stage');
@@ -63,13 +55,18 @@ export function handleImageError(e: React.SyntheticEvent<HTMLImageElement, Event
   if (!stage) {
     target.setAttribute('data-fallback-stage', '1');
     const rawUrl = UNIT_IMAGES[id];
+    
     if (rawUrl && rawUrl !== "PLACEHOLDER_URL") {
-      const cleanUrl = rawUrl.split("/revision/")[0];
-      target.src = `https://wsrv.nl/?url=${encodeURIComponent(cleanUrl)}&output=webp&w=150&fit=cover`;
+      // Fandom blocks external proxies like wsrv.nl. We use Fandom's native formatting.
+      // Combined with the "no-referrer" policy, this bypasses Cloudflare bot protection.
+      const cleanUrl = rawUrl.replace(/&amp;/g, '&').split("/revision/")[0];
+      // Append timestamp to prevent the browser from caching a potential 403 Forbidden
+      target.src = `${cleanUrl}/revision/latest/scale-to-width-down/150?cb=${Date.now()}`;
       return;
     }
   }
 
+  // If Fandom ALSO fails, cleanly fade the image out to show the CSS initials.
   target.style.opacity = '0';
 }
 

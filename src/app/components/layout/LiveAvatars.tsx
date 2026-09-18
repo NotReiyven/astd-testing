@@ -1,4 +1,5 @@
 import { usePresence, PresenceState } from "../../../hooks/usePresence";
+import { handleImageError } from "../../../data";
 
 const getInitials = (name: string) => {
   const parts = name.split(" ");
@@ -42,7 +43,7 @@ export function LiveAvatars() {
               src={`/units/${user.unitId}.webp`} 
               alt={user.name}
               className="w-full h-full object-cover rounded-full absolute inset-0 z-10"
-              onError={(e) => e.currentTarget.style.opacity = '0'}
+              onError={(e) => handleImageError(e, user.unitId)}
             />
             
             {/* Hover Tooltip */}

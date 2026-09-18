@@ -4,7 +4,7 @@ import { TradeCard, MasterUnit } from "../../../types";
 import { parseSmartTrade, AmbiguousToken, getSlangCache, removeSlang, learnSlang } from "./smartParser";
 import { getAvatarStyle, getInitials } from "./summaryUtils";
 import { useTradeStore } from "../../../store/useTradeStore";
-import { getProxyImage } from "../../../data";
+import { getProxyImage, handleImageError } from "../../../data";
 import { triggerHaptic } from "../../../data/helpers";
 
 interface SmartParserMenuProps {
@@ -366,7 +366,7 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
                                  >
                                      <div className="w-8 h-8 rounded-[4px] bg-[#111214] overflow-hidden shrink-0 flex items-center justify-center border border-[rgba(255,255,255,0.04)]">
                                          {proxyUrl ? (
-                                             <img src={proxyUrl} alt={u.name} className="w-full h-full object-cover" />
+                                             <img src={proxyUrl} alt={u.name} onError={(e) => handleImageError(e, u.id)} className="w-full h-full object-cover" />
                                          ) : (
                                              <span className="text-white font-bold text-[10px]" style={getAvatarStyle(u.name)}>{getInitials(u.name)}</span>
                                          )}
@@ -403,7 +403,10 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
              ) : (
                <div className="max-h-[200px] overflow-y-auto custom-scrollbar flex flex-col gap-1.5 pr-2">
                  {Object.entries(slangDict).map(([key, targetId]) => {
-                   const targetName = ALL_UNITS.find(u => u.id === targetId)?.name || targetId;
+                   const targetUnit = ALL_UNITS.find(u => u.id === targetId);
+                   const targetName = targetUnit?.name || targetId;
+                   const proxyUrl = targetUnit ? getProxyImage(targetUnit.id, targetUnit.imageUrl) : null;
+
                    return (
                      <div key={key} className="flex items-center justify-between bg-[#1E1F22] p-2.5 rounded-[6px] border border-[rgba(255,255,255,0.02)] hover:border-[rgba(255,255,255,0.06)] transition-colors">
                         <div className="flex items-center gap-3 overflow-hidden">

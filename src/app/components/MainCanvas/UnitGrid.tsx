@@ -5,7 +5,7 @@ import {
   ChevronsUp, ChevronsDown, Activity, TrendingUp, TrendingDown, Flame, Lock, EyeOff
 } from "lucide-react";
 import { PopupUnit, GridUnit, MasterUnit, UnitStatus } from "../../../types";
-import { GRID_STATUS_CFG, getRarityLabel, LIQUIDITY_SCALE, getTier, TIER_CONFIG, getProxyImage, getObtainability } from "../../../data";
+import { GRID_STATUS_CFG, getRarityLabel, LIQUIDITY_SCALE, getTier, TIER_CONFIG, getProxyImage, getObtainability, handleImageError } from "../../../data";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils"; 
 import { useTradeStore } from "../../../store/useTradeStore";
 import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
@@ -208,7 +208,7 @@ export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { 
               alt={unit.name} 
               loading="lazy" 
               decoding="async"
-              onError={(e) => { e.currentTarget.style.opacity = '0'; }}
+              onError={(e) => handleImageError(e, unit.id)}
               className="absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-out z-10 bg-[#1E1F22]" 
               style={{ objectPosition: "center 15%", transform: hovered ? "scale(1.05)" : "scale(1)", willChange: "transform" }} 
             />
@@ -299,7 +299,7 @@ export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { 
                   <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-[14px] z-0" style={getAvatarStyle(unit.name)}>
                     {getInitials(unit.name)}
                   </div>
-                  <img src={proxyUrl} alt={unit.name} className="absolute inset-0 w-full h-full object-cover z-10 bg-[#111214]" onError={(e) => { e.currentTarget.style.opacity = '0'; }} />
+                  <img src={proxyUrl} alt={unit.name} className="absolute inset-0 w-full h-full object-cover z-10 bg-[#111214]" onError={(e) => handleImageError(e, unit.id)} />
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="text-[16px] font-black text-[#F2F3F5] tracking-tight truncate">{unit.name}</span>
