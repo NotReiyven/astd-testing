@@ -1,20 +1,20 @@
 import { createClient } from "@supabase/supabase-js";
 import { parseSpreadsheet, SpreadsheetData } from "./lib/parseSheet";
 
-export default async function handler(req: any, res: any) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
+export const config = {
+  runtime: 'edge'
+};
 
-  const authHeader = req.headers.authorization;
+export async function GET(request: Request) {
+  const authHeader = request.headers.get('authorization');
   
   if (!process.env.CRON_SECRET) {
     console.warn("CRON_SECRET is not configured. Failing safely to prevent unauthorized execution.");
-    return res.status(401).json({ error: "Unauthorized - Missing configuration" });
+    return new Response(JSON.stringify({ error: "Unauthorized - Missing configuration" }), { status: 401, headers: { "Content-Type": "application/json" } });
   }
   
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ error: "Unauthorized" });
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
   }
 
   const API_KEY = process.env.GOOGLE_SHEETS_API_KEY;
@@ -24,7 +24,7 @@ export default async function handler(req: any, res: any) {
 
   if (!API_KEY || !SHEET_ID || !SUPABASE_URL || !SUPABASE_KEY) {
     console.error("Missing environment variables for history sync.");
-    return res.status(500).json({ error: "Internal Server Error" });
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 
   try {
@@ -39,7 +39,7 @@ export default async function handler(req: any, res: any) {
     if (!data.sheets) throw new Error("No grid data returned from Google Sheets");
 
     const { units } = parseSpreadsheet(data);
-    if (!units || units.length === 0) return res.status(200).json({ message: "No units parsed" });
+    if (!units || units.length === 0) return new Response(JSON.stringify({ message: "No units parsed" }), { status: 200, headers: { "Content-Type": "application/json" } });
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -125,9 +125,9 @@ export default async function handler(req: any, res: any) {
       if (upsertErr) throw upsertErr;
     }
 
-    return res.status(200).json({ message: "OK" });
+    return new Response(JSON.stringify({ message: "OK" }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (error) {
     console.error("Cron history sync error:", error);
-    return res.status(500).json({ error: "Error syncing history" });
+    return new Response(JSON.stringify({ error: "Error syncing history" }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 }
