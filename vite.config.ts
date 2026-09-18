@@ -5,7 +5,6 @@ import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Required to safely resolve paths in an ES Module environment ("type": "module" in package.json)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -16,10 +15,10 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
+        navigateFallbackDenylist: [/^\/api/], // Force Service Worker to ignore /api routes
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         runtimeCaching: [
           {
-            // Intercepts both direct Wikia images and the wsrv.nl proxy cache
             urlPattern: /^https:\/\/(wsrv\.nl|static\.wikia\.nocookie\.net)\/.*/i,
             handler: 'CacheFirst',
             options: {

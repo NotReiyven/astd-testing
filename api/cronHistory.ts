@@ -1,17 +1,20 @@
 import { createClient } from "@supabase/supabase-js";
 import { parseSpreadsheet, SpreadsheetData } from "./lib/parseSheet";
 
-export async function GET(request: Request) {
-  const authHeader = request.headers.get('authorization');
+export default async function handler(req: any, res: any) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
+
+  const authHeader = req.headers.authorization;
   
-  // Defensive validation: if CRON_SECRET is not configured, or if the bearer token doesn't match, block execution.
   if (!process.env.CRON_SECRET) {
     console.warn("CRON_SECRET is not configured. Failing safely to prevent unauthorized execution.");
-    return new Response('Unauthorized - Missing configuration', { status: 401 });
+    return res.status(401).json({ error: "Unauthorized - Missing configuration" });
   }
   
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response('Unauthorized', { status: 401 });
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   const API_KEY = process.env.GOOGLE_SHEETS_API_KEY;
@@ -21,7 +24,7 @@ export async function GET(request: Request) {
 
   if (!API_KEY || !SHEET_ID || !SUPABASE_URL || !SUPABASE_KEY) {
     console.error("Missing environment variables for history sync.");
-    return new Response("Internal Server Error", { status: 500 });
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 
   try {
@@ -36,11 +39,10 @@ export async function GET(request: Request) {
     if (!data.sheets) throw new Error("No grid data returned from Google Sheets");
 
     const { units } = parseSpreadsheet(data);
-    if (!units || units.length === 0) return new Response("No units parsed", { status: 200 });
+    if (!units || units.length === 0) return res.status(200).json({ message: "No units parsed" });
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // FIX: Paginate to bypass the 1000 row PostgREST limit
     let allRows: any[] = [];
     let from = 0;
     let to = 999;
@@ -123,9 +125,9 @@ export async function GET(request: Request) {
       if (upsertErr) throw upsertErr;
     }
 
-    return new Response("OK", { status: 200 });
+    return res.status(200).json({ message: "OK" });
   } catch (error) {
     console.error("Cron history sync error:", error);
-    return new Response("Error", { status: 500 });
+    return res.status(500).json({ error: "Error syncing history" });
   }
 }

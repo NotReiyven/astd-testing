@@ -15,42 +15,40 @@ if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) 
   });
 }
 
-function jsonResponse(statusCode: number, body: unknown, extraHeaders: Record<string, string> = {}) {
-  // Hardcoded to new Vercel domain as per instructions, with a fallback for local/preview if env is set.
+export default async function handler(req: any, res: any) {
   const allowedOrigin = process.env.URL || "https://all-star-vl.vercel.app";
-  
-  return new Response(JSON.stringify(body), {
-    status: statusCode,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": allowedOrigin,
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
-      ...extraHeaders
-    }
-  });
-}
 
-export async function OPTIONS() {
-  return jsonResponse(204, "");
-}
+  // Set CORS headers
+  res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Content-Type", "application/json");
 
-export async function GET(request: Request) {
-  const url = new URL(request.url);
-  
-  if (url.searchParams.toString().length > 0) {
-    return jsonResponse(400, { error: "Query parameters are not allowed." });
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
+
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
+
+  if (Object.keys(req.query || {}).length > 0) {
+    return res.status(400).json({ error: "Query parameters are not allowed." });
   }
 
   if (ratelimit) {
-    const ip = request.headers.get("x-forwarded-for") || "anonymous";
+    const ip = req.headers["x-forwarded-for"] || "anonymous";
     const { success } = await ratelimit.limit(`sync_${ip}`);
     if (!success) {
-      return jsonResponse(429, { error: "Rate limit exceeded. Please try again in a minute." });
+      return res.status(429).json({ error: "Rate limit exceeded. Please try again in a minute." });
     }
   }
 
   const API_KEY = process.env.GOOGLE_SHEETS_API_KEY;
   const SHEET_ID = process.env.SPREADSHEET_ID;
+
+  if (!API_KEY || !SHEET_ID) {
+    return res.status(500).json({ error: "Missing Environment Variables" });
+  }
 
   const ranges = [
     "S Tier!A:I", "A Tier!A:I", "B Tier!A:I", "C Tier!A:I",
@@ -58,10 +56,6 @@ export async function GET(request: Request) {
     "Home!A:K", "Extra Notices!A:B"
   ];
   const batchRanges = ranges.map(r => `ranges=${encodeURIComponent(r)}`).join("&");
-
-  if (!API_KEY || !SHEET_ID) {
-    return jsonResponse(500, { error: "Missing Environment Variables" });
-  }
 
   try {
     const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batchRanges}&includeGridData=true&key=${API_KEY}`);
@@ -72,13 +66,10 @@ export async function GET(request: Request) {
     const parsed = parseSpreadsheet(data);
     const lastUpdated = new Date().toISOString();
 
-    return jsonResponse(
-      200,
-      { ...parsed, lastUpdated },
-      { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" }
-    );
+    res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+    return res.status(200).json({ ...parsed, lastUpdated });
   } catch (error) {
     console.error("syncSheet error:", error);
-    return jsonResponse(500, { error: "Failed to sync sheet data." });
+    return res.status(500).json({ error: "Failed to sync sheet data." });
   }
 }
