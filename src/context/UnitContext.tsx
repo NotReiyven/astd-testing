@@ -74,7 +74,8 @@ export const UnitProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       try {
-        const res = await fetch('/.netlify/functions/syncSheet');
+        // Updated to Vercel API path
+        const res = await fetch('/api/syncSheet');
         if (!res.ok) throw new Error('API Response not OK');
         
         const data = await res.json();
