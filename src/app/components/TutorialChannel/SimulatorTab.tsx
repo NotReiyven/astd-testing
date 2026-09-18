@@ -4,7 +4,7 @@ import { StaticStatusBadge } from "./TutorialUI";
 import { useUnits } from "../../../context/UnitContext";
 import { MasterUnit, TradeCard } from "../../../types";
 import { getProxyImage } from "../../../data";
-import { getAvatarStyle, getInitials, handleImageError, getTradeForecast } from "../TradeAnalyzer/summaryUtils";
+import { getAvatarStyle, getInitials, getTradeForecast } from "../TradeAnalyzer/summaryUtils";
 import { useTradeStore } from "../../../store/useTradeStore";
 
 const FIRE_ZIO_AVATAR = "/units/firezio.webp";
@@ -20,7 +20,7 @@ type Scenario = {
 };
 
 const ScenarioUnitDisplay = ({ unit, qty }: { unit: MasterUnit; qty: number }) => {
-  const proxyUrl = getProxyImage(unit.id, unit.imageUrl);
+  const proxyUrl = getProxyImage(unit.id);
   const totalVal = (unit.value as number) * qty;
 
   return (
@@ -39,7 +39,7 @@ const ScenarioUnitDisplay = ({ unit, qty }: { unit: MasterUnit; qty: number }) =
             src={proxyUrl} 
             alt={unit.name} 
             className="absolute inset-0 w-full h-full object-cover z-10 bg-[#111214]" 
-            onError={(e) => handleImageError(e, unit.id, unit.imageUrl)}
+            onError={(e) => { e.currentTarget.style.opacity = '0'; }}
           />
         )}
       </div>
@@ -162,7 +162,6 @@ export function SimulatorTab() {
       const v2 = (g2.value as number) * q2;
       const vw = v2 / v1;
 
-      // Unreasonable structure checks
       let correctAns: "WIN" | "LOSS" | "UNREASONABLE" = isWin ? "WIN" : "LOSS";
       if (isWin) {
          if (q2 >= 3 && q1 === 1 && vw < 0.85) correctAns = "UNREASONABLE";
@@ -186,8 +185,6 @@ export function SimulatorTab() {
     return newScenarios;
   }, [ALL_UNITS]);
 
-  // Load a specific trade directly into the global Zustand store
-  // Load a specific trade directly into the global Zustand store
   const loadScenarioIntoAnalyzer = useCallback((scenario: Scenario) => {
     if (!scenario) return;
     const giveCard = { id: scenario.give.unit.id, name: scenario.give.unit.name, subtitle: scenario.give.unit.subtitle, value: scenario.give.unit.value as number, qty: scenario.give.qty };
@@ -208,7 +205,6 @@ export function SimulatorTab() {
     setGuessResult("none");
     setAquaHint(false);
     
-    // Explicitly load the first trade on start
     loadScenarioIntoAnalyzer(freshScenarios[0]);
   };
 
@@ -218,7 +214,6 @@ export function SimulatorTab() {
       setSimScore(prev => prev + 500 + (simCombo * 200));
       setSimCombo(prev => prev + 1);
     } else if (guess === "UNREASONABLE") {
-      // User deemed it unreasonable despite the algorithm's calculation. Skip trade. Maintain combo.
       setGuessResult("unreasonable");
     } else {
       setGuessResult("incorrect");
@@ -234,7 +229,6 @@ export function SimulatorTab() {
       setGuessResult("none");
       setAquaHint(false);
       setCurrentScenario(nextIndex);
-      // Explicitly load the next trade
       loadScenarioIntoAnalyzer(scenarios[nextIndex]);
     }
   };
@@ -256,7 +250,6 @@ export function SimulatorTab() {
     );
   }
 
-  // RESULTS SCREEN
   if (isAssessmentComplete) {
     return (
       <div className="animate-fade-in pb-6 max-w-4xl mx-auto font-sans select-none">

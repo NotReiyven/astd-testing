@@ -16,23 +16,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         navigateFallbackDenylist: [/^\/api/], // Force Service Worker to ignore /api routes
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/(wsrv\.nl|static\.wikia\.nocookie\.net)\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'astd-unit-images',
-              expiration: {
-                maxEntries: 400,
-                maxAgeSeconds: 60 * 60 * 24 * 30 
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          }
-        ]
+        // Added webp to strictly cache the local authoritative images
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
       },
       manifest: {
         name: 'ASTD Trading Server',

@@ -1,5 +1,6 @@
 import { MasterUnit } from "../types";
 import { RARITY_SCALE } from "./config";
+import { UNIT_IMAGES } from "./images";
 
 // --- HAPTIC FEEDBACK ENGINE ---
 export function triggerHaptic(type: 'light' | 'medium' | 'heavy' | 'success') {
@@ -16,13 +17,10 @@ export function triggerHaptic(type: 'light' | 'medium' | 'heavy' | 'success') {
           navigator.vibrate(40);
           break;
         case 'success':
-          // Double tap
           navigator.vibrate([30, 60, 30]);
           break;
       }
-    } catch (e) {
-      // Ignore gracefully if the device restricts it
-    }
+    } catch (e) {}
   }
 }
 
@@ -41,20 +39,38 @@ export function getRarityLabel(v: number) {
   return entry ? entry.label : "Unknown";
 }
 
+// Resilient fallback proxy bridge: tries local WebP first, 
+// if missing or failed, dynamically resolves to the raw Nocookie source via wsrv.nl proxy.
 export function getProxyImage(unitId: string, fallbackUrl?: string) {
   if (!unitId) return null;
-
-  // Since UnitContext defaults to local paths, serve them directly
-  if (fallbackUrl && fallbackUrl.startsWith('/units/')) {
-    return fallbackUrl;
+  
+  // If an explicit fallback or images.ts mapping exists, provide a safe proxied URL option
+  const rawWikiaUrl = UNIT_IMAGES[unitId] || fallbackUrl;
+  if (rawWikiaUrl && rawWikiaUrl !== "PLACEHOLDER_URL" && rawWikiaUrl.startsWith("http")) {
+    const cleanUrl = rawWikiaUrl.split("/revision/")[0];
+    // Return local path first; components can handle onError or we can use a multi-stage approach.
+    // To ensure 100% load success right now, we can check if local exists or fallback to proxy via error handler.
   }
 
-  // Fallback for brand-new units added to the sheet with raw Wikia URLs
-  if (!fallbackUrl || fallbackUrl === "PLACEHOLDER_URL") return null;
-  if (fallbackUrl.includes("imgur.com")) return fallbackUrl;
+  return `/units/${unitId}.webp`;
+}
 
-  const cleanUrl = fallbackUrl.split("/revision/")[0];
-  return `https://wsrv.nl/?url=${encodeURIComponent(cleanUrl)}&output=webp&w=150&fit=cover`;
+// Updated error handler for image tags to switch to live proxy if local asset is absent
+export function handleImageError(e: React.SyntheticEvent<HTMLImageElement, Event>, id: string) {
+  const target = e.currentTarget;
+  const stage = target.getAttribute('data-fallback-stage');
+
+  if (!stage) {
+    target.setAttribute('data-fallback-stage', '1');
+    const rawUrl = UNIT_IMAGES[id];
+    if (rawUrl && rawUrl !== "PLACEHOLDER_URL") {
+      const cleanUrl = rawUrl.split("/revision/")[0];
+      target.src = `https://wsrv.nl/?url=${encodeURIComponent(cleanUrl)}&output=webp&w=150&fit=cover`;
+      return;
+    }
+  }
+
+  target.style.opacity = '0';
 }
 
 const UNOB_BLACKLIST = [
@@ -89,40 +105,33 @@ export function getObtainability(unit?: MasterUnit): "OBT" | "UNOB" {
   const id = (unit.id || "").toLowerCase();
   const subCat = (unit.subCategory || "").toLowerCase();
 
-  // 1. Explicit notice overrides
   if (note.includes("(unobtainable)") || note.includes("[unobtainable]") || note.includes("unobtainable") || note.includes("retired") || note.includes("unob")) return "UNOB";
   if (note.includes("(obtainable)") || note.includes("[obtainable]")) return "OBT";
 
-  // 2. Gamepasses & Mounts (Exact match for "unit mount" prevents "Mountain" false positives)
   if (id.startsWith("gp-") || name.includes("gamepass") || name.includes("star pass") || name.includes("starpass") || name.includes("unit mount") || note.includes("gamepass") || name.includes("premium pass") || subCat.includes("gamepass")) {
     return "OBT";
   }
 
-  // 3. Skins & Gifts
   const isSkin = subCat.includes("skin") || subtitle.includes("skin") || note.includes("skin") || note.includes("gift");
   if (isSkin) {
     if (note.includes("easter capsule")) return "OBT";
     return "UNOB";
   }
 
-  // 4. Blacklisted Terms & PvP/Tournament/Leaderboard
   if (UNOB_BLACKLIST.some(item => id.includes(item) || name.includes(item) || subtitle.includes(item))) return "UNOB";
   if (note.includes("evolv") || note.includes("evolution")) return "UNOB";
   if (note.includes("pvp set") || note.includes("tournament") || note.includes("leaderboard") || note.includes("event") || note.includes("raid") || note.includes("dungeon") || note.includes("code")) {
     return "UNOB";
   }
 
-  // 5. Banners
   if (getTier(unit) === "C" && note.includes("banner") && !name.includes("snowman")) {
     return "OBT";
   }
 
-  // 6. Capsules
   if (note.includes("starpass capsule") || note.includes("star pass capsule")) return "UNOB";
   if (note.includes("lucky capsule") || note.includes("nested capsule")) return "OBT";
   if (note.includes("capsule") || note.includes("egg") || note.includes("firework")) return "OBT";
 
-  // 7. Fallback regex
   if (/\bobtainable\b/.test(note.replace(/unobtainable/g, ''))) return "OBT";
 
   return "UNOB";
