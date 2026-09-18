@@ -43,7 +43,7 @@ export const MainCanvas = memo(function MainCanvas({
     catch (e) { return true; }
   });
 
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "compact">("grid");
   const [sortMode, setSortMode] = useState("value-desc");
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -64,14 +64,20 @@ export const MainCanvas = memo(function MainCanvas({
 
   const colsRef = useRef(4);
   const [cols, setCols] = useState(4);
+  
   useEffect(() => {
      if (!scrollRef.current) return;
      const observer = new ResizeObserver(entries => {
         const width = entries[0].contentRect.width;
-        const gap = window.innerWidth < 640 ? 12 : 20;
-        const padding = window.innerWidth < 768 ? 16 : 64; 
+        const isDesktop = window.innerWidth >= 768;
+        
+        const baseCardWidth = isDesktop ? 200 : 155;
+        const gap = isDesktop ? 20 : 12;
+        const padding = isDesktop ? 64 : 16; 
+        
         const available = width - padding;
-        const c = Math.max(1, Math.floor((available + gap) / (155 + gap)));
+        const c = Math.max(1, Math.floor((available + gap) / (baseCardWidth + gap)));
+        
         if (c !== colsRef.current) {
            colsRef.current = c;
            setCols(c);
@@ -280,8 +286,9 @@ export const MainCanvas = memo(function MainCanvas({
           case 'no-results': return 250; 
           case 'tier-banner': return 110; 
           case 'sub-header': return 50;
-          case 'grid-row': return window.innerWidth < 640 ? 290 : 272;
-          case 'list-row': return 57;
+          case 'grid-row': return window.innerWidth < 768 ? 290 : 360;
+          // FIXED: Compact view drops the row height significantly
+          case 'list-row': return viewMode === 'compact' ? 30 : 57;
           case 'space-bottom': return 100;
           default: return 50;
        }
@@ -364,9 +371,9 @@ export const MainCanvas = memo(function MainCanvas({
           setViewMode={setViewMode}
         />
 
-        {viewMode === "list" && !isLoading && (
+        {(viewMode === "list" || viewMode === "compact") && !isLoading && (
           <div className="hidden md:block w-full border-b border-[rgba(0,0,0,0.5)] bg-[#1E1F22]">
-            <ListHeaderRow />
+            <ListHeaderRow sortMode={sortMode} setSortMode={setSortMode} viewMode={viewMode} />
           </div>
         )}
       </div>
@@ -377,7 +384,7 @@ export const MainCanvas = memo(function MainCanvas({
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto px-2 md:px-8 custom-scrollbar relative z-0 h-full" 
         style={{ 
-          paddingTop: headerHeight + (viewMode === 'list' && !isMobile ? 36 : 0),
+          paddingTop: headerHeight + ((viewMode === 'list' || viewMode === 'compact') && !isMobile ? 36 : 0),
           overflowAnchor: "none",
           touchAction: "pan-y"
         }}
@@ -473,7 +480,7 @@ export const MainCanvas = memo(function MainCanvas({
 
                   {item.type === 'list-row' && (
                     <div className={`${isStatsTarget && virtualRow.index === 1 ? 'animate-pulse ring-2 ring-[#5865F2]' : ''}`}>
-                       <UnitListRow unit={item.unit} isLast={item.isLast} searchQuery={item.searchQuery} />
+                       <UnitListRow unit={item.unit} isLast={item.isLast} searchQuery={item.searchQuery} viewMode={viewMode} />
                     </div>
                   )}
                 </div>

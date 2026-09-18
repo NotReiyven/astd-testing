@@ -41,12 +41,34 @@ export function TopBar({
 
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const mobileInputRef = useRef<HTMLInputElement>(null);
+  
+  // NEW: Desktop search ref for global hotkeys
+  const desktopSearchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (mobileSearchOpen && mobileInputRef.current) {
       mobileInputRef.current.focus();
     }
   }, [mobileSearchOpen]);
+
+  // NEW: Global Hotkey Listener
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Don't hijack if they are already typing in an input
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
+        return;
+      }
+      
+      // Ctrl+K / Cmd+K or /
+      if (((e.ctrlKey || e.metaKey) && e.key === 'k') || e.key === '/') {
+        e.preventDefault();
+        desktopSearchRef.current?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -190,8 +212,9 @@ export function TopBar({
 
         <div className="relative hidden md:flex items-center bg-[#1E1F22] rounded-[6px] px-2.5 h-[28px] w-[120px] focus-within:w-[180px] lg:w-48 lg:focus-within:w-64 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] border border-[rgba(255,255,255,0.04)] shadow-inner">
           <input 
+            ref={desktopSearchRef}
             type="text" 
-            placeholder="Search..." 
+            placeholder="Search... (Ctrl+K)" 
             value={globalSearchQuery} 
             onChange={(e) => setGlobalSearchQuery(e.target.value)}
             onKeyDown={(e) => {

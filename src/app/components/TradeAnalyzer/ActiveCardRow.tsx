@@ -29,7 +29,24 @@ const QuantityInput = memo(({ qty, onChange }: { qty: number; onChange: (val: nu
       onBlur={handleBlur}
       onKeyDown={(e) => {
         if (e.key === 'Enter') e.currentTarget.blur();
+        
+        // NEW: Arrow Key Nudge
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          const delta = e.shiftKey ? 10 : 1;
+          const newVal = Math.min(qty + delta, 9999);
+          setVal(newVal.toString());
+          onChange(newVal);
+        }
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          const delta = e.shiftKey ? 10 : 1;
+          const newVal = Math.max(qty - delta, 1);
+          setVal(newVal.toString());
+          onChange(newVal);
+        }
       }}
+      title="Up/Down arrows to adjust. Shift for ±10"
       className="w-10 h-8 md:w-8 md:h-6 bg-transparent hover:bg-[rgba(255,255,255,0.04)] focus:bg-[#111214] text-center text-[14px] md:text-[12.5px] font-bold text-[#F2F3F5] outline-none focus:ring-1 focus:ring-[#5865F2] rounded-[3px] transition-all cursor-text select-all"
     />
   );

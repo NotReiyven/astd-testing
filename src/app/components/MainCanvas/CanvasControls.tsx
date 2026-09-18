@@ -1,4 +1,4 @@
-import { X, LayoutGrid, List, ArrowUpDown, Filter } from "lucide-react";
+import { X, LayoutGrid, List, ArrowUpDown, Filter, AlignJustify } from "lucide-react";
 import { FilterKey } from "../../../types";
 import { FILTERS } from "../../../data";
 import { CustomDropdown } from "./CustomDropdown";
@@ -26,8 +26,8 @@ interface CanvasControlsProps {
   setStatusFilter: (s: string) => void;
   sortMode: string;
   setSortMode: (s: string) => void;
-  viewMode: "grid" | "list";
-  setViewMode: (v: "grid" | "list") => void;
+  viewMode: "grid" | "list" | "compact";
+  setViewMode: (v: "grid" | "list" | "compact") => void;
 }
 
 export function CanvasControls({
@@ -81,13 +81,17 @@ export function CanvasControls({
         <CustomDropdown icon={Filter} value={statusFilter} options={FILTER_OPTIONS} onChange={(s: string) => { setStatusFilter(s); if (s !== "all") window.dispatchEvent(new Event("academy-used-filter")); }} defaultLabel="All Statuses" />
         <CustomDropdown icon={ArrowUpDown} value={sortMode} options={SORT_OPTIONS} onChange={setSortMode} />
         <div className="hidden md:block w-px h-5 mx-1 flex-shrink-0" style={{ background: "rgba(255,255,255,0.08)" }} />
-        
+
         <div className="flex bg-[#1E1F22] rounded-[6px] p-[3px] border border-[rgba(255,255,255,0.06)] flex-shrink-0 ml-auto md:ml-0 shadow-inner">
           <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-[4px] transition-all duration-200 ease-out ${viewMode === "grid" ? "bg-[#4e5058] text-white shadow-sm" : "text-[#80848E] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)]"}`} title="Grid View">
             <LayoutGrid className="w-4 h-4" />
           </button>
           <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-[4px] transition-all duration-200 ease-out ${viewMode === "list" ? "bg-[#4e5058] text-white shadow-sm" : "text-[#80848E] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)]"}`} title="List View">
             <List className="w-4 h-4" />
+          </button>
+          {/* NEW: Compact View Button */}
+          <button onClick={() => setViewMode("compact")} className={`hidden md:block p-1.5 rounded-[4px] transition-all duration-200 ease-out ${viewMode === "compact" ? "bg-[#4e5058] text-white shadow-sm" : "text-[#80848E] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)]"}`} title="Compact View">
+            <AlignJustify className="w-4 h-4" />
           </button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { memo, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, ArrowUpCircle, ArrowDownCircle, History } from "lucide-react";
+import { X, ArrowUpCircle, ArrowDownCircle, History, ArrowDown, ArrowUp } from "lucide-react";
 import { PopupUnit, MasterUnit } from "../../../types";
 import { GRID_STATUS_CFG, getTier, TIER_CONFIG, getProxyImage } from "../../../data";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils"; 
@@ -26,22 +26,61 @@ export const getStatColor = (label: string, value: number | string) => {
   return "#DBDEE1";
 };
 
-const GRID_COLS = "md:grid-cols-[60px_minmax(200px,1.2fr)_140px_60px_70px_minmax(200px,2fr)]";
+// NEW: Dynamic grid template sizing
+export const getGridCols = (isCompact: boolean) => 
+  isCompact 
+    ? "md:grid-cols-[minmax(200px,1.2fr)_140px_60px_70px_minmax(200px,2fr)]" 
+    : "md:grid-cols-[60px_minmax(200px,1.2fr)_140px_60px_70px_minmax(200px,2fr)]";
 
-export const ListHeaderRow = memo(function ListHeaderRow() {
+export const ListHeaderRow = memo(function ListHeaderRow({ sortMode, setSortMode, viewMode }: { sortMode: string, setSortMode: (s: string) => void, viewMode: string }) {
+  const isCompact = viewMode === "compact";
+  
+  const handleSort = (key: string) => {
+    if (key === 'value') setSortMode(sortMode === 'value-desc' ? 'value-asc' : 'value-desc');
+    if (key === 'rarity') setSortMode('rarity-desc'); 
+    if (key === 'liquidity') setSortMode(sortMode === 'liq-desc' ? 'liq-asc' : 'liq-desc');
+  };
+
+  const getSortIcon = (key: string) => {
+    if (sortMode === `${key}-desc`) return <ArrowDown className="w-3.5 h-3.5 text-[#F2F3F5] ml-1" />;
+    if (sortMode === `${key}-asc`) return <ArrowUp className="w-3.5 h-3.5 text-[#F2F3F5] ml-1" />;
+    return null;
+  };
+
   return (
-    <div className={`hidden md:grid ${GRID_COLS} items-stretch bg-[#18191C] text-[#80848E] text-[10px] font-black uppercase tracking-widest select-none w-full border-y border-[rgba(255,255,255,0.06)] shadow-sm sticky top-0 z-20`}>
-      <div className="px-3 py-3 flex items-center justify-center">Icon</div>
+    <div className={`hidden md:grid ${getGridCols(isCompact)} items-stretch bg-[#18191C] text-[#80848E] text-[10px] font-black uppercase tracking-widest select-none w-full border-y border-[rgba(255,255,255,0.06)] shadow-sm sticky top-0 z-20`}>
+      {!isCompact && <div className="px-3 py-3 flex items-center justify-center">Icon</div>}
       <div className="px-3 py-3 flex items-center justify-start border-l border-[rgba(255,255,255,0.02)]">Units</div>
-      <div className="px-3 py-3 flex items-center justify-end border-l border-[rgba(255,255,255,0.02)]">Value</div>
-      <div className="px-2 py-3 flex items-center justify-center border-l border-[rgba(255,255,255,0.02)]" title="Rarity (0-20)">R</div>
-      <div className="px-2 py-3 flex items-center justify-center border-l border-[rgba(255,255,255,0.02)]" title="Liquidity (Low/Avg/High)">Liq</div>
+      
+      <button 
+        onClick={() => handleSort('value')}
+        className={`px-3 py-3 flex items-center justify-end border-l border-[rgba(255,255,255,0.02)] transition-colors hover:bg-[rgba(255,255,255,0.03)] cursor-pointer focus-visible:outline-none ${sortMode.includes('value') ? 'text-[#F2F3F5] bg-[rgba(255,255,255,0.02)]' : 'hover:text-[#DBDEE1]'}`}
+      >
+        Value {getSortIcon('value')}
+      </button>
+
+      <button 
+        onClick={() => handleSort('rarity')}
+        title="Rarity (0-20)"
+        className={`px-2 py-3 flex items-center justify-center border-l border-[rgba(255,255,255,0.02)] transition-colors hover:bg-[rgba(255,255,255,0.03)] cursor-pointer focus-visible:outline-none ${sortMode.includes('rarity') ? 'text-[#F2F3F5] bg-[rgba(255,255,255,0.02)]' : 'hover:text-[#DBDEE1]'}`}
+      >
+        R {getSortIcon('rarity')}
+      </button>
+
+      <button 
+        onClick={() => handleSort('liq')}
+        title="Liquidity (Low/Avg/High)"
+        className={`px-2 py-3 flex items-center justify-center border-l border-[rgba(255,255,255,0.02)] transition-colors hover:bg-[rgba(255,255,255,0.03)] cursor-pointer focus-visible:outline-none ${sortMode.includes('liq') ? 'text-[#F2F3F5] bg-[rgba(255,255,255,0.02)]' : 'hover:text-[#DBDEE1]'}`}
+      >
+        Liq {getSortIcon('liq')}
+      </button>
+
       <div className="px-3 py-3 flex items-center justify-start border-l border-[rgba(255,255,255,0.02)]">Notices</div>
     </div>
   );
 });
 
-export const UnitListRow = memo(function UnitListRow({ unit, isLast, searchQuery }: { unit: MasterUnit; isLast: boolean; searchQuery?: string }) {
+export const UnitListRow = memo(function UnitListRow({ unit, isLast, searchQuery, viewMode }: { unit: MasterUnit; isLast: boolean; searchQuery?: string, viewMode: string }) {
   const [hovered, setHovered] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -66,6 +105,8 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast, searchQuery
   const tierKey = getTier(unit);
   const tierColor = TIER_CONFIG[tierKey]?.badgeColor || "#5865F2";
   const proxyUrl = getProxyImage(unit.id, unit.imageUrl);
+
+  const isCompact = viewMode === "compact";
 
   const obtainability = (() => {
     const lowerName = (unit.name || "").toLowerCase();
@@ -103,7 +144,9 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast, searchQuery
 
   const handleRowClick = () => {
     triggerHaptic('light');
-    setMenuOpen(true);
+    if (window.innerWidth < 768) {
+      setMenuOpen(true);
+    }
   };
 
   const valDisplay = tierKey === "Untiered"
@@ -128,28 +171,31 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast, searchQuery
             if (window.matchMedia('(hover: hover)').matches) setHovered(true);
           }}
           onMouseLeave={() => setHovered(false)}
-          className={`relative flex flex-col md:grid ${GRID_COLS} items-stretch cursor-pointer select-none even:bg-[rgba(255,255,255,0.015)] bg-[#2B2D31] hover:bg-[rgba(255,255,255,0.04)] z-10 will-change-transform`}
+          className={`relative flex flex-col md:grid ${getGridCols(isCompact)} items-stretch cursor-pointer select-none even:bg-[rgba(255,255,255,0.015)] bg-[#2B2D31] hover:bg-[rgba(255,255,255,0.04)] z-10 will-change-transform`}
           style={{ 
             background: isAdded ? `${tierColor}40` : "",
             transform: isAdded ? "scale(0.98)" : "scale(1)",
             transition: "transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease",
           }}
         >
-          <div className="hidden md:flex px-3 py-2 items-center justify-center">
-            <div className="relative w-8 h-8 rounded-full overflow-hidden bg-[#111214] border border-[rgba(255,255,255,0.08)] shadow-sm flex-shrink-0 flex items-center justify-center" style={{ borderColor: hovered ? `${tierColor}60` : "rgba(255,255,255,0.08)", transition: "border-color 0.3s ease" }}>
-              <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-[10px] z-0" style={getAvatarStyle(unit.name)}>
-                {getInitials(unit.name)}
+          {/* ICON COLUMN */}
+          {!isCompact && (
+            <div className="hidden md:flex px-3 py-2 items-center justify-center">
+              <div className="relative w-8 h-8 rounded-full overflow-hidden bg-[#111214] border border-[rgba(255,255,255,0.08)] shadow-sm flex-shrink-0 flex items-center justify-center" style={{ borderColor: hovered ? `${tierColor}60` : "rgba(255,255,255,0.08)", transition: "border-color 0.3s ease" }}>
+                <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-[10px] z-0" style={getAvatarStyle(unit.name)}>
+                  {getInitials(unit.name)}
+                </div>
+                <img 
+                  src={proxyUrl} 
+                  alt={unit.name} 
+                  loading="lazy" 
+                  decoding="async" 
+                  onError={(e) => { e.currentTarget.style.opacity = '0'; }}
+                  className="absolute inset-0 w-full h-full object-cover animate-fade-in z-10 bg-[#111214]" 
+                />
               </div>
-              <img 
-                src={proxyUrl} 
-                alt={unit.name} 
-                loading="lazy" 
-                decoding="async" 
-                onError={(e) => { e.currentTarget.style.opacity = '0'; }}
-                className="absolute inset-0 w-full h-full object-cover animate-fade-in z-10 bg-[#111214]" 
-              />
             </div>
-          </div>
+          )}
 
           <div className="flex md:hidden items-center justify-between w-full px-4 py-3">
             <div className="flex items-center gap-3 min-w-0 pr-2">
@@ -178,24 +224,30 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast, searchQuery
             <div className="flex-shrink-0 text-right">{valDisplay}</div>
           </div>
 
-          <div className="hidden md:flex flex-col justify-center min-w-0 px-3 py-2 border-l border-r border-[rgba(255,255,255,0.03)]">
-            <span className="text-[13.5px] font-extrabold tracking-tight text-[#F2F3F5] truncate transition-colors duration-300" style={{ color: hovered ? "#FFF" : "#F2F3F5" }}>
-              <HighlightText text={unit.name} query={searchQuery} />
-            </span>
-            <span className="text-[10px] font-bold uppercase tracking-wider leading-none text-[#949BA4] truncate mt-1 mb-1.5">
-              <HighlightText text={unit.subtitle || ""} query={searchQuery} />
-            </span>
-            <div className="flex items-center gap-1.5">
-              {obtainability === "UNOB" ? (
-                <span className="text-[10px] font-bold uppercase text-[#949BA4] bg-[#1E1F22] px-1.5 py-[2px] rounded-[3px] border border-[rgba(255,255,255,0.05)] tracking-widest leading-none">UNOB</span>
-              ) : (
-                <span className="text-[10px] font-bold uppercase text-[#DBDEE1] bg-[rgba(255,255,255,0.05)] px-1.5 py-[2px] rounded-[3px] border border-[rgba(255,255,255,0.1)] tracking-widest leading-none">OBN</span>
+          <div className={`hidden md:flex flex-col justify-center min-w-0 px-3 border-l border-r border-[rgba(255,255,255,0.03)] ${isCompact ? 'py-1' : 'py-2'}`}>
+            <div className="flex items-center gap-2">
+              <span className="text-[13.5px] font-extrabold tracking-tight text-[#F2F3F5] truncate transition-colors duration-300" style={{ color: hovered ? "#FFF" : "#F2F3F5" }}>
+                <HighlightText text={unit.name} query={searchQuery} />
+              </span>
+              {!isCompact && unit.subtitle && (
+                <span className="text-[10px] font-bold uppercase tracking-wider leading-none text-[#949BA4] truncate">
+                  <HighlightText text={unit.subtitle} query={searchQuery} />
+                </span>
               )}
             </div>
+            {!isCompact && (
+              <div className="flex items-center gap-1.5 mt-1.5">
+                {obtainability === "UNOB" ? (
+                  <span className="text-[10px] font-bold uppercase text-[#949BA4] bg-[#1E1F22] px-1.5 py-[2px] rounded-[3px] border border-[rgba(255,255,255,0.05)] tracking-widest leading-none">UNOB</span>
+                ) : (
+                  <span className="text-[10px] font-bold uppercase text-[#DBDEE1] bg-[rgba(255,255,255,0.05)] px-1.5 py-[2px] rounded-[3px] border border-[rgba(255,255,255,0.1)] tracking-widest leading-none">OBN</span>
+                )}
+              </div>
+            )}
           </div>
 
           <div 
-            className="hidden md:flex px-3 py-2 border-r border-[rgba(255,255,255,0.03)] items-center justify-end relative transition-colors"
+            className={`hidden md:flex px-3 border-r border-[rgba(255,255,255,0.03)] items-center justify-end relative transition-colors ${isCompact ? 'py-1' : 'py-2'}`}
             style={{
               background: sCfg ? sCfg.bg : 'transparent',
               borderColor: sCfg ? sCfg.border : undefined
@@ -205,19 +257,31 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast, searchQuery
               {valDisplay}
             </div>
             <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-center justify-end pr-3 inset-0">
-              <span className="text-[10px] font-black text-[#DBDEE1] drop-shadow-md">Click for Options</span>
+              <span className="text-[10px] font-black text-[#DBDEE1] drop-shadow-md">Options ➔</span>
             </div>
           </div>
 
-          <div className="hidden md:flex px-2 py-2 border-r border-[rgba(255,255,255,0.03)] items-center justify-center font-mono font-bold text-[12px]" style={{ color: getStatColor("R", unit.rarity) }}>
+          <div className={`hidden md:flex px-2 border-r border-[rgba(255,255,255,0.03)] items-center justify-center font-mono font-bold text-[12px] ${isCompact ? 'py-1' : 'py-2'}`} style={{ color: getStatColor("R", unit.rarity) }}>
             {unit.rarity}
           </div>
-          <div className="hidden md:flex px-2 py-2 border-r border-[rgba(255,255,255,0.03)] items-center justify-center font-mono font-bold text-[12px]" style={{ color: getStatColor("L", liqString) }}>
+          <div className={`hidden md:flex px-2 border-r border-[rgba(255,255,255,0.03)] items-center justify-center font-mono font-bold text-[12px] ${isCompact ? 'py-1' : 'py-2'}`} style={{ color: getStatColor("L", liqString) }}>
             {liqDisplay}
           </div>
 
-          <div className="hidden md:flex px-3 py-2 items-center min-w-0">
+          <div className={`hidden md:flex px-3 items-center min-w-0 relative ${isCompact ? 'py-1' : 'py-2'}`}>
             {unit.notice ? <span className="text-[11.5px] font-medium text-[#B5BAC1] line-clamp-2 leading-snug">{unit.notice}</span> : <span className="text-[11.5px] font-medium text-[#4e5058] italic">No notes</span>}
+            
+            <div className="hidden md:flex absolute top-0 bottom-0 right-0 w-[300px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gradient-to-l from-[#2B2D31] via-[#2B2D31] to-transparent items-center justify-end pr-4 gap-2 pointer-events-none group-hover:pointer-events-auto z-20">
+                <button onClick={(e) => { e.stopPropagation(); openModal(unit.id); }} className="w-8 h-8 flex items-center justify-center bg-[#1E1F22] hover:bg-[#3F4147] text-[#DBDEE1] rounded-[6px] border border-[rgba(255,255,255,0.08)] transition-all shadow-sm" title="View History">
+                   <History className="w-4 h-4" />
+                </button>
+                <button onClick={(e) => { e.stopPropagation(); handleAdd("give"); }} className="px-3 h-8 flex items-center gap-1.5 bg-[#FAA61A] hover:bg-[#d98b14] text-white text-[12px] font-bold rounded-[6px] transition-all shadow-sm">
+                   <ArrowUpCircle className="w-3.5 h-3.5" /> Give
+                </button>
+                <button onClick={(e) => { e.stopPropagation(); handleAdd("get"); }} className="px-3 h-8 flex items-center gap-1.5 bg-[#5865F2] hover:bg-[#4752C4] text-white text-[12px] font-bold rounded-[6px] transition-all shadow-sm">
+                   <ArrowDownCircle className="w-3.5 h-3.5" /> Get
+                </button>
+            </div>
           </div>
 
           <div className="flex md:hidden items-center justify-between w-full px-4 pb-3 relative min-h-[28px]">
