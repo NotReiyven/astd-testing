@@ -22,8 +22,12 @@ const COLOR_TARGETS = [
   { tag: "hyped", r: 11, g: 83, b: 148 },
   { tag: "hyped", r: 7, g: 55, b: 99 },
   { tag: "varies", r: 142, g: 124, b: 195 },
+  { tag: "varies", r: 180, g: 167, b: 214 }, // Google Sheets Light Purple 2
+  { tag: "varies", r: 204, g: 192, b: 218 }, // Alternate light purple
   { tag: "gatekept", r: 166, g: 77, b: 121 },
   { tag: "gatekept", r: 255, g: 0, b: 255 },
+  { tag: "gatekept", r: 194, g: 123, b: 160 }, // Google Sheets Light Magenta 1
+  { tag: "gatekept", r: 213, g: 166, b: 189 }, // Google Sheets Light Magenta 2
   { tag: "inflated", r: 180, g: 95, b: 6 },
   { tag: "unstable", r: 118, g: 165, b: 175 },
   { tag: "black-marketed", r: 67, g: 67, b: 67 },
@@ -60,7 +64,7 @@ export function parseSpreadsheet(data: SpreadsheetData) {
   const parsedUnits: any[] = [];
   const changelog: string[] = [];
   const notices: any[] = [];
-  const idTracker = new Map<string, number>(); // Prevents duplicate IDs crashing Supabase
+  const idTracker = new Map<string, number>(); 
   const sheetTitle = data.properties?.title || "ASTD Official Value List";
 
   if (!data.sheets) return { units: parsedUnits, changelog, notices, sheetTitle };
@@ -124,7 +128,6 @@ export function parseSpreadsheet(data: SpreadsheetData) {
       const getCellStr = (idx: number) => row[idx]?.formattedValue?.toString().trim() || "";
       const colB = cleanText(getCellStr(1));
       
-      // Prevent blank row poisoning
       if (!colB || colB.length < 2) continue;
 
       const rawRowStrs = row.map((c: CellData | undefined) => cleanText(c?.formattedValue?.toString().toLowerCase().trim()));
@@ -187,7 +190,6 @@ export function parseSpreadsheet(data: SpreadsheetData) {
         baseId = "eis";
       }
 
-      // Enforce Absolute Uniqueness
       let unitId = baseId;
       if (idTracker.has(baseId)) {
         const count = idTracker.get(baseId)! + 1;
