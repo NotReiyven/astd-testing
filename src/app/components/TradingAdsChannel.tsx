@@ -3,8 +3,8 @@
 import { useState, useEffect, useMemo, memo } from "react";
 import { 
   Megaphone, Search, Plus, Trash2, Clock, 
-  ExternalLink, Check, Lock, X, ArrowDownCircle,
-  Calculator, Package, BookOpen, UserCircle2, ArrowRight
+  Check, Lock, Calculator, Package, 
+  Copy, Activity
 } from "lucide-react";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -16,6 +16,14 @@ import { TradeCard, MasterUnit } from "../../types";
 import { getProxyImage, handleImageError } from "../../data";
 import { getAvatarStyle, getInitials } from "./TradeAnalyzer/summaryUtils";
 import { triggerHaptic } from "../../data/helpers";
+import { CustomDropdown } from "./MainCanvas/CustomDropdown";
+
+const SORT_OPTIONS = {
+  "newest": "Recently Posted",
+  "oldest": "Oldest First",
+  "value-desc": "Highest Value",
+  "value-asc": "Lowest Value"
+};
 
 function getTimeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -33,68 +41,87 @@ function getExpiryDate(dateStr: string) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-const SlotGrid = ({ items, ALL_UNITS, onInspectUnit, label }: { items: TradeCard[]; ALL_UNITS: MasterUnit[]; onInspectUnit: (id: string) => void; label: string }) => {
+// Flat, solid grid with strict sizing to prevent squishing
+const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8 }: { items: TradeCard[]; ALL_UNITS: MasterUnit[]; onInspectUnit: (id: string) => void; isOfferTile?: boolean; limit?: number; }) => {
+  const slots = Array.from({ length: limit });
+  const displayItems = items.slice(0, limit);
+  const extraCount = items.length > limit ? items.length - limit + 1 : 0; 
+
+  const slotBase = "w-11 h-11 sm:w-[50px] sm:h-[50px] rounded-[6px] shrink-0";
+
   return (
-    <div className="flex flex-col gap-2">
-      {label && (
-        <div className="flex items-center justify-between px-0.5">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#80848E]">{label}</span>
-        </div>
-      )}
-      
-      <div className="flex flex-wrap gap-2 bg-[#161719] p-3 rounded-[8px] border border-[rgba(255,255,255,0.03)] shadow-inner max-h-[190px] overflow-y-auto custom-scrollbar">
-        {items.length === 0 ? (
-          <div className="w-full py-4 text-center text-[11px] text-[#80848E] italic">No items</div>
-        ) : (
-          items.map((item, index) => {
-            const master = ALL_UNITS.find((u) => u.id === item.id);
-            const proxyUrl = getProxyImage(item.id, master?.imageUrl);
+    <div className="grid grid-cols-4 gap-1.5 sm:gap-2 w-fit mx-auto">
+      {slots.map((_, i) => {
+        // "Taking Offers" special tile - Unified Color
+        if (isOfferTile && i === 0) {
+          return (
+            <div key="offer-tile" className={`${slotBase} bg-[#111214] border border-[#5865F2]/40 flex flex-col items-center justify-center gap-0.5`}>
+              <Search className="w-4 h-4 sm:w-5 sm:h-5 text-[#5865F2]" />
+              <span className="text-[8px] sm:text-[9px] font-black text-[#5865F2] uppercase tracking-wider">Offer</span>
+            </div>
+          );
+        }
 
-            return (
-              <div
-                key={`${item.id}-${index}`}
-                onClick={() => onInspectUnit(item.id)}
-                className="relative w-[52px] h-[52px] rounded-[6px] bg-[#111214] border border-[rgba(255,255,255,0.08)] hover:border-[#5865F2] cursor-pointer transition-all shadow-sm group overflow-hidden flex items-center justify-center shrink-0"
-                title={`${item.qty > 1 ? `${item.qty}x ` : ''}${item.name} • ${(item.value * item.qty).toLocaleString()}`}
-              >
-                <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white z-0" style={getAvatarStyle(item.name)}>
-                  {getInitials(item.name)}
-                </div>
-                {proxyUrl && (
-                  <img 
-                    src={proxyUrl} 
-                    alt={item.name} 
-                    className="absolute inset-0 w-full h-full object-cover z-10 bg-[#111214]" 
-                    style={{ objectPosition: "center 15%" }} 
-                    onError={(e) => handleImageError(e, item.id)} 
-                  />
-                )}
+        // Overlay "+X more" 
+        if (extraCount > 0 && i === limit - 1) {
+          const item = displayItems[i];
+          const master = item ? ALL_UNITS.find(u => u.id === item.id) : null;
+          const proxyUrl = master ? getProxyImage(item.id, master.imageUrl) : null;
+          return (
+            <div key="extra-slot" className={`relative ${slotBase} bg-[#111214] border border-[rgba(255,255,255,0.06)] overflow-hidden flex items-center justify-center`}>
+               {proxyUrl && <img src={proxyUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />}
+               <div className="absolute inset-0 bg-[#111214]/60 z-0" />
+               <span className="relative z-10 text-[13px] sm:text-[14px] font-black text-[#F2F3F5]">+{extraCount}</span>
+            </div>
+          );
+        }
 
-                {item.qty > 1 && (
-                  <div className="absolute top-1 right-1 bg-[#2B2D31] text-[#DBDEE1] text-[9px] font-black px-1.5 py-0.5 rounded-full z-20 border border-[rgba(255,255,255,0.1)] shadow-sm">
-                    x{item.qty}
-                  </div>
-                )}
-
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity z-30 flex items-center justify-center">
-                  <Search className="w-3.5 h-3.5 text-white" />
-                </div>
+        // Actual Unit Tiles
+        if (i < displayItems.length) {
+          const item = displayItems[i];
+          const master = ALL_UNITS.find(u => u.id === item.id);
+          const proxyUrl = master ? getProxyImage(item.id, master.imageUrl) : null;
+          return (
+            <div
+              key={`item-${i}`}
+              onClick={() => onInspectUnit(item.id)}
+              className={`relative ${slotBase} bg-[#111214] border border-[rgba(255,255,255,0.06)] hover:border-[#5865F2] cursor-pointer transition-colors overflow-hidden flex items-center justify-center group`}
+              title={`${item.qty > 1 ? `${item.qty}x ` : ''}${item.name}`}
+            >
+              <div className="absolute inset-0 flex items-center justify-center text-[10px] sm:text-[11px] font-bold text-white z-0" style={getAvatarStyle(item.name)}>
+                {getInitials(item.name)}
               </div>
-            );
-          })
-        )}
-      </div>
+              {proxyUrl && (
+                <img src={proxyUrl} alt={item.name} className="absolute inset-0 w-full h-full object-cover z-10 bg-[#111214] group-hover:scale-110 transition-transform duration-300" style={{ objectPosition: "center 15%" }} onError={(e) => handleImageError(e, item.id)} />
+              )}
+              {item.qty > 1 && (
+                <div className="absolute bottom-0 right-0 bg-[#1E1F22] text-[#DBDEE1] text-[10px] sm:text-[11px] font-black px-1.5 py-0.5 rounded-tl-[6px] z-20 border-t border-l border-[rgba(255,255,255,0.06)] leading-none">
+                  x{item.qty}
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        // Flat, subtle empty slot
+        return (
+          <div key={`empty-${i}`} className={`${slotBase} bg-[#111214] border border-dashed border-[rgba(255,255,255,0.04)] flex items-center justify-center`}>
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-[rgba(255,255,255,0.03)]" strokeWidth={3} />
+          </div>
+        );
+      })}
     </div>
   );
 };
 
-const AdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL_UNITS, onInspectUnit, onSendToCalculator }: { ad: TradingAd; currentUserId?: string; currentUserRole?: string; onDelete: (id: string) => void; ALL_UNITS: MasterUnit[]; onInspectUnit: (unitId: string) => void; onSendToCalculator: (give: TradeCard[], get: TradeCard[]) => void; }) => {
+// Clean, flat Vanguard-Style Ad Card
+const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL_UNITS, onInspectUnit, onSendToCalculator }: { ad: TradingAd; currentUserId?: string; currentUserRole?: string; onDelete: (id: string) => void; ALL_UNITS: MasterUnit[]; onInspectUnit: (unitId: string) => void; onSendToCalculator: (give: TradeCard[], get: TradeCard[]) => void; }) => {
+    const [copiedId, setCopiedId] = useState(false);
+
     const isOwner = currentUserId === ad.user_id;
     const canModerate = currentUserRole === 'master' || currentUserRole === 'admin' || currentUserRole === 'mod';
     const canDelete = isOwner || canModerate;
 
-    const giveVal = ad.give_items.reduce((sum, item) => sum + item.value * item.qty, 0);
-    
     const isTakingOffers = ad.ad_type === "lf_offers" || (ad.ad_type === "standard" && ad.get_items.length === 0);
     const isInventory = ad.ad_type === "inventory";
 
@@ -106,153 +133,95 @@ const AdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL_UNITS, 
       window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'inventory' }));
     };
 
-    const getAdTypeBadge = () => {
-      if (isInventory) {
-        return (
-          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-[rgba(255,255,255,0.06)] text-[#DBDEE1] border border-[rgba(255,255,255,0.08)] flex items-center gap-1.5">
-            <Package className="w-3 h-3 text-[#949BA4]" /> Showcase
-          </span>
-        );
-      }
-      return (
-        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-[rgba(88,101,242,0.1)] text-[#5865F2] border border-[rgba(88,101,242,0.2)] flex items-center gap-1.5">
-          <Calculator className="w-3 h-3" /> Trade
-        </span>
-      );
+    const handleCopyId = () => {
+      if (!ad.profiles?.discord_id) return;
+      navigator.clipboard.writeText(ad.profiles.discord_id);
+      setCopiedId(true);
+      triggerHaptic('light');
+      setTimeout(() => setCopiedId(false), 2000);
     };
 
+    // Unified Solid Color for Badges
+    let badgeTitle = "TRADE";
+    if (isTakingOffers) badgeTitle = "LF OFFERS";
+    else if (isInventory) badgeTitle = "SHOWCASE";
+
     return (
-      <div className="bg-[#2B2D31] rounded-[8px] flex flex-col transition-all shadow-sm border border-[rgba(255,255,255,0.04)] overflow-hidden hover:border-[rgba(255,255,255,0.08)]">
+      <div className="bg-[#2B2D31] rounded-[12px] p-5 sm:p-6 flex flex-col h-full border border-transparent hover:border-[rgba(255,255,255,0.04)] transition-colors">
         
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 bg-[#1E1F22] border-b border-[rgba(255,255,255,0.04)]">
-          <div className="flex items-center gap-2">
-            {getAdTypeBadge()}
-            {isOwner && (
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-[#5865F2]/20 text-[#5865F2]">
-                You
-              </span>
-            )}
+        {/* Header - User Left, Badge Right */}
+        <div className="flex items-start justify-between mb-4">
+          <div 
+            className="flex items-center gap-3 cursor-pointer group"
+            onClick={handleCopyId}
+            title="Click to copy Discord ID"
+          >
+            <img src={ad.profiles?.avatar_url || "/units/firezio.webp"} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#18191C] object-cover" alt=""/>
+            <div className="flex flex-col">
+               <span className="text-[15px] sm:text-[16px] font-bold text-[#F2F3F5] tracking-tight leading-none mb-1.5 flex items-center gap-1.5 group-hover:underline">
+                 {ad.profiles?.username || "Unknown"}
+                 {copiedId && <Check className="w-3.5 h-3.5 text-[#23a559]" />}
+               </span>
+               <span className="text-[12px] text-[#80848E] font-medium leading-none">{getTimeAgo(ad.created_at)}</span>
+            </div>
           </div>
-
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="text-[13px] font-bold text-[#F2F3F5] truncate max-w-[140px]">
-              {ad.profiles?.username || "Unknown Trader"}
-            </span>
-            <img
-              src={ad.profiles?.avatar_url || "/units/firezio.webp"}
-              alt="Avatar"
-              className="w-7 h-7 rounded-full bg-[#111214] object-cover shrink-0 border border-[rgba(255,255,255,0.08)]"
-            />
-          </div>
+          <span className="px-2.5 py-0.5 rounded-[4px] text-[10px] font-black uppercase tracking-wider border text-[#5865F2] border-[rgba(88,101,242,0.4)] bg-transparent">
+            {badgeTitle}
+          </span>
         </div>
 
-        {/* Body */}
-        <div className="p-4 flex flex-col gap-4 flex-1">
-          {/* Note block with invisible placeholder to maintain equal card heights */}
-          <div className={`px-3.5 py-2.5 rounded-r-[6px] text-[12.5px] italic leading-relaxed transition-opacity ${ad.note ? 'bg-[#1E1F22] border-l-2 border-[#5865F2] text-[#DBDEE1]' : 'opacity-0 pointer-events-none select-none h-[38px] bg-transparent'}`}>
-            "{ad.note || "placeholder"}"
+        {/* Note */}
+        {ad.note && (
+          <div className="text-[14px] text-[#DBDEE1] font-medium leading-relaxed w-full break-words mb-4 min-h-[20px]">
+            {ad.note}
           </div>
+        )}
 
-          {isInventory ? (
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between px-0.5">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#80848E]">Vault Showcase</span>
-                <span className="font-mono text-[11.5px] font-bold text-[#DBDEE1]">{giveVal.toLocaleString()} Value</span>
-              </div>
-              <div className="flex flex-wrap gap-2 max-h-[225px] overflow-y-auto custom-scrollbar p-3 rounded-[8px] bg-[#161719] border border-[rgba(255,255,255,0.03)] shadow-inner">
-                {ad.give_items.map((item, index) => {
-                  const master = ALL_UNITS.find((u) => u.id === item.id);
-                  const proxyUrl = getProxyImage(item.id, master?.imageUrl);
-                  return (
-                    <div
-                      key={`${item.id}-${index}`}
-                      onClick={() => onInspectUnit(item.id)}
-                      className="relative w-[52px] h-[52px] rounded-[6px] bg-[#111214] border border-[rgba(255,255,255,0.08)] hover:border-[#5865F2] cursor-pointer transition-all shadow-sm group overflow-hidden flex items-center justify-center shrink-0"
-                      title={`${item.qty > 1 ? `${item.qty}x ` : ''}${item.name} • ${(item.value * item.qty).toLocaleString()}`}
-                    >
-                      <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white z-0" style={getAvatarStyle(item.name)}>
-                        {getInitials(item.name)}
-                      </div>
-                      {proxyUrl && (
-                        <img 
-                          src={proxyUrl} 
-                          alt={item.name} 
-                          className="absolute inset-0 w-full h-full object-cover z-10 bg-[#111214]" 
-                          style={{ objectPosition: "center 15%" }} 
-                          onError={(e) => handleImageError(e, item.id)} 
-                        />
-                      )}
-                      {item.qty > 1 && (
-                        <div className="absolute top-1 right-1 bg-[#2B2D31] text-[#DBDEE1] text-[9px] font-black px-1.5 py-0.5 rounded-full z-20 border border-[rgba(255,255,255,0.1)] shadow-sm">
-                          x{item.qty}
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity z-30 flex items-center justify-center">
-                        <Search className="w-3.5 h-3.5 text-white" />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2 bg-[#1E1F22] p-3 rounded-[6px] border border-[rgba(255,255,255,0.03)] shadow-inner">
-                <div className="flex items-center justify-between pb-1.5 border-b border-[rgba(255,255,255,0.04)]">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#FAA61A]">Offering</span>
-                  <span className="font-mono text-[11px] font-bold text-[#DBDEE1]">{giveVal.toLocaleString()}</span>
-                </div>
-                <SlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} label="" />
-              </div>
+        {/* Unified Trade Grids - Prevents awkward scaling by keeping them all inside identical boxes */}
+        {isInventory ? (
+          <div className="flex flex-col items-center w-full mt-auto bg-[#1E1F22] rounded-[8px] p-4 sm:p-5">
+            <h4 className="text-[12px] font-bold text-[#F2F3F5] mb-3">Showcase Assets</h4>
+            <FixedSlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} limit={16} />
+          </div>
+        ) : (
+          <div className="flex flex-col items-center w-full mt-auto bg-[#1E1F22] rounded-[8px] p-4 sm:p-5">
+            <h4 className="text-[12px] font-bold text-[#F2F3F5] mb-3">Offering</h4>
+            <FixedSlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} />
+            
+            <h4 className="text-[12px] font-bold text-[#F2F3F5] mt-5 mb-3">Requesting</h4>
+            <FixedSlotGrid items={ad.get_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} isOfferTile={isTakingOffers} />
+          </div>
+        )}
 
-              <div className="flex flex-col gap-2 bg-[#1E1F22] p-3 rounded-[6px] border border-[rgba(255,255,255,0.03)] shadow-inner">
-                <div className="flex items-center justify-between pb-1.5 border-b border-[rgba(255,255,255,0.04)]">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#5865F2]">Requesting</span>
-                  {!isTakingOffers && <span className="font-mono text-[11px] font-bold text-[#DBDEE1]">{ad.get_items.reduce((s, i) => s + i.value * i.qty, 0).toLocaleString()}</span>}
-                </div>
-                {isTakingOffers ? (
-                  <div className="flex flex-col gap-2 py-2">
-                    <div className="flex items-center justify-center py-5 bg-[#161719] rounded-[6px] border border-dashed border-[rgba(250,166,26,0.3)] text-[#FAA61A]">
-                      <span className="text-[11px] font-bold uppercase tracking-wider">Taking All Offers</span>
-                    </div>
-                  </div>
-                ) : (
-                  <SlotGrid items={ad.get_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} label="" />
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer Actions & Metadata */}
-        <div className="mt-auto px-4 py-3 bg-[#18191C] border-t border-[rgba(255,255,255,0.04)] flex items-center justify-between gap-3">
-          <span className="text-[10.5px] text-[#80848E] truncate">
-            Posted {getTimeAgo(ad.created_at)} • Expires {getExpiryDate(ad.expires_at)}
+        {/* Flat Footer Actions */}
+        <div className="mt-5 flex items-center justify-between">
+          <span className="text-[11px] font-medium text-[#4E5058]">
+            Exp. {getExpiryDate(ad.expires_at)}
           </span>
           
-          <div className="flex items-center gap-2 shrink-0">
-            {isInventory ? (
-              <button
-                onClick={handleInspectVault}
-                className="px-4 py-1.5 rounded-[4px] bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold text-[11px] uppercase tracking-wider transition-colors shadow-sm focus-visible:outline-none"
-              >
-                Inspect
-              </button>
-            ) : (
-              <button
-                onClick={() => onSendToCalculator(ad.give_items, ad.get_items)}
-                className="px-4 py-1.5 rounded-[4px] bg-[#313338] hover:bg-[#3F4147] text-[#DBDEE1] hover:text-white font-bold text-[11px] uppercase tracking-wider transition-colors border border-[rgba(255,255,255,0.04)] focus-visible:outline-none"
-              >
-                Evaluate
-              </button>
-            )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopyId}
+              className="px-3 py-2 flex items-center gap-1.5 text-[12px] font-bold rounded-[6px] border border-[rgba(255,255,255,0.06)] bg-transparent hover:bg-[rgba(255,255,255,0.04)] text-[#949BA4] hover:text-[#DBDEE1] transition-colors focus-visible:outline-none"
+            >
+              {copiedId ? <Check className="w-4 h-4 text-[#23a559]" /> : <Copy className="w-4 h-4" />}
+              <span className="hidden sm:inline">ID</span>
+            </button>
+
+            {/* Unified Button Color */}
+            <button 
+              onClick={() => isInventory ? handleInspectVault() : onSendToCalculator(ad.give_items, ad.get_items)}
+              className="px-3 py-2 flex items-center gap-1.5 text-[12px] font-bold rounded-[6px] bg-[#5865F2] hover:bg-[#4752C4] text-white transition-colors focus-visible:outline-none"
+            >
+              {isInventory ? <Package className="w-4 h-4" /> : <Calculator className="w-4 h-4" />}
+              {isInventory ? "Inspect" : "Evaluate"}
+            </button>
 
             {canDelete && (
               <button
                 onClick={() => onDelete(ad.id)}
-                className="p-1.5 text-[#80848E] hover:text-[#ed4245] transition-colors focus-visible:outline-none"
-                title={isOwner ? "Delete your listing" : "Moderator: Delete listing"}
+                className="p-2 border border-[rgba(255,255,255,0.06)] text-[#80848E] hover:text-[#ed4245] hover:border-[rgba(237,66,69,0.3)] bg-transparent hover:bg-[rgba(237,66,69,0.1)] rounded-[6px] transition-colors focus-visible:outline-none ml-1"
+                title="Delete listing"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -324,16 +293,23 @@ export function TradingAdsChannel() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#313338] h-full select-none font-sans relative">
       
-      {/* Top Navigation Sub-Bar */}
-      <div className="flex-shrink-0 px-4 md:px-6 py-4 bg-[#2B2D31] border-b border-[rgba(0,0,0,0.22)] shadow-sm flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[16px] font-black text-[#F2F3F5] tracking-tight">Active Listings</h2>
+      {/* Top Navigation & Filters */}
+      <div className="flex-shrink-0 flex flex-col px-4 md:px-6 py-4 bg-[#2B2D31] border-b border-[rgba(0,0,0,0.22)] shadow-sm z-20 gap-4">
+        
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <div className="relative flex items-center justify-center">
+              <div className="w-2.5 h-2.5 bg-[#5865F2] rounded-full z-10" />
+              <div className="absolute inset-0 bg-[#5865F2] rounded-full animate-ping opacity-60" />
+            </div>
+            <h2 className="text-[16px] font-black text-[#F2F3F5] tracking-tight">Live Trading Board</h2>
+          </div>
 
           {profile ? (
             <button
               type="button"
               onClick={handleCreateAdClick}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-[6px] bg-[#5865F2] hover:bg-[#4752C4] text-white text-[12px] font-bold uppercase tracking-wider transition-colors shadow-sm focus-visible:outline-none shrink-0"
+              className="flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-[6px] bg-[#5865F2] hover:bg-[#4752C4] text-white text-[13px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none shrink-0"
             >
               <Plus className="w-4 h-4" />
               <span>Create Ad</span>
@@ -342,82 +318,82 @@ export function TradingAdsChannel() {
             <button
               type="button"
               onClick={loginWithDiscord}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-[6px] bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] text-[#DBDEE1] text-[12px] font-bold uppercase tracking-wider transition-colors hover:bg-[#35373C] focus-visible:outline-none shrink-0"
+              className="flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-[6px] bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] text-[#DBDEE1] text-[13px] font-bold uppercase tracking-wider transition-colors hover:bg-[#35373C] focus-visible:outline-none shrink-0"
             >
-              <Lock className="w-3.5 h-3.5 text-[#5865F2]" />
+              <Lock className="w-4 h-4 text-[#5865F2]" />
               <span>Login to Post</span>
             </button>
           )}
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <div className="relative w-full sm:flex-1">
-            <Search className="w-4 h-4 text-[#80848E] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              placeholder="Search by item..."
-              className="w-full bg-[#1E1F22] text-[#F2F3F5] text-[13px] pl-9 pr-3 py-2 rounded-[6px] outline-none border border-[rgba(255,255,255,0.04)] focus:border-[#5865F2] transition-colors shadow-inner"
-            />
+        <div className="flex flex-col xl:flex-row xl:items-center gap-4 w-full">
+          {/* Custom Filter Pills */}
+          <div className="flex bg-[#1E1F22] rounded-[8px] p-1 border border-[rgba(255,255,255,0.04)] w-full md:w-fit overflow-x-auto hide-scrollbar shrink-0">
+            {[{ id: "all", label: "All" }, { id: "standard", label: "Trades" }, { id: "lf_offers", label: "LF Offers" }, { id: "inventory", label: "Showcases" }].map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTypeFilter(t.id)}
+                className={`flex-1 md:flex-none px-5 py-2 rounded-[6px] text-[12px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none whitespace-nowrap ${typeFilter === t.id ? 'bg-[#5865F2] text-white' : 'text-[#949BA4] hover:text-[#DBDEE1]'}`}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
-          
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="flex-1 sm:flex-none bg-[#1E1F22] text-[#DBDEE1] text-[12px] font-bold uppercase tracking-wider px-3 py-2 rounded-[6px] outline-none border border-[rgba(255,255,255,0.04)] focus:border-[#5865F2] shadow-inner cursor-pointer"
-            >
-              <option value="all">All Listings</option>
-              <option value="standard">Specific Trades</option>
-              <option value="lf_offers">LF Offers</option>
-              <option value="inventory">Vault Showcases</option>
-            </select>
 
-            <select
-              value={sortMode}
-              onChange={(e) => setSortMode(e.target.value)}
-              className="flex-1 sm:flex-none bg-[#1E1F22] text-[#DBDEE1] text-[12px] font-bold uppercase tracking-wider px-3 py-2 rounded-[6px] outline-none border border-[rgba(255,255,255,0.04)] focus:border-[#5865F2] shadow-inner cursor-pointer"
-            >
-              <option value="newest">Recently Posted</option>
-              <option value="oldest">Oldest First</option>
-              <option value="value-desc">Highest Value</option>
-              <option value="value-asc">Lowest Value</option>
-            </select>
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
+            <div className="relative w-full">
+              <Search className="w-4 h-4 text-[#80848E] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
+                placeholder="Search board by unit name..."
+                className="w-full bg-[#1E1F22] text-[#F2F3F5] text-[14px] pl-10 pr-4 py-2.5 rounded-[8px] outline-none border border-[rgba(255,255,255,0.04)] focus:border-[#5865F2] transition-colors font-medium"
+              />
+            </div>
+            
+            <div className="w-full sm:w-auto shrink-0">
+              <CustomDropdown icon={Clock} value={sortMode} options={SORT_OPTIONS} onChange={setSortMode} defaultLabel="Sort By" />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Viewport */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 pb-24">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-[#80848E] gap-2">
-            <span className="text-[13px] font-bold">Connecting to live market...</span>
-          </div>
-        ) : filteredAndSortedAds.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-[#80848E] gap-2">
-            <Megaphone className="w-12 h-12 opacity-30 mb-2" />
-            <span className="text-[15px] font-bold text-[#DBDEE1]">No Active Ads & Vault Showcases</span>
-            <p className="text-[12px] max-w-sm text-center">
-              There are currently no trading ads matching your search parameters.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5 mx-auto w-full">
-            {filteredAndSortedAds.map((ad) => (
-              <AdCard
-                key={ad.id}
-                ad={ad}
-                currentUserId={profile?.id}
-                currentUserRole={profile?.role}
-                onDelete={deleteAd}
-                ALL_UNITS={ALL_UNITS}
-                onInspectUnit={(unitId) => openHistoryModal(unitId)}
-                onSendToCalculator={handleSendToCalculator}
-              />
-            ))}
-          </div>
-        )}
+      {/* Main Message Feed */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col bg-[#313338] relative z-10">
+        <div className="w-full h-full max-w-[1400px] mx-auto p-4 md:p-6 lg:p-8 pb-24">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 text-[#80848E] gap-3">
+              <Activity className="w-8 h-8 animate-pulse text-[#5865F2]" />
+              <span className="text-[13px] font-bold uppercase tracking-widest">Connecting to live market...</span>
+            </div>
+          ) : filteredAndSortedAds.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
+              <div className="w-20 h-20 bg-[#2B2D31] rounded-full flex items-center justify-center border border-[rgba(255,255,255,0.04)] mb-2">
+                <Megaphone className="w-10 h-10 text-[#4E5058]" />
+              </div>
+              <span className="text-[20px] font-black text-[#F2F3F5] tracking-tight">No Active Listings</span>
+              <p className="text-[14px] text-[#949BA4] max-w-md leading-relaxed">
+                There are currently no trading ads matching your search parameters. Try adjusting your filters or post a new ad yourself.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full animate-fade-in">
+              {filteredAndSortedAds.map((ad) => (
+                <VanguardAdCard
+                  key={ad.id}
+                  ad={ad}
+                  currentUserId={profile?.id}
+                  currentUserRole={profile?.role}
+                  onDelete={deleteAd}
+                  ALL_UNITS={ALL_UNITS}
+                  onInspectUnit={(unitId) => openHistoryModal(unitId)}
+                  onSendToCalculator={handleSendToCalculator}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -39,6 +39,10 @@ interface InventoryState {
   toggleWishlist: (userId: string, unitId: string) => Promise<void>;
 }
 
+// Request ID tracking to prevent stale network requests from overlapping
+let activeFetchId = 0;
+let activeViewFetchId = 0;
+
 export const useInventoryStore = create<InventoryState>((set, get) => ({
   items: [],
   wishlistItems: [],
@@ -49,16 +53,20 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   viewingUsername: null,
 
   setViewingUser: (userId, username = null) => {
-    set({ viewingUserId: userId, viewingUsername: username });
+    // Instantly wipe the viewing slate clean to prevent data fusion
+    set({ viewingUserId: userId, viewingUsername: username, viewedItems: [], viewedWishlist: [] });
     if (userId) {
       get().fetchInventory(userId, true);
       get().fetchWishlist(userId, true);
-    } else {
-      set({ viewedItems: [], viewedWishlist: [] });
     }
   },
 
   fetchInventory: async (userId: string, isViewing = false) => {
+    if (!userId) return;
+    
+    // Assign a unique ID to this specific fetch request
+    const currentRequestId = isViewing ? ++activeViewFetchId : ++activeFetchId;
+    
     set({ isLoading: true });
     const { data, error } = await supabase
       .from('user_inventory')
@@ -66,9 +74,16 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
+    // Race Condition Guard: If another fetch was triggered while this one was pending, abort this one.
+    if (isViewing && currentRequestId !== activeViewFetchId) return;
+    if (!isViewing && currentRequestId !== activeFetchId) return;
+
     if (!error && data) {
-      if (isViewing) set({ viewedItems: data, isLoading: false });
-      else set({ items: data, isLoading: false });
+      if (isViewing) {
+        set({ viewedItems: data, isLoading: false });
+      } else {
+        set({ items: data, isLoading: false });
+      }
     } else {
       set({ isLoading: false });
       if (error) console.error("Failed to fetch inventory:", error.message);
@@ -76,11 +91,18 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   },
 
   fetchWishlist: async (userId: string, isViewing = false) => {
+    if (!userId) return;
+
+    const currentRequestId = isViewing ? activeViewFetchId : activeFetchId;
+
     const { data, error } = await supabase
       .from('user_wishlist')
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
+
+    if (isViewing && currentRequestId !== activeViewFetchId) return;
+    if (!isViewing && currentRequestId !== activeFetchId) return;
 
     if (!error && data) {
       if (isViewing) set({ viewedWishlist: data });
@@ -91,6 +113,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   },
 
   addOrUpdateUnit: async (userId: string, unitId: string, quantityDelta: number) => {
+    if (get().viewingUserId) return; // Hard guard against modifying while viewing
     const previousItems = get().items;
     const existingItem = previousItems.find(i => i.unit_id === unitId);
     
@@ -125,6 +148,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   },
 
   removeUnit: async (userId: string, unitId: string) => {
+    if (get().viewingUserId) return;
     const previousItems = get().items;
     set({ items: previousItems.filter(i => i.unit_id !== unitId) });
     try {
@@ -137,6 +161,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   },
 
   restoreItem: async (item: InventoryItem) => {
+    if (get().viewingUserId) return;
     const previousItems = get().items;
     set({ items: [item, ...previousItems] });
     try {
@@ -150,6 +175,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   },
 
   togglePin: async (userId: string, unitId: string, currentPinStatus: boolean) => {
+    if (get().viewingUserId) return;
     const previousItems = get().items;
     const nextStatus = !currentPinStatus;
     set({ items: previousItems.map(i => i.unit_id === unitId ? { ...i, is_pinned: nextStatus } : i) });
@@ -163,6 +189,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   },
 
   clearInventory: async (userId: string) => {
+    if (get().viewingUserId) return;
     const previousItems = get().items;
     set({ items: [] });
     try {
@@ -175,6 +202,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   },
 
   clearUnpinned: async (userId: string) => {
+    if (get().viewingUserId) return;
     const previousItems = get().items;
     set({ items: previousItems.filter(i => i.is_pinned) });
     try {
@@ -187,6 +215,8 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   },
 
   toggleWishlist: async (userId: string, unitId: string) => {
+    if (get().viewingUserId) return; 
+    
     const previousItems = get().wishlistItems;
     const existing = previousItems.find(i => i.unit_id === unitId);
 

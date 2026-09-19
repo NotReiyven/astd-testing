@@ -209,7 +209,6 @@ const TradingCardSlot = memo(({
           />
         )}
         
-        {/* Quick Transfer Overlay for Wishlist */}
         {isWishlist && !isSelectMode && !isReadOnly && (
           <div className="absolute inset-0 bg-[rgba(0,0,0,0.7)] opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-40 flex items-center justify-center p-4">
              <button onClick={(e) => { e.stopPropagation(); onQuickTransfer?.(item.unit_id); }} className="w-full bg-[#23a559] hover:bg-[#1f914e] text-white text-[11px] font-bold py-2 rounded-[6px] shadow-sm flex items-center justify-center gap-1.5 transition-transform active:scale-95">
@@ -218,7 +217,6 @@ const TradingCardSlot = memo(({
           </div>
         )}
         
-        {/* Standard Inspect Overlay */}
         {!isWishlist && !isSelectMode && (
           <div className="absolute inset-0 bg-[rgba(0,0,0,0.6)] opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30 flex items-center justify-center pointer-events-none">
             <Search className="w-5 h-5 text-white" />
@@ -307,7 +305,9 @@ export function InventoryChannel() {
   const [sortMode, setSortMode] = useState("value-desc");
   const [collapsedTiers, setCollapsedTiers] = useState<Record<string, boolean>>({});
 
-  const isReadOnly = viewingUserId !== null;
+  // Extremely strict read-only lock. If viewingUserId is truthy, we are completely isolated from personal items.
+  const isReadOnly = viewingUserId !== null && viewingUserId !== "";
+
   const items = isReadOnly ? viewedItems : myItems;
   const wishlistItems = isReadOnly ? viewedWishlist : myWishlist;
 
@@ -336,6 +336,7 @@ export function InventoryChannel() {
 
   const [toast, setToast] = useState<{ id: number, message: string, isError: boolean, itemToRestore?: InventoryItem } | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
   const showToast = useCallback((message: string, isError = false, itemToRestore?: InventoryItem) => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToast({ id: Date.now(), message, isError, itemToRestore });
@@ -411,7 +412,8 @@ export function InventoryChannel() {
 
   const vaultLiquidValue = useMemo(() => {
     let liqVal = 0;
-    items.forEach(item => {
+    const sourceItems = isReadOnly ? viewedItems : myItems;
+    sourceItems.forEach(item => {
       const master = ALL_UNITS.find(u => u.id === item.unit_id);
       if (master) {
         const liq = (master.liquidity || "Average").toLowerCase();
@@ -421,7 +423,7 @@ export function InventoryChannel() {
       }
     });
     return liqVal;
-  }, [items, ALL_UNITS]);
+  }, [myItems, viewedItems, isReadOnly, ALL_UNITS]);
 
   const { 
     resolvedInventory, 
@@ -525,7 +527,7 @@ export function InventoryChannel() {
 
   const handleCopyVault = useCallback(() => {
     const header = isReadOnly && viewingUsername 
-      ? `${viewingUsername}'s ASTD Vault` 
+      ? `${viewingUsername}'s ASTD ${vaultView === "wishlist" ? "Wishlist" : "Vault"}` 
       : `My ASTD ${vaultView === "wishlist" ? "Wishlist" : "Vault"}`;
       
     const text = `${header} (Total: ${estimatedValue.toLocaleString()} | Liquid: ${liquidValue.toLocaleString()} | UNOB: ${unobPercentage.toFixed(0)}%):\n` +
@@ -743,8 +745,8 @@ export function InventoryChannel() {
       {isReadOnly && (
         <div className="flex items-center justify-between px-4 py-2.5 bg-[#5865F2] text-white shrink-0 shadow-md z-30 animate-fade-in">
           <div className="flex items-center gap-2.5">
-            <span className="text-[12px] font-bold uppercase tracking-wider bg-black/20 px-2 py-0.5 rounded">Viewing Vault</span>
-            <span className="text-[14px] font-black truncate">{viewingUsername || "Trader"}'s Collection</span>
+            <span className="text-[12px] font-bold uppercase tracking-wider bg-black/20 px-2 py-0.5 rounded">Viewing</span>
+            <span className="text-[14px] font-black truncate">{viewingUsername || "Trader"}'s {vaultView === "wishlist" ? "Wishlist" : "Collection"}</span>
           </div>
           <button 
             onClick={() => setViewingUser(null, null)}
@@ -756,12 +758,10 @@ export function InventoryChannel() {
       )}
 
       {/* Master Tabs */}
-      {!isReadOnly && (
-        <div className="flex items-center gap-6 px-6 pt-4 bg-[#2B2D31] border-b border-[rgba(0,0,0,0.22)] shrink-0 z-20">
-          <button onClick={() => handleTabSwitch('owned')} className={`pb-3 text-[13px] font-black uppercase tracking-widest transition-all border-b-[3px] focus-visible:outline-none ${vaultView === 'owned' ? 'text-[#F2F3F5] border-[#5865F2]' : 'text-[#80848E] border-transparent hover:text-[#DBDEE1]'}`}>My Vault</button>
-          <button onClick={() => handleTabSwitch('wishlist')} className={`pb-3 text-[13px] font-black uppercase tracking-widest transition-all border-b-[3px] focus-visible:outline-none ${vaultView === 'wishlist' ? 'text-[#F2F3F5] border-[#5865F2]' : 'text-[#80848E] border-transparent hover:text-[#DBDEE1]'}`}>Wishlist</button>
-        </div>
-      )}
+      <div className="flex items-center gap-6 px-6 pt-4 bg-[#2B2D31] border-b border-[rgba(0,0,0,0.22)] shrink-0 z-20">
+        <button onClick={() => handleTabSwitch('owned')} className={`pb-3 text-[13px] font-black uppercase tracking-widest transition-all border-b-[3px] focus-visible:outline-none ${vaultView === 'owned' ? 'text-[#F2F3F5] border-[#5865F2]' : 'text-[#80848E] border-transparent hover:text-[#DBDEE1]'}`}>{isReadOnly ? 'Vault' : 'My Vault'}</button>
+        <button onClick={() => handleTabSwitch('wishlist')} className={`pb-3 text-[13px] font-black uppercase tracking-widest transition-all border-b-[3px] focus-visible:outline-none ${vaultView === 'wishlist' ? 'text-[#F2F3F5] border-[#5865F2]' : 'text-[#80848E] border-transparent hover:text-[#DBDEE1]'}`}>Wishlist</button>
+      </div>
 
       {/* Header Controls Bar */}
       <div className={`flex-shrink-0 flex flex-col bg-[#2B2D31] border-b border-[rgba(0,0,0,0.22)] shadow-sm z-20 relative ${importMenuOpen ? "opacity-30 pointer-events-none blur-sm" : ""}`}>
@@ -808,7 +808,7 @@ export function InventoryChannel() {
                   onChange={(e) => { setSearchQuery(e.target.value); setIsOmniboxOpen(true); setOmniboxIndex(-1); }}
                   onFocus={() => setIsOmniboxOpen(true)}
                   onKeyDown={handleOmniboxKeyDown}
-                  placeholder={isReadOnly ? "Search vault..." : vaultView === "wishlist" ? "Search to add wishlist item..." : "Search or add units..."}
+                  placeholder={isReadOnly ? `Search ${vaultView === 'wishlist' ? 'wishlist' : 'vault'}...` : vaultView === "wishlist" ? "Search to add wishlist item..." : "Search or add units..."}
                   className="w-full bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[4px] pl-9 pr-3 py-1 text-[13px] text-[#F2F3F5] outline-none placeholder-[#80848E] focus:ring-1 focus:ring-[#5865F2] transition-colors shadow-inner h-[32px]"
                 />
               </div>
@@ -952,7 +952,9 @@ export function InventoryChannel() {
                 vaultView === "wishlist" ? (
                   <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-4 mb-6 animate-fade-in">
                     <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-5 flex flex-col justify-center relative overflow-hidden">
-                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#949BA4] mb-4">Wishlist Goal Progress</h3>
+                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#949BA4] mb-4">
+                         {isReadOnly && viewingUsername ? `${viewingUsername}'s Wishlist Progress` : 'Wishlist Goal Progress'}
+                       </h3>
                        <div className="flex justify-between items-end mb-2">
                          <div className="flex flex-col">
                            <span className="text-[28px] md:text-[36px] font-black text-[#F2F3F5] font-mono leading-none">{vaultLiquidValue.toLocaleString()} <span className="text-[#80848E] text-[16px] md:text-[20px]">/ {estimatedValue.toLocaleString()}</span></span>
