@@ -5,15 +5,18 @@ import { TradeCard } from '../types';
 interface TradeState {
   giveItems: TradeCard[];
   getItems: TradeCard[];
-  pinnedIds: string[]; // Stored as array for JSON serialization
+  pinnedIds: string[];
+  isComposerOpen: boolean;
+  composerMode: "standard" | "lf_offers" | "inventory";
   addCard: (col: "give" | "get", card: TradeCard) => void;
   changeQty: (col: "give" | "get", id: string, qty: number) => void;
   removeCard: (col: "give" | "get", id: string) => void;
   clearSection: (col: "give" | "get") => void;
-  clearAllUnpinned: () => { give: TradeCard[], get: TradeCard[] }; // Returns previous state for undo
+  clearAllUnpinned: () => { give: TradeCard[], get: TradeCard[] }; 
   swap: () => void;
   overwrite: (giveCards: TradeCard[], getCards: TradeCard[]) => void;
   togglePin: (col: "give" | "get", id: string) => void;
+  setComposerOpen: (isOpen: boolean, mode?: "standard" | "lf_offers" | "inventory") => void;
 }
 
 export const useTradeStore = create<TradeState>()(
@@ -22,6 +25,10 @@ export const useTradeStore = create<TradeState>()(
       giveItems: [],
       getItems: [],
       pinnedIds: [],
+      isComposerOpen: false,
+      composerMode: "standard",
+
+      setComposerOpen: (isOpen, mode = "standard") => set({ isComposerOpen: isOpen, composerMode: mode }),
 
       addCard: (col, card) => set((state) => {
         const target = col === "give" ? state.giveItems : state.getItems;
@@ -82,13 +89,14 @@ export const useTradeStore = create<TradeState>()(
     }),
     {
       name: 'astd_trade_storage',
-      version: 1,
+      version: 2,
       migrate: (persistedState: any, version: number) => {
-        if (version === 0) {
-          // Fallback mechanism to clear out corrupted older states safely
+        if (version < 2) {
           persistedState.giveItems = Array.isArray(persistedState.giveItems) ? persistedState.giveItems : [];
           persistedState.getItems = Array.isArray(persistedState.getItems) ? persistedState.getItems : [];
           persistedState.pinnedIds = Array.isArray(persistedState.pinnedIds) ? persistedState.pinnedIds : [];
+          persistedState.isComposerOpen = false;
+          persistedState.composerMode = "standard";
         }
         return persistedState as TradeState;
       },

@@ -8,6 +8,7 @@ export interface TradingAd {
   give_items: TradeCard[];
   get_items: TradeCard[];
   note?: string;
+  ad_type?: "standard" | "lf_offers" | "inventory";
   expires_at: string;
   created_at: string;
   profiles?: {
@@ -21,7 +22,9 @@ interface TradingAdsState {
   ads: TradingAd[];
   isLoading: boolean;
   stagedGiveForAd: TradeCard[];
+  stagedGetForAd: TradeCard[];
   setStagedGiveForAd: (items: TradeCard[]) => void;
+  setStagedGetForAd: (items: TradeCard[]) => void;
   fetchAds: () => Promise<void>;
   subscribeToAds: () => () => void;
   createAd: (params: {
@@ -30,6 +33,7 @@ interface TradingAdsState {
     getItems: TradeCard[];
     note: string;
     ttlHours: number;
+    adType?: "standard" | "lf_offers" | "inventory";
   }) => Promise<void>;
   deleteAd: (adId: string) => Promise<void>;
 }
@@ -38,8 +42,10 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
   ads: [],
   isLoading: true,
   stagedGiveForAd: [],
+  stagedGetForAd: [],
 
   setStagedGiveForAd: (items) => set({ stagedGiveForAd: items }),
+  setStagedGetForAd: (items) => set({ stagedGetForAd: items }),
 
   fetchAds: async () => {
     set({ isLoading: true });
@@ -73,18 +79,22 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
     };
   },
 
-  createAd: async ({ userId, giveItems, getItems, note, ttlHours }) => {
+  createAd: async ({ userId, giveItems, getItems, note, ttlHours, adType = "standard" }) => {
     const expiresAt = new Date(Date.now() + ttlHours * 3600000).toISOString();
 
     const { error } = await supabase.from('trading_ads').insert({
       user_id: userId,
       give_items: giveItems,
-      get_items: getItems,
+      get_items: adType === "lf_offers" ? [] : getItems,
       note: note.trim() || null,
+      ad_type: adType,
       expires_at: expiresAt,
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase insert error:", error);
+      throw error;
+    }
     await get().fetchAds();
   },
 

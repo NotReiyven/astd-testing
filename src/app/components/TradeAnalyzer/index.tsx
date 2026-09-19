@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Calculator, RotateCcw, Share2, Check, ArrowUpDown, Wand2, X, Info, ChevronUp } from "lucide-react";
+import { Calculator, RotateCcw, Share2, Check, ArrowUpDown, Wand2, X, Info, ChevronUp, Megaphone } from "lucide-react";
 import { TradeCard } from "../../../types";
 import { TradeSectionPanel } from "./TradeSectionPanel";
 import { TradeNotices } from "./TradeNotices";
@@ -11,6 +11,8 @@ import { useUnits } from "../../../context/UnitContext";
 import { GuideType } from "../guides/AquaGuideOverlay";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { triggerHaptic } from "../../../data/helpers";
+import { useTradingAdsStore } from "../../../store/useTradingAdsStore";
+import { useAuthStore } from "../../../store/useAuthStore";
 
 export function TradeAnalyzerPanel({
   isOpen = true,
@@ -26,6 +28,8 @@ export function TradeAnalyzerPanel({
   analyzerZ?: string;
 }) {
   const { units: ALL_UNITS } = useUnits();
+  const { profile, loginWithDiscord } = useAuthStore();
+  const { setStagedGiveForAd, setStagedGetForAd } = useTradingAdsStore();
 
   const { 
     giveItems, 
@@ -162,6 +166,16 @@ export function TradeAnalyzerPanel({
     tryWrite();
   }, [giveItems, getItems, giveTotal, getTotal, ALL_UNITS]);
 
+  const handleAdvertise = () => {
+    if (!profile) {
+      loginWithDiscord();
+      return;
+    }
+    setStagedGiveForAd(giveItems);
+    setStagedGetForAd(getItems);
+    window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'trading-ads' }));
+  };
+
   const openSheet = () => {
     triggerHaptic('light');
     window.dispatchEvent(new Event("open-analyzer")); 
@@ -258,11 +272,20 @@ export function TradeAnalyzerPanel({
         </button>
         <button 
           onClick={handleShare} 
-          className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 md:px-3 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-30 pointer-events-auto" 
-          style={{ background: copied ? "#23a559" : "#5865F2", fontFamily: "'Inter', sans-serif" }}
+          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-2.5 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-30 pointer-events-auto" 
+          style={{ background: copied ? "#23a559" : "#1E1F22", border: "1px solid rgba(255,255,255,0.06)", fontFamily: "'Inter', sans-serif" }}
+          title="Share formatted trade string"
         >
-          {copied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
-          {copied ? "Copied!" : "Share"}
+          {copied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5 text-[#80848E]" />}
+          <span className="hidden sm:inline">{copied ? "Copied!" : "Share"}</span>
+        </button>
+        <button 
+          onClick={handleAdvertise} 
+          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-3 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white bg-[#5865F2] hover:bg-[#4752C4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-30 pointer-events-auto shadow-sm" 
+          title="Post this trade as an advertisement"
+        >
+          <Megaphone className="w-3.5 h-3.5" />
+          <span>Advertise</span>
         </button>
 
         {(!isMobile && onClose) && (
@@ -427,7 +450,7 @@ export function TradeAnalyzerPanel({
 
             <div className="flex items-center gap-2 pl-3">
                {forecastData.calculable ? (
-                 <div className={`px-2 py-1 rounded-[4px] font-black font-mono text-[12px] border ${forecastData.st > 0 ? 'bg-[#23a559]/10 text-[#23a559] border-[#23a559]/30' : forecastData.st < 0 ? 'bg-[#ed4245]/10 text-[#ed4245] border-[#ed4245]/30' : 'bg-[#1E1F22] text-[#80848E] border-[rgba(255,255,255,0.06]'}`}>
+                 <div className={`px-2 py-1 rounded-[4px] font-black font-mono text-[12px] border ${forecastData.st > 0 ? 'bg-[#23a559]/10 text-[#23a559] border-[#23a559]/30' : forecastData.st < 0 ? 'bg-[#ed4245]/10 text-[#ed4245] border-[#ed4245]/30' : 'bg-[#1E1F22] text-[#80848E] border-[rgba(255,255,255,0.06)]'}`}>
                    {forecastData.st > 0 ? '+' : ''}{forecastData.st.toFixed(0)}
                  </div>
                ) : (
