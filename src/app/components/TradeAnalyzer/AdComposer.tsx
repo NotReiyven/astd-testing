@@ -3,6 +3,9 @@ import { Check, X, Megaphone, AlertCircle, BookOpen } from "lucide-react";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { useTradingAdsStore } from "../../../store/useTradingAdsStore";
 import { useAuthStore } from "../../../store/useAuthStore";
+import { useInventoryStore } from "../../../store/useInventoryStore";
+import { useUnits } from "../../../context/UnitContext";
+import { TradeCard } from "../../../types";
 
 const TTL_OPTIONS = [
   { hours: 1, label: "1 Hour (Quick Flip)" },
@@ -22,14 +25,35 @@ const PRESET_NOTES = [
 
 export function AdComposer() {
   const { profile } = useAuthStore();
-  const { giveItems, getItems, composerMode, setComposerOpen } = useTradeStore();
+  const { giveItems, getItems, composerMode, setComposerOpen, overwrite } = useTradeStore();
   const { createAd } = useTradingAdsStore();
+  const { items: inventoryItems } = useInventoryStore();
+  const { units: ALL_UNITS } = useUnits();
 
   const [adType, setAdType] = useState<"standard" | "lf_offers" | "inventory">(composerMode);
   const [note, setNote] = useState("");
   const [ttl, setTtl] = useState(4);
   const [isPublishing, setIsPublishing] = useState(false);
   const [error, setError] = useState("");
+
+  const handleImportInventory = () => {
+    const cards: TradeCard[] = [];
+    inventoryItems.forEach((inv) => {
+      const master = ALL_UNITS.find((unit) => unit.id === inv.unit_id);
+      if (master && !inv.is_pinned && cards.length < 8) {
+        const numericVal = typeof master.value === "number" ? master.value : master.valueMin || 0;
+        cards.push({
+          id: master.id,
+          name: master.name,
+          subtitle: master.subtitle,
+          value: numericVal,
+          qty: inv.quantity
+        });
+      }
+    });
+    // This loads the inventory into the "Give" section of the calculator behind the composer
+    overwrite(cards, getItems);
+  };
 
   const handlePublish = async () => {
     if (!profile) return;
@@ -104,7 +128,10 @@ export function AdComposer() {
               <span className="text-[12px] font-bold">LF Offers</span>
             </button>
             <button 
-              onClick={() => setAdType("inventory")} 
+              onClick={() => {
+                setAdType("inventory");
+                handleImportInventory();
+              }} 
               className={`p-2 rounded-[4px] border flex flex-col items-center justify-center gap-1 transition-all focus-visible:outline-none ${adType === "inventory" ? "bg-[#23a559]/10 border-[#23a559] text-[#23a559]" : "bg-[#1E1F22] border-[rgba(255,255,255,0.04)] text-[#80848E] hover:border-[#23a559]/50 hover:text-[#DBDEE1]"}`}
             >
               <span className="text-[12px] font-bold text-center leading-tight">Trading Inventory</span>

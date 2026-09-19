@@ -5,13 +5,13 @@ import { TradeSectionPanel } from "./TradeSectionPanel";
 import { TradeNotices } from "./TradeNotices";
 import { SmartParserMenu } from "./SmartParserMenu";
 import { TradeSummaryBox } from "./TradeSummaryBox";
+import { AdComposer } from "./AdComposer";
 import { usePanelResize } from "../../../hooks/usePanelResize";
 import { getShareText, getTradeForecast } from "./summaryUtils";
 import { useUnits } from "../../../context/UnitContext";
 import { GuideType } from "../guides/AquaGuideOverlay";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { triggerHaptic } from "../../../data/helpers";
-import { useTradingAdsStore } from "../../../store/useTradingAdsStore";
 import { useAuthStore } from "../../../store/useAuthStore";
 
 export function TradeAnalyzerPanel({
@@ -29,7 +29,6 @@ export function TradeAnalyzerPanel({
 }) {
   const { units: ALL_UNITS } = useUnits();
   const { profile, loginWithDiscord } = useAuthStore();
-  const { setStagedGiveForAd, setStagedGetForAd } = useTradingAdsStore();
 
   const { 
     giveItems, 
@@ -42,7 +41,9 @@ export function TradeAnalyzerPanel({
     overwrite, 
     pinnedIds, 
     togglePin, 
-    clearAllUnpinned 
+    clearAllUnpinned,
+    isComposerOpen,
+    setComposerOpen
   } = useTradeStore();
 
   const [copied, setCopied] = useState(false);
@@ -171,9 +172,7 @@ export function TradeAnalyzerPanel({
       loginWithDiscord();
       return;
     }
-    setStagedGiveForAd(giveItems);
-    setStagedGetForAd(getItems);
-    window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'trading-ads' }));
+    setComposerOpen(true, getItems.length === 0 ? "lf_offers" : "standard");
   };
 
   const openSheet = () => {
@@ -395,6 +394,8 @@ export function TradeAnalyzerPanel({
           </div>
         </div>
       </div>
+
+      {isComposerOpen && <AdComposer />}
 
       {undoCache && (
         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[1000] bg-[#111214] border border-[rgba(255,255,255,0.08)] px-4 py-2.5 rounded-[8px] shadow-[0_8px_16px_rgba(0,0,0,0.4)] flex items-center gap-4 animate-fade-in w-max max-w-[90vw]">

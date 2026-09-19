@@ -21,10 +21,6 @@ export interface TradingAd {
 interface TradingAdsState {
   ads: TradingAd[];
   isLoading: boolean;
-  stagedGiveForAd: TradeCard[];
-  stagedGetForAd: TradeCard[];
-  setStagedGiveForAd: (items: TradeCard[]) => void;
-  setStagedGetForAd: (items: TradeCard[]) => void;
   fetchAds: () => Promise<void>;
   subscribeToAds: () => () => void;
   createAd: (params: {
@@ -41,11 +37,6 @@ interface TradingAdsState {
 export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
   ads: [],
   isLoading: true,
-  stagedGiveForAd: [],
-  stagedGetForAd: [],
-
-  setStagedGiveForAd: (items) => set({ stagedGiveForAd: items }),
-  setStagedGetForAd: (items) => set({ stagedGetForAd: items }),
 
   fetchAds: async () => {
     set({ isLoading: true });
