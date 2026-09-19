@@ -47,7 +47,7 @@ function AuthenticStatusIcon({ status }: { status?: string | null }) {
 
 const MinimalUnitList = ({ items, ALL_UNITS, onInspectUnit }: { items: TradeCard[]; ALL_UNITS: MasterUnit[]; onInspectUnit: (id: string) => void; }) => {
   return (
-    <div className="flex flex-col gap-1 max-h-[180px] overflow-y-auto custom-scrollbar pr-1">
+    <div className="flex flex-col gap-1.5 max-h-[180px] overflow-y-auto custom-scrollbar pr-1">
       {items.map((item, index) => {
         const master = ALL_UNITS.find((u) => u.id === item.id);
         const proxyUrl = getProxyImage(item.id, master?.imageUrl);
@@ -57,10 +57,10 @@ const MinimalUnitList = ({ items, ALL_UNITS, onInspectUnit }: { items: TradeCard
           <div
             key={`${item.id}-${index}`}
             onClick={() => onInspectUnit(item.id)}
-            className="group flex items-center justify-between gap-3 p-1.5 rounded-[4px] hover:bg-[#1E1F22] cursor-pointer transition-colors border border-transparent hover:border-[rgba(255,255,255,0.04)]"
+            className="group flex items-center justify-between gap-3 p-2 rounded-[6px] bg-[#161719] hover:bg-[#1E1F22] cursor-pointer transition-colors border border-[rgba(255,255,255,0.02)]"
           >
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <div className="relative w-7 h-7 rounded-[4px] bg-[#111214] overflow-hidden shrink-0 border border-[rgba(255,255,255,0.06)] shadow-sm">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="relative w-8 h-8 rounded-[4px] bg-[#111214] overflow-hidden shrink-0 border border-[rgba(255,255,255,0.06)] shadow-sm">
                 <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white z-0" style={getAvatarStyle(item.name)}>
                   {getInitials(item.name)}
                 </span>
@@ -70,19 +70,24 @@ const MinimalUnitList = ({ items, ALL_UNITS, onInspectUnit }: { items: TradeCard
               </div>
 
               <div className="flex flex-col min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2 flex-wrap">
                   {item.qty > 1 && <span className="text-[10px] font-bold text-[#80848E] bg-[#111214] px-1.5 py-0.5 rounded-[3px] border border-[rgba(255,255,255,0.04)]">x{item.qty}</span>}
-                  <span className="text-[12.5px] font-bold text-[#DBDEE1] group-hover:text-[#F2F3F5] truncate transition-colors">{item.name}</span>
+                  <span className="text-[13px] font-bold text-[#DBDEE1] group-hover:text-[#F2F3F5] transition-colors">{item.name}</span>
                   {dropCfg && (
-                    <span className="shrink-0 ml-0.5" style={{ color: dropCfg.color }} title={dropCfg.label}>
+                    <span className="shrink-0" style={{ color: dropCfg.color }} title={dropCfg.label}>
                       <AuthenticStatusIcon status={master.status} />
                     </span>
                   )}
                 </div>
+                {master?.subtitle && (
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#80848E] truncate">
+                    {master.subtitle}
+                  </span>
+                )}
               </div>
             </div>
 
-            <span className="shrink-0 font-mono font-bold text-[12px] text-[#949BA4] group-hover:text-[#DBDEE1] transition-colors">
+            <span className="shrink-0 font-mono font-bold text-[12.5px] text-[#DBDEE1]">
               {(item.value * item.qty).toLocaleString()}
             </span>
           </div>
@@ -127,7 +132,9 @@ const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, on
     const isInventory = ad.ad_type === "inventory";
 
     const discordUrl = ad.profiles?.discord_id ? `https://discord.com/users/${ad.profiles.discord_id}` : null;
-    // Evaluated from the viewer's POV: Viewer gives what poster wants (get_items) and gets what poster offers (give_items)
+    
+    // Viewer's POV: Viewer receives ad.give_items (Vault value received) and gives ad.get_items (Vault value given)
+    const viewerDiff = giveVal - getVal;
     const forecast = getTradeForecast(ad.get_items, ad.give_items, ALL_UNITS);
     const setViewingUser = useInventoryStore(s => s.setViewingUser);
 
@@ -218,7 +225,7 @@ const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, on
                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">Vault Preview</span>
                 <span className="font-mono text-[12px] font-bold text-[#DBDEE1]">{giveVal.toLocaleString()} Value</span>
               </div>
-              <div className="flex flex-wrap gap-2 max-h-[160px] overflow-y-auto custom-scrollbar pr-1 bg-[#1E1F22] p-2.5 rounded-[6px] border border-[rgba(255,255,255,0.03)] shadow-inner">
+              <div className="flex flex-wrap gap-2 max-h-[180px] overflow-y-auto custom-scrollbar pr-1 bg-[#1E1F22] p-2.5 rounded-[6px] border border-[rgba(255,255,255,0.03)] shadow-inner">
                 {ad.give_items.map(item => (
                   <VaultGridItem 
                     key={item.id} 
@@ -230,8 +237,8 @@ const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, on
               </div>
             </div>
           ) : (
-            /* Standard / LF Offers Layout */
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-stretch">
+            /* Standard / LF Offers Vertical Stack Layout */
+            <div className="flex flex-col gap-3">
               
               <div className="flex flex-col gap-2 bg-[#1E1F22] p-3 rounded-[6px] border border-[rgba(255,255,255,0.03)] shadow-inner">
                 <div className="flex items-center justify-between pb-1.5 border-b border-[rgba(255,255,255,0.04)]">
@@ -257,13 +264,13 @@ const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, on
             </div>
           )}
 
-          {/* Trade Math Footer */}
+          {/* Trade Math Footer (Viewer's POV) */}
           {!isTakingOffers && !isInventory && (
             <div className="mt-auto pt-3 border-t border-[rgba(255,255,255,0.04)] flex flex-wrap items-center justify-between gap-3 bg-[#111214] p-2.5 rounded-[6px] shadow-inner">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-bold text-[#80848E] uppercase tracking-wider">Raw Diff:</span>
-                <span className={`text-[12px] font-mono font-bold ${getVal > giveVal ? "text-[#ed4245]" : getVal < giveVal ? "text-[#23a559]" : "text-[#DBDEE1]"}`}>
-                  {getVal > giveVal ? "+" : ""}{(getVal - giveVal).toLocaleString()}
+                <span className={`text-[12px] font-mono font-bold ${viewerDiff > 0 ? "text-[#23a559]" : viewerDiff < 0 ? "text-[#ed4245]" : "text-[#DBDEE1]"}`}>
+                  {viewerDiff > 0 ? "+" : ""}{viewerDiff.toLocaleString()}
                 </span>
               </div>
               {forecast.calculable && (
