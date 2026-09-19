@@ -32,9 +32,6 @@ function getExpiryDate(dateStr: string) {
 }
 
 const SlotGrid = ({ items, ALL_UNITS, onInspectUnit, label }: { items: TradeCard[]; ALL_UNITS: MasterUnit[]; onInspectUnit: (id: string) => void; label: string }) => {
-  const totalSlots = 8;
-  const slots = Array.from({ length: totalSlots }, (_, i) => items[i] || null);
-
   return (
     <div className="flex flex-col gap-2">
       {label && (
@@ -43,54 +40,47 @@ const SlotGrid = ({ items, ALL_UNITS, onInspectUnit, label }: { items: TradeCard
         </div>
       )}
       
-      <div className="grid grid-cols-4 gap-2 bg-[#161719] p-3 rounded-[8px] border border-[rgba(255,255,255,0.03)] shadow-inner">
-        {slots.map((item, index) => {
-          if (!item) {
+      <div className="flex flex-wrap gap-2 bg-[#161719] p-3 rounded-[8px] border border-[rgba(255,255,255,0.03)] shadow-inner max-h-[190px] overflow-y-auto custom-scrollbar">
+        {items.length === 0 ? (
+          <div className="w-full py-4 text-center text-[11px] text-[#80848E] italic">No items</div>
+        ) : (
+          items.map((item, index) => {
+            const master = ALL_UNITS.find((u) => u.id === item.id);
+            const proxyUrl = getProxyImage(item.id, master?.imageUrl);
+
             return (
-              <div 
-                key={`empty-${index}`} 
-                className="aspect-square rounded-[6px] border border-dashed border-[rgba(255,255,255,0.06)] bg-[#111214]/40 flex items-center justify-center"
+              <div
+                key={`${item.id}-${index}`}
+                onClick={() => onInspectUnit(item.id)}
+                className="relative w-[52px] h-[52px] rounded-[6px] bg-[#111214] border border-[rgba(255,255,255,0.08)] hover:border-[#5865F2] cursor-pointer transition-all shadow-sm group overflow-hidden flex items-center justify-center shrink-0"
+                title={`${item.qty > 1 ? `${item.qty}x ` : ''}${item.name} • ${(item.value * item.qty).toLocaleString()}`}
               >
-                <div className="w-1 h-1 rounded-full bg-[rgba(255,255,255,0.1)]" />
+                <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white z-0" style={getAvatarStyle(item.name)}>
+                  {getInitials(item.name)}
+                </div>
+                {proxyUrl && (
+                  <img 
+                    src={proxyUrl} 
+                    alt={item.name} 
+                    className="absolute inset-0 w-full h-full object-cover z-10 bg-[#111214]" 
+                    style={{ objectPosition: "center 15%" }} 
+                    onError={(e) => handleImageError(e, item.id)} 
+                  />
+                )}
+
+                {item.qty > 1 && (
+                  <div className="absolute top-1 right-1 bg-[#2B2D31] text-[#DBDEE1] text-[9px] font-black px-1.5 py-0.5 rounded-full z-20 border border-[rgba(255,255,255,0.1)] shadow-sm">
+                    x{item.qty}
+                  </div>
+                )}
+
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity z-30 flex items-center justify-center">
+                  <Search className="w-3.5 h-3.5 text-white" />
+                </div>
               </div>
             );
-          }
-
-          const master = ALL_UNITS.find((u) => u.id === item.id);
-          const proxyUrl = getProxyImage(item.id, master?.imageUrl);
-
-          return (
-            <div
-              key={`${item.id}-${index}`}
-              onClick={() => onInspectUnit(item.id)}
-              className="relative aspect-square rounded-[6px] bg-[#111214] border border-[rgba(255,255,255,0.08)] hover:border-[#5865F2] cursor-pointer transition-all shadow-sm group overflow-hidden flex items-center justify-center"
-              title={`${item.qty > 1 ? `${item.qty}x ` : ''}${item.name} • ${(item.value * item.qty).toLocaleString()}`}
-            >
-              <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white z-0" style={getAvatarStyle(item.name)}>
-                {getInitials(item.name)}
-              </div>
-              {proxyUrl && (
-                <img 
-                  src={proxyUrl} 
-                  alt={item.name} 
-                  className="absolute inset-0 w-full h-full object-cover z-10 bg-[#111214]" 
-                  style={{ objectPosition: "center 15%" }} 
-                  onError={(e) => handleImageError(e, item.id)} 
-                />
-              )}
-
-              {item.qty > 1 && (
-                <div className="absolute top-1 right-1 bg-[#2B2D31] text-[#DBDEE1] text-[9px] font-black px-1.5 py-0.5 rounded-full z-20 border border-[rgba(255,255,255,0.1)] shadow-sm">
-                  x{item.qty}
-                </div>
-              )}
-
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity z-30 flex items-center justify-center">
-                <Search className="w-3.5 h-3.5 text-white" />
-              </div>
-            </div>
-          );
-        })}
+          })
+        )}
       </div>
     </div>
   );
@@ -98,6 +88,8 @@ const SlotGrid = ({ items, ALL_UNITS, onInspectUnit, label }: { items: TradeCard
 
 const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, onSendToCalculator }: { ad: TradingAd; currentUserId?: string; onDelete: (id: string) => void; ALL_UNITS: MasterUnit[]; onInspectUnit: (unitId: string) => void; onSendToCalculator: (give: TradeCard[], get: TradeCard[]) => void; }) => {
     const isOwner = currentUserId === ad.user_id;
+    const giveVal = ad.give_items.reduce((sum, item) => sum + item.value * item.qty, 0);
+    
     const isTakingOffers = ad.ad_type === "lf_offers" || (ad.ad_type === "standard" && ad.get_items.length === 0);
     const isInventory = ad.ad_type === "inventory";
 
@@ -159,19 +151,70 @@ const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, on
           </div>
 
           {isInventory ? (
-            <SlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} label="Vault Showcase" />
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between px-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#80848E]">Vault Showcase</span>
+                <span className="font-mono text-[11.5px] font-bold text-[#DBDEE1]">{giveVal.toLocaleString()} Value</span>
+              </div>
+              <div className="flex flex-wrap gap-2 max-h-[225px] overflow-y-auto custom-scrollbar p-3 rounded-[8px] bg-[#161719] border border-[rgba(255,255,255,0.03)] shadow-inner">
+                {ad.give_items.map((item, index) => {
+                  const master = ALL_UNITS.find((u) => u.id === item.id);
+                  const proxyUrl = getProxyImage(item.id, master?.imageUrl);
+                  return (
+                    <div
+                      key={`${item.id}-${index}`}
+                      onClick={() => onInspectUnit(item.id)}
+                      className="relative w-[52px] h-[52px] rounded-[6px] bg-[#111214] border border-[rgba(255,255,255,0.08)] hover:border-[#5865F2] cursor-pointer transition-all shadow-sm group overflow-hidden flex items-center justify-center shrink-0"
+                      title={`${item.qty > 1 ? `${item.qty}x ` : ''}${item.name} • ${(item.value * item.qty).toLocaleString()}`}
+                    >
+                      <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white z-0" style={getAvatarStyle(item.name)}>
+                        {getInitials(item.name)}
+                      </div>
+                      {proxyUrl && (
+                        <img 
+                          src={proxyUrl} 
+                          alt={item.name} 
+                          className="absolute inset-0 w-full h-full object-cover z-10 bg-[#111214]" 
+                          style={{ objectPosition: "center 15%" }} 
+                          onError={(e) => handleImageError(e, item.id)} 
+                        />
+                      )}
+                      {item.qty > 1 && (
+                        <div className="absolute top-1 right-1 bg-[#2B2D31] text-[#DBDEE1] text-[9px] font-black px-1.5 py-0.5 rounded-full z-20 border border-[rgba(255,255,255,0.1)] shadow-sm">
+                          x{item.qty}
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity z-30 flex items-center justify-center">
+                        <Search className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           ) : (
             <div className="flex flex-col gap-4">
-              <SlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} label="Offering" />
+              <div className="flex flex-col gap-2 bg-[#1E1F22] p-3 rounded-[6px] border border-[rgba(255,255,255,0.03)] shadow-inner">
+                <div className="flex items-center justify-between pb-1.5 border-b border-[rgba(255,255,255,0.04)]">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#FAA61A]">Offering</span>
+                  <span className="font-mono text-[11px] font-bold text-[#DBDEE1]">{giveVal.toLocaleString()}</span>
+                </div>
+                <SlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} label="" />
+              </div>
 
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 bg-[#1E1F22] p-3 rounded-[6px] border border-[rgba(255,255,255,0.03)] shadow-inner">
+                <div className="flex items-center justify-between pb-1.5 border-b border-[rgba(255,255,255,0.04)]">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#5865F2]">Requesting</span>
+                  {!isTakingOffers && <span className="font-mono text-[11px] font-bold text-[#DBDEE1]">{ad.get_items.reduce((s, i) => s + i.value * i.qty, 0).toLocaleString()}</span>}
+                </div>
                 {isTakingOffers ? (
-                  <div className="bg-[#1E1F22] p-4 rounded-[8px] border border-[rgba(250,166,26,0.2)] flex items-center justify-center gap-2 text-[#FAA61A]">
-                    <BookOpen className="w-4 h-4" />
-                    <span className="text-[11.5px] font-bold uppercase tracking-wider">Looking for Offers</span>
+                  <div className="flex flex-col gap-2 py-2">
+                    <div className="flex items-center justify-center py-5 bg-[#161719] rounded-[6px] border border-dashed border-[rgba(250,166,26,0.3)] text-[#FAA61A]">
+                      <span className="text-[11px] font-bold uppercase tracking-wider">Taking All Offers</span>
+                    </div>
                   </div>
                 ) : (
-                  <SlotGrid items={ad.get_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} label="Requesting" />
+                  <SlotGrid items={ad.get_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} label="" />
                 )}
               </div>
             </div>
