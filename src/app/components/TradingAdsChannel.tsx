@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, memo } from "react";
 import { 
   Megaphone, Search, Plus, Trash2, Clock, 
   ExternalLink, Check, Lock, X, ArrowDownCircle,
-  Calculator, Package, BookOpen, UserCircle2, ArrowRight, LayoutGrid, SlidersHorizontal
+  Calculator, Package, BookOpen, UserCircle2, ArrowRight
 } from "lucide-react";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -11,8 +11,8 @@ import { useInventoryStore } from "../../store/useInventoryStore";
 import { useUnits } from "../../context/UnitContext";
 import { useHistoryModalStore } from "../../store/useHistoryModalStore";
 import { TradeCard, MasterUnit } from "../../types";
-import { getProxyImage, handleImageError, GRID_STATUS_CFG } from "../../data";
-import { getAvatarStyle, getInitials, getTradeForecast } from "./TradeAnalyzer/summaryUtils";
+import { getProxyImage, handleImageError } from "../../data";
+import { getAvatarStyle, getInitials } from "./TradeAnalyzer/summaryUtils";
 import { triggerHaptic } from "../../data/helpers";
 
 function getTimeAgo(dateStr: string) {
@@ -31,18 +31,19 @@ function getExpiryDate(dateStr: string) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-// 2x4 Grid Slot Component (4 columns x 2 rows = 8 slots)
 const SlotGrid = ({ items, ALL_UNITS, onInspectUnit, label }: { items: TradeCard[]; ALL_UNITS: MasterUnit[]; onInspectUnit: (id: string) => void; label: string }) => {
   const totalSlots = 8;
   const slots = Array.from({ length: totalSlots }, (_, i) => items[i] || null);
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between px-1">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-[#949BA4]">{label}</span>
-      </div>
+      {label && (
+        <div className="flex items-center justify-between px-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#80848E]">{label}</span>
+        </div>
+      )}
       
-      <div className="grid grid-cols-4 gap-2 bg-[#1E1F22] p-3 rounded-[8px] border border-[rgba(255,255,255,0.04)] shadow-inner">
+      <div className="grid grid-cols-4 gap-2 bg-[#161719] p-3 rounded-[8px] border border-[rgba(255,255,255,0.03)] shadow-inner">
         {slots.map((item, index) => {
           if (!item) {
             return (
@@ -50,7 +51,7 @@ const SlotGrid = ({ items, ALL_UNITS, onInspectUnit, label }: { items: TradeCard
                 key={`empty-${index}`} 
                 className="aspect-square rounded-[6px] border border-dashed border-[rgba(255,255,255,0.06)] bg-[#111214]/40 flex items-center justify-center"
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-[rgba(255,255,255,0.06)]" />
+                <div className="w-1 h-1 rounded-full bg-[rgba(255,255,255,0.1)]" />
               </div>
             );
           }
@@ -85,7 +86,7 @@ const SlotGrid = ({ items, ALL_UNITS, onInspectUnit, label }: { items: TradeCard
               )}
 
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity z-30 flex items-center justify-center">
-                <Search className="w-4 h-4 text-white" />
+                <Search className="w-3.5 h-3.5 text-white" />
               </div>
             </div>
           );
@@ -109,23 +110,36 @@ const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, on
       window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'inventory' }));
     };
 
+    const getAdTypeBadge = () => {
+      if (isInventory) {
+        return (
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-[rgba(255,255,255,0.06)] text-[#DBDEE1] border border-[rgba(255,255,255,0.08)] flex items-center gap-1.5">
+            <Package className="w-3 h-3 text-[#949BA4]" /> Showcase
+          </span>
+        );
+      }
+      return (
+        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-[rgba(88,101,242,0.1)] text-[#5865F2] border border-[rgba(88,101,242,0.2)] flex items-center gap-1.5">
+          <Calculator className="w-3 h-3" /> Trade
+        </span>
+      );
+    };
+
     return (
-      <div className="bg-[#2B2D31] rounded-[10px] flex flex-col transition-all shadow-md border border-[rgba(255,255,255,0.06)] overflow-hidden hover:border-[rgba(255,255,255,0.12)]">
+      <div className="bg-[#2B2D31] rounded-[8px] flex flex-col transition-all shadow-sm border border-[rgba(255,255,255,0.04)] overflow-hidden hover:border-[rgba(255,255,255,0.08)]">
         
         {/* Header */}
         <div className="flex items-center justify-between p-4 bg-[#1E1F22] border-b border-[rgba(255,255,255,0.04)]">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-[4px] bg-[#313338] text-[#DBDEE1] border border-[rgba(255,255,255,0.06)]">
-              {isInventory ? "SHOWCASE" : "TRADE"}
-            </span>
+            {getAdTypeBadge()}
             {isOwner && (
-              <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-[4px] bg-[#5865F2]/20 text-[#5865F2]">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-[#5865F2]/20 text-[#5865F2]">
                 You
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
             <span className="text-[13px] font-bold text-[#F2F3F5] truncate max-w-[140px]">
               {ad.profiles?.username || "Unknown Trader"}
             </span>
@@ -139,11 +153,10 @@ const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, on
 
         {/* Body */}
         <div className="p-4 flex flex-col gap-4 flex-1">
-          {ad.note && (
-            <div className="text-[13px] font-medium text-[#DBDEE1] px-1">
-              {ad.note}
-            </div>
-          )}
+          {/* Note block with invisible placeholder to maintain equal card heights */}
+          <div className={`px-3.5 py-2.5 rounded-r-[6px] text-[12.5px] italic leading-relaxed transition-opacity ${ad.note ? 'bg-[#1E1F22] border-l-2 border-[#5865F2] text-[#DBDEE1]' : 'opacity-0 pointer-events-none select-none h-[38px] bg-transparent'}`}>
+            "{ad.note || "placeholder"}"
+          </div>
 
           {isInventory ? (
             <SlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} label="Vault Showcase" />
@@ -152,38 +165,37 @@ const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, on
               <SlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} label="Offering" />
 
               <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#949BA4]">Requesting</span>
-                </div>
                 {isTakingOffers ? (
-                  <div className="bg-[#1E1F22] p-4 rounded-[8px] border border-[rgba(255,255,255,0.04)] flex items-center justify-center gap-2 text-[#FAA61A]">
+                  <div className="bg-[#1E1F22] p-4 rounded-[8px] border border-[rgba(250,166,26,0.2)] flex items-center justify-center gap-2 text-[#FAA61A]">
                     <BookOpen className="w-4 h-4" />
-                    <span className="text-[12px] font-bold uppercase tracking-wider">Will Respond Quickly / Taking Offers</span>
+                    <span className="text-[11.5px] font-bold uppercase tracking-wider">Looking for Offers</span>
                   </div>
                 ) : (
-                  <SlotGrid items={ad.get_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} label="" />
+                  <SlotGrid items={ad.get_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} label="Requesting" />
                 )}
               </div>
             </div>
           )}
         </div>
 
-        {/* Footer Metadata & Actions */}
-        <div className="flex items-center justify-between px-4 py-3 bg-[#18191C] border-t border-[rgba(255,255,255,0.04)] text-[11px] text-[#80848E]">
-          <span>Posted {getTimeAgo(ad.created_at)} • Expires {getExpiryDate(ad.expires_at)}</span>
+        {/* Footer Actions & Metadata */}
+        <div className="mt-auto px-4 py-3 bg-[#18191C] border-t border-[rgba(255,255,255,0.04)] flex items-center justify-between gap-3">
+          <span className="text-[10.5px] text-[#80848E] truncate">
+            Posted {getTimeAgo(ad.created_at)} • Expires {getExpiryDate(ad.expires_at)}
+          </span>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {isInventory ? (
               <button
                 onClick={handleInspectVault}
-                className="px-3 py-1.5 rounded-[4px] bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold uppercase tracking-wider transition-colors shadow-sm"
+                className="px-4 py-1.5 rounded-[4px] bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold text-[11px] uppercase tracking-wider transition-colors shadow-sm focus-visible:outline-none"
               >
                 Inspect
               </button>
             ) : (
               <button
                 onClick={() => onSendToCalculator(ad.give_items, ad.get_items)}
-                className="px-3 py-1.5 rounded-[4px] bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-[#DBDEE1] font-bold uppercase tracking-wider transition-colors"
+                className="px-4 py-1.5 rounded-[4px] bg-[#313338] hover:bg-[#3F4147] text-[#DBDEE1] hover:text-white font-bold text-[11px] uppercase tracking-wider transition-colors border border-[rgba(255,255,255,0.04)] focus-visible:outline-none"
               >
                 Evaluate
               </button>
@@ -192,7 +204,7 @@ const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, on
             {isOwner && (
               <button
                 onClick={() => onDelete(ad.id)}
-                className="p-1.5 text-[#80848E] hover:text-[#ed4245] transition-colors"
+                className="p-1.5 text-[#80848E] hover:text-[#ed4245] transition-colors focus-visible:outline-none"
                 title="Delete listing"
               >
                 <Trash2 className="w-4 h-4" />
@@ -355,7 +367,7 @@ export function TradingAdsChannel() {
         ) : filteredAndSortedAds.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-[#80848E] gap-2">
             <Megaphone className="w-12 h-12 opacity-30 mb-2" />
-            <span className="text-[15px] font-bold text-[#DBDEE1]">No Active Ads</span>
+            <span className="text-[15px] font-bold text-[#DBDEE1]">No Active Ads & Vault Showcases</span>
             <p className="text-[12px] max-w-sm text-center">
               There are currently no trading ads matching your search parameters.
             </p>
