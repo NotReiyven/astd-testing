@@ -1,5 +1,12 @@
-import { useState, useMemo, useRef, useCallback, memo } from "react";
-import { Package, Search, Trash2, Pin, Plus, ArrowUpDown, Info, Settings2, AlertTriangle, X, Wand2, UploadCloud, Check, ChevronDown, Copy, ArrowUpCircle, ArrowDownCircle, History, TrendingUp } from "lucide-react";
+import { useState, useMemo, useRef, useCallback, memo, useEffect } from "react";
+import { 
+  Package, Search, Trash2, Pin, Plus, Minus, ArrowUpDown, 
+  Settings2, AlertTriangle, X, Wand2, UploadCloud, 
+  Check, ChevronDown, Copy, ArrowUpCircle, ArrowDownCircle, 
+  Star, MousePointerSquareDashed, Scale, Lock as LockIcon,
+  TrendingUp, TrendingDown, Flame, EyeOff, ChevronsUp, ChevronsDown, Activity, Heart,
+  Info
+} from "lucide-react";
 import { useInventoryStore, InventoryItem } from "../../store/useInventoryStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useTradeStore } from "../../store/useTradeStore";
@@ -8,10 +15,10 @@ import { getProxyImage, handleImageError, TIER_CONFIG, getTier, FILTERS, GRID_ST
 import { getAvatarStyle, getInitials } from "./TradeAnalyzer/summaryUtils";
 import { QuantitySelector } from "./ui/QuantitySelector";
 import { CustomDropdown, useClickOutside } from "./MainCanvas/CustomDropdown";
-import { StatusIcon, JargonWrap } from "./MainCanvas/UnitGrid";
 import { FilterKey, MasterUnit } from "../../types";
 import { parseSmartTrade } from "./TradeAnalyzer/smartParser";
 import { triggerHaptic } from "../../data/helpers";
+import { useStickyState } from "../../hooks/useStickyState";
 
 const SORT_OPTIONS = {
   "value-desc": "Value: High to Low",
@@ -22,70 +29,276 @@ const SORT_OPTIONS = {
 
 const TIER_ORDER: FilterKey[] = ["S", "A", "B", "C", "Pure", "Oddities", "Untiered"];
 
-// --- Compact Draggable RPG Inventory Slot Component ---
-const VaultSlot = memo(({ 
-  item, master, onInspect 
+const getUnitConservativeValue = (master: MasterUnit): number => {
+  if (master.value === "owner" || master.valueDisplay === "Owner's Choice" || master.valueDisplay === "O/C") return 0;
+  if (typeof master.value === "number" && master.value > 0) return master.value;
+  if (typeof master.valueMin === "number" && master.valueMin > 0) return master.valueMin;
+  return 0; 
+};
+
+// Cohesive Unified Status Icon
+function AuthenticStatusIcon({ status }: { status?: string | null }) {
+  if (!status) return null;
+  const lower = status.toLowerCase();
+  const sz = "w-3 h-3 shrink-0";
+  
+  if (lower === "rising") return <ChevronsUp className={sz} />;
+  if (lower === "dropping") return <ChevronsDown className={sz} />;
+  if (lower === "unstable") return <Activity className={sz} />;
+  if (lower === "inflated") return <TrendingUp className={sz} />;
+  if (lower === "deflated") return <TrendingDown className={sz} />;
+  if (lower === "highballed") return <ArrowUpCircle className={sz} />;
+  if (lower === "hyped") return <Flame className={sz} />;
+  if (lower === "gatekept") return <LockIcon className={sz} />;
+  if (lower === "black-marketed") return <EyeOff className={sz} />;
+  if (lower === "stable") return <span className="flex items-center justify-center w-3 h-3 font-black text-[12px] leading-none shrink-0">≈</span>;
+  if (lower === "varies") return <span className="flex items-center justify-center w-3 h-3 font-black text-[12px] leading-none shrink-0">↕</span>;
+  if (lower === "lowballed") return <span className="flex items-center justify-center w-3 h-3 font-black text-[12px] leading-none shrink-0">↓</span>;
+  return null;
+}
+
+// Sparkline SVG for Dashboard
+const Sparkline = () => (
+  <svg className="absolute bottom-0 left-0 w-full h-[65%] opacity-[0.15] pointer-events-none z-0" preserveAspectRatio="none" viewBox="0 0 100 100">
+    <path d="M0,100 C15,80 25,95 40,65 C60,25 80,45 100,10 L100,100 Z" fill="url(#sparkGradient)" />
+    <path d="M0,100 C15,80 25,95 40,65 C60,25 80,45 100,10" fill="none" stroke="#23a559" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+    <defs>
+      <linearGradient id="sparkGradient" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#23a559" stopOpacity="1" />
+        <stop offset="100%" stopColor="#23a559" stopOpacity="0" />
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
+// --- Signal Bars for Liquidity ---
+const LiquidityBars = ({ liquidity }: { liquidity?: string }) => {
+  const liq = (liquidity || "Average").toLowerCase();
+  let bars = 2;
+  let color = "#B5BAC1"; 
+  
+  if (liq === "high") { bars = 3; color = "#4DB6AC"; }
+  else if (liq === "low" || liq.includes("black")) { bars = 1; color = "#E57373"; }
+
+  return (
+    <div className="flex items-end gap-[1.5px] h-3" title={`Liquidity: ${liquidity || "Average"}`}>
+      <div className="w-1 rounded-[1px]" style={{ height: "40%", backgroundColor: bars >= 1 ? color : "rgba(255,255,255,0.1)" }} />
+      <div className="w-1 rounded-[1px]" style={{ height: "70%", backgroundColor: bars >= 2 ? color : "rgba(255,255,255,0.1)" }} />
+      <div className="w-1 rounded-[1px]" style={{ height: "100%", backgroundColor: bars >= 3 ? color : "rgba(255,255,255,0.1)" }} />
+    </div>
+  );
+};
+
+// --- Trading Card Slot Component ---
+const TradingCardSlot = memo(({ 
+  item, 
+  master, 
+  onInspect, 
+  isSelectMode, 
+  isSelected, 
+  toggleSelect,
+  stagedGiveQty,
+  stagedGetQty,
+  onQtyChange,
+  isSandbox
 }: { 
-  item: InventoryItem; master: MasterUnit; 
+  item: InventoryItem; 
+  master: MasterUnit; 
   onInspect: (item: InventoryItem, master: MasterUnit) => void;
+  isSelectMode: boolean;
+  isSelected: boolean;
+  toggleSelect: (item: InventoryItem) => void;
+  stagedGiveQty: number;
+  stagedGetQty: number;
+  onQtyChange: (unitId: string, delta: number) => void;
+  isSandbox?: boolean;
 }) => {
   const tierKey = getTier(master);
   const tierColor = TIER_CONFIG[tierKey]?.badgeColor || "#5865F2";
   const proxyUrl = getProxyImage(master.id, master.imageUrl);
   const dropCfg = master.status ? GRID_STATUS_CFG[master.status as keyof typeof GRID_STATUS_CFG] : null;
 
+  const totalStaged = stagedGiveQty + stagedGetQty;
+  const isFullyStaged = totalStaged >= item.quantity;
+  const availableQty = Math.max(0, item.quantity - totalStaged);
+
+  const displayVal = master.value === "owner" 
+    ? "Owner's Choice" 
+    : (master.valueDisplay && master.valueDisplay !== "N/A" 
+        ? master.valueDisplay 
+        : (getUnitConservativeValue(master) || "N/A").toLocaleString());
+
+  const obtainability = (() => {
+    const note = (master.notice || "").toLowerCase();
+    if (note.includes("(unobtainable)") || note.includes("[unobtainable]") || note.includes("unobtainable")) return "UNOB";
+    if (note.includes("(obtainable)") || note.includes("[obtainable]")) return "OBN";
+    return master.obtainability || "UNOB";
+  })();
+
   const handleDragStart = (e: React.DragEvent) => {
+    if (item.is_pinned || isSelectMode || isSandbox) {
+      e.preventDefault();
+      return;
+    }
     const numericValue = typeof master.value === "number" ? master.value : master.valueMin || 0;
     const popupUnit = { id: master.id, name: master.name, subtitle: master.subtitle, value: numericValue };
     e.dataTransfer.setData("unit", JSON.stringify(popupUnit));
     e.dataTransfer.effectAllowed = "copy";
   };
 
+  const handleClick = () => {
+    if (isSelectMode) toggleSelect(item);
+    else onInspect(item, master);
+  };
+
+  const tagBgTint = dropCfg?.bg ? dropCfg.bg : "transparent";
+
   return (
     <div
-      draggable
+      onClick={handleClick}
+      draggable={!item.is_pinned && !isSelectMode && !isSandbox}
       onDragStart={handleDragStart}
-      onClick={() => onInspect(item, master)}
-      className="group relative flex flex-col items-center bg-[#1E1F22] hover:bg-[#2B2D31] rounded-[8px] p-2 transition-all border border-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.1)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] text-left cursor-grab active:cursor-grabbing overflow-hidden aspect-square shadow-sm"
+      className={`group relative flex flex-col bg-[#2B2D31] rounded-[8px] transition-all cursor-pointer overflow-hidden border will-change-transform ${item.is_pinned && !isSandbox ? "cursor-not-allowed" : "active:scale-[0.98]"} ${
+        isSelected 
+          ? "border-[#5865F2] ring-2 ring-[#5865F2] scale-[0.98]" 
+          : isFullyStaged
+            ? "border-[rgba(255,255,255,0.02)] opacity-50"
+            : "border-[rgba(255,255,255,0.05)] hover:border-[rgba(255,255,255,0.18)] hover:-translate-y-0.5"
+      }`}
+      style={{ boxShadow: "0 4px 14px rgba(0,0,0,0.2)" }}
     >
-      {item.is_pinned && (
-        <div className="absolute inset-0 border-2 border-[#5865F2] rounded-[8px] pointer-events-none z-20 shadow-[inset_0_0_8px_rgba(88,101,242,0.3)]" />
-      )}
-      <div className="absolute top-0 left-0 right-0 h-[3px] z-20" style={{ backgroundColor: tierColor }} />
-
-      <div className="w-full flex-1 rounded-[6px] bg-[#111214] overflow-hidden relative flex items-center justify-center border border-[rgba(255,255,255,0.04)] mt-1">
-        <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-[12px] z-0" style={getAvatarStyle(master.name)}>
-          {getInitials(master.name)}
+      {/* Quick Edit Vertical Stepper */}
+      {!isSelectMode && !isSandbox && (
+        <div className="absolute top-0 bottom-[35%] left-0 w-8 bg-[#111214]/95 backdrop-blur-sm border-r border-[rgba(255,255,255,0.05)] flex flex-col justify-center items-center py-2 gap-2 -translate-x-full group-hover:translate-x-0 transition-transform duration-200 z-50 rounded-br-[8px]" onClick={(e) => e.stopPropagation()}>
+          <button onClick={() => onQtyChange(item.unit_id, 1)} className="w-6 h-6 flex items-center justify-center bg-[rgba(255,255,255,0.05)] hover:bg-[#23a559]/20 rounded-[4px] transition-colors focus-visible:outline-none"><Plus className="w-4 h-4 text-[#23a559]" /></button>
+          <span className="font-mono font-bold text-[11px] text-[#DBDEE1] py-1">{item.quantity}</span>
+          <button onClick={() => onQtyChange(item.unit_id, -1)} className="w-6 h-6 flex items-center justify-center bg-[rgba(255,255,255,0.05)] hover:bg-[#ed4245]/20 rounded-[4px] transition-colors focus-visible:outline-none"><Minus className="w-4 h-4 text-[#ed4245]" /></button>
         </div>
-        {proxyUrl && (
-          <img src={proxyUrl} alt={master.name} className="absolute inset-0 w-full h-full object-cover z-10 bg-[#111214]" onError={(e) => handleImageError(e, master.id)} />
-        )}
+      )}
 
-        {dropCfg && (
+      {/* Selection Checkmark */}
+      {isSelected && (
+        <div className="absolute top-2 right-2 z-50 bg-[#5865F2] text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md">
+          <Check className="w-4 h-4 stroke-[3]" />
+        </div>
+      )}
+
+      {/* Card Artwork Window with Tag-Specific Ambient Background */}
+      <div 
+        className="relative w-full overflow-hidden flex items-center justify-center border-b border-[rgba(255,255,255,0.03)] bg-[#111214]"
+        style={{ aspectRatio: "1/1", background: `radial-gradient(circle at 50% 30%, ${tagBgTint} 0%, #18191C 85%)` }}
+      >
+        {/* Top-Left: Status Stamp */}
+        {dropCfg && !isSelected && (
           <div 
-            className="absolute top-1.5 right-1.5 flex items-center gap-1 px-1.5 py-[1px] rounded-[3px] z-30 shadow-md pointer-events-none"
-            style={{ background: dropCfg.bg, border: `1px solid ${dropCfg.border}` }}
+            className="absolute top-2 left-2 z-30 flex items-center gap-1.5 px-2 py-1 rounded-full shadow-sm max-w-[70%]"
+            style={{ background: dropCfg.bg, border: `1px solid ${dropCfg.border}`, color: dropCfg.color }}
           >
-            <StatusIcon status={master.status} />
-            <span className="text-[7.5px] font-bold leading-none uppercase tracking-wide hidden sm:inline-block" style={{ color: dropCfg.color }}>
+            <AuthenticStatusIcon status={master.status} />
+            <span className="text-[9.5px] font-bold tracking-wide border-b border-dashed border-[rgba(255,255,255,0.4)] truncate">
               {dropCfg.label}
             </span>
           </div>
         )}
 
-        <div className="absolute bottom-1 right-1 bg-black/80 backdrop-blur-md text-white font-mono font-black text-[10px] px-1.5 py-0.5 rounded-[4px] z-30 border border-white/10 shadow-md">
-          x{item.quantity}
+        {/* Top-Right: Owned Quantity Badge & Pinned Icon */}
+        <div className="absolute top-2 right-2 z-30 flex items-center gap-1">
+          {item.is_pinned && (
+            <div className="bg-[#ed4245] text-white p-1 rounded-[4px] shadow-sm flex items-center justify-center" title="Locked - Cannot be traded">
+              <LockIcon className="w-3 h-3 fill-current" />
+            </div>
+          )}
+          {totalStaged > 0 ? (
+            <div className="flex bg-[#111214]/90 backdrop-blur-sm text-white font-mono font-bold text-[10px] rounded-[4px] border border-white/10 shadow-sm overflow-hidden">
+               <div className="px-1.5 py-0.5 bg-[#2B2D31] text-[#DBDEE1] flex items-center gap-1 border-r border-[rgba(255,255,255,0.05)]" title="Available in Vault">
+                 <Package className="w-2.5 h-2.5" /> {availableQty}
+               </div>
+               <div className="px-1.5 py-0.5 text-[#FAA61A] flex items-center gap-1" title="Staged in Calculator">
+                 <Scale className="w-2.5 h-2.5" /> {totalStaged}
+               </div>
+            </div>
+          ) : (
+            <div className="bg-[#111214]/90 backdrop-blur-sm text-[#DBDEE1] font-mono font-bold text-[11px] px-2 py-0.5 rounded-[4px] border border-[rgba(255,255,255,0.08)] shadow-sm">
+              x{item.quantity}
+            </div>
+          )}
         </div>
 
-        {item.is_pinned && (
-          <div className="absolute top-1.5 left-1.5 bg-[#5865F2] text-white p-1 rounded-full z-30 shadow-sm">
-            <Pin className="w-2.5 h-2.5 fill-current" />
+        {/* Unit Image & Fallback Initials */}
+        <div className="absolute inset-0 flex items-center justify-center text-white font-black text-4xl z-0 opacity-40 select-none" style={getAvatarStyle(master.name)}>
+          {getInitials(master.name)}
+        </div>
+        {proxyUrl && (
+          <img 
+            src={proxyUrl} 
+            alt={master.name} 
+            className="absolute inset-0 w-full h-full object-cover z-10 transition-transform duration-500 group-hover:scale-105" 
+            style={{ objectPosition: "center 15%" }}
+            onError={(e) => handleImageError(e, master.id)} 
+          />
+        )}
+
+        {/* In-Trade Dimmer Overlay */}
+        {isFullyStaged && (
+          <div className="absolute inset-0 bg-[#111214]/85 z-25 flex items-center justify-center pointer-events-none">
+            <span className="bg-[#1E1F22] border border-[rgba(255,255,255,0.08)] text-[#FAA61A] text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-[4px] shadow-md">
+              In Trade
+            </span>
           </div>
         )}
       </div>
 
-      <div className="w-full mt-1.5 px-0.5 flex flex-col min-w-0">
-        <span className="text-[11px] font-bold text-[#F2F3F5] truncate leading-tight">{master.name}</span>
+      {/* Card Body Data */}
+      <div className="p-3 flex flex-col flex-1 bg-[#2B2D31]">
+        <div className="flex flex-col mb-2">
+          <span className="text-[14px] font-black text-[#F2F3F5] tracking-tight truncate leading-snug">
+            {master.name}
+          </span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#949BA4] truncate mt-0.5">
+            {master.subtitle || "Official Unit"}
+          </span>
+
+          <div className="flex items-center gap-2 mt-1.5">
+            <span className={`text-[9.5px] font-bold uppercase px-1.5 py-0.5 rounded-[3px] border tracking-wider leading-none ${
+              obtainability === "UNOB" 
+                ? "bg-[#1E1F22] text-[#949BA4] border-[rgba(255,255,255,0.06)]" 
+                : "bg-[rgba(255,255,255,0.05)] text-[#DBDEE1] border-[rgba(255,255,255,0.1)]"
+            }`}>
+              {obtainability}
+            </span>
+          </div>
+        </div>
+
+        {/* Value Section */}
+        <div className="mt-auto pt-2 border-t border-[rgba(255,255,255,0.03)]">
+          <div className="pl-2.5 border-l-[3px] mb-2.5" style={{ borderColor: tierColor }}>
+            <span className={`text-[15px] font-black font-mono tracking-tight block truncate ${
+              displayVal === "Owner's Choice" 
+                ? "bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400" 
+                : "text-[#F2F3F5]"
+            }`}>
+              {displayVal}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-1.5">
+            <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[4px] p-1.5 flex flex-col justify-center">
+              <span className="text-[8px] font-bold uppercase tracking-wider text-[#80848E]">Rarity</span>
+              <span className="text-[12px] font-mono font-bold text-[#4DB6AC]">
+                {master.rarity ?? "N/A"}
+              </span>
+            </div>
+            <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[4px] p-1.5 flex flex-col justify-center">
+              <span className="text-[8px] font-bold uppercase tracking-wider text-[#80848E]">Liquidity</span>
+              <span className={`text-[11px] font-mono font-bold uppercase truncate ${
+                (master.liquidity || "").toLowerCase() === "high" ? "text-[#4DB6AC]" :
+                (master.liquidity || "").toLowerCase() === "low" ? "text-[#E57373]" : "text-[#B5BAC1]"
+              }`}>
+                {master.liquidity || "AVG"}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -94,7 +307,7 @@ const VaultSlot = memo(({
 export function InventoryChannel() {
   const { units: ALL_UNITS } = useUnits();
   const { items, addOrUpdateUnit, removeUnit, togglePin, restoreItem, clearInventory, clearUnpinned } = useInventoryStore();
-  const addCard = useTradeStore(state => state.addCard);
+  const { addCard, giveItems, getItems } = useTradeStore();
   const { profile } = useAuthStore();
   
   const [searchQuery, setSearchQuery] = useState("");
@@ -102,9 +315,16 @@ export function InventoryChannel() {
   const [sortMode, setSortMode] = useState("value-desc");
   const [collapsedTiers, setCollapsedTiers] = useState<Record<string, boolean>>({});
 
+  // Dual Vault State & Sandbox State
+  const [vaultView, setVaultView] = useState<"owned" | "wishlist">("owned");
+  const [sandboxDismissed, setSandboxDismissed] = useStickyState(false, "astd_sandbox_dismissed_v1");
+
+  // Selection Mode State
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedUnits, setSelectedUnits] = useState<Set<string>>(new Set());
+
   // Inspect Modal State
   const [inspectTarget, setInspectTarget] = useState<{ item: InventoryItem; master: MasterUnit } | null>(null);
-  const [showValueHistory, setShowValueHistory] = useState(false);
 
   // Omnibox State
   const [isOmniboxOpen, setIsOmniboxOpen] = useState(false);
@@ -125,7 +345,6 @@ export function InventoryChannel() {
   const manageRef = useRef<HTMLDivElement>(null);
   useClickOutside(manageRef, () => { setManageOpen(false); setConfirmClear(null); });
 
-  // Toast System
   const [toast, setToast] = useState<{ id: number, message: string, isError: boolean, itemToRestore?: InventoryItem } | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showToast = useCallback((message: string, isError = false, itemToRestore?: InventoryItem) => {
@@ -183,56 +402,201 @@ export function InventoryChannel() {
     } catch (e) { showToast("Failed to clear inventory.", true); }
   }, [profile, confirmClear, clearUnpinned, clearInventory, showToast]);
 
-  // Derived Data
-  const getUnitConservativeValue = (master: MasterUnit): number => {
-    if (master.value === "owner" || master.valueDisplay === "Owner's Choice" || master.valueDisplay === "O/C") return 0;
-    if (typeof master.value === "number" && master.value > 0) return master.value;
-    if (typeof master.valueMin === "number" && master.valueMin > 0) return master.valueMin;
-    return 0; 
-  };
+  // Derived Analytics Data
+  const { 
+    resolvedInventory, 
+    estimatedValue, 
+    liquidValue, 
+    totalQuantity, 
+    uniqueCount, 
+    unpinnedCount, 
+    unobPercentage,
+    marketMomentum,
+    liqDistribution 
+  } = useMemo(() => {
+    let estVal = 0, liqVal = 0, totQty = 0, unpinned = 0;
+    let unobVal = 0;
+    let risingCount = 0, droppingCount = 0;
+    let highLiq = 0, avgLiq = 0, lowLiq = 0;
 
-  const { resolvedInventory, estimatedValue, totalQuantity, uniqueCount, unpinnedCount } = useMemo(() => {
-    let estVal = 0, totQty = 0, unpinned = 0;
     const resolved = items.map(item => {
       const master = ALL_UNITS.find(u => u.id === item.unit_id);
       if (master) {
         totQty += item.quantity;
-        estVal += getUnitConservativeValue(master) * item.quantity;
+        const conservativeVal = getUnitConservativeValue(master) * item.quantity;
+        estVal += conservativeVal;
+
+        const isUnob = (master.notice || "").toLowerCase().includes("unobtainable") || master.obtainability === "UNOB";
+        if (isUnob) unobVal += conservativeVal;
+
+        if (master.status === "rising") risingCount += item.quantity;
+        if (master.status === "dropping") droppingCount += item.quantity;
+
+        const liq = (master.liquidity || "Average").toLowerCase();
+        if (liq === "high") {
+          liqVal += conservativeVal;
+          highLiq += conservativeVal;
+        } else if (liq === "average") {
+          liqVal += conservativeVal;
+          avgLiq += conservativeVal;
+        } else {
+          lowLiq += conservativeVal;
+        }
+
         if (!item.is_pinned) unpinned++;
       }
       return { ...item, master };
     }).filter(i => i.master !== undefined) as (typeof items[0] & { master: MasterUnit })[];
 
-    return { resolvedInventory: resolved, estimatedValue: estVal, totalQuantity: totQty, uniqueCount: resolved.length, unpinnedCount: unpinned };
+    const unobPct = estVal > 0 ? (unobVal / estVal) * 100 : 0;
+    const netMomentum = risingCount - droppingCount;
+
+    return { 
+      resolvedInventory: resolved, 
+      estimatedValue: estVal, 
+      liquidValue: liqVal,
+      totalQuantity: totQty, 
+      uniqueCount: resolved.length, 
+      unpinnedCount: unpinned,
+      unobPercentage: unobPct,
+      marketMomentum: { net: netMomentum, rising: risingCount, dropping: droppingCount },
+      liqDistribution: { high: highLiq, avg: avgLiq, low: lowLiq }
+    };
   }, [items, ALL_UNITS]);
 
+  // Determine Sandbox Mode State
+  const isSandbox = uniqueCount === 0 && !sandboxDismissed;
+  
+  const sandboxMockItems = useMemo(() => {
+    if (!isSandbox) return [];
+    const mocks = [
+      { unit_id: "bunny-girl", quantity: 1, is_pinned: false },
+      { unit_id: "the-ripper", quantity: 3, is_pinned: false },
+      { unit_id: "death", quantity: 1, is_pinned: true }
+    ];
+    return mocks.map(item => ({
+      ...item,
+      id: `sandbox-${item.unit_id}`,
+      user_id: "sandbox",
+      created_at: new Date().toISOString(), // Fills the missing property TS is crying about
+      master: ALL_UNITS.find(u => u.id === item.unit_id)!
+    })).filter(i => i.master) as (InventoryItem & { master: MasterUnit })[]; // Explicit cast to match real inventory
+  }, [isSandbox, ALL_UNITS]);
+
+  const displayInventory = isSandbox ? sandboxMockItems : resolvedInventory;
+
+  const top3Units = useMemo(() => {
+    return [...displayInventory]
+      .sort((a, b) => (getUnitConservativeValue(b.master) * b.quantity) - (getUnitConservativeValue(a.master) * a.quantity))
+      .slice(0, 3);
+  }, [displayInventory]);
+
   const handleCopyVault = useCallback(() => {
-    const text = `My Vault (Est. Value: ${estimatedValue.toLocaleString()}):\n` +
-      resolvedInventory.map(i => `- ${i.quantity}x ${i.master.name}`).join('\n');
+    const text = `My ASTD Vault (Total: ${estimatedValue.toLocaleString()} | Liquid: ${liquidValue.toLocaleString()} | UNOB: ${unobPercentage.toFixed(0)}%):\n` +
+      displayInventory.map(i => `- ${i.quantity}x ${i.master.name}`).join('\n');
     navigator.clipboard.writeText(text);
     showToast("Vault summary copied to clipboard!");
-    setManageOpen(false);
-  }, [resolvedInventory, estimatedValue, showToast]);
+  }, [displayInventory, estimatedValue, liquidValue, unobPercentage, showToast]);
 
-  const handleSendToAnalyzer = (type: "give" | "get") => {
-    if (!inspectTarget) return;
+  const handleSendToAnalyzer = (type: "give" | "get", targetMaster?: MasterUnit) => {
     triggerHaptic('medium');
-    const numericValue = getUnitConservativeValue(inspectTarget.master) || (typeof inspectTarget.master.value === "number" ? inspectTarget.master.value : 0);
-    addCard(type, {
-      id: inspectTarget.master.id,
-      name: inspectTarget.master.name,
-      subtitle: inspectTarget.master.subtitle,
-      value: numericValue,
-      qty: 1
-    });
-    showToast(`Added ${inspectTarget.master.name} to You ${type === "give" ? "Give" : "Get"}!`);
-    window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: inspectTarget.master.name, type } }));
-    setInspectTarget(null);
+    
+    if (isSelectMode && selectedUnits.size > 0) {
+      let count = 0;
+      selectedUnits.forEach(itemId => {
+        const invItem = displayInventory.find(i => i.id === itemId);
+        if (invItem && !invItem.is_pinned) { 
+          const numVal = getUnitConservativeValue(invItem.master);
+          addCard(type, { id: invItem.master.id, name: invItem.master.name, subtitle: invItem.master.subtitle, value: numVal, qty: invItem.quantity });
+          count++;
+        }
+      });
+      showToast(`Added ${count} units to You ${type === "give" ? "Give" : "Get"}`);
+      setSelectedUnits(new Set());
+      setIsSelectMode(false);
+      return;
+    }
+
+    const master = targetMaster || inspectTarget?.master;
+    if (!master) return;
+    
+    const qty = targetMaster ? 1 : (inspectTarget?.item.quantity || 1);
+    const numericValue = getUnitConservativeValue(master);
+    addCard(type, { id: master.id, name: master.name, subtitle: master.subtitle, value: numericValue, qty });
+    showToast(`Added ${master.name} to You ${type === "give" ? "Give" : "Get"}!`);
+    window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: master.name, type } }));
+    if (!targetMaster) setInspectTarget(null);
   };
 
-  // Processed owned units grouped by Tier
+  const toggleSelectUnit = (item: InventoryItem) => {
+    if (item.is_pinned) {
+      showToast("Cannot select locked units.", true);
+      triggerHaptic('light');
+      return;
+    }
+    triggerHaptic('light');
+    setSelectedUnits(prev => {
+      const next = new Set(prev);
+      if (next.has(item.id)) next.delete(item.id);
+      else next.add(item.id);
+      return next;
+    });
+  };
+
+  const handleQuickAdd = async (master: MasterUnit) => {
+    if (!profile) return;
+    try {
+      await addOrUpdateUnit(profile.id, master.id, 1);
+      if (isSandbox) setSandboxDismissed(true);
+      setSearchQuery("");
+      setIsOmniboxOpen(false);
+      setOmniboxIndex(-1);
+    } catch (e) { showToast("Failed to add unit.", true); }
+  };
+
+  const handleOmniboxKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setOmniboxIndex(prev => Math.min(prev + 1, unownedSearchResults.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setOmniboxIndex(prev => Math.max(prev - 1, -1));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (omniboxIndex >= 0 && unownedSearchResults[omniboxIndex]) {
+        handleQuickAdd(unownedSearchResults[omniboxIndex]);
+      } else if (unownedSearchResults.length > 0) {
+        handleQuickAdd(unownedSearchResults[0]);
+      }
+    } else if (e.key === "Escape") {
+      setIsOmniboxOpen(false);
+      searchInputRef.current?.blur();
+    }
+  };
+
+  const executeMassImport = async () => {
+    if (!profile || parsedImportItems.length === 0) return;
+    setIsImporting(true);
+    let successCount = 0;
+    
+    for (const item of parsedImportItems) {
+      try {
+        await addOrUpdateUnit(profile.id, item.id, item.qty);
+        successCount++;
+      } catch (e) { console.error("Failed to import", item.name); }
+    }
+    
+    if (isSandbox && successCount > 0) setSandboxDismissed(true);
+
+    setIsImporting(false);
+    setImportMenuOpen(false);
+    setImportText("");
+    if (successCount > 0) showToast(`Imported ${successCount} items successfully.`, false);
+    if (successCount < parsedImportItems.length) showToast(`Failed to import ${parsedImportItems.length - successCount} items.`, true);
+  };
+
   const tierGroupedUnits = useMemo(() => {
-    let filtered = resolvedInventory;
+    let filtered = displayInventory;
     const q = searchQuery.toLowerCase().trim();
     
     if (q) {
@@ -274,7 +638,7 @@ export function InventoryChannel() {
     });
 
     return groups;
-  }, [resolvedInventory, searchQuery, activeTierFilter, sortMode]);
+  }, [displayInventory, searchQuery, activeTierFilter, sortMode]);
 
   const unownedSearchResults = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
@@ -288,78 +652,29 @@ export function InventoryChannel() {
 
   const parsedImportItems = useMemo(() => {
     if (!importText.trim()) return [];
-    const result = parseSmartTrade(importText, ALL_UNITS);
-    return result.giveCards;
+    return parseSmartTrade(importText, ALL_UNITS).giveCards;
   }, [importText, ALL_UNITS]);
-
-  const handleQuickAdd = async (master: MasterUnit) => {
-    if (!profile) return;
-    try {
-      await addOrUpdateUnit(profile.id, master.id, 1);
-      setSearchQuery("");
-      setIsOmniboxOpen(false);
-      setOmniboxIndex(-1);
-    } catch (e) { showToast("Failed to add unit.", true); }
-  };
-
-  const handleOmniboxKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setOmniboxIndex(prev => Math.min(prev + 1, unownedSearchResults.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setOmniboxIndex(prev => Math.max(prev - 1, -1));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      if (omniboxIndex >= 0 && unownedSearchResults[omniboxIndex]) {
-        handleQuickAdd(unownedSearchResults[omniboxIndex]);
-      } else if (unownedSearchResults.length > 0) {
-        handleQuickAdd(unownedSearchResults[0]);
-      }
-    } else if (e.key === "Escape") {
-      setIsOmniboxOpen(false);
-      searchInputRef.current?.blur();
-    }
-  };
-
-  const executeMassImport = async () => {
-    if (!profile || parsedImportItems.length === 0) return;
-    setIsImporting(true);
-    let successCount = 0;
-    
-    for (const item of parsedImportItems) {
-      try {
-        await addOrUpdateUnit(profile.id, item.id, item.qty);
-        successCount++;
-      } catch (e) {
-        console.error("Failed to import", item.name);
-      }
-    }
-    
-    setIsImporting(false);
-    setImportMenuOpen(false);
-    setImportText("");
-    if (successCount > 0) showToast(`Imported ${successCount} items successfully.`, false);
-    if (successCount < parsedImportItems.length) showToast(`Failed to import ${parsedImportItems.length - successCount} items.`, true);
-  };
 
   if (!profile) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-[#313338] p-6 text-center">
         <Package className="w-12 h-12 text-[#80848E] mb-3" />
         <h2 className="text-[18px] font-bold text-[#F2F3F5] mb-1">Authentication Required</h2>
-        <p className="text-[#949BA4] text-[13px] max-w-sm">Please log in with Discord using the top navigation bar to access your personal unit collection.</p>
+        <p className="text-[#949BA4] text-[13px] max-w-sm">Please log in with Discord using the top navigation bar to access your personal vault.</p>
       </div>
     );
   }
 
-  // --- EMPTY STATE TAKEOVER ---
-  if (uniqueCount === 0 && !importMenuOpen) {
+  const liqTotal = estimatedValue > 0 ? estimatedValue : 1;
+  const highPct = (liqDistribution.high / liqTotal) * 100;
+  const avgPct = (liqDistribution.avg / liqTotal) * 100;
+  const lowPct = (liqDistribution.low / liqTotal) * 100;
+
+  // Progressive Disclosure Empty State View
+  if (uniqueCount === 0 && sandboxDismissed && !importMenuOpen) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-[#313338] p-4 md:p-6 animate-fade-in relative font-sans">
-        <style>{`
-          .bg-grid-pattern { background-size: 40px 40px; background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px); }
-        `}</style>
+        <style>{`.bg-grid-pattern { background-size: 40px 40px; background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px); }`}</style>
         <div className="absolute inset-0 bg-grid-pattern z-0" />
         <div className="relative z-10 flex flex-col items-center w-full max-w-xl text-center px-2">
           <div className="w-16 h-16 md:w-20 md:h-20 rounded-[12px] bg-[#1E1F22] border border-[#5865F2]/30 flex items-center justify-center shadow-[0_0_40px_rgba(88,101,242,0.15)] mb-5">
@@ -367,7 +682,7 @@ export function InventoryChannel() {
           </div>
           <h1 className="text-[22px] md:text-[32px] font-black text-[#F2F3F5] tracking-tight mb-2">Welcome to your Vault</h1>
           <p className="text-[#949BA4] text-[13px] md:text-[15px] mb-6 md:mb-8 leading-relaxed max-w-md mx-auto">
-            Search for your first unit below to start tracking your net worth, or paste your entire inventory list at once.
+            Search for your first unit below to start tracking your net worth, or import your entire inventory list at once.
           </p>
 
           <div className="w-full relative" ref={omniboxRef}>
@@ -395,10 +710,10 @@ export function InventoryChannel() {
                       key={u.id}
                       onClick={() => handleQuickAdd(u)}
                       onMouseEnter={() => setOmniboxIndex(i)}
-                      className={`flex items-center gap-3 w-full p-3 rounded-[8px] transition-colors ${isSelected ? 'bg-[#5865F2] text-white shadow-sm' : 'bg-transparent hover:bg-[rgba(255,255,255,0.04)] text-[#F2F3F5]'}`}
+                      className={`flex items-center gap-3 w-full p-3 rounded-[8px] transition-colors focus-visible:outline-none ${isSelected ? 'bg-[#5865F2] text-white shadow-sm' : 'bg-transparent hover:bg-[rgba(255,255,255,0.04)] text-[#F2F3F5]'}`}
                     >
-                      <div className="w-8 h-8 rounded-[4px] bg-[#111214] flex items-center justify-center shrink-0 border border-[rgba(255,255,255,0.08)] overflow-hidden">
-                        {getProxyImage(u.id, u.imageUrl) ? <img src={getProxyImage(u.id, u.imageUrl)!} alt="" className="w-full h-full object-cover" onError={(e) => e.currentTarget.style.opacity = '0'} /> : <span className="text-[9px] font-bold" style={getAvatarStyle(u.name)}>{getInitials(u.name)}</span>}
+                      <div className="w-8 h-8 rounded-[4px] bg-[#111214] flex items-center justify-center shrink-0 border border-[rgba(255,255,255,0.08)] overflow-hidden relative">
+                        {getProxyImage(u.id, u.imageUrl) ? <img src={getProxyImage(u.id, u.imageUrl)!} alt="" className="w-full h-full object-cover" onError={(e) => e.currentTarget.style.opacity = '0'} /> : <span className="text-[9px] font-bold z-0" style={getAvatarStyle(u.name)}>{getInitials(u.name)}</span>}
                       </div>
                       <div className="flex flex-col min-w-0 flex-1">
                         <span className="text-[14px] font-bold truncate">{u.name}</span>
@@ -433,83 +748,45 @@ export function InventoryChannel() {
     <div className="flex-1 flex flex-col overflow-hidden bg-[#313338] h-full select-none font-sans relative">
       <style>{`.mask-fade-edges { mask-image: linear-gradient(to right, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%); }`}</style>
       
-      {/* HEADER SECTION */}
-      <div className={`flex-shrink-0 flex flex-col bg-[#2B2D31] border-b border-[rgba(0,0,0,0.2)] shadow-sm z-20 relative transition-all duration-300 ${importMenuOpen ? "opacity-30 pointer-events-none blur-sm" : ""}`}>
+      {/* Header Controls Bar (Hidden in completely empty Sandbox state, but shown once populated) */}
+      <div className={`flex-shrink-0 flex flex-col bg-[#2B2D31] border-b border-[rgba(0,0,0,0.22)] shadow-sm z-20 relative ${importMenuOpen ? "opacity-30 pointer-events-none blur-sm" : ""}`}>
         
-        {/* Top Row */}
-        <div className="px-3 md:px-5 py-3 flex items-center justify-between border-b border-[rgba(255,255,255,0.04)]">
-          <div className="flex items-center gap-2.5 min-w-0 pr-2">
-            <div className="w-9 h-9 md:w-10 md:h-10 rounded-[8px] bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] flex items-center justify-center shadow-inner shrink-0">
-              <Package className="w-4 h-4 md:w-5 md:h-5 text-[#5865F2]" />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5 group relative cursor-help w-fit">
-                <span className="text-[9.5px] md:text-[10px] font-bold uppercase tracking-widest text-[#949BA4] truncate">Est. Value: <span className="text-[#DBDEE1] font-mono">{estimatedValue.toLocaleString()}</span></span>
-                <Info className="w-3 h-3 text-[#4e5058] group-hover:text-[#DBDEE1] transition-colors shrink-0" />
-                <div className="absolute top-full left-0 mt-1 w-[220px] bg-[#111214] border border-[rgba(255,255,255,0.08)] text-[#DBDEE1] text-[10.5px] p-2.5 rounded-[6px] shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 leading-relaxed font-medium">
-                  Calculated using minimum range values. Owner's Choice and unavailable units are excluded from this sum.
-                </div>
-              </div>
-              <h2 className="text-[15px] md:text-[17px] font-black text-[#F2F3F5] tracking-tight truncate">
-                My Inventory <span className="text-[#80848E] font-bold text-[12px] md:text-[14px]">({uniqueCount}u / {totalQuantity}t)</span>
-              </h2>
-            </div>
-          </div>
-
-          {/* Manage Dropdown */}
-          <div className="relative shrink-0" ref={manageRef}>
-            <button 
-              onClick={() => setManageOpen(!manageOpen)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-[6px] text-[12px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] ${manageOpen || confirmClear ? 'bg-[rgba(255,255,255,0.08)] text-[#F2F3F5]' : 'bg-[rgba(255,255,255,0.04)] text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.08)]'}`}
-            >
-              <Settings2 className="w-3.5 h-3.5" /> Manage
-            </button>
-            
-            {manageOpen && (
-              <div className="absolute top-full right-0 mt-2 w-[260px] bg-[#2B2D31] border border-[rgba(255,255,255,0.08)] shadow-2xl rounded-[8px] p-1.5 z-50 animate-fade-in flex flex-col">
-                {confirmClear ? (
-                  <div className="p-3 bg-[rgba(237,66,69,0.1)] border border-[rgba(237,66,69,0.2)] rounded-[6px] flex flex-col gap-3">
-                    <span className="text-[12.5px] text-[#F2F3F5] font-medium leading-snug">
-                      Remove {confirmClear === "unpinned" ? <span className="font-bold text-[#ed4245]">{unpinnedCount} unpinned</span> : <span className="font-bold text-[#ed4245]">all {uniqueCount}</span>} units? This cannot be undone.
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => setConfirmClear(null)} className="flex-1 px-3 py-2 bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] rounded-[4px] text-[12px] font-bold text-[#DBDEE1] transition-colors focus-visible:outline-none">Cancel</button>
-                      <button onClick={handleClearAction} className="flex-1 px-3 py-2 bg-[#ed4245] hover:bg-[#c9383a] rounded-[4px] text-[12px] font-bold text-white transition-colors focus-visible:outline-none">Clear</button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <button onClick={handleCopyVault} className="w-full text-left px-3 py-2.5 rounded-[4px] text-[12.5px] font-semibold text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)] transition-colors focus-visible:outline-none flex items-center justify-between">
-                      Copy Vault Summary <Copy className="w-3.5 h-3.5 text-[#80848E]" />
-                    </button>
-                    <div className="w-full h-px bg-[rgba(255,255,255,0.04)] my-1" />
-                    <button onClick={() => { if (unpinnedCount > 0) setConfirmClear("unpinned"); }} disabled={unpinnedCount === 0} className="w-full text-left px-3 py-2.5 rounded-[4px] text-[12.5px] font-semibold text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none flex items-center justify-between">
-                      Clear Unpinned <span className="text-[#80848E] font-mono font-bold text-[11px]">{unpinnedCount}</span>
-                    </button>
-                    <div className="w-full h-px bg-[rgba(255,255,255,0.04)] my-1" />
-                    <button onClick={() => { if (uniqueCount > 0) setConfirmClear("all"); }} disabled={uniqueCount === 0} className="w-full text-left px-3 py-2.5 rounded-[4px] text-[12.5px] font-semibold text-[#ed4245] hover:bg-[rgba(237,66,69,0.1)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none flex items-center justify-between">
-                      Clear Entire Inventory <span className="text-[#ed4245] opacity-70 font-mono font-bold text-[11px]">{uniqueCount}</span>
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+        {/* Dual Vault Tabs */}
+        <div className="flex bg-[#1E1F22] rounded-[4px] p-[3px] mx-3 md:mx-5 mt-3 mb-1 border border-[rgba(255,255,255,0.04)] w-fit shadow-inner">
+          <button 
+            onClick={() => setVaultView("owned")} 
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[3px] text-[11px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none ${vaultView === "owned" ? "bg-[#5865F2] text-white shadow-sm" : "text-[#949BA4] hover:text-[#DBDEE1]"}`}
+          >
+            <Package className="w-3.5 h-3.5" /> My Vault
+          </button>
+          <button 
+            onClick={() => { setVaultView("wishlist"); showToast("Wishlist feature arriving in the Trading Ads update.", false); }} 
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[3px] text-[11px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none ${vaultView === "wishlist" ? "bg-[#5865F2] text-white shadow-sm" : "text-[#949BA4] hover:text-[#DBDEE1]"}`}
+          >
+            <Heart className="w-3.5 h-3.5" /> Wishlist
+          </button>
         </div>
 
-        {/* Bottom Row */}
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between px-3 md:px-5 py-2.5 md:py-3 gap-2.5">
-          
-          <div className="flex flex-nowrap gap-1.5 md:gap-2 overflow-x-auto hide-scrollbar pb-1 -mb-1 w-full xl:w-auto snap-x snap-mandatory pr-6 mask-fade-edges" style={{ WebkitOverflowScrolling: 'touch' }}>
-            <button 
-              onClick={() => setActiveTierFilter("Pinned")} 
-              className="snap-start flex-shrink-0 px-3.5 py-1.5 rounded-full text-[11.5px] md:text-[12px] font-bold tracking-wide transition-all duration-200 ease-out active:scale-95 border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2]" 
-              style={activeTierFilter === "Pinned" ? { background: "#5865F2", color: "#fff", borderColor: "#5865F2", boxShadow: "0 4px 12px rgba(88,101,242,0.3)" } : { background: "rgba(255,255,255,0.03)", color: "#FAA61A", borderColor: "rgba(250,166,26,0.3)" }}
-            >
-              ⭐ Pinned
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between px-3 md:px-5 py-2.5 gap-2.5">
+          <div className="flex flex-nowrap items-center gap-1.5 md:gap-2 overflow-x-auto hide-scrollbar pb-1 -mb-1 w-full xl:w-auto snap-x snap-mandatory pr-6 mask-fade-edges" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="flex items-center pr-2 border-r border-[rgba(255,255,255,0.06)] mr-1 shrink-0">
+              <button 
+                onClick={() => { setIsSelectMode(!isSelectMode); setSelectedUnits(new Set()); }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] ${isSelectMode ? 'bg-[rgba(88,101,242,0.15)] text-[#5865F2] ring-1 ring-[#5865F2]/50' : 'bg-[#1E1F22] text-[#80848E] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.04)]'}`}
+              >
+                <MousePointerSquareDashed className="w-3.5 h-3.5" />
+                Select
+              </button>
+            </div>
+
+            <button onClick={() => setActiveTierFilter("All")} className="snap-start flex-shrink-0 px-3.5 py-1.5 rounded-full text-[11.5px] md:text-[12px] font-bold tracking-wide transition-colors border focus-visible:outline-none" style={activeTierFilter === "All" ? { background: "#5865F2", color: "#fff", borderColor: "#5865F2" } : { background: "rgba(255,255,255,0.03)", color: "#949BA4", borderColor: "rgba(255,255,255,0.05)" }}>
+              All
             </button>
-            {FILTERS.map((f) => (
-              <button key={f} onClick={() => setActiveTierFilter(f)} className="snap-start flex-shrink-0 px-3.5 py-1.5 rounded-full text-[11.5px] md:text-[12px] font-bold tracking-wide transition-all duration-200 ease-out active:scale-95 border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2]" style={activeTierFilter === f ? { background: "#5865F2", color: "#fff", borderColor: "#5865F2", boxShadow: "0 4px 12px rgba(88,101,242,0.3)" } : { background: "rgba(255,255,255,0.03)", color: "#949BA4", borderColor: "rgba(255,255,255,0.05)" }}>
+            <button onClick={() => setActiveTierFilter("Pinned")} className="snap-start flex-shrink-0 px-3.5 py-1.5 rounded-full text-[11.5px] md:text-[12px] font-bold tracking-wide transition-colors border focus-visible:outline-none" style={activeTierFilter === "Pinned" ? { background: "#5865F2", color: "#fff", borderColor: "#5865F2" } : { background: "rgba(255,255,255,0.03)", color: "#FAA61A", borderColor: "rgba(250,166,26,0.3)" }}>
+              <LockIcon className="w-3 h-3 inline mr-1" /> Locked
+            </button>
+            {FILTERS.filter(f => f !== "All").map((f) => (
+              <button key={f} onClick={() => setActiveTierFilter(f)} className="snap-start flex-shrink-0 px-3.5 py-1.5 rounded-full text-[11.5px] md:text-[12px] font-bold tracking-wide transition-colors border focus-visible:outline-none" style={activeTierFilter === f ? { background: "#5865F2", color: "#fff", borderColor: "#5865F2" } : { background: "rgba(255,255,255,0.03)", color: "#949BA4", borderColor: "rgba(255,255,255,0.05)" }}>
                 {f}
               </button>
             ))}
@@ -528,22 +805,61 @@ export function InventoryChannel() {
                   onChange={(e) => { setSearchQuery(e.target.value); setIsOmniboxOpen(true); setOmniboxIndex(-1); }}
                   onFocus={() => setIsOmniboxOpen(true)}
                   onKeyDown={handleOmniboxKeyDown}
-                  placeholder="Search or quick add..."
-                  className="w-full bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-full pl-9 pr-3 py-1 text-[13px] text-[#F2F3F5] outline-none placeholder-[#80848E] focus:ring-1 focus:ring-[#5865F2] transition-all shadow-inner h-[36px] md:h-[30px]"
+                  placeholder="Search or add units..."
+                  className="w-full bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[4px] pl-9 pr-3 py-1 text-[13px] text-[#F2F3F5] outline-none placeholder-[#80848E] focus:ring-1 focus:ring-[#5865F2] transition-colors shadow-inner h-[32px]"
                 />
               </div>
 
-              <button 
-                onClick={() => { setImportMenuOpen(true); setTimeout(() => importInputRef.current?.focus(), 100); }} 
-                className="w-[36px] h-[36px] md:w-[30px] md:h-[30px] shrink-0 bg-[rgba(255,255,255,0.04)] hover:bg-[#5865F2] text-[#80848E] hover:text-white rounded-full flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white"
-                title="Mass Import from Text"
+              <button
+                onClick={handleCopyVault}
+                className="w-[32px] h-[32px] shrink-0 bg-[#1E1F22] hover:bg-[#35373C] text-[#80848E] hover:text-[#F2F3F5] rounded-[4px] flex items-center justify-center transition-colors focus-visible:outline-none border border-[rgba(255,255,255,0.04)]"
+                title="Copy Vault Summary"
               >
-                <Wand2 className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                <Copy className="w-3.5 h-3.5" />
               </button>
+
+              <div className="relative shrink-0" ref={manageRef}>
+                <button 
+                  onClick={() => setManageOpen(!manageOpen)}
+                  className={`w-[32px] h-[32px] shrink-0 flex items-center justify-center rounded-[4px] transition-colors focus-visible:outline-none border ${manageOpen || confirmClear ? 'bg-[#35373C] text-[#F2F3F5] border-[rgba(255,255,255,0.1)]' : 'bg-[#1E1F22] text-[#80848E] hover:text-[#DBDEE1] hover:bg-[#35373C] border-[rgba(255,255,255,0.04)]'}`}
+                  title="Inventory Options"
+                >
+                  <Settings2 className="w-3.5 h-3.5" />
+                </button>
+                
+                {manageOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-[260px] bg-[#2B2D31] border border-[rgba(255,255,255,0.08)] shadow-2xl rounded-[8px] p-1.5 z-50 animate-fade-in flex flex-col">
+                    {confirmClear ? (
+                      <div className="p-3 bg-[rgba(237,66,69,0.1)] border border-[rgba(237,66,69,0.2)] rounded-[6px] flex flex-col gap-3">
+                        <span className="text-[12.5px] text-[#F2F3F5] font-medium leading-snug">
+                          Remove {confirmClear === "unpinned" ? <span className="font-bold text-[#ed4245]">{unpinnedCount} unlocked</span> : <span className="font-bold text-[#ed4245]">all {uniqueCount}</span>} units? This cannot be undone.
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => setConfirmClear(null)} className="flex-1 px-3 py-2 bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] rounded-[4px] text-[12px] font-bold text-[#DBDEE1] transition-colors focus-visible:outline-none">Cancel</button>
+                          <button onClick={handleClearAction} className="flex-1 px-3 py-2 bg-[#ed4245] hover:bg-[#c9383a] rounded-[4px] text-[12px] font-bold text-white transition-colors focus-visible:outline-none">Clear</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <button onClick={() => { setImportMenuOpen(true); setManageOpen(false); setTimeout(() => importInputRef.current?.focus(), 100); }} className="w-full text-left px-3 py-2.5 rounded-[4px] text-[12.5px] font-semibold text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)] transition-colors focus-visible:outline-none flex items-center justify-between">
+                          Import from Text <Wand2 className="w-3.5 h-3.5 text-[#80848E]" />
+                        </button>
+                        <div className="w-full h-px bg-[rgba(255,255,255,0.04)] my-1" />
+                        <button onClick={() => { if (unpinnedCount > 0) setConfirmClear("unpinned"); }} disabled={unpinnedCount === 0} className="w-full text-left px-3 py-2.5 rounded-[4px] text-[12.5px] font-semibold text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none flex items-center justify-between">
+                          Clear Unlocked <span className="text-[#80848E] font-mono font-bold text-[11px]">{unpinnedCount}</span>
+                        </button>
+                        <button onClick={() => { if (uniqueCount > 0) setConfirmClear("all"); }} disabled={uniqueCount === 0} className="w-full text-left px-3 py-2.5 rounded-[4px] text-[12.5px] font-semibold text-[#ed4245] hover:bg-[rgba(237,66,69,0.1)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none flex items-center justify-between">
+                          Clear Entire Inventory <span className="text-[#ed4245] opacity-70 font-mono font-bold text-[11px]">{uniqueCount}</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/* Omnibox Dropdown */}
               {isOmniboxOpen && searchQuery && unownedSearchResults.length > 0 && (
-                <div className="absolute top-full left-0 right-10 mt-1 max-h-[300px] overflow-y-auto custom-scrollbar bg-[#2B2D31] border border-[rgba(255,255,255,0.08)] rounded-[8px] shadow-[0_12px_40px_rgba(0,0,0,0.4)] z-[99999] flex flex-col p-1.5 text-left">
+                <div className="absolute top-full left-0 right-10 mt-1 max-h-[300px] overflow-y-auto custom-scrollbar bg-[#2B2D31] border border-[rgba(255,255,255,0.08)] rounded-[6px] shadow-[0_12px_40px_rgba(0,0,0,0.5)] z-[99999] flex flex-col p-1 text-left">
                   {unownedSearchResults.map((u, i) => {
                     const isSelected = i === omniboxIndex;
                     return (
@@ -551,13 +867,13 @@ export function InventoryChannel() {
                         key={u.id}
                         onClick={() => handleQuickAdd(u)}
                         onMouseEnter={() => setOmniboxIndex(i)}
-                        className={`flex items-center gap-2.5 w-full p-2 rounded-[6px] transition-colors focus-visible:outline-none ${isSelected ? 'bg-[#5865F2] text-white shadow-sm' : 'bg-transparent hover:bg-[rgba(255,255,255,0.04)] text-[#F2F3F5]'}`}
+                        className={`flex items-center gap-2.5 w-full p-2 rounded-[4px] transition-colors focus-visible:outline-none ${isSelected ? 'bg-[#5865F2] text-white' : 'bg-transparent hover:bg-[rgba(255,255,255,0.04)] text-[#F2F3F5]'}`}
                       >
-                        <div className="w-6 h-6 rounded-[4px] bg-[#111214] flex items-center justify-center shrink-0 border border-[rgba(255,255,255,0.08)] overflow-hidden">
-                          {getProxyImage(u.id, u.imageUrl) ? <img src={getProxyImage(u.id, u.imageUrl)!} alt="" className="w-full h-full object-cover" onError={(e) => e.currentTarget.style.opacity = '0'} /> : <span className="text-[7px] font-bold" style={getAvatarStyle(u.name)}>{getInitials(u.name)}</span>}
+                        <div className="w-7 h-7 rounded-[4px] bg-[#111214] flex items-center justify-center shrink-0 border border-[rgba(255,255,255,0.08)] overflow-hidden relative">
+                          {getProxyImage(u.id, u.imageUrl) ? <img src={getProxyImage(u.id, u.imageUrl)!} alt="" className="w-full h-full object-cover" onError={(e) => handleImageError(e, u.id)} /> : <span className="text-[7px] font-bold z-0" style={getAvatarStyle(u.name)}>{getInitials(u.name)}</span>}
                         </div>
                         <div className="flex flex-col min-w-0 flex-1">
-                          <span className="text-[12px] font-bold truncate leading-tight">{u.name}</span>
+                          <span className="text-[12.5px] font-bold truncate leading-tight">{u.name}</span>
                         </div>
                         <Plus className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'opacity-100' : 'opacity-0'}`} />
                       </button>
@@ -570,7 +886,262 @@ export function InventoryChannel() {
         </div>
       </div>
 
-      {/* MASS IMPORT MODAL */}
+      <div className={`flex-1 overflow-y-auto custom-scrollbar relative z-0 transition-all duration-300 ${importMenuOpen ? "opacity-30 pointer-events-none blur-sm" : ""}`}>
+        <div className="p-3 md:p-6 pb-32">
+          
+          {/* Sandbox Banner */}
+          {isSandbox && (
+             <div className="bg-[rgba(88,101,242,0.1)] border border-[#5865F2]/30 rounded-[8px] p-4 flex items-center justify-between mb-6 shadow-sm">
+                <div className="flex items-center gap-3">
+                   <Info className="w-5 h-5 text-[#5865F2] shrink-0" />
+                   <div className="flex flex-col">
+                      <span className="text-[13px] font-bold text-[#F2F3F5]">Sandbox Mode Active</span>
+                      <span className="text-[12px] text-[#B5BAC1]">Try adjusting quantities or moving these dummy units to the Calculator. Adding any real unit clears the sandbox.</span>
+                   </div>
+                </div>
+                <button onClick={() => setSandboxDismissed(true)} className="px-4 py-2 bg-[#5865F2] hover:bg-[#4752C4] text-white text-[12px] font-bold rounded-[4px] transition-colors focus-visible:outline-none shrink-0">Exit Sandbox</button>
+             </div>
+          )}
+
+          {/* Authentic Portfolio Dashboard */}
+          {displayInventory.length > 0 && !searchQuery && activeTierFilter === "All" && (
+            <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-4 mb-6">
+              
+              {/* Left Panel: Clean Financial Breakdown */}
+              <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-5 flex flex-col justify-between relative overflow-hidden">
+                <Sparkline />
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">Vault Net Worth</span>
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold font-mono">
+                      {isSandbox ? (
+                         <span className="text-[#949BA4] bg-[#1E1F22] px-2 py-0.5 rounded-[4px] border border-[rgba(255,255,255,0.04)]">Sandbox Value</span>
+                      ) : marketMomentum.net > 0 ? (
+                        <span className="text-[#23a559] flex items-center gap-1 bg-[#23a559]/10 px-2 py-0.5 rounded-[4px] border border-[#23a559]/20">
+                          <TrendingUp className="w-3 h-3" /> +{marketMomentum.net} Net Rising
+                        </span>
+                      ) : marketMomentum.net < 0 ? (
+                        <span className="text-[#ed4245] flex items-center gap-1 bg-[#ed4245]/10 px-2 py-0.5 rounded-[4px] border border-[#ed4245]/20">
+                          <TrendingDown className="w-3 h-3" /> {Math.abs(marketMomentum.net)} Net Dropping
+                        </span>
+                      ) : (
+                        <span className="text-[#949BA4] bg-[#1E1F22] px-2 py-0.5 rounded-[4px] border border-[rgba(255,255,255,0.04)]">Market Stable</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <h2 className="text-[32px] md:text-[40px] font-black text-[#F2F3F5] tracking-tighter leading-none font-mono">
+                    {isSandbox ? sandboxMockItems.reduce((acc, c) => acc + (c.master.value as number)*c.quantity, 0).toLocaleString() : estimatedValue.toLocaleString()}
+                  </h2>
+
+                  <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-[rgba(255,255,255,0.04)]">
+                    <div className="bg-[#111214]/60 backdrop-blur-sm p-2.5 rounded-[6px] border border-[rgba(255,255,255,0.02)] flex flex-col shadow-inner">
+                      <span className="text-[9px] font-bold text-[#80848E] uppercase tracking-wider">Liquid Assets</span>
+                      <span className="text-[14px] font-bold text-[#4DB6AC] font-mono mt-0.5">{isSandbox ? "0" : liquidValue.toLocaleString()}</span>
+                    </div>
+                    <div className="bg-[#111214]/60 backdrop-blur-sm p-2.5 rounded-[6px] border border-[rgba(255,255,255,0.02)] flex flex-col shadow-inner">
+                      <span className="text-[9px] font-bold text-[#80848E] uppercase tracking-wider">UNOB Proportion</span>
+                      <span className="text-[14px] font-bold text-[#FAA61A] font-mono mt-0.5">{isSandbox ? "0" : unobPercentage.toFixed(0)}% Unobtainable</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tactile Liquidity Distribution */}
+                {!isSandbox && (
+                  <div className="flex flex-col gap-1.5 mt-5 relative z-10">
+                    <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">
+                      <span>Demand Distribution</span>
+                      <span>{((liquidValue / liqTotal) * 100).toFixed(0)}% Liquid</span>
+                    </div>
+                    <div className="w-full h-2 rounded-[2px] bg-[#111214] overflow-hidden flex shadow-inner border border-[rgba(255,255,255,0.02)]">
+                      <div className="h-full bg-[#4DB6AC] transition-all duration-700 ease-out" style={{ width: `${highPct}%` }} title={`High Demand: ${highPct.toFixed(0)}%`} />
+                      <div className="h-full bg-[#B5BAC1] transition-all duration-700 ease-out" style={{ width: `${avgPct}%` }} title={`Average Demand: ${avgPct.toFixed(0)}%`} />
+                      <div className="h-full bg-[#E57373] transition-all duration-700 ease-out" style={{ width: `${lowPct}%` }} title={`Low Demand: ${lowPct.toFixed(0)}%`} />
+                    </div>
+                    <div className="flex justify-between items-center text-[9px] font-bold text-[#80848E]">
+                      <span className="text-[#4DB6AC]">High: {highPct.toFixed(0)}%</span>
+                      <span className="text-[#B5BAC1]">Avg: {avgPct.toFixed(0)}%</span>
+                      <span className="text-[#E57373]">Low: {lowPct.toFixed(0)}%</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Panel: Top Assets */}
+              <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-5 flex flex-col">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4] mb-3">Crown Assets</span>
+                
+                <div className="flex flex-col gap-2 flex-1 justify-center">
+                  {top3Units.map((item, idx) => {
+                    const proxyUrl = getProxyImage(item.master.id, item.master.imageUrl);
+                    const unitVal = getUnitConservativeValue(item.master) * item.quantity;
+                    const share = estimatedValue > 0 ? (unitVal / estimatedValue) * 100 : 0;
+                    const rankColor = idx === 0 ? "#FAA61A" : idx === 1 ? "#B5BAC1" : "#A0714F";
+                    const rankBg = idx === 0 ? "rgba(250,166,26,0.1)" : idx === 1 ? "rgba(181,186,193,0.1)" : "rgba(160,113,79,0.1)";
+
+                    return (
+                      <div 
+                        key={item.id} 
+                        className="flex items-center justify-between p-2 rounded-[6px] bg-[#1E1F22] border border-[rgba(255,255,255,0.02)] transition-colors hover:border-[rgba(255,255,255,0.06)]"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 pr-2">
+                          <span className="font-mono font-black text-[12px] w-5 text-center shrink-0 rounded-[3px] py-0.5" style={{ color: rankColor, backgroundColor: rankBg }}>
+                            #{idx + 1}
+                          </span>
+                          <div className="w-10 h-10 rounded-full bg-[#111214] border border-[rgba(255,255,255,0.06)] overflow-hidden shrink-0 flex items-center justify-center relative shadow-sm">
+                            <span className="text-[9px] font-bold text-white z-0" style={getAvatarStyle(item.master.name)}>
+                              {getInitials(item.master.name)}
+                            </span>
+                            {proxyUrl && (
+                              <img 
+                                src={proxyUrl} 
+                                alt={item.master.name} 
+                                className="absolute inset-0 w-full h-full object-cover z-10" 
+                                style={{ objectPosition: "center 15%" }}
+                                onError={(e) => handleImageError(e, item.master.id)} 
+                              />
+                            )}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[13px] font-bold text-[#F2F3F5] truncate leading-tight">
+                              {item.master.name}
+                            </span>
+                            <span className="text-[10px] font-mono text-[#80848E]">
+                              {isSandbox ? "Sandbox Item" : `${share.toFixed(1)}% of total net worth`}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-[13px] font-mono font-bold text-[#DBDEE1]">
+                            {unitVal.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* Unit Cards Grid */}
+          <div className="flex flex-col gap-6">
+            {TIER_ORDER.map(tier => {
+              const tierItems = tierGroupedUnits[tier] || [];
+              if (tierItems.length === 0) return null;
+              const isCollapsed = collapsedTiers[tier];
+              const tierCfg = TIER_CONFIG[tier] || { badgeColor: "#5865F2", label: tier };
+              
+              // Completionist Math
+              const totalInTier = ALL_UNITS.filter(u => getTier(u) === tier).length;
+              const uniqueCollected = new Set(tierItems.map(i => i.unit_id)).size;
+              const progressPct = totalInTier > 0 ? (uniqueCollected / totalInTier) * 100 : 0;
+
+              return (
+                <div key={tier} className="flex flex-col gap-3">
+                  {/* Clean Non-Sticky Group Header */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-[3px] h-[16px] rounded-full" style={{ backgroundColor: tierCfg.badgeColor }} />
+                    <h3 className="text-[15px] font-black uppercase tracking-wider text-[#F2F3F5] leading-none mt-0.5">{tierCfg.label}</h3>
+                    <span className="text-[11px] font-bold text-[#80848E] bg-[#1E1F22] px-2 py-0.5 rounded-[4px] border border-[rgba(255,255,255,0.04)] ml-1">
+                      {tierItems.reduce((s, i) => s + i.quantity, 0)} Units
+                    </span>
+                    
+                    {!isSandbox && (
+                      <div className="hidden md:flex items-center gap-2 ml-4">
+                        <span className="text-[10px] font-mono text-[#80848E]">{uniqueCollected} / {totalInTier} Collected</span>
+                        <div className="w-20 h-1.5 bg-[#1E1F22] rounded-full overflow-hidden">
+                           <div className="h-full bg-[#5865F2] rounded-full" style={{ width: `${progressPct}%`, backgroundColor: tierCfg.badgeColor }} />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex-1 h-px bg-[rgba(255,255,255,0.04)] ml-2" />
+                    <button
+                      onClick={() => setCollapsedTiers(prev => ({ ...prev, [tier]: !prev[tier] }))}
+                      className="p-1 rounded-[4px] hover:bg-[#1E1F22] text-[#80848E] hover:text-[#DBDEE1] transition-colors focus-visible:outline-none"
+                    >
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
+                    </button>
+                  </div>
+
+                  {!isCollapsed && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 animate-fade-in">
+                      {tierItems.map((item, idx) => {
+                        const stagedGive = giveItems.find(g => g.id === item.unit_id)?.qty || 0;
+                        const stagedGet = getItems.find(g => g.id === item.unit_id)?.qty || 0;
+
+                        return (
+                          <TradingCardSlot 
+                            key={`${item.unit_id}-${idx}`} 
+                            item={item} 
+                            master={item.master} 
+                            onInspect={(it, mst) => setInspectTarget({ item: it, master: mst })}
+                            isSelectMode={isSelectMode}
+                            isSelected={selectedUnits.has(item.id)}
+                            toggleSelect={toggleSelectUnit}
+                            stagedGiveQty={stagedGive}
+                            stagedGetQty={stagedGet}
+                            onQtyChange={handleQtyChange}
+                            isSandbox={isSandbox}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Persistent Action Dock for Selection Mode */}
+      {isSelectMode && (
+        <div className="fixed bottom-0 left-0 right-0 z-[80] p-4 pointer-events-none">
+          <div className="max-w-2xl mx-auto bg-[#1E1F22] border border-[rgba(255,255,255,0.1)] p-3 rounded-[8px] shadow-2xl pointer-events-auto flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-[13px] font-bold text-[#F2F3F5]">
+                {selectedUnits.size} Selected
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button 
+                disabled={selectedUnits.size === 0}
+                onClick={() => handleSendToAnalyzer("give")}
+                className="px-4 py-2 bg-[#FAA61A] hover:bg-[#d98b14] disabled:bg-[#2B2D31] disabled:text-[#80848E] text-white text-[12px] font-bold rounded-[4px] transition-colors focus-visible:outline-none"
+              >
+                To Give
+              </button>
+              <button 
+                disabled={selectedUnits.size === 0}
+                onClick={() => handleSendToAnalyzer("get")}
+                className="px-4 py-2 bg-[#5865F2] hover:bg-[#4752C4] disabled:bg-[#2B2D31] disabled:text-[#80848E] text-white text-[12px] font-bold rounded-[4px] transition-colors focus-visible:outline-none"
+              >
+                To Get
+              </button>
+              <div className="w-px h-5 bg-[rgba(255,255,255,0.1)] mx-1" />
+              <button 
+                disabled
+                className="px-4 py-2 bg-[#2B2D31] text-[#4e5058] text-[12px] font-bold rounded-[4px] border border-[rgba(255,255,255,0.02)] cursor-not-allowed"
+                title="Available in upcoming trading ads release"
+              >
+                Create Ad
+              </button>
+              <button 
+                onClick={() => { setIsSelectMode(false); setSelectedUnits(new Set()); }}
+                className="p-2 text-[#80848E] hover:text-[#F2F3F5] rounded-[4px] hover:bg-[rgba(255,255,255,0.05)] ml-1 focus-visible:outline-none"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mass Import Modal with Live Tokens */}
       {importMenuOpen && (
         <div className="absolute inset-0 z-[100000] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setImportMenuOpen(false)} />
@@ -581,12 +1152,12 @@ export function InventoryChannel() {
                 <UploadCloud className="w-5 h-5 text-[#5865F2]" />
                 <h3 className="text-[15px] font-bold tracking-tight">Mass Import</h3>
               </div>
-              <button onClick={() => setImportMenuOpen(false)} className="text-[#80848E] hover:text-[#DBDEE1] p-1 transition-colors"><X className="w-4 h-4" /></button>
+              <button onClick={() => setImportMenuOpen(false)} className="text-[#80848E] hover:text-[#DBDEE1] p-1 focus-visible:outline-none"><X className="w-4 h-4" /></button>
             </div>
 
             <div className="p-5 flex flex-col gap-4">
               <p className="text-[13px] text-[#949BA4] leading-relaxed">
-                Paste your inventory list below. The Smart Parser will automatically read unit names and quantities (e.g., <strong className="text-[#DBDEE1]">"3x Koku Drip, 1 Death"</strong>).
+                Paste your inventory text below. The parser automatically detects unit names and quantities (e.g. <strong className="text-[#DBDEE1]">"3x Koku Drip, 1 Death"</strong>).
               </p>
               
               <textarea
@@ -594,43 +1165,53 @@ export function InventoryChannel() {
                 value={importText}
                 onChange={(e) => setImportText(e.target.value)}
                 placeholder="Paste items here..."
-                className="w-full h-[140px] bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[6px] p-3 text-[13px] text-[#F2F3F5] outline-none focus:border-[#5865F2] focus:ring-1 focus:ring-[#5865F2] resize-none custom-scrollbar shadow-inner"
+                className="w-full h-[120px] bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[6px] p-3 text-[13px] text-[#F2F3F5] outline-none focus:border-[#5865F2] resize-none custom-scrollbar shadow-inner"
               />
 
-              {importText.trim().length > 0 && (
-                <div className="bg-[#111214] border border-[rgba(255,255,255,0.02)] rounded-[6px] p-3 flex items-center justify-between">
-                  <span className="text-[12px] font-bold text-[#80848E] uppercase tracking-widest">Items Detected</span>
-                  <span className="text-[13px] font-mono font-bold text-[#5865F2]">{parsedImportItems.length}</span>
+              <div className="min-h-[60px] bg-[#111214] rounded-[6px] p-3 border border-[rgba(255,255,255,0.02)] flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-[#80848E] uppercase tracking-wider">Live Parser Output</span>
+                  <span className="text-[12px] font-mono font-bold text-[#5865F2]">{parsedImportItems.length} Found</span>
                 </div>
-              )}
+                {parsedImportItems.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {parsedImportItems.map((item, i) => (
+                      <span key={i} className="text-[10px] font-bold bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/30 px-2 py-0.5 rounded-[3px] truncate max-w-[120px]">
+                        x{item.qty} {item.name}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-[11px] text-[#4E5058] italic mt-1">Waiting for valid input...</span>
+                )}
+              </div>
             </div>
 
-            <div className="px-5 py-4 border-t border-[rgba(255,255,255,0.04)] bg-[#1E1F22] flex justify-end gap-2">
-              <button onClick={() => setImportMenuOpen(false)} className="px-5 py-2.5 rounded-[4px] text-[13px] font-bold text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)] transition-colors">Cancel</button>
+            <div className="px-5 py-3.5 border-t border-[rgba(255,255,255,0.04)] bg-[#1E1F22] flex justify-end gap-2">
+              <button onClick={() => setImportMenuOpen(false)} className="px-4 py-2 rounded-[4px] text-[12px] font-bold text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)] focus-visible:outline-none">Cancel</button>
               <button 
                 onClick={executeMassImport}
                 disabled={parsedImportItems.length === 0 || isImporting}
-                className="px-6 py-2.5 rounded-[4px] text-[13px] font-bold text-white bg-[#5865F2] hover:bg-[#4752C4] disabled:bg-[rgba(255,255,255,0.04)] disabled:text-[#80848E] disabled:cursor-not-allowed transition-colors shadow-sm flex items-center gap-2"
+                className="px-5 py-2 rounded-[4px] text-[12px] font-bold text-white bg-[#5865F2] hover:bg-[#4752C4] disabled:bg-[#1E1F22] disabled:text-[#80848E] shadow-sm flex items-center gap-2 focus-visible:outline-none"
               >
-                {isImporting ? "Importing..." : <><Check className="w-4 h-4" /> Import Units</>}
+                {isImporting ? "Importing..." : <><Check className="w-3.5 h-3.5" /> Import Items</>}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* INSPECTION MODAL / ACTION SHEET (Desktop-Optimized Wide Layout & Mobile Sheet) */}
+      {/* Inspect Modal */}
       {inspectTarget && (
         <div className="absolute inset-0 z-[100000] flex flex-col justify-end md:justify-center md:items-center p-0 md:p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => { setInspectTarget(null); setShowValueHistory(false); }} />
-          <div className="relative w-full md:max-w-2xl max-h-[88vh] overflow-y-auto custom-scrollbar bg-[#2B2D31] rounded-t-[24px] md:rounded-[16px] p-5 md:p-7 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] md:shadow-[0_20px_60px_rgba(0,0,0,0.8)] animate-slide-up border-t md:border border-[rgba(255,255,255,0.08)] z-10 flex flex-col gap-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setInspectTarget(null)} />
+          <div className="relative w-full md:max-w-xl max-h-[88vh] overflow-y-auto custom-scrollbar bg-[#2B2D31] rounded-t-[12px] md:rounded-[8px] p-5 shadow-2xl border-t md:border border-[rgba(255,255,255,0.08)] z-10 flex flex-col gap-4">
             
             <div className="md:hidden absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-[rgba(255,255,255,0.2)] rounded-full" />
 
-            {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.04)] pb-3">
               <div className="flex items-center gap-3.5 min-w-0 pr-4">
-                <div className="w-14 h-14 rounded-[8px] overflow-hidden bg-[#111214] border border-[rgba(255,255,255,0.1)] shadow-sm shrink-0 relative flex items-center justify-center">
+                <div className="w-12 h-12 rounded-[4px] overflow-hidden bg-[#111214] border border-[rgba(255,255,255,0.08)] shrink-0 relative flex items-center justify-center">
                   <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-[14px] z-0" style={getAvatarStyle(inspectTarget.master.name)}>
                     {getInitials(inspectTarget.master.name)}
                   </div>
@@ -640,68 +1221,45 @@ export function InventoryChannel() {
                 </div>
                 <div className="flex flex-col min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-[18px] font-black text-[#F2F3F5] tracking-tight truncate">{inspectTarget.master.name}</span>
+                    <span className="text-[17px] font-black text-[#F2F3F5] tracking-tight truncate">{inspectTarget.master.name}</span>
                     {inspectTarget.master.status && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-[3px] uppercase tracking-wider" style={{ background: GRID_STATUS_CFG[inspectTarget.master.status as keyof typeof GRID_STATUS_CFG]?.bg, color: GRID_STATUS_CFG[inspectTarget.master.status as keyof typeof GRID_STATUS_CFG]?.color }}>
                         {inspectTarget.master.status}
                       </span>
                     )}
                   </div>
-                  <span className="text-[11.5px] font-bold uppercase tracking-wider text-[#949BA4] truncate">{inspectTarget.master.subtitle || "Unit"}</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#949BA4] truncate">{inspectTarget.master.subtitle || "Unit"}</span>
                 </div>
               </div>
-              <button onClick={() => { setInspectTarget(null); setShowValueHistory(false); }} className="w-9 h-9 rounded-full bg-[rgba(255,255,255,0.06)] flex items-center justify-center text-[#949BA4] shrink-0 active:scale-90 hover:bg-[rgba(255,255,255,0.1)] transition-colors focus-visible:outline-none">
-                <X className="w-4 h-4" />
+              <button onClick={() => setInspectTarget(null)} className="p-1 text-[#949BA4] hover:text-white transition-colors focus-visible:outline-none">
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Modal Body Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-              
-              <div className="flex flex-col gap-3">
-                <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] rounded-[8px] p-4 flex flex-col gap-1 shadow-inner">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#80848E]">Current Value</span>
-                  <span className="text-[18px] font-black font-mono text-[#F2F3F5]">
-                    {inspectTarget.master.valueDisplay || (typeof inspectTarget.master.value === 'number' ? inspectTarget.master.value.toLocaleString() : inspectTarget.master.value)}
-                  </span>
-                  <span className="text-[11.5px] text-[#949BA4] font-medium">Vault Total: <strong className="text-[#DBDEE1] font-mono">{(getUnitConservativeValue(inspectTarget.master) * inspectTarget.item.quantity).toLocaleString()}</strong></span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] rounded-[8px] p-3 flex flex-col">
-                    <span className="text-[9.5px] font-bold uppercase tracking-wider text-[#80848E]">Rarity (0-20)</span>
-                    <span className="text-[15px] font-black font-mono text-[#5865F2] mt-0.5">{inspectTarget.master.rarity ?? "N/A"}</span>
-                  </div>
-                  <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] rounded-[8px] p-3 flex flex-col">
-                    <span className="text-[9.5px] font-bold uppercase tracking-wider text-[#80848E]">Liquidity</span>
-                    <span className="text-[15px] font-black font-mono text-[#DBDEE1] mt-0.5">{inspectTarget.master.liquidity ?? "Avg"}</span>
-                  </div>
-                </div>
-
-                {inspectTarget.master.notice && (
-                  <div className="bg-[rgba(88,101,242,0.08)] border border-[rgba(88,101,242,0.2)] rounded-[8px] p-3 flex flex-col gap-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#5865F2] flex items-center gap-1"><Info className="w-3.5 h-3.5" /> Notice</span>
-                    <span className="text-[12px] text-[#DBDEE1] leading-relaxed">{inspectTarget.master.notice}</span>
-                  </div>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[6px] p-3 flex flex-col">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-[#80848E]">Individual Unit Value</span>
+                <span className="text-[18px] font-black font-mono text-[#F2F3F5] mt-1">
+                  {inspectTarget.master.valueDisplay || (typeof inspectTarget.master.value === 'number' ? inspectTarget.master.value.toLocaleString() : inspectTarget.master.value)}
+                </span>
+                <span className="text-[11px] text-[#949BA4] mt-1">Vault Subtotal: <strong className="text-[#DBDEE1] font-mono">{(getUnitConservativeValue(inspectTarget.master) * inspectTarget.item.quantity).toLocaleString()}</strong></span>
               </div>
 
-              <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] rounded-[8px] p-5 flex flex-col items-center justify-center text-center relative min-h-[160px] shadow-inner">
-                <div className="w-10 h-10 rounded-full bg-[rgba(255,255,255,0.04)] flex items-center justify-center text-[#80848E] mb-2">
-                  <TrendingUp className="w-5 h-5 text-[#5865F2]" />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[6px] p-3 flex flex-col">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-[#80848E]">Rarity (0-20)</span>
+                  <span className="text-[14px] font-black font-mono text-[#4DB6AC] mt-1">{inspectTarget.master.rarity ?? "N/A"}</span>
                 </div>
-                <h4 className="text-[14px] font-bold text-[#F2F3F5] tracking-tight mb-1">Tracking Initiated</h4>
-                <p className="text-[12px] text-[#949BA4] leading-relaxed max-w-[240px]">
-                  Baseline snapshot recorded for {inspectTarget.master.name}. Trend charts will generate as market shifts happen.
-                </p>
+                <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[6px] p-3 flex flex-col">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-[#80848E]">Liquidity</span>
+                  <span className="text-[13px] font-black font-mono text-[#DBDEE1] mt-1 uppercase">{inspectTarget.master.liquidity ?? "Average"}</span>
+                </div>
               </div>
-
             </div>
 
-            {/* Action Bar */}
-            <div className="flex flex-col gap-3.5 bg-[#1E1F22] p-4 rounded-[10px] border border-[rgba(255,255,255,0.04)] shadow-inner">
+            <div className="flex flex-col gap-3 bg-[#1E1F22] p-3.5 rounded-[6px] border border-[rgba(255,255,255,0.04)]">
               <div className="flex items-center justify-between">
-                <span className="text-[12px] font-bold text-[#949BA4] uppercase tracking-wider">Adjust Quantity</span>
+                <span className="text-[11px] font-bold text-[#949BA4] uppercase tracking-wider">Vault Quantity</span>
                 <QuantitySelector 
                   qty={inspectTarget.item.quantity} 
                   onChange={(newQty) => handleQtyChange(inspectTarget.item.unit_id, newQty - inspectTarget.item.quantity)} 
@@ -709,36 +1267,30 @@ export function InventoryChannel() {
                 />
               </div>
 
-              {/* Send to Trade Analyzer Actions */}
-              <div className="grid grid-cols-2 gap-2.5 pt-1 border-t border-[rgba(255,255,255,0.04)]">
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[rgba(255,255,255,0.04)]">
                 <button 
-                  onClick={() => handleSendToAnalyzer("give")}
-                  className="flex items-center justify-center gap-2 py-2.5 rounded-[6px] text-[12.5px] font-bold text-white bg-[#FAA61A] hover:bg-[#d98b14] transition-colors shadow-sm"
+                  disabled={inspectTarget.item.is_pinned}
+                  onClick={() => handleSendToAnalyzer("give")} 
+                  className="flex items-center justify-center gap-2 py-2 rounded-[4px] text-[12px] font-bold text-white bg-[#FAA61A] hover:bg-[#d98b14] disabled:bg-[rgba(255,255,255,0.04)] disabled:text-[#80848E] transition-colors focus-visible:outline-none"
                 >
-                  <ArrowUpCircle className="w-4 h-4" /> + Give
+                  <ArrowUpCircle className="w-4 h-4" /> To Give
                 </button>
                 <button 
-                  onClick={() => handleSendToAnalyzer("get")}
-                  className="flex items-center justify-center gap-2 py-2.5 rounded-[6px] text-[12.5px] font-bold text-white bg-[#5865F2] hover:bg-[#4752C4] transition-colors shadow-sm"
+                  disabled={inspectTarget.item.is_pinned}
+                  onClick={() => handleSendToAnalyzer("get")} 
+                  className="flex items-center justify-center gap-2 py-2 rounded-[4px] text-[12px] font-bold text-white bg-[#5865F2] hover:bg-[#4752C4] disabled:bg-[rgba(255,255,255,0.04)] disabled:text-[#80848E] transition-colors focus-visible:outline-none"
                 >
-                  <ArrowDownCircle className="w-4 h-4" /> + Get
+                  <ArrowDownCircle className="w-4 h-4" /> To Get
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5 pt-1 border-t border-[rgba(255,255,255,0.04)]">
-                <button 
-                  onClick={() => handleTogglePin(inspectTarget.item.unit_id, inspectTarget.item.is_pinned)}
-                  className={`flex items-center justify-center gap-2 py-3 rounded-[6px] text-[13px] font-bold transition-colors border ${inspectTarget.item.is_pinned ? 'bg-[rgba(88,101,242,0.15)] text-[#5865F2] border-[rgba(88,101,242,0.4)]' : 'bg-[#2B2D31] text-[#DBDEE1] border-[rgba(255,255,255,0.04)] hover:bg-[#3F4147]'}`}
-                >
-                  <Pin className="w-4 h-4" style={{ fill: inspectTarget.item.is_pinned ? "currentColor" : "none" }} />
-                  <span>{inspectTarget.item.is_pinned ? "Pinned" : "Pin Unit"}</span>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button onClick={() => handleTogglePin(inspectTarget.item.unit_id, inspectTarget.item.is_pinned)} className={`flex items-center justify-center gap-2 py-2 rounded-[4px] text-[12px] font-bold border focus-visible:outline-none ${inspectTarget.item.is_pinned ? 'bg-[rgba(237,66,69,0.1)] text-[#ed4245] border-[rgba(237,66,69,0.3)]' : 'bg-[#2B2D31] text-[#DBDEE1] border-[rgba(255,255,255,0.04)] hover:bg-[#35373C]'}`}>
+                  {inspectTarget.item.is_pinned ? <LockIcon className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+                  <span>{inspectTarget.item.is_pinned ? "Locked" : "Lock"}</span>
                 </button>
-
-                <button 
-                  onClick={() => handleRemove(inspectTarget.item, inspectTarget.master)}
-                  className="flex items-center justify-center gap-2 py-3 rounded-[6px] text-[13px] font-bold text-[#ed4245] bg-[rgba(237,66,69,0.1)] hover:bg-[rgba(237,66,69,0.2)] border border-[rgba(237,66,69,0.2)] transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
+                <button onClick={() => handleRemove(inspectTarget.item, inspectTarget.master)} className="flex items-center justify-center gap-2 py-2 rounded-[4px] text-[12px] font-bold text-[#80848E] hover:text-[#DBDEE1] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.04)] focus-visible:outline-none">
+                  <Trash2 className="w-3.5 h-3.5" />
                   <span>Remove</span>
                 </button>
               </div>
@@ -749,82 +1301,23 @@ export function InventoryChannel() {
         </div>
       )}
 
-      {/* OWNED TIER-GROUPED POCKETS GRID */}
-      <div className={`flex-1 overflow-y-auto custom-scrollbar p-3 md:p-6 relative z-0 transition-all duration-300 ${importMenuOpen ? "opacity-30 pointer-events-none blur-sm" : ""}`}>
-        {uniqueCount === 0 && searchQuery === "" ? (
-          <div className="flex flex-col items-center justify-center h-full opacity-60 mt-10">
-            <Package className="w-16 h-16 text-[#4e5058] mb-4" />
-            <p className="text-[#F2F3F5] text-[15px] font-bold">No units found</p>
-            <p className="text-[#949BA4] text-[13px] mt-1 text-center max-w-sm">Adjust your filters to see more units.</p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-6">
-            {TIER_ORDER.map(tier => {
-              const tierItems = tierGroupedUnits[tier] || [];
-              if (tierItems.length === 0) return null;
-              const isCollapsed = collapsedTiers[tier];
-              const tierCfg = TIER_CONFIG[tier] || { badgeColor: "#5865F2", label: tier };
-
-              return (
-                <div key={tier} className="flex flex-col gap-3">
-                  {/* Tier Pocket Header */}
-                  <button
-                    onClick={() => setCollapsedTiers(prev => ({ ...prev, [tier]: !prev[tier] }))}
-                    className="flex items-center justify-between w-full px-3 py-2 rounded-[6px] bg-[#2B2D31] hover:bg-[#3F4147] border border-[rgba(255,255,255,0.04)] transition-colors group focus-visible:outline-none"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: tierCfg.badgeColor }} />
-                      <span className="text-[13px] font-black uppercase tracking-wider text-[#F2F3F5]">{tierCfg.label}</span>
-                      <span className="text-[11px] font-bold text-[#80848E] bg-[#1E1F22] px-2 py-0.5 rounded-[4px] border border-[rgba(255,255,255,0.04)]">
-                        {tierItems.reduce((s, i) => s + i.quantity, 0)} total
-                      </span>
-                    </div>
-                    <ChevronDown className={`w-4 h-4 text-[#80848E] group-hover:text-[#F2F3F5] transition-transform duration-300 ${isCollapsed ? '-rotate-90' : ''}`} />
-                  </button>
-
-                  {/* Tier Pocket Grid Slots */}
-                  {!isCollapsed && (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 md:gap-3 animate-fade-in">
-                      {tierItems.map(item => (
-                        <VaultSlot 
-                          key={item.unit_id} 
-                          item={item} 
-                          master={item.master} 
-                          onInspect={(it, mst) => { setInspectTarget({ item: it, master: mst }); setShowValueHistory(false); }} 
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* GLOBAL TOAST OVERLAY */}
+      {/* Global Toast */}
       {toast && (
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[1000] animate-slide-up w-max max-w-[90vw]">
-          <div className={`bg-[#111214] border px-4 py-2.5 rounded-[8px] shadow-[0_8px_24px_rgba(0,0,0,0.5)] flex items-center gap-4 ${toast.isError ? 'border-[rgba(237,66,69,0.3)]' : 'border-[rgba(255,255,255,0.08)]'}`}>
-            <span className="flex items-center gap-2 text-[13px] font-medium text-[#DBDEE1]">
-              {toast.isError && <AlertTriangle className="w-4 h-4 text-[#ed4245]" />}
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[1000] w-max max-w-[90vw]">
+          <div className={`bg-[#111214] border px-4 py-2 rounded-[6px] shadow-2xl flex items-center gap-4 ${toast.isError ? 'border-[rgba(237,66,69,0.3)]' : 'border-[rgba(255,255,255,0.08)]'}`}>
+            <span className="text-[13px] font-medium text-[#DBDEE1]">
               {toast.message}
             </span>
-            
-            {(toast.itemToRestore || !toast.isError) && (
-              <div className="flex items-center gap-2">
-                {toast.itemToRestore && (
-                  <button onClick={handleUndo} className="text-[12.5px] font-bold text-[#5865F2] hover:text-[#4752C4] hover:underline transition-all focus-visible:outline-none px-1">Undo</button>
-                )}
-                <div className="w-[1px] h-3 bg-[rgba(255,255,255,0.1)] mx-1"></div>
-                <button onClick={() => { setToast(null); if (toastTimerRef.current) clearTimeout(toastTimerRef.current); }} className="text-[#80848E] hover:text-[#DBDEE1] p-1 -m-1 transition-colors focus-visible:outline-none">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
+            {toast.itemToRestore && (
+              <button onClick={handleUndo} className="text-[12px] font-bold text-[#5865F2] hover:underline focus-visible:outline-none">Undo</button>
             )}
+            <button onClick={() => setToast(null)} className="text-[#80848E] hover:text-[#DBDEE1] focus-visible:outline-none">
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       )}
+
     </div>
   );
 }

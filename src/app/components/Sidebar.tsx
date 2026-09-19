@@ -7,12 +7,12 @@ import {
   Megaphone,
   LucideIcon,
   Shield,
-  FileText
+  FileText,
+  Package
 } from "lucide-react";
 import { FilterKey } from "../../types";
 import { useUnits } from "../../context/UnitContext";
 import { getTier } from "../../data";
-import { Package } from "lucide-react";
 
 type ChannelConfig = { id: string; label: string; isLocked: boolean; hasThreads?: boolean; icon?: LucideIcon; };
 type CategoryConfig = { id: string; label: string; channels: ChannelConfig[]; };
@@ -30,7 +30,8 @@ const CATEGORIES: CategoryConfig[] = [
   {
     id: "trading", label: "trading",
     channels: [
-      { id: "value-list", label: "value-list", isLocked: false, hasThreads: true }
+      { id: "value-list", label: "value-list", isLocked: false, hasThreads: true },
+      { id: "trading-ads", label: "trading-ads", isLocked: false, icon: Megaphone }
     ]
   },
   {
@@ -187,7 +188,7 @@ export function Sidebar({
                                         <button
                                           key={`${group.tier}-${child.id}`}
                                           onClick={() => onThreadClick(group.tier as FilterKey, child.id)}
-                                          className="relative flex items-center min-h-[36px] md:min-h-[28px] hover:bg-[rgba(78,80,88,0.3)] rounded-[4px] px-2 text-[#80848E] hover:text-[#DBDEE1] text-left transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-x-1"
+                                          className="relative flex items-center min-h-[36px] md:min-h-[28px] hover:bg-[rgba(78,80,88,0.3)] rounded-[4px] px-2 text-[#80848E] hover:text-[#DBDEE1] text-left transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-x-1 focus-visible:outline-none"
                                         >
                                           {isLastChild ? (
                                             <div className="absolute left-[-10px] top-[-12px] w-[12px] h-[30px] md:h-[26px] border-l-2 border-b-2 border-[#3F4147] rounded-bl-[6px]" />

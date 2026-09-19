@@ -17,12 +17,14 @@ const MainCanvas = lazy(() => import("./components/MainCanvas").then(module => (
 const HomeChannel = lazy(() => import("./components/HomeChannel").then(module => ({ default: module.HomeChannel })));
 const TutorialChannel = lazy(() => import("./components/TutorialChannel").then(module => ({ default: module.TutorialChannel })));
 const InventoryChannel = lazy(() => import("./components/InventoryChannel").then(module => ({ default: module.InventoryChannel })));
+const TradingAdsChannel = lazy(() => import("./components/TradingAdsChannel").then(module => ({ default: module.TradingAdsChannel })));
 const ExtraNoticesChannel = lazy(() => import("./components/ExtraNoticesChannel").then(module => ({ default: module.ExtraNoticesChannel })));
 const LegalChannel = lazy(() => import("./components/LegalChannel").then(module => ({ default: module.LegalChannel })));
 
 const CHANNEL_INFO: Record<string, { title: string; subtitle: string }> = {
   "home": { title: "home", subtitle: "Welcome to the ASTD Value List! Important information and update logs are posted here." },
   "value-list": { title: "value-list", subtitle: "ASTD unit values • Being Observed Live by Fire Zio" },
+  "trading-ads": { title: "trading-ads", subtitle: "Live community trade listings • Direct Discord messaging" },
   "tutorial": { title: "tutorial", subtitle: "Learn how to use the ASTD trading calculator and value list." },
   "inventory": { title: "my-inventory", subtitle: "Manage your personal unit collection and vault." },
   "extra-notices": { title: "extra-notices", subtitle: "Additional rules, exceptions, and community notes." },
@@ -125,6 +127,7 @@ export default function App() {
       import("./components/HomeChannel"),
       import("./components/TutorialChannel"),
       import("./components/InventoryChannel"),
+      import("./components/TradingAdsChannel"),
       import("./components/ExtraNoticesChannel"),
       import("./components/LegalChannel")
     ]).then(() => {
@@ -505,6 +508,7 @@ export default function App() {
                   isMobile={isMobile}
                 />
               ) : activeChannel === "inventory" ? ( <InventoryChannel />
+              ) : activeChannel === "trading-ads" ? ( <TradingAdsChannel />
               ) : activeChannel === "extra-notices" ? ( <ExtraNoticesChannel />
               ) : activeChannel === "terms-of-service" ? ( <LegalChannel type="tos" />
               ) : activeChannel === "privacy-policy" ? ( <LegalChannel type="privacy" />
