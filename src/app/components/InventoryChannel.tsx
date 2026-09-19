@@ -5,7 +5,7 @@ import {
   Check, ChevronDown, Copy, ArrowUpCircle, ArrowDownCircle, 
   Star, MousePointerSquareDashed, Scale, Lock as LockIcon,
   TrendingUp, TrendingDown, Flame, EyeOff, ChevronsUp, ChevronsDown, Activity, Heart,
-  Info
+  Info, ArrowLeft
 } from "lucide-react";
 import { useInventoryStore, InventoryItem } from "../../store/useInventoryStore";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -36,7 +36,6 @@ const getUnitConservativeValue = (master: MasterUnit): number => {
   return 0; 
 };
 
-// Cohesive Unified Status Icon
 function AuthenticStatusIcon({ status }: { status?: string | null }) {
   if (!status) return null;
   const lower = status.toLowerCase();
@@ -57,7 +56,6 @@ function AuthenticStatusIcon({ status }: { status?: string | null }) {
   return null;
 }
 
-// Sparkline SVG for Dashboard
 const Sparkline = () => (
   <svg className="absolute bottom-0 left-0 w-full h-[65%] opacity-[0.15] pointer-events-none z-0" preserveAspectRatio="none" viewBox="0 0 100 100">
     <path d="M0,100 C15,80 25,95 40,65 C60,25 80,45 100,10 L100,100 Z" fill="url(#sparkGradient)" />
@@ -71,25 +69,6 @@ const Sparkline = () => (
   </svg>
 );
 
-// --- Signal Bars for Liquidity ---
-const LiquidityBars = ({ liquidity }: { liquidity?: string }) => {
-  const liq = (liquidity || "Average").toLowerCase();
-  let bars = 2;
-  let color = "#B5BAC1"; 
-  
-  if (liq === "high") { bars = 3; color = "#4DB6AC"; }
-  else if (liq === "low" || liq.includes("black")) { bars = 1; color = "#E57373"; }
-
-  return (
-    <div className="flex items-end gap-[1.5px] h-3" title={`Liquidity: ${liquidity || "Average"}`}>
-      <div className="w-1 rounded-[1px]" style={{ height: "40%", backgroundColor: bars >= 1 ? color : "rgba(255,255,255,0.1)" }} />
-      <div className="w-1 rounded-[1px]" style={{ height: "70%", backgroundColor: bars >= 2 ? color : "rgba(255,255,255,0.1)" }} />
-      <div className="w-1 rounded-[1px]" style={{ height: "100%", backgroundColor: bars >= 3 ? color : "rgba(255,255,255,0.1)" }} />
-    </div>
-  );
-};
-
-// --- Trading Card Slot Component ---
 const TradingCardSlot = memo(({ 
   item, 
   master, 
@@ -100,7 +79,8 @@ const TradingCardSlot = memo(({
   stagedGiveQty,
   stagedGetQty,
   onQtyChange,
-  isSandbox
+  isSandbox,
+  isReadOnly
 }: { 
   item: InventoryItem; 
   master: MasterUnit; 
@@ -112,6 +92,7 @@ const TradingCardSlot = memo(({
   stagedGetQty: number;
   onQtyChange: (unitId: string, delta: number) => void;
   isSandbox?: boolean;
+  isReadOnly?: boolean;
 }) => {
   const tierKey = getTier(master);
   const tierColor = TIER_CONFIG[tierKey]?.badgeColor || "#5865F2";
@@ -136,7 +117,7 @@ const TradingCardSlot = memo(({
   })();
 
   const handleDragStart = (e: React.DragEvent) => {
-    if (item.is_pinned || isSelectMode || isSandbox) {
+    if (item.is_pinned || isSelectMode || isSandbox || isReadOnly) {
       e.preventDefault();
       return;
     }
@@ -156,9 +137,9 @@ const TradingCardSlot = memo(({
   return (
     <div
       onClick={handleClick}
-      draggable={!item.is_pinned && !isSelectMode && !isSandbox}
+      draggable={!item.is_pinned && !isSelectMode && !isSandbox && !isReadOnly}
       onDragStart={handleDragStart}
-      className={`group relative flex flex-col bg-[#2B2D31] rounded-[8px] transition-all cursor-pointer overflow-hidden border will-change-transform ${item.is_pinned && !isSandbox ? "cursor-not-allowed" : "active:scale-[0.98]"} ${
+      className={`group relative flex flex-col bg-[#2B2D31] rounded-[8px] transition-all cursor-pointer overflow-hidden border will-change-transform ${
         isSelected 
           ? "border-[#5865F2] ring-2 ring-[#5865F2] scale-[0.98]" 
           : isFullyStaged
@@ -167,8 +148,7 @@ const TradingCardSlot = memo(({
       }`}
       style={{ boxShadow: "0 4px 14px rgba(0,0,0,0.2)" }}
     >
-      {/* Quick Edit Vertical Stepper */}
-      {!isSelectMode && !isSandbox && (
+      {!isSelectMode && !isSandbox && !isReadOnly && (
         <div className="absolute top-0 bottom-[35%] left-0 w-8 bg-[#111214]/95 backdrop-blur-sm border-r border-[rgba(255,255,255,0.05)] flex flex-col justify-center items-center py-2 gap-2 -translate-x-full group-hover:translate-x-0 transition-transform duration-200 z-50 rounded-br-[8px]" onClick={(e) => e.stopPropagation()}>
           <button onClick={() => onQtyChange(item.unit_id, 1)} className="w-6 h-6 flex items-center justify-center bg-[rgba(255,255,255,0.05)] hover:bg-[#23a559]/20 rounded-[4px] transition-colors focus-visible:outline-none"><Plus className="w-4 h-4 text-[#23a559]" /></button>
           <span className="font-mono font-bold text-[11px] text-[#DBDEE1] py-1">{item.quantity}</span>
@@ -176,19 +156,16 @@ const TradingCardSlot = memo(({
         </div>
       )}
 
-      {/* Selection Checkmark */}
       {isSelected && (
         <div className="absolute top-2 right-2 z-50 bg-[#5865F2] text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md">
           <Check className="w-4 h-4 stroke-[3]" />
         </div>
       )}
 
-      {/* Card Artwork Window with Tag-Specific Ambient Background */}
       <div 
         className="relative w-full overflow-hidden flex items-center justify-center border-b border-[rgba(255,255,255,0.03)] bg-[#111214]"
         style={{ aspectRatio: "1/1", background: `radial-gradient(circle at 50% 30%, ${tagBgTint} 0%, #18191C 85%)` }}
       >
-        {/* Top-Left: Status Stamp */}
         {dropCfg && !isSelected && (
           <div 
             className="absolute top-2 left-2 z-30 flex items-center gap-1.5 px-2 py-1 rounded-full shadow-sm max-w-[70%]"
@@ -201,30 +178,17 @@ const TradingCardSlot = memo(({
           </div>
         )}
 
-        {/* Top-Right: Owned Quantity Badge & Pinned Icon */}
         <div className="absolute top-2 right-2 z-30 flex items-center gap-1">
-          {item.is_pinned && (
-            <div className="bg-[#ed4245] text-white p-1 rounded-[4px] shadow-sm flex items-center justify-center" title="Locked - Cannot be traded">
+          {item.is_pinned && !isReadOnly && (
+            <div className="bg-[#ed4245] text-white p-1 rounded-[4px] shadow-sm flex items-center justify-center" title="Locked">
               <LockIcon className="w-3 h-3 fill-current" />
             </div>
           )}
-          {totalStaged > 0 ? (
-            <div className="flex bg-[#111214]/90 backdrop-blur-sm text-white font-mono font-bold text-[10px] rounded-[4px] border border-white/10 shadow-sm overflow-hidden">
-               <div className="px-1.5 py-0.5 bg-[#2B2D31] text-[#DBDEE1] flex items-center gap-1 border-r border-[rgba(255,255,255,0.05)]" title="Available in Vault">
-                 <Package className="w-2.5 h-2.5" /> {availableQty}
-               </div>
-               <div className="px-1.5 py-0.5 text-[#FAA61A] flex items-center gap-1" title="Staged in Calculator">
-                 <Scale className="w-2.5 h-2.5" /> {totalStaged}
-               </div>
-            </div>
-          ) : (
-            <div className="bg-[#111214]/90 backdrop-blur-sm text-[#DBDEE1] font-mono font-bold text-[11px] px-2 py-0.5 rounded-[4px] border border-[rgba(255,255,255,0.08)] shadow-sm">
-              x{item.quantity}
-            </div>
-          )}
+          <div className="bg-[#111214]/90 backdrop-blur-sm text-[#DBDEE1] font-mono font-bold text-[11px] px-2 py-0.5 rounded-[4px] border border-[rgba(255,255,255,0.08)] shadow-sm">
+            x{item.quantity}
+          </div>
         </div>
 
-        {/* Unit Image & Fallback Initials */}
         <div className="absolute inset-0 flex items-center justify-center text-white font-black text-4xl z-0 opacity-40 select-none" style={getAvatarStyle(master.name)}>
           {getInitials(master.name)}
         </div>
@@ -237,18 +201,8 @@ const TradingCardSlot = memo(({
             onError={(e) => handleImageError(e, master.id)} 
           />
         )}
-
-        {/* In-Trade Dimmer Overlay */}
-        {isFullyStaged && (
-          <div className="absolute inset-0 bg-[#111214]/85 z-25 flex items-center justify-center pointer-events-none">
-            <span className="bg-[#1E1F22] border border-[rgba(255,255,255,0.08)] text-[#FAA61A] text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-[4px] shadow-md">
-              In Trade
-            </span>
-          </div>
-        )}
       </div>
 
-      {/* Card Body Data */}
       <div className="p-3 flex flex-col flex-1 bg-[#2B2D31]">
         <div className="flex flex-col mb-2">
           <span className="text-[14px] font-black text-[#F2F3F5] tracking-tight truncate leading-snug">
@@ -269,7 +223,6 @@ const TradingCardSlot = memo(({
           </div>
         </div>
 
-        {/* Value Section */}
         <div className="mt-auto pt-2 border-t border-[rgba(255,255,255,0.03)]">
           <div className="pl-2.5 border-l-[3px] mb-2.5" style={{ borderColor: tierColor }}>
             <span className={`text-[15px] font-black font-mono tracking-tight block truncate ${
@@ -306,7 +259,7 @@ const TradingCardSlot = memo(({
 
 export function InventoryChannel() {
   const { units: ALL_UNITS } = useUnits();
-  const { items, addOrUpdateUnit, removeUnit, togglePin, restoreItem, clearInventory, clearUnpinned } = useInventoryStore();
+  const { items, addOrUpdateUnit, removeUnit, togglePin, restoreItem, clearInventory, clearUnpinned, viewingUserId, viewingUsername, setViewingUser } = useInventoryStore();
   const { addCard, giveItems, getItems } = useTradeStore();
   const { profile } = useAuthStore();
   
@@ -315,31 +268,27 @@ export function InventoryChannel() {
   const [sortMode, setSortMode] = useState("value-desc");
   const [collapsedTiers, setCollapsedTiers] = useState<Record<string, boolean>>({});
 
-  // Dual Vault State & Sandbox State
+  const isReadOnly = viewingUserId !== null;
+  const activeProfileId = viewingUserId || profile?.id;
+
   const [vaultView, setVaultView] = useState<"owned" | "wishlist">("owned");
   const [sandboxDismissed, setSandboxDismissed] = useStickyState(false, "astd_sandbox_dismissed_v1");
 
-  // Selection Mode State
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedUnits, setSelectedUnits] = useState<Set<string>>(new Set());
-
-  // Inspect Modal State
   const [inspectTarget, setInspectTarget] = useState<{ item: InventoryItem; master: MasterUnit } | null>(null);
 
-  // Omnibox State
   const [isOmniboxOpen, setIsOmniboxOpen] = useState(false);
   const [omniboxIndex, setOmniboxIndex] = useState(-1);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const omniboxRef = useRef<HTMLDivElement>(null);
   useClickOutside(omniboxRef, () => setIsOmniboxOpen(false));
 
-  // Mass Import State
   const [importMenuOpen, setImportMenuOpen] = useState(false);
   const [importText, setImportText] = useState("");
   const [isImporting, setIsImporting] = useState(false);
   const importInputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Manage Menu State
   const [manageOpen, setManageOpen] = useState(false);
   const [confirmClear, setConfirmClear] = useState<"unpinned" | "all" | null>(null);
   const manageRef = useRef<HTMLDivElement>(null);
@@ -354,16 +303,16 @@ export function InventoryChannel() {
   }, []);
 
   const handleUndo = useCallback(async () => {
-    if (toast?.itemToRestore && profile) {
+    if (toast?.itemToRestore && profile && !isReadOnly) {
       try {
         await restoreItem(toast.itemToRestore);
         setToast(null);
       } catch (e) { showToast("Failed to restore unit.", true); }
     }
-  }, [toast, profile, restoreItem, showToast]);
+  }, [toast, profile, restoreItem, showToast, isReadOnly]);
 
   const handleQtyChange = useCallback(async (unitId: string, delta: number) => {
-    if (!profile || delta === 0) return;
+    if (!profile || delta === 0 || isReadOnly) return;
     try { 
       await addOrUpdateUnit(profile.id, unitId, delta);
       setInspectTarget(prev => {
@@ -372,37 +321,36 @@ export function InventoryChannel() {
         if (updatedQty <= 0) return null;
         return { ...prev, item: { ...prev.item, quantity: updatedQty } };
       });
-    } catch (e) { showToast("Failed to update quantity. Network error.", true); }
-  }, [profile, addOrUpdateUnit, showToast]);
+    } catch (e) { showToast("Failed to update quantity.", true); }
+  }, [profile, addOrUpdateUnit, showToast, isReadOnly]);
 
   const handleTogglePin = useCallback(async (unitId: string, status: boolean) => {
-    if (!profile) return;
+    if (!profile || isReadOnly) return;
     try { 
       await togglePin(profile.id, unitId, status); 
       setInspectTarget(prev => prev && prev.item.unit_id === unitId ? { ...prev, item: { ...prev.item, is_pinned: !status } } : prev);
     } catch (e) { showToast("Failed to pin unit.", true); }
-  }, [profile, togglePin, showToast]);
+  }, [profile, togglePin, showToast, isReadOnly]);
 
   const handleRemove = useCallback(async (item: InventoryItem, master: MasterUnit) => {
-    if (!profile) return;
+    if (!profile || isReadOnly) return;
     try {
       await removeUnit(profile.id, item.unit_id);
       setInspectTarget(null);
       showToast(`Removed ${master.name}`, false, item);
     } catch (e) { showToast("Failed to remove unit.", true); }
-  }, [profile, removeUnit, showToast]);
+  }, [profile, removeUnit, showToast, isReadOnly]);
 
   const handleClearAction = useCallback(async () => {
-    if (!profile || !confirmClear) return;
+    if (!profile || !confirmClear || isReadOnly) return;
     try {
       if (confirmClear === "unpinned") await clearUnpinned(profile.id);
       if (confirmClear === "all") await clearInventory(profile.id);
       setManageOpen(false);
       setConfirmClear(null);
     } catch (e) { showToast("Failed to clear inventory.", true); }
-  }, [profile, confirmClear, clearUnpinned, clearInventory, showToast]);
+  }, [profile, confirmClear, clearUnpinned, clearInventory, showToast, isReadOnly]);
 
-  // Derived Analytics Data
   const { 
     resolvedInventory, 
     estimatedValue, 
@@ -412,7 +360,11 @@ export function InventoryChannel() {
     unpinnedCount, 
     unobPercentage,
     marketMomentum,
-    liqDistribution 
+    liqDistribution,
+    liqTotal,
+    highPct,
+    avgPct,
+    lowPct
   } = useMemo(() => {
     let estVal = 0, liqVal = 0, totQty = 0, unpinned = 0;
     let unobVal = 0;
@@ -451,6 +403,11 @@ export function InventoryChannel() {
     const unobPct = estVal > 0 ? (unobVal / estVal) * 100 : 0;
     const netMomentum = risingCount - droppingCount;
 
+    const totalVal = estVal > 0 ? estVal : 1;
+    const hPct = (highLiq / totalVal) * 100;
+    const aPct = (avgLiq / totalVal) * 100;
+    const lPct = (lowLiq / totalVal) * 100;
+
     return { 
       resolvedInventory: resolved, 
       estimatedValue: estVal, 
@@ -460,12 +417,15 @@ export function InventoryChannel() {
       unpinnedCount: unpinned,
       unobPercentage: unobPct,
       marketMomentum: { net: netMomentum, rising: risingCount, dropping: droppingCount },
-      liqDistribution: { high: highLiq, avg: avgLiq, low: lowLiq }
+      liqDistribution: { high: highLiq, avg: avgLiq, low: lowLiq },
+      liqTotal: totalVal,
+      highPct: hPct,
+      avgPct: aPct,
+      lowPct: lPct
     };
   }, [items, ALL_UNITS]);
 
-  // Determine Sandbox Mode State
-  const isSandbox = uniqueCount === 0 && !sandboxDismissed;
+  const isSandbox = !isReadOnly && uniqueCount === 0 && !sandboxDismissed;
   
   const sandboxMockItems = useMemo(() => {
     if (!isSandbox) return [];
@@ -478,9 +438,9 @@ export function InventoryChannel() {
       ...item,
       id: `sandbox-${item.unit_id}`,
       user_id: "sandbox",
-      created_at: new Date().toISOString(), // Fills the missing property TS is crying about
+      created_at: new Date().toISOString(),
       master: ALL_UNITS.find(u => u.id === item.unit_id)!
-    })).filter(i => i.master) as (InventoryItem & { master: MasterUnit })[]; // Explicit cast to match real inventory
+    })).filter(i => i.master) as (InventoryItem & { master: MasterUnit })[];
   }, [isSandbox, ALL_UNITS]);
 
   const displayInventory = isSandbox ? sandboxMockItems : resolvedInventory;
@@ -492,11 +452,11 @@ export function InventoryChannel() {
   }, [displayInventory]);
 
   const handleCopyVault = useCallback(() => {
-    const text = `My ASTD Vault (Total: ${estimatedValue.toLocaleString()} | Liquid: ${liquidValue.toLocaleString()} | UNOB: ${unobPercentage.toFixed(0)}%):\n` +
+    const text = `${isReadOnly && viewingUsername ? `${viewingUsername}'s` : 'My'} ASTD Vault (Total: ${estimatedValue.toLocaleString()} | Liquid: ${liquidValue.toLocaleString()} | UNOB: ${unobPercentage.toFixed(0)}%):\n` +
       displayInventory.map(i => `- ${i.quantity}x ${i.master.name}`).join('\n');
     navigator.clipboard.writeText(text);
     showToast("Vault summary copied to clipboard!");
-  }, [displayInventory, estimatedValue, liquidValue, unobPercentage, showToast]);
+  }, [displayInventory, estimatedValue, liquidValue, unobPercentage, showToast, isReadOnly, viewingUsername]);
 
   const handleSendToAnalyzer = (type: "give" | "get", targetMaster?: MasterUnit) => {
     triggerHaptic('medium');
@@ -544,7 +504,7 @@ export function InventoryChannel() {
   };
 
   const handleQuickAdd = async (master: MasterUnit) => {
-    if (!profile) return;
+    if (!profile || isReadOnly) return;
     try {
       await addOrUpdateUnit(profile.id, master.id, 1);
       if (isSandbox) setSandboxDismissed(true);
@@ -575,7 +535,7 @@ export function InventoryChannel() {
   };
 
   const executeMassImport = async () => {
-    if (!profile || parsedImportItems.length === 0) return;
+    if (!profile || parsedImportItems.length === 0 || isReadOnly) return;
     setIsImporting(true);
     let successCount = 0;
     
@@ -592,7 +552,6 @@ export function InventoryChannel() {
     setImportMenuOpen(false);
     setImportText("");
     if (successCount > 0) showToast(`Imported ${successCount} items successfully.`, false);
-    if (successCount < parsedImportItems.length) showToast(`Failed to import ${parsedImportItems.length - successCount} items.`, true);
   };
 
   const tierGroupedUnits = useMemo(() => {
@@ -642,20 +601,20 @@ export function InventoryChannel() {
 
   const unownedSearchResults = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    if (!q) return [];
+    if (!q || isReadOnly) return [];
     const ownedIds = new Set(items.map(i => i.unit_id));
     return ALL_UNITS.filter(u => {
       if (ownedIds.has(u.id)) return false;
       return u.name.toLowerCase().includes(q) || (u.subtitle && u.subtitle.toLowerCase().includes(q)) || (u.aliases && u.aliases.some(a => a.toLowerCase().includes(q)));
     }).slice(0, 10);
-  }, [searchQuery, items, ALL_UNITS]);
+  }, [searchQuery, items, ALL_UNITS, isReadOnly]);
 
   const parsedImportItems = useMemo(() => {
     if (!importText.trim()) return [];
     return parseSmartTrade(importText, ALL_UNITS).giveCards;
   }, [importText, ALL_UNITS]);
 
-  if (!profile) {
+  if (!profile && !isReadOnly) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-[#313338] p-6 text-center">
         <Package className="w-12 h-12 text-[#80848E] mb-3" />
@@ -665,13 +624,8 @@ export function InventoryChannel() {
     );
   }
 
-  const liqTotal = estimatedValue > 0 ? estimatedValue : 1;
-  const highPct = (liqDistribution.high / liqTotal) * 100;
-  const avgPct = (liqDistribution.avg / liqTotal) * 100;
-  const lowPct = (liqDistribution.low / liqTotal) * 100;
-
   // Progressive Disclosure Empty State View
-  if (uniqueCount === 0 && sandboxDismissed && !importMenuOpen) {
+  if (uniqueCount === 0 && sandboxDismissed && !importMenuOpen && !isReadOnly) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-[#313338] p-4 md:p-6 animate-fade-in relative font-sans">
         <style>{`.bg-grid-pattern { background-size: 40px 40px; background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px); }`}</style>
@@ -713,7 +667,7 @@ export function InventoryChannel() {
                       className={`flex items-center gap-3 w-full p-3 rounded-[8px] transition-colors focus-visible:outline-none ${isSelected ? 'bg-[#5865F2] text-white shadow-sm' : 'bg-transparent hover:bg-[rgba(255,255,255,0.04)] text-[#F2F3F5]'}`}
                     >
                       <div className="w-8 h-8 rounded-[4px] bg-[#111214] flex items-center justify-center shrink-0 border border-[rgba(255,255,255,0.08)] overflow-hidden relative">
-                        {getProxyImage(u.id, u.imageUrl) ? <img src={getProxyImage(u.id, u.imageUrl)!} alt="" className="w-full h-full object-cover" onError={(e) => e.currentTarget.style.opacity = '0'} /> : <span className="text-[9px] font-bold z-0" style={getAvatarStyle(u.name)}>{getInitials(u.name)}</span>}
+                        {getProxyImage(u.id, u.imageUrl) ? <img src={getProxyImage(u.id, u.imageUrl)!} alt="" className="w-full h-full object-cover" onError={(e) => handleImageError(e, u.id)} /> : <span className="text-[9px] font-bold z-0" style={getAvatarStyle(u.name)}>{getInitials(u.name)}</span>}
                       </div>
                       <div className="flex flex-col min-w-0 flex-1">
                         <span className="text-[14px] font-bold truncate">{u.name}</span>
@@ -748,36 +702,56 @@ export function InventoryChannel() {
     <div className="flex-1 flex flex-col overflow-hidden bg-[#313338] h-full select-none font-sans relative">
       <style>{`.mask-fade-edges { mask-image: linear-gradient(to right, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%); }`}</style>
       
-      {/* Header Controls Bar (Hidden in completely empty Sandbox state, but shown once populated) */}
-      <div className={`flex-shrink-0 flex flex-col bg-[#2B2D31] border-b border-[rgba(0,0,0,0.22)] shadow-sm z-20 relative ${importMenuOpen ? "opacity-30 pointer-events-none blur-sm" : ""}`}>
-        
-        {/* Dual Vault Tabs */}
-        <div className="flex bg-[#1E1F22] rounded-[4px] p-[3px] mx-3 md:mx-5 mt-3 mb-1 border border-[rgba(255,255,255,0.04)] w-fit shadow-inner">
+      {/* Read-Only Banner Header */}
+      {isReadOnly && (
+        <div className="flex items-center justify-between px-4 py-2.5 bg-[#5865F2] text-white shrink-0 shadow-md z-30 animate-fade-in">
+          <div className="flex items-center gap-2.5">
+            <span className="text-[12px] font-bold uppercase tracking-wider bg-black/20 px-2 py-0.5 rounded">Viewing Vault</span>
+            <span className="text-[14px] font-black truncate">{viewingUsername || "Trader"}'s Collection</span>
+          </div>
           <button 
-            onClick={() => setVaultView("owned")} 
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[3px] text-[11px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none ${vaultView === "owned" ? "bg-[#5865F2] text-white shadow-sm" : "text-[#949BA4] hover:text-[#DBDEE1]"}`}
+            onClick={() => setViewingUser(null, null)}
+            className="flex items-center gap-1.5 px-3 py-1 bg-black/20 hover:bg-black/30 rounded-[4px] text-[12px] font-bold transition-colors focus-visible:outline-none"
           >
-            <Package className="w-3.5 h-3.5" /> My Vault
-          </button>
-          <button 
-            onClick={() => { setVaultView("wishlist"); showToast("Wishlist feature arriving in the Trading Ads update.", false); }} 
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[3px] text-[11px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none ${vaultView === "wishlist" ? "bg-[#5865F2] text-white shadow-sm" : "text-[#949BA4] hover:text-[#DBDEE1]"}`}
-          >
-            <Heart className="w-3.5 h-3.5" /> Wishlist
+            <ArrowLeft className="w-3.5 h-3.5" /> Return to My Vault
           </button>
         </div>
+      )}
+
+      {/* Header Controls Bar */}
+      <div className={`flex-shrink-0 flex flex-col bg-[#2B2D31] border-b border-[rgba(0,0,0,0.22)] shadow-sm z-20 relative ${importMenuOpen ? "opacity-30 pointer-events-none blur-sm" : ""}`}>
+        
+        {!isReadOnly && (
+          <div className="flex bg-[#1E1F22] rounded-[4px] p-[3px] mx-3 md:mx-5 mt-3 mb-1 border border-[rgba(255,255,255,0.04)] w-fit shadow-inner">
+            <button 
+              onClick={() => setVaultView("owned")} 
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[3px] text-[11px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none ${vaultView === "owned" ? "bg-[#5865F2] text-white shadow-sm" : "text-[#949BA4] hover:text-[#DBDEE1]"}`}
+            >
+              <Package className="w-3.5 h-3.5" /> My Vault
+            </button>
+            <button 
+              onClick={() => { setVaultView("wishlist"); showToast("Wishlist feature arriving in the Trading Ads update.", false); }} 
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[3px] text-[11px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none ${vaultView === "wishlist" ? "bg-[#5865F2] text-white shadow-sm" : "text-[#949BA4] hover:text-[#DBDEE1]"}`}
+            >
+              <Heart className="w-3.5 h-3.5" /> Wishlist
+            </button>
+          </div>
+        )}
 
         <div className="flex flex-col xl:flex-row xl:items-center justify-between px-3 md:px-5 py-2.5 gap-2.5">
           <div className="flex flex-nowrap items-center gap-1.5 md:gap-2 overflow-x-auto hide-scrollbar pb-1 -mb-1 w-full xl:w-auto snap-x snap-mandatory pr-6 mask-fade-edges" style={{ WebkitOverflowScrolling: 'touch' }}>
-            <div className="flex items-center pr-2 border-r border-[rgba(255,255,255,0.06)] mr-1 shrink-0">
-              <button 
-                onClick={() => { setIsSelectMode(!isSelectMode); setSelectedUnits(new Set()); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] ${isSelectMode ? 'bg-[rgba(88,101,242,0.15)] text-[#5865F2] ring-1 ring-[#5865F2]/50' : 'bg-[#1E1F22] text-[#80848E] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.04)]'}`}
-              >
-                <MousePointerSquareDashed className="w-3.5 h-3.5" />
-                Select
-              </button>
-            </div>
+            
+            {!isReadOnly && (
+              <div className="flex items-center pr-2 border-r border-[rgba(255,255,255,0.06)] mr-1 shrink-0">
+                <button 
+                  onClick={() => { setIsSelectMode(!isSelectMode); setSelectedUnits(new Set()); }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] ${isSelectMode ? 'bg-[rgba(88,101,242,0.15)] text-[#5865F2] ring-1 ring-[#5865F2]/50' : 'bg-[#1E1F22] text-[#80848E] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.04)]'}`}
+                >
+                  <MousePointerSquareDashed className="w-3.5 h-3.5" />
+                  Select
+                </button>
+              </div>
+            )}
 
             <button onClick={() => setActiveTierFilter("All")} className="snap-start flex-shrink-0 px-3.5 py-1.5 rounded-full text-[11.5px] md:text-[12px] font-bold tracking-wide transition-colors border focus-visible:outline-none" style={activeTierFilter === "All" ? { background: "#5865F2", color: "#fff", borderColor: "#5865F2" } : { background: "rgba(255,255,255,0.03)", color: "#949BA4", borderColor: "rgba(255,255,255,0.05)" }}>
               All
@@ -805,7 +779,7 @@ export function InventoryChannel() {
                   onChange={(e) => { setSearchQuery(e.target.value); setIsOmniboxOpen(true); setOmniboxIndex(-1); }}
                   onFocus={() => setIsOmniboxOpen(true)}
                   onKeyDown={handleOmniboxKeyDown}
-                  placeholder="Search or add units..."
+                  placeholder={isReadOnly ? "Search vault..." : "Search or add units..."}
                   className="w-full bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[4px] pl-9 pr-3 py-1 text-[13px] text-[#F2F3F5] outline-none placeholder-[#80848E] focus:ring-1 focus:ring-[#5865F2] transition-colors shadow-inner h-[32px]"
                 />
               </div>
@@ -818,47 +792,49 @@ export function InventoryChannel() {
                 <Copy className="w-3.5 h-3.5" />
               </button>
 
-              <div className="relative shrink-0" ref={manageRef}>
-                <button 
-                  onClick={() => setManageOpen(!manageOpen)}
-                  className={`w-[32px] h-[32px] shrink-0 flex items-center justify-center rounded-[4px] transition-colors focus-visible:outline-none border ${manageOpen || confirmClear ? 'bg-[#35373C] text-[#F2F3F5] border-[rgba(255,255,255,0.1)]' : 'bg-[#1E1F22] text-[#80848E] hover:text-[#DBDEE1] hover:bg-[#35373C] border-[rgba(255,255,255,0.04)]'}`}
-                  title="Inventory Options"
-                >
-                  <Settings2 className="w-3.5 h-3.5" />
-                </button>
-                
-                {manageOpen && (
-                  <div className="absolute top-full right-0 mt-2 w-[260px] bg-[#2B2D31] border border-[rgba(255,255,255,0.08)] shadow-2xl rounded-[8px] p-1.5 z-50 animate-fade-in flex flex-col">
-                    {confirmClear ? (
-                      <div className="p-3 bg-[rgba(237,66,69,0.1)] border border-[rgba(237,66,69,0.2)] rounded-[6px] flex flex-col gap-3">
-                        <span className="text-[12.5px] text-[#F2F3F5] font-medium leading-snug">
-                          Remove {confirmClear === "unpinned" ? <span className="font-bold text-[#ed4245]">{unpinnedCount} unlocked</span> : <span className="font-bold text-[#ed4245]">all {uniqueCount}</span>} units? This cannot be undone.
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => setConfirmClear(null)} className="flex-1 px-3 py-2 bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] rounded-[4px] text-[12px] font-bold text-[#DBDEE1] transition-colors focus-visible:outline-none">Cancel</button>
-                          <button onClick={handleClearAction} className="flex-1 px-3 py-2 bg-[#ed4245] hover:bg-[#c9383a] rounded-[4px] text-[12px] font-bold text-white transition-colors focus-visible:outline-none">Clear</button>
+              {!isReadOnly && (
+                <div className="relative shrink-0" ref={manageRef}>
+                  <button 
+                    onClick={() => setManageOpen(!manageOpen)}
+                    className={`w-[32px] h-[32px] shrink-0 flex items-center justify-center rounded-[4px] transition-colors focus-visible:outline-none border ${manageOpen || confirmClear ? 'bg-[#35373C] text-[#F2F3F5] border-[rgba(255,255,255,0.1)]' : 'bg-[#1E1F22] text-[#80848E] hover:text-[#DBDEE1] hover:bg-[#35373C] border-[rgba(255,255,255,0.04)]'}`}
+                    title="Inventory Options"
+                  >
+                    <Settings2 className="w-3.5 h-3.5" />
+                  </button>
+                  
+                  {manageOpen && (
+                    <div className="absolute top-full right-0 mt-2 w-[260px] bg-[#2B2D31] border border-[rgba(255,255,255,0.08)] shadow-2xl rounded-[8px] p-1.5 z-50 animate-fade-in flex flex-col">
+                      {confirmClear ? (
+                        <div className="p-3 bg-[rgba(237,66,69,0.1)] border border-[rgba(237,66,69,0.2)] rounded-[6px] flex flex-col gap-3">
+                          <span className="text-[12.5px] text-[#F2F3F5] font-medium leading-snug">
+                            Remove {confirmClear === "unpinned" ? <span className="font-bold text-[#ed4245]">{unpinnedCount} unlocked</span> : <span className="font-bold text-[#ed4245]">all {uniqueCount}</span>} units? This cannot be undone.
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => setConfirmClear(null)} className="flex-1 px-3 py-2 bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] rounded-[4px] text-[12px] font-bold text-[#DBDEE1] transition-colors focus-visible:outline-none">Cancel</button>
+                            <button onClick={handleClearAction} className="flex-1 px-3 py-2 bg-[#ed4245] hover:bg-[#c9383a] rounded-[4px] text-[12px] font-bold text-white transition-colors focus-visible:outline-none">Clear</button>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <>
-                        <button onClick={() => { setImportMenuOpen(true); setManageOpen(false); setTimeout(() => importInputRef.current?.focus(), 100); }} className="w-full text-left px-3 py-2.5 rounded-[4px] text-[12.5px] font-semibold text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)] transition-colors focus-visible:outline-none flex items-center justify-between">
-                          Import from Text <Wand2 className="w-3.5 h-3.5 text-[#80848E]" />
-                        </button>
-                        <div className="w-full h-px bg-[rgba(255,255,255,0.04)] my-1" />
-                        <button onClick={() => { if (unpinnedCount > 0) setConfirmClear("unpinned"); }} disabled={unpinnedCount === 0} className="w-full text-left px-3 py-2.5 rounded-[4px] text-[12.5px] font-semibold text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none flex items-center justify-between">
-                          Clear Unlocked <span className="text-[#80848E] font-mono font-bold text-[11px]">{unpinnedCount}</span>
-                        </button>
-                        <button onClick={() => { if (uniqueCount > 0) setConfirmClear("all"); }} disabled={uniqueCount === 0} className="w-full text-left px-3 py-2.5 rounded-[4px] text-[12.5px] font-semibold text-[#ed4245] hover:bg-[rgba(237,66,69,0.1)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none flex items-center justify-between">
-                          Clear Entire Inventory <span className="text-[#ed4245] opacity-70 font-mono font-bold text-[11px]">{uniqueCount}</span>
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
+                      ) : (
+                        <>
+                          <button onClick={() => { setImportMenuOpen(true); setManageOpen(false); setTimeout(() => importInputRef.current?.focus(), 100); }} className="w-full text-left px-3 py-2.5 rounded-[4px] text-[12.5px] font-semibold text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)] transition-colors focus-visible:outline-none flex items-center justify-between">
+                            Import from Text <Wand2 className="w-3.5 h-3.5 text-[#80848E]" />
+                          </button>
+                          <div className="w-full h-px bg-[rgba(255,255,255,0.04)] my-1" />
+                          <button onClick={() => { if (unpinnedCount > 0) setConfirmClear("unpinned"); }} disabled={unpinnedCount === 0} className="w-full text-left px-3 py-2.5 rounded-[4px] text-[12.5px] font-semibold text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none flex items-center justify-between">
+                            Clear Unlocked <span className="text-[#80848E] font-mono font-bold text-[11px]">{unpinnedCount}</span>
+                          </button>
+                          <button onClick={() => { if (uniqueCount > 0) setConfirmClear("all"); }} disabled={uniqueCount === 0} className="w-full text-left px-3 py-2.5 rounded-[4px] text-[12.5px] font-semibold text-[#ed4245] hover:bg-[rgba(237,66,69,0.1)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none flex items-center justify-between">
+                            Clear Entire Inventory <span className="text-[#ed4245] opacity-70 font-mono font-bold text-[11px]">{uniqueCount}</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Omnibox Dropdown */}
-              {isOmniboxOpen && searchQuery && unownedSearchResults.length > 0 && (
+              {!isReadOnly && isOmniboxOpen && searchQuery && unownedSearchResults.length > 0 && (
                 <div className="absolute top-full left-0 right-10 mt-1 max-h-[300px] overflow-y-auto custom-scrollbar bg-[#2B2D31] border border-[rgba(255,255,255,0.08)] rounded-[6px] shadow-[0_12px_40px_rgba(0,0,0,0.5)] z-[99999] flex flex-col p-1 text-left">
                   {unownedSearchResults.map((u, i) => {
                     const isSelected = i === omniboxIndex;
@@ -890,7 +866,7 @@ export function InventoryChannel() {
         <div className="p-3 md:p-6 pb-32">
           
           {/* Sandbox Banner */}
-          {isSandbox && (
+          {!isReadOnly && isSandbox && (
              <div className="bg-[rgba(88,101,242,0.1)] border border-[#5865F2]/30 rounded-[8px] p-4 flex items-center justify-between mb-6 shadow-sm">
                 <div className="flex items-center gap-3">
                    <Info className="w-5 h-5 text-[#5865F2] shrink-0" />
@@ -903,16 +879,15 @@ export function InventoryChannel() {
              </div>
           )}
 
-          {/* Authentic Portfolio Dashboard */}
+          {/* Portfolio Dashboard */}
           {displayInventory.length > 0 && !searchQuery && activeTierFilter === "All" && (
             <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-4 mb-6">
               
-              {/* Left Panel: Clean Financial Breakdown */}
               <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-5 flex flex-col justify-between relative overflow-hidden">
                 <Sparkline />
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">Vault Net Worth</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">{isReadOnly && viewingUsername ? `${viewingUsername}'s Vault Net Worth` : 'Vault Net Worth'}</span>
                     <div className="flex items-center gap-1.5 text-[11px] font-bold font-mono">
                       {isSandbox ? (
                          <span className="text-[#949BA4] bg-[#1E1F22] px-2 py-0.5 rounded-[4px] border border-[rgba(255,255,255,0.04)]">Sandbox Value</span>
@@ -946,7 +921,6 @@ export function InventoryChannel() {
                   </div>
                 </div>
 
-                {/* Tactile Liquidity Distribution */}
                 {!isSandbox && (
                   <div className="flex flex-col gap-1.5 mt-5 relative z-10">
                     <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">
@@ -967,7 +941,6 @@ export function InventoryChannel() {
                 )}
               </div>
 
-              {/* Right Panel: Top Assets */}
               <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-5 flex flex-col">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4] mb-3">Crown Assets</span>
                 
@@ -1033,14 +1006,12 @@ export function InventoryChannel() {
               const isCollapsed = collapsedTiers[tier];
               const tierCfg = TIER_CONFIG[tier] || { badgeColor: "#5865F2", label: tier };
               
-              // Completionist Math
               const totalInTier = ALL_UNITS.filter(u => getTier(u) === tier).length;
               const uniqueCollected = new Set(tierItems.map(i => i.unit_id)).size;
               const progressPct = totalInTier > 0 ? (uniqueCollected / totalInTier) * 100 : 0;
 
               return (
                 <div key={tier} className="flex flex-col gap-3">
-                  {/* Clean Non-Sticky Group Header */}
                   <div className="flex items-center gap-3">
                     <div className="w-[3px] h-[16px] rounded-full" style={{ backgroundColor: tierCfg.badgeColor }} />
                     <h3 className="text-[15px] font-black uppercase tracking-wider text-[#F2F3F5] leading-none mt-0.5">{tierCfg.label}</h3>
@@ -1085,6 +1056,7 @@ export function InventoryChannel() {
                             stagedGetQty={stagedGet}
                             onQtyChange={handleQtyChange}
                             isSandbox={isSandbox}
+                            isReadOnly={isReadOnly}
                           />
                         );
                       })}
@@ -1122,14 +1094,6 @@ export function InventoryChannel() {
               >
                 To Get
               </button>
-              <div className="w-px h-5 bg-[rgba(255,255,255,0.1)] mx-1" />
-              <button 
-                disabled
-                className="px-4 py-2 bg-[#2B2D31] text-[#4e5058] text-[12px] font-bold rounded-[4px] border border-[rgba(255,255,255,0.02)] cursor-not-allowed"
-                title="Available in upcoming trading ads release"
-              >
-                Create Ad
-              </button>
               <button 
                 onClick={() => { setIsSelectMode(false); setSelectedUnits(new Set()); }}
                 className="p-2 text-[#80848E] hover:text-[#F2F3F5] rounded-[4px] hover:bg-[rgba(255,255,255,0.05)] ml-1 focus-visible:outline-none"
@@ -1141,8 +1105,8 @@ export function InventoryChannel() {
         </div>
       )}
 
-      {/* Mass Import Modal with Live Tokens */}
-      {importMenuOpen && (
+      {/* Mass Import Modal */}
+      {importMenuOpen && !isReadOnly && (
         <div className="absolute inset-0 z-[100000] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setImportMenuOpen(false)} />
           <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.06)] rounded-[12px] w-full max-w-lg shadow-[0_20px_60px_rgba(0,0,0,0.8)] relative z-10 flex flex-col overflow-hidden animate-slide-up">
@@ -1260,11 +1224,15 @@ export function InventoryChannel() {
             <div className="flex flex-col gap-3 bg-[#1E1F22] p-3.5 rounded-[6px] border border-[rgba(255,255,255,0.04)]">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold text-[#949BA4] uppercase tracking-wider">Vault Quantity</span>
-                <QuantitySelector 
-                  qty={inspectTarget.item.quantity} 
-                  onChange={(newQty) => handleQtyChange(inspectTarget.item.unit_id, newQty - inspectTarget.item.quantity)} 
-                  minQty={0} 
-                />
+                {!isReadOnly ? (
+                  <QuantitySelector 
+                    qty={inspectTarget.item.quantity} 
+                    onChange={(newQty) => handleQtyChange(inspectTarget.item.unit_id, newQty - inspectTarget.item.quantity)} 
+                    minQty={0} 
+                  />
+                ) : (
+                  <span className="font-mono font-bold text-[#DBDEE1]">x{inspectTarget.item.quantity}</span>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[rgba(255,255,255,0.04)]">
@@ -1284,16 +1252,18 @@ export function InventoryChannel() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <button onClick={() => handleTogglePin(inspectTarget.item.unit_id, inspectTarget.item.is_pinned)} className={`flex items-center justify-center gap-2 py-2 rounded-[4px] text-[12px] font-bold border focus-visible:outline-none ${inspectTarget.item.is_pinned ? 'bg-[rgba(237,66,69,0.1)] text-[#ed4245] border-[rgba(237,66,69,0.3)]' : 'bg-[#2B2D31] text-[#DBDEE1] border-[rgba(255,255,255,0.04)] hover:bg-[#35373C]'}`}>
-                  {inspectTarget.item.is_pinned ? <LockIcon className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
-                  <span>{inspectTarget.item.is_pinned ? "Locked" : "Lock"}</span>
-                </button>
-                <button onClick={() => handleRemove(inspectTarget.item, inspectTarget.master)} className="flex items-center justify-center gap-2 py-2 rounded-[4px] text-[12px] font-bold text-[#80848E] hover:text-[#DBDEE1] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.04)] focus-visible:outline-none">
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Remove</span>
-                </button>
-              </div>
+              {!isReadOnly && (
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button onClick={() => handleTogglePin(inspectTarget.item.unit_id, inspectTarget.item.is_pinned)} className={`flex items-center justify-center gap-2 py-2 rounded-[4px] text-[12px] font-bold border focus-visible:outline-none ${inspectTarget.item.is_pinned ? 'bg-[rgba(237,66,69,0.1)] text-[#ed4245] border-[rgba(237,66,69,0.3)]' : 'bg-[#2B2D31] text-[#DBDEE1] border-[rgba(255,255,255,0.04)] hover:bg-[#35373C]'}`}>
+                    {inspectTarget.item.is_pinned ? <LockIcon className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+                    <span>{inspectTarget.item.is_pinned ? "Locked" : "Lock"}</span>
+                  </button>
+                  <button onClick={() => handleRemove(inspectTarget.item, inspectTarget.master)} className="flex items-center justify-center gap-2 py-2 rounded-[4px] text-[12px] font-bold text-[#80848E] hover:text-[#DBDEE1] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.04)] focus-visible:outline-none">
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Remove</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="w-full h-[env(safe-area-inset-bottom)] md:hidden mt-1" />
@@ -1308,7 +1278,7 @@ export function InventoryChannel() {
             <span className="text-[13px] font-medium text-[#DBDEE1]">
               {toast.message}
             </span>
-            {toast.itemToRestore && (
+            {toast.itemToRestore && !isReadOnly && (
               <button onClick={handleUndo} className="text-[12px] font-bold text-[#5865F2] hover:underline focus-visible:outline-none">Undo</button>
             )}
             <button onClick={() => setToast(null)} className="text-[#80848E] hover:text-[#DBDEE1] focus-visible:outline-none">

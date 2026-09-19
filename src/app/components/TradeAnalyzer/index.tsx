@@ -245,7 +245,7 @@ export function TradeAnalyzerPanel({
 
         <button 
           onClick={() => { setSmartMenuOpen(!smartMenuOpen); startGuide("dictionary"); }} 
-          className={`flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-30 pointer-events-auto ${
+          className={`flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto ${
             isWandTarget 
               ? "bg-[#5865F2] text-white shadow-[0_0_20px_rgba(88,101,242,0.8)] ring-2 ring-[#5865F2] z-[100005] animate-pulse" 
               : smartMenuOpen 
@@ -258,7 +258,7 @@ export function TradeAnalyzerPanel({
         </button>
         <button 
           onClick={handleSafeClear} 
-          className={`flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-30 pointer-events-auto ${
+          className={`flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto ${
             isClearTarget 
               ? "bg-[#ed4245] text-white shadow-[0_0_20px_rgba(237,66,69,0.8)] ring-2 ring-[#ed4245] z-[100005] animate-pulse" 
               : confirmClear
@@ -271,7 +271,7 @@ export function TradeAnalyzerPanel({
         </button>
         <button 
           onClick={handleShare} 
-          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-2.5 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-30 pointer-events-auto" 
+          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-2.5 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto" 
           style={{ background: copied ? "#23a559" : "#1E1F22", border: "1px solid rgba(255,255,255,0.06)", fontFamily: "'Inter', sans-serif" }}
           title="Share formatted trade string"
         >
@@ -280,7 +280,7 @@ export function TradeAnalyzerPanel({
         </button>
         <button 
           onClick={handleAdvertise} 
-          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-3 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white bg-[#5865F2] hover:bg-[#4752C4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-30 pointer-events-auto shadow-sm" 
+          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-3 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white bg-[#5865F2] hover:bg-[#4752C4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto shadow-sm" 
           title="Post this trade as an advertisement"
         >
           <Megaphone className="w-3.5 h-3.5" />
@@ -290,7 +290,7 @@ export function TradeAnalyzerPanel({
         {(!isMobile && onClose) && (
           <button 
             onClick={closeSheet} 
-            className="flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] text-[#B5BAC1] hover:bg-[rgba(237,66,69,0.1)] hover:text-[#ed4245] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ed4245] relative z-30 pointer-events-auto" 
+            className="flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] text-[#B5BAC1] hover:bg-[rgba(237,66,69,0.1)] hover:text-[#ed4245] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ed4245] relative z-35 pointer-events-auto" 
             title="Close Analyzer"
           >
             <X className="w-4 h-4" />
@@ -433,7 +433,7 @@ export function TradeAnalyzerPanel({
 
         {/* Mobile Resting State (Bottom Bar) */}
         <div 
-          className={`fixed left-0 right-0 bg-[#2B2D31] border-t border-[rgba(255,255,255,0.08)] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer 
+          className={`fixed left-0 right-0 bottom-0 bg-[#2B2D31] border-t border-[rgba(255,255,255,0.08)] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer 
           ${isOpen ? 'translate-y-[100%] opacity-0 pointer-events-none z-[80]' : 'bottom-0 translate-y-0 opacity-100'} 
           ${isMainStep3 && !isOpen ? '!z-[100005] ring-4 ring-[#5865F2] shadow-[0_0_30px_rgba(88,101,242,0.8)] animate-pulse' : 'z-[80]'}`}
           onClick={openSheet}
@@ -482,6 +482,9 @@ export function TradeAnalyzerPanel({
           </div>
 
           {renderCalculatorContent()}
+
+          {/* Render AdComposer inside the mobile sheet if open */}
+          {isComposerOpen && <AdComposer />}
         </div>
       </>
     );
@@ -497,7 +500,7 @@ export function TradeAnalyzerPanel({
         <div className="w-full h-full">
           <div 
             ref={panelRef} 
-            className="flex flex-col h-full w-full select-none border-l border-[rgba(0,0,0,0.32)] shadow-[-12px_0_40px_rgba(0,0,0,0.5)] bg-[#2B2D31]" 
+            className="flex flex-col h-full w-full select-none border-l border-[rgba(0,0,0,0.32)] shadow-[-12px_0_40px_rgba(0,0,0,0.5)] bg-[#2B2D31] relative" 
             style={{ width: `${panelWidth}px`, minWidth: "420px", fontFamily: "'Inter', sans-serif" }}
           >
             <div 

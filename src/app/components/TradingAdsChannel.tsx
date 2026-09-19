@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo, memo } from "react";
 import { 
   Megaphone, Search, Plus, Trash2, Clock, 
-  ExternalLink, Check, Lock,
-  ChevronsUp, ChevronsDown, Activity, TrendingUp, TrendingDown, ArrowUpCircle, Flame, EyeOff, Calculator, Package, BookOpen
+  ExternalLink, Check, Lock, X, ArrowDownCircle,
+  ChevronsUp, ChevronsDown, Activity, TrendingUp, TrendingDown, ArrowUpCircle, Flame, EyeOff, Calculator, Package, BookOpen, UserCircle2, ArrowRight
 } from "lucide-react";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useTradeStore } from "../../store/useTradeStore";
+import { useInventoryStore } from "../../store/useInventoryStore";
 import { useUnits } from "../../context/UnitContext";
 import { useHistoryModalStore } from "../../store/useHistoryModalStore";
 import { TradeCard, MasterUnit } from "../../types";
@@ -27,7 +28,7 @@ function getTimeAgo(dateStr: string) {
 function AuthenticStatusIcon({ status }: { status?: string | null }) {
   if (!status) return null;
   const lower = status.toLowerCase();
-  const sz = "w-2.5 h-2.5 shrink-0";
+  const sz = "w-3 h-3 shrink-0";
   
   if (lower === "rising") return <ChevronsUp className={sz} />;
   if (lower === "dropping") return <ChevronsDown className={sz} />;
@@ -38,76 +39,81 @@ function AuthenticStatusIcon({ status }: { status?: string | null }) {
   if (lower === "hyped") return <Flame className={sz} />;
   if (lower === "gatekept") return <Lock className={sz} />;
   if (lower === "black-marketed") return <EyeOff className={sz} />;
-  if (lower === "stable") return <span className="flex items-center justify-center w-2.5 h-2.5 font-black text-[10px] leading-none shrink-0">≈</span>;
-  if (lower === "varies") return <span className="flex items-center justify-center w-2.5 h-2.5 font-black text-[10px] leading-none shrink-0">↕</span>;
-  if (lower === "lowballed") return <span className="flex items-center justify-center w-2.5 h-2.5 font-black text-[10px] leading-none shrink-0">↓</span>;
+  if (lower === "stable") return <span className="flex items-center justify-center w-3 h-3 font-black text-[12px] leading-none shrink-0">≈</span>;
+  if (lower === "varies") return <span className="flex items-center justify-center w-3 h-3 font-black text-[12px] leading-none shrink-0">↕</span>;
+  if (lower === "lowballed") return <span className="flex items-center justify-center w-3 h-3 font-black text-[12px] leading-none shrink-0">↓</span>;
   return null;
 }
 
-const CompactUnitList = ({ items, ALL_UNITS, onInspectUnit }: { items: TradeCard[]; ALL_UNITS: MasterUnit[]; onInspectUnit: (id: string) => void; }) => {
+const MinimalUnitList = ({ items, ALL_UNITS, onInspectUnit }: { items: TradeCard[]; ALL_UNITS: MasterUnit[]; onInspectUnit: (id: string) => void; }) => {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1 max-h-[180px] overflow-y-auto custom-scrollbar pr-1">
       {items.map((item, index) => {
         const master = ALL_UNITS.find((u) => u.id === item.id);
         const proxyUrl = getProxyImage(item.id, master?.imageUrl);
         const dropCfg = master?.status ? GRID_STATUS_CFG[master.status as keyof typeof GRID_STATUS_CFG] : null;
 
         return (
-          <button
+          <div
             key={`${item.id}-${index}`}
-            type="button"
             onClick={() => onInspectUnit(item.id)}
-            className="w-full flex items-center justify-between gap-3 p-2.5 rounded-[6px] bg-[#1E1F22] hover:bg-[#35373C] border border-[rgba(255,255,255,0.04)] cursor-pointer transition-colors text-left group shadow-inner focus-visible:outline-none"
-            title={`Inspect ${item.name}`}
+            className="group flex items-center justify-between gap-3 p-1.5 rounded-[4px] hover:bg-[#1E1F22] cursor-pointer transition-colors border border-transparent hover:border-[rgba(255,255,255,0.04)]"
           >
-            <div className="flex items-center gap-3 min-w-0 pr-2 flex-1">
-              <div className="relative w-9 h-9 rounded-[5px] bg-[#111214] overflow-hidden shrink-0 shadow-sm flex items-center justify-center border border-[rgba(255,255,255,0.08)]">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="relative w-7 h-7 rounded-[4px] bg-[#111214] overflow-hidden shrink-0 border border-[rgba(255,255,255,0.06)] shadow-sm">
                 <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white z-0" style={getAvatarStyle(item.name)}>
                   {getInitials(item.name)}
                 </span>
                 {proxyUrl && (
-                  <img
-                    src={proxyUrl}
-                    alt={item.name}
-                    className="absolute inset-0 w-full h-full object-cover z-10"
-                    style={{ objectPosition: "center 15%" }}
-                    onError={(e) => handleImageError(e, item.id)}
-                  />
+                  <img src={proxyUrl} alt={item.name} className="absolute inset-0 w-full h-full object-cover z-10" style={{ objectPosition: "center 15%" }} onError={(e) => handleImageError(e, item.id)} />
                 )}
               </div>
 
-              <div className="min-w-0 flex-1 flex flex-col justify-center">
-                <span className="text-[13px] font-bold text-[#F2F3F5] group-hover:text-white leading-tight">
-                  {item.qty > 1 ? `${item.qty}x ` : ""}
-                  {item.name}
-                </span>
-
-                <div className="flex items-center gap-2 mt-1 min-w-0">
-                  {master?.subtitle && (
-                    <span className="truncate text-[9.5px] font-bold uppercase tracking-wider text-[#949BA4]">
-                      {master.subtitle}
-                    </span>
-                  )}
-
+              <div className="flex flex-col min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  {item.qty > 1 && <span className="text-[10px] font-bold text-[#80848E] bg-[#111214] px-1.5 py-0.5 rounded-[3px] border border-[rgba(255,255,255,0.04)]">x{item.qty}</span>}
+                  <span className="text-[12.5px] font-bold text-[#DBDEE1] group-hover:text-[#F2F3F5] truncate transition-colors">{item.name}</span>
                   {dropCfg && (
-                    <span
-                      className="inline-flex items-center gap-1 px-1.5 py-[1px] rounded-[3px] border text-[8px] font-black uppercase tracking-wider shrink-0"
-                      style={{ color: dropCfg.color, backgroundColor: dropCfg.bg, borderColor: dropCfg.border }}
-                    >
+                    <span className="shrink-0 ml-0.5" style={{ color: dropCfg.color }} title={dropCfg.label}>
                       <AuthenticStatusIcon status={master.status} />
-                      {dropCfg.label}
                     </span>
                   )}
                 </div>
               </div>
             </div>
 
-            <span className="shrink-0 font-mono font-bold text-[12.5px] text-[#DBDEE1] pl-3">
+            <span className="shrink-0 font-mono font-bold text-[12px] text-[#949BA4] group-hover:text-[#DBDEE1] transition-colors">
               {(item.value * item.qty).toLocaleString()}
             </span>
-          </button>
+          </div>
         );
       })}
+    </div>
+  );
+};
+
+const VaultGridItem = ({ item, master, onClick }: { item: TradeCard; master?: MasterUnit; onClick: () => void; }) => {
+  const proxyUrl = getProxyImage(item.id, master?.imageUrl);
+  return (
+    <div
+      onClick={onClick}
+      className="relative w-[44px] h-[44px] rounded-[6px] bg-[#111214] border border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.2)] cursor-pointer transition-all shadow-sm group shrink-0"
+      title={`${item.qty > 1 ? `${item.qty}x ` : ''}${item.name} • ${(item.value * item.qty).toLocaleString()}`}
+    >
+      <div className="absolute inset-0 rounded-[5px] overflow-hidden">
+        <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white z-0" style={getAvatarStyle(item.name)}>
+          {getInitials(item.name)}
+        </span>
+        {proxyUrl && <img src={proxyUrl} alt={item.name} className="absolute inset-0 w-full h-full object-cover z-10" onError={(e) => handleImageError(e, item.id)} />}
+      </div>
+      {item.qty > 1 && (
+        <div className="absolute -top-1.5 -right-1.5 bg-[#2B2D31] text-[#DBDEE1] text-[9px] font-black px-1.5 py-0.5 rounded-full z-20 border border-[rgba(255,255,255,0.1)] shadow-sm">
+          x{item.qty}
+        </div>
+      )}
+      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity z-30 flex items-center justify-center rounded-[5px]">
+        <Search className="w-4 h-4 text-white" />
+      </div>
     </div>
   );
 };
@@ -116,107 +122,147 @@ const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, on
     const isOwner = currentUserId === ad.user_id;
     const giveVal = ad.give_items.reduce((sum, item) => sum + item.value * item.qty, 0);
     const getVal = ad.get_items.reduce((sum, item) => sum + item.value * item.qty, 0);
-    const isTakingOffers = ad.ad_type === "lf_offers" || ad.get_items.length === 0;
+    
+    const isTakingOffers = ad.ad_type === "lf_offers" || (ad.ad_type === "standard" && ad.get_items.length === 0);
+    const isInventory = ad.ad_type === "inventory";
 
     const discordUrl = ad.profiles?.discord_id ? `https://discord.com/users/${ad.profiles.discord_id}` : null;
     const forecast = getTradeForecast(ad.give_items, ad.get_items, ALL_UNITS);
+    const setViewingUser = useInventoryStore(s => s.setViewingUser);
+
+    const handleInspectVault = () => {
+      triggerHaptic('medium');
+      setViewingUser(ad.user_id, ad.profiles?.username || "Trader");
+      window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'inventory' }));
+    };
 
     const getAdTypeBadge = () => {
-      if (ad.ad_type === "inventory") {
+      if (isInventory) {
         return (
-          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-[#23a559]/10 text-[#23a559] border border-[#23a559]/20 flex items-center gap-1">
-            <Package className="w-3 h-3" /> Trading Inventory
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-[rgba(255,255,255,0.06)] text-[#DBDEE1] border border-[rgba(255,255,255,0.08)] flex items-center gap-1.5">
+            <Package className="w-3 h-3 text-[#949BA4]" /> Vault Showcase
           </span>
         );
       }
       if (isTakingOffers) {
         return (
-          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-[#FAA61A]/10 text-[#FAA61A] border border-[#FAA61A]/20 flex items-center gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-[rgba(250,166,26,0.1)] text-[#FAA61A] border border-[rgba(250,166,26,0.2)] flex items-center gap-1.5">
             <BookOpen className="w-3 h-3" /> LF Offers
           </span>
         );
       }
       return (
-        <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-[#5865F2]/10 text-[#5865F2] border border-[#5865F2]/20 flex items-center gap-1">
+        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] bg-[rgba(88,101,242,0.1)] text-[#5865F2] border border-[rgba(88,101,242,0.2)] flex items-center gap-1.5">
           <Calculator className="w-3 h-3" /> Specific Trade
         </span>
       );
     };
 
     return (
-      <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.15)] rounded-[10px] p-5 flex flex-col justify-between transition-all shadow-lg w-full">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.04)] pb-4">
-            <div className="flex items-center gap-3.5 min-w-0">
-              <img
-                src={ad.profiles?.avatar_url || "/units/firezio.webp"}
-                alt=""
-                className="w-10 h-10 rounded-full bg-[#111214] object-cover shrink-0 border border-[rgba(255,255,255,0.08)] shadow-sm"
-              />
-
-              <div className="flex flex-col min-w-0 gap-0.5">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-[14.5px] font-extrabold text-[#F2F3F5] truncate leading-tight">
-                    {ad.profiles?.username || "Unknown Trader"}
+      <div className="bg-[#2B2D31] rounded-[8px] flex flex-col transition-all shadow-sm border border-[rgba(255,255,255,0.04)] overflow-hidden hover:border-[rgba(255,255,255,0.08)]">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 bg-[#1E1F22] border-b border-[rgba(255,255,255,0.04)]">
+          <div className="flex items-center gap-3 min-w-0">
+            <img
+              src={ad.profiles?.avatar_url || "/units/firezio.webp"}
+              alt="Avatar"
+              className="w-10 h-10 rounded-full bg-[#111214] object-cover shrink-0 border border-[rgba(255,255,255,0.04)]"
+            />
+            <div className="flex flex-col min-w-0 gap-0.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-[14.5px] font-bold text-[#F2F3F5] truncate">
+                  {ad.profiles?.username || "Unknown Trader"}
+                </span>
+                {isOwner && (
+                  <span className="shrink-0 px-1.5 py-[2px] rounded-[3px] bg-[#3B3E44] text-[9px] font-bold uppercase tracking-wider text-[#DBDEE1]">
+                    You
                   </span>
-                  {isOwner && (
-                    <span className="shrink-0 px-1.5 py-[2px] rounded-[3px] bg-[#3B3E44] border border-[#4E525B] text-[7.5px] font-black uppercase tracking-wider text-[#B8BDC6]">
-                      You
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[11px] font-mono font-medium text-[#949BA4] flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-[#80848E]" />
-                    <span>{getTimeAgo(ad.created_at)}</span>
-                  </span>
-                  {getAdTypeBadge()}
-                </div>
-              </div>
-            </div>
-
-            {isOwner && (
-              <button
-                type="button"
-                onClick={() => onDelete(ad.id)}
-                className="p-1.5 text-[#80848E] hover:text-[#ed4245] hover:bg-[#ed4245]/10 rounded-[4px] transition-colors focus-visible:outline-none"
-                title="Delete ad"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
-            <div className="bg-[#111214] p-3.5 rounded-[8px] border border-[rgba(255,255,255,0.03)] flex flex-col justify-between shadow-inner min-w-0">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[10.5px] font-black uppercase tracking-widest text-[#FAA61A]">Offering</span>
-                <span className="font-mono text-[12px] font-bold text-[#DBDEE1]">{giveVal.toLocaleString()}</span>
-              </div>
-              <CompactUnitList items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} />
-            </div>
-
-            <div className="bg-[#111214] p-3.5 rounded-[8px] border border-[rgba(255,255,255,0.03)] flex flex-col justify-between shadow-inner min-w-0">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[10.5px] font-black uppercase tracking-widest text-[#5865F2]">Looking For</span>
-                {!isTakingOffers && (
-                  <span className="font-mono text-[12px] font-bold text-[#DBDEE1]">{getVal.toLocaleString()}</span>
                 )}
               </div>
-              {isTakingOffers ? (
-                <div className="min-h-[110px] flex flex-col items-center justify-center p-4 rounded-[6px] bg-[#5865F2]/10 border border-dashed border-[#5865F2]/40 text-[#5865F2] text-center">
-                  <span className="font-black text-[12px] uppercase tracking-wider">Taking All Offers</span>
-                  <span className="text-[10px] text-[#949BA4] mt-1">No specific units requested.</span>
-                </div>
-              ) : (
-                <CompactUnitList items={ad.get_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} />
-              )}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[11px] font-medium text-[#949BA4] flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {getTimeAgo(ad.created_at)}
+                </span>
+                <span className="text-[#4E5058] text-[10px]">•</span>
+                {getAdTypeBadge()}
+              </div>
             </div>
           </div>
 
-          {!isTakingOffers && (
-            <div className="bg-[#111214] p-3 rounded-[6px] border border-[rgba(255,255,255,0.03)] flex flex-wrap items-center justify-between gap-2 shadow-inner">
+          {isOwner && (
+            <button
+              onClick={() => onDelete(ad.id)}
+              className="p-2 text-[#80848E] hover:text-[#ed4245] hover:bg-[#ed4245]/10 rounded-[6px] transition-colors focus-visible:outline-none"
+              title="Delete listing"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Body */}
+        <div className="p-4 flex flex-col gap-4 flex-1">
+          {ad.note && (
+            <div className="px-3.5 py-2.5 bg-[#1E1F22] border-l-2 border-[#5865F2] rounded-r-[6px] text-[12.5px] text-[#DBDEE1] italic leading-relaxed shadow-inner">
+              "{ad.note}"
+            </div>
+          )}
+
+          {isInventory ? (
+            /* Inventory Layout */
+            <div className="flex flex-col gap-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">Vault Preview</span>
+                <span className="font-mono text-[12px] font-bold text-[#DBDEE1]">{giveVal.toLocaleString()} Value</span>
+              </div>
+              <div className="flex flex-wrap gap-2 max-h-[160px] overflow-y-auto custom-scrollbar pr-1 bg-[#1E1F22] p-2.5 rounded-[6px] border border-[rgba(255,255,255,0.03)] shadow-inner">
+                {ad.give_items.map(item => (
+                  <VaultGridItem 
+                    key={item.id} 
+                    item={item} 
+                    master={ALL_UNITS.find(u => u.id === item.id)} 
+                    onClick={handleInspectVault} 
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
+            /* Standard / LF Offers Layout */
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 md:gap-2 items-start">
+              
+              <div className="flex flex-col gap-2 bg-[#1E1F22] p-3 rounded-[6px] border border-[rgba(255,255,255,0.03)] shadow-inner">
+                <div className="flex items-center justify-between pb-1.5 border-b border-[rgba(255,255,255,0.04)]">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#FAA61A]">Offering</span>
+                  <span className="font-mono text-[11px] font-bold text-[#DBDEE1]">{giveVal.toLocaleString()}</span>
+                </div>
+                <MinimalUnitList items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} />
+              </div>
+
+              <div className="hidden md:flex flex-col justify-center items-center h-full px-1 text-[#4E5058]">
+                <ArrowRight className="w-4 h-4" />
+              </div>
+
+              <div className="flex flex-col gap-2 bg-[#1E1F22] p-3 rounded-[6px] border border-[rgba(255,255,255,0.03)] shadow-inner">
+                <div className="flex items-center justify-between pb-1.5 border-b border-[rgba(255,255,255,0.04)]">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#5865F2]">Looking For</span>
+                  {!isTakingOffers && <span className="font-mono text-[11px] font-bold text-[#DBDEE1]">{getVal.toLocaleString()}</span>}
+                </div>
+                {isTakingOffers ? (
+                  <div className="flex items-center justify-center py-6 border border-dashed border-[rgba(250,166,26,0.3)] rounded-[6px] bg-[rgba(250,166,26,0.03)] text-[#FAA61A]">
+                    <span className="text-[11px] font-bold uppercase tracking-wider">Taking All Offers</span>
+                  </div>
+                ) : (
+                  <MinimalUnitList items={ad.get_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Trade Math Footer */}
+          {!isTakingOffers && !isInventory && (
+            <div className="mt-auto pt-3 border-t border-[rgba(255,255,255,0.04)] flex flex-wrap items-center justify-between gap-3 bg-[#111214] p-2.5 rounded-[6px] shadow-inner">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-bold text-[#80848E] uppercase tracking-wider">Raw Diff:</span>
                 <span className={`text-[12px] font-mono font-bold ${getVal > giveVal ? "text-[#ed4245]" : getVal < giveVal ? "text-[#23a559]" : "text-[#DBDEE1]"}`}>
@@ -225,46 +271,50 @@ const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, on
               </div>
               {forecast.calculable && (
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-[#80848E] uppercase tracking-wider">Poster's Forecast:</span>
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-[4px] border ${forecast.st >= 0 || forecast.lt >= 0 ? 'bg-[#23a559]/10 text-[#23a559] border-[#23a559]/30' : 'bg-[#ed4245]/10 text-[#ed4245] border-[#ed4245]/30'}`}>
-                    {forecast.st >= 0 || forecast.lt >= 0 ? "WIN" : "LOSS"}
+                  <span className="text-[10px] font-bold text-[#80848E] uppercase tracking-wider">Algorithm:</span>
+                  <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${forecast.st >= 0 || forecast.lt >= 0 ? 'bg-[#23a559]/10 text-[#23a559] border-[#23a559]/30' : 'bg-[#ed4245]/10 text-[#ed4245] border-[#ed4245]/30'}`}>
+                    {forecast.st >= 0 || forecast.lt >= 0 ? "Win" : "Loss"}
                   </span>
                 </div>
               )}
             </div>
           )}
-
-          {ad.note && (
-            <p className="text-[13px] text-[#B5BAC1] bg-[#111214]/70 p-3.5 rounded-[6px] border border-[rgba(255,255,255,0.03)] leading-relaxed italic shadow-inner">
-              "{ad.note}"
-            </p>
-          )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3 pt-4 mt-4 border-t border-[rgba(255,255,255,0.06)]">
-          <button
-            type="button"
-            onClick={() => onSendToCalculator(ad.give_items, ad.get_items)}
-            className="flex items-center justify-center gap-2 py-2.5 rounded-[6px] bg-[#1E1F22] hover:bg-[#35373C] text-[#DBDEE1] hover:text-white text-[12px] font-bold uppercase tracking-wider transition-colors border border-[rgba(255,255,255,0.04)] focus-visible:outline-none shadow-sm"
-          >
-            <Calculator className="w-4 h-4 text-[#5865F2]" />
-            Evaluate Trade
-          </button>
+        {/* Action Buttons */}
+        <div className="grid grid-cols-2 gap-px bg-[rgba(255,255,255,0.04)] border-t border-[rgba(255,255,255,0.04)]">
+          {isInventory ? (
+            <button
+              onClick={handleInspectVault}
+              className="flex items-center justify-center gap-2 py-3 bg-[#1E1F22] hover:bg-[#35373C] text-[#DBDEE1] hover:text-white text-[11.5px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none"
+            >
+              <Package className="w-3.5 h-3.5 text-[#5865F2]" />
+              Inspect Vault
+            </button>
+          ) : (
+            <button
+              onClick={() => onSendToCalculator(ad.give_items, ad.get_items)}
+              className="flex items-center justify-center gap-2 py-3 bg-[#1E1F22] hover:bg-[#35373C] text-[#DBDEE1] hover:text-white text-[11.5px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none"
+            >
+              <Calculator className="w-3.5 h-3.5 text-[#5865F2]" />
+              Evaluate Trade
+            </button>
+          )}
 
           {discordUrl ? (
             <a
               href={discordUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 py-2.5 rounded-[6px] bg-[#5865F2] hover:bg-[#4752C4] text-white text-[12px] font-bold uppercase tracking-wider transition-colors shadow-sm focus-visible:outline-none"
+              className="flex items-center justify-center gap-2 py-3 bg-[#5865F2] hover:bg-[#4752C4] text-white text-[11.5px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none shadow-sm"
             >
+              <UserCircle2 className="w-3.5 h-3.5" />
               DM Trader
-              <ExternalLink className="w-3.5 h-3.5" />
             </a>
           ) : (
-            <span className="flex items-center justify-center py-2.5 text-[11px] font-bold text-[#80848E] bg-[#1E1F22] rounded-[6px] border border-[rgba(255,255,255,0.02)]">
+            <div className="flex items-center justify-center py-3 bg-[#1E1F22] text-[#80848E] text-[11.5px] font-bold uppercase tracking-wider cursor-not-allowed">
               No Discord
-            </span>
+            </div>
           )}
         </div>
       </div>
@@ -296,7 +346,7 @@ export function TradingAdsChannel() {
         ad.give_items.some(i => i.name.toLowerCase().includes(q)) ||
         ad.get_items.some(i => i.name.toLowerCase().includes(q));
 
-      const isTakingOffers = ad.ad_type === "lf_offers" || ad.get_items.length === 0;
+      const isTakingOffers = ad.ad_type === "lf_offers" || (ad.ad_type === "standard" && ad.get_items.length === 0);
       let matchesType = true;
       if (typeFilter === "standard") matchesType = ad.ad_type === "standard" && !isTakingOffers;
       if (typeFilter === "lf_offers") matchesType = isTakingOffers;
@@ -338,7 +388,8 @@ export function TradingAdsChannel() {
               className="flex items-center gap-1.5 px-4 py-2 rounded-[6px] bg-[#5865F2] hover:bg-[#4752C4] text-white text-[12px] font-bold uppercase tracking-wider transition-colors shadow-sm focus-visible:outline-none shrink-0"
             >
               <Plus className="w-4 h-4" />
-              <span>Create Ad</span>
+              <span className="hidden sm:inline">Create Ad</span>
+              <span className="sm:hidden">Post</span>
             </button>
           ) : (
             <button
@@ -347,7 +398,8 @@ export function TradingAdsChannel() {
               className="flex items-center gap-1.5 px-4 py-2 rounded-[6px] bg-[#1E1F22] hover:bg-[#35373C] text-[#DBDEE1] text-[12px] font-bold uppercase tracking-wider transition-colors border border-[rgba(255,255,255,0.04)] focus-visible:outline-none shrink-0"
             >
               <Lock className="w-3.5 h-3.5 text-[#5865F2]" />
-              <span>Login to Post</span>
+              <span className="hidden sm:inline">Login to Post</span>
+              <span className="sm:hidden">Login</span>
             </button>
           )}
         </div>
@@ -372,7 +424,7 @@ export function TradingAdsChannel() {
               <option value="all">All Listings</option>
               <option value="standard">Specific Trades</option>
               <option value="lf_offers">LF Offers</option>
-              <option value="inventory">Trading Inventory</option>
+              <option value="inventory">Vault Showcases</option>
             </select>
           </div>
         </div>
@@ -401,7 +453,7 @@ export function TradingAdsChannel() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 max-w-6xl mx-auto w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5 mx-auto w-full">
             {filteredAds.map((ad) => (
               <AdCard
                 key={ad.id}
