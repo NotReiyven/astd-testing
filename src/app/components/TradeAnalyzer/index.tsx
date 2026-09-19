@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Calculator, RotateCcw, Share2, Check, ArrowUpDown, Wand2, X, Info, ChevronUp, Megaphone } from "lucide-react";
+import { Calculator, RotateCcw, Share2, Check, ArrowUpDown, Wand2, X, Info, ChevronUp, Megaphone, ArrowLeft } from "lucide-react";
 import { TradeCard } from "../../../types";
 import { TradeSectionPanel } from "./TradeSectionPanel";
 import { TradeNotices } from "./TradeNotices";
@@ -52,7 +52,6 @@ export function TradeAnalyzerPanel({
   const [initialParserText, setInitialParserText] = useState("");
   
   const [confirmClear, setConfirmClear] = useState(false);
-
   const [isMobile, setIsMobile] = useState(false);
   
   const { panelWidth, startResize, panelRef } = usePanelResize(480, 420, 800);
@@ -61,7 +60,6 @@ export function TradeAnalyzerPanel({
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const sheetRef = useRef<HTMLDivElement>(null);
-  
   const touchStartYRef = useRef<number | null>(null);
   const currentYRef = useRef(0);
 
@@ -241,51 +239,64 @@ export function TradeAnalyzerPanel({
         <div className="w-7 h-7 flex-shrink-0 rounded-[6px] flex items-center justify-center bg-[#1E1F22] border border-[rgba(255,255,255,0.04)]">
           <Calculator className="w-3.5 h-3.5 text-[#DBDEE1]" />
         </div>
-        <span className="text-[14px] md:text-[15px] font-bold flex-1 text-[#F2F3F5] truncate select-none">Trade Analyzer</span>
+        <span className="text-[14px] md:text-[15px] font-bold flex-1 text-[#F2F3F5] truncate select-none">
+          {isComposerOpen ? "Create Listing" : "Trade Analyzer"}
+        </span>
 
-        <button 
-          onClick={() => { setSmartMenuOpen(!smartMenuOpen); startGuide("dictionary"); }} 
-          className={`flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto ${
-            isWandTarget 
-              ? "bg-[#5865F2] text-white shadow-[0_0_20px_rgba(88,101,242,0.8)] ring-2 ring-[#5865F2] z-[100005] animate-pulse" 
-              : smartMenuOpen 
-                ? "bg-[rgba(88,101,242,0.15)] text-[#5865F2]" 
-                : "text-[#B5BAC1] hover:bg-[rgba(255,255,255,0.05)] hover:text-[#F2F3F5]"
-          }`} 
-          title="Context Recognition"
-        >
-          <Wand2 className="w-4 h-4 md:w-4 md:h-4" />
-        </button>
-        <button 
-          onClick={handleSafeClear} 
-          className={`flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto ${
-            isClearTarget 
-              ? "bg-[#ed4245] text-white shadow-[0_0_20px_rgba(237,66,69,0.8)] ring-2 ring-[#ed4245] z-[100005] animate-pulse" 
-              : confirmClear
-                ? "bg-[#ed4245] text-white shadow-md animate-pulse"
-                : "text-[#B5BAC1] hover:bg-[rgba(255,255,255,0.05)] hover:text-[#F2F3F5]"
-          }`} 
-          title={confirmClear ? "Click again to confirm" : "Clear trade"}
-        >
-          {confirmClear ? <Check className="w-4 h-4 md:w-4 md:h-4" /> : <RotateCcw className="w-4 h-4 md:w-3.5 md:h-3.5" />}
-        </button>
-        <button 
-          onClick={handleShare} 
-          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-2.5 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto" 
-          style={{ background: copied ? "#23a559" : "#1E1F22", border: "1px solid rgba(255,255,255,0.06)", fontFamily: "'Inter', sans-serif" }}
-          title="Share formatted trade string"
-        >
-          {copied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5 text-[#80848E]" />}
-          <span className="hidden sm:inline">{copied ? "Copied!" : "Share"}</span>
-        </button>
-        <button 
-          onClick={handleAdvertise} 
-          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-3 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white bg-[#5865F2] hover:bg-[#4752C4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto shadow-sm" 
-          title="Post this trade as an advertisement"
-        >
-          <Megaphone className="w-3.5 h-3.5" />
-          <span>Advertise</span>
-        </button>
+        {isComposerOpen ? (
+          <button 
+            onClick={() => setComposerOpen(false)}
+            className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-[#1E1F22] hover:bg-[#35373C] text-[#DBDEE1] text-[12px] font-bold rounded-[4px] border border-[rgba(255,255,255,0.04)] transition-colors focus-visible:outline-none"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Back
+          </button>
+        ) : (
+          <>
+            <button 
+              onClick={() => { setSmartMenuOpen(!smartMenuOpen); startGuide("dictionary"); }} 
+              className={`flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto ${
+                isWandTarget 
+                  ? "bg-[#5865F2] text-white shadow-[0_0_20px_rgba(88,101,242,0.8)] ring-2 ring-[#5865F2] z-[100005] animate-pulse" 
+                  : smartMenuOpen 
+                    ? "bg-[rgba(88,101,242,0.15)] text-[#5865F2]" 
+                    : "text-[#B5BAC1] hover:bg-[rgba(255,255,255,0.05)] hover:text-[#F2F3F5]"
+              }`} 
+              title="Context Recognition"
+            >
+              <Wand2 className="w-4 h-4 md:w-4 md:h-4" />
+            </button>
+            <button 
+              onClick={handleSafeClear} 
+              className={`flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto ${
+                isClearTarget 
+                  ? "bg-[#ed4245] text-white shadow-[0_0_20px_rgba(237,66,69,0.8)] ring-2 ring-[#ed4245] z-[100005] animate-pulse" 
+                  : confirmClear
+                    ? "bg-[#ed4245] text-white shadow-md animate-pulse"
+                    : "text-[#B5BAC1] hover:bg-[rgba(255,255,255,0.05)] hover:text-[#F2F3F5]"
+              }`} 
+              title={confirmClear ? "Click again to confirm" : "Clear trade"}
+            >
+              {confirmClear ? <Check className="w-4 h-4 md:w-4 md:h-4" /> : <RotateCcw className="w-4 h-4 md:w-3.5 md:h-3.5" />}
+            </button>
+            <button 
+              onClick={handleShare} 
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-2.5 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto" 
+              style={{ background: copied ? "#23a559" : "#1E1F22", border: "1px solid rgba(255,255,255,0.06)", fontFamily: "'Inter', sans-serif" }}
+              title="Share formatted trade string"
+            >
+              {copied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5 text-[#80848E]" />}
+              <span className="hidden sm:inline">{copied ? "Copied!" : "Share"}</span>
+            </button>
+            <button 
+              onClick={handleAdvertise} 
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-3 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white bg-[#5865F2] hover:bg-[#4752C4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto shadow-sm" 
+              title="Post this trade as an advertisement"
+            >
+              <Megaphone className="w-3.5 h-3.5" />
+              <span>Advertise</span>
+            </button>
+          </>
+        )}
 
         {(!isMobile && onClose) && (
           <button 
@@ -298,124 +309,107 @@ export function TradeAnalyzerPanel({
         )}
       </div>
 
-      {smartMenuOpen && (
-        <SmartParserMenu 
-          ALL_UNITS={ALL_UNITS} 
-          onClose={() => { setSmartMenuOpen(false); setInitialParserText(""); }} 
-          onSaveUndo={saveUndoState}
-          initialText={initialParserText}
-        />
-      )}
+      {isComposerOpen ? (
+        <AdComposer />
+      ) : (
+        <>
+          {smartMenuOpen && (
+            <SmartParserMenu 
+              ALL_UNITS={ALL_UNITS} 
+              onClose={() => { setSmartMenuOpen(false); setInitialParserText(""); }} 
+              onSaveUndo={saveUndoState}
+              initialText={initialParserText}
+            />
+          )}
 
-      <TradeSummaryBox 
-        isMainStep4={isMainStep4}
-        giveTotal={giveTotal}
-        getTotal={getTotal}
-        givePercent={givePercent}
-        getPercent={getPercent}
-        giveItems={giveItems}
-        getItems={getItems}
-        ALL_UNITS={ALL_UNITS}
-      />
-
-      <div className="flex-1 overflow-y-auto py-1 custom-scrollbar overscroll-y-contain">
-        <div className={`relative transition-all duration-300 ${isClearTarget ? "ring-2 ring-[#5865F2] rounded-[8px] bg-[rgba(88,101,242,0.05)] shadow-[0_0_20px_rgba(88,101,242,0.2)] z-[100005]" : ""}`}>
-          <TradeSectionPanel 
-            label="You Give" 
-            type="give" 
-            items={giveItems} 
-            isDraggingGlobal={isGlobalDragging} 
-            onQtyChange={(id, qty) => {
-              const item = giveItems.find(i => i.id === id);
-              if (item && qty > item.qty) {
-                window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: item.name, type: "give" } }));
-              }
-              changeQty("give", id, qty);
-            }} 
-            onRemove={(id) => removeCard("give", id)} 
-            onClear={() => clearSection("give")} 
-            onAdd={(card) => {
-              addCard("give", card);
-              window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: card.name, type: "give" } }));
-            }} 
-            pinnedIds={new Set(pinnedIds)}
-            onTogglePin={(id) => { togglePin("give", id); startGuide("management"); }}
+          <TradeSummaryBox 
+            isMainStep4={isMainStep4}
+            giveTotal={giveTotal}
+            getTotal={getTotal}
+            givePercent={givePercent}
+            getPercent={getPercent}
+            giveItems={giveItems}
+            getItems={getItems}
+            ALL_UNITS={ALL_UNITS}
           />
-        </div>
 
-        <div className="relative mx-3 md:mx-4 flex items-center justify-center my-1">
-          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[rgba(255,255,255,0.04)]" /></div>
-          <button onClick={swap} className="relative flex items-center justify-center w-10 h-10 md:w-7 md:h-7 rounded-full transition-all duration-300 ease-out hover:scale-110 z-10 bg-[#1E1F22] border border-[rgba(255,255,255,0.08)] text-[#80848E] hover:text-[#DBDEE1] hover:bg-[#2B2D31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2]" title="Swap Give and Get">
-            <ArrowUpDown className="w-4 h-4 md:w-3.5 md:h-3.5" />
-          </button>
-        </div>
-
-        <TradeSectionPanel 
-          label="You Get" 
-          type="get" 
-          items={getItems} 
-          isDraggingGlobal={isGlobalDragging} 
-          onQtyChange={(id, qty) => {
-            const item = getItems.find(i => i.id === id);
-            if (item && qty > item.qty) {
-              window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: item.name, type: "get" } }));
-            }
-            changeQty("get", id, qty);
-          }} 
-          onRemove={(id) => removeCard("get", id)} 
-          onClear={() => clearSection("get")} 
-          onAdd={(card) => {
-            addCard("get", card);
-            window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: card.name, type: "get" } }));
-          }} 
-          pinnedIds={new Set(pinnedIds)}
-          onTogglePin={(id) => { togglePin("get", id); startGuide("management"); }}
-        />
-
-        <TradeNotices giveItems={giveItems} getItems={getItems} ALL_UNITS={ALL_UNITS} />
-
-        <div className="mx-3 md:mx-4 mt-1 mb-4 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-3 md:p-4 shadow-sm pb-10">
-          <div className="flex items-center gap-2 mb-2">
-            <Info className="w-4 h-4 text-[#5865F2]" />
-            <h4 className="text-[11px] font-bold text-[#F2F3F5] uppercase tracking-wider">How the Forecast Works</h4>
-          </div>
-          <p className="text-[11.5px] text-[#949BA4] leading-relaxed">
-            The <strong>Market Forecast</strong> system goes beyond raw value. It uses an advanced algorithm to predict the success of a trade. <strong className="text-[#DBDEE1]">Scores &gt; 0</strong> indicate a mathematical win, while <strong className="text-[#DBDEE1]">Scores &lt; 0</strong> indicate a loss.
-          </p>
-          <div className="mt-3 flex flex-col gap-2">
-            <div className="flex gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#FAA61A] mt-1.5 shrink-0" />
-              <p className="text-[11px] text-[#B5BAC1] leading-snug"><strong className="text-[#DBDEE1]">Short-Term Flip</strong> prioritizes immediate liquidity (Demand ÷ Supply) and hyped momentum tags.</p>
+          <div className="flex-1 overflow-y-auto py-1 custom-scrollbar overscroll-y-contain">
+            <div className={`relative transition-all duration-300 ${isClearTarget ? "ring-2 ring-[#5865F2] rounded-[8px] bg-[rgba(88,101,242,0.05)] shadow-[0_0_20px_rgba(88,101,242,0.2)] z-[100005]" : ""}`}>
+              <TradeSectionPanel 
+                label="You Give" 
+                type="give" 
+                items={giveItems} 
+                isDraggingGlobal={isGlobalDragging} 
+                onQtyChange={(id, qty) => {
+                  const item = giveItems.find(i => i.id === id);
+                  if (item && qty > item.qty) {
+                    window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: item.name, type: "give" } }));
+                  }
+                  changeQty("give", id, qty);
+                }} 
+                onRemove={(id) => removeCard("give", id)} 
+                onClear={() => clearSection("give")} 
+                onAdd={(card) => {
+                  addCard("give", card);
+                  window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: card.name, type: "give" } }));
+                }} 
+                pinnedIds={new Set(pinnedIds)}
+                onTogglePin={(id) => { togglePin("give", id); startGuide("management"); }}
+              />
             </div>
-            <div className="flex gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#5865F2] mt-1.5 shrink-0" />
-              <p className="text-[11px] text-[#B5BAC1] leading-snug"><strong className="text-[#DBDEE1]">Long-Term Hold</strong> severely punishes unstable/hyped units and rewards high-rarity assets that retain value.</p>
+
+            <div className="relative mx-3 md:mx-4 flex items-center justify-center my-1">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[rgba(255,255,255,0.04)]" /></div>
+              <button onClick={swap} className="relative flex items-center justify-center w-10 h-10 md:w-7 md:h-7 rounded-full transition-all duration-300 ease-out hover:scale-110 z-10 bg-[#1E1F22] border border-[rgba(255,255,255,0.08)] text-[#80848E] hover:text-[#DBDEE1] hover:bg-[#2B2D31] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2]" title="Swap Give and Get">
+                <ArrowUpDown className="w-4 h-4 md:w-3.5 md:h-3.5" />
+              </button>
+            </div>
+
+            <TradeSectionPanel 
+              label="You Get" 
+              type="get" 
+              items={getItems} 
+              isDraggingGlobal={isGlobalDragging} 
+              onQtyChange={(id, qty) => {
+                const item = getItems.find(i => i.id === id);
+                if (item && qty > item.qty) {
+                  window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: item.name, type: "get" } }));
+                }
+                changeQty("get", id, qty);
+              }} 
+              onRemove={(id) => removeCard("get", id)} 
+              onClear={() => clearSection("get")} 
+              onAdd={(card) => {
+                addCard("get", card);
+                window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: card.name, type: "get" } }));
+              }} 
+              pinnedIds={new Set(pinnedIds)}
+              onTogglePin={(id) => { togglePin("get", id); startGuide("management"); }}
+            />
+
+            <TradeNotices giveItems={giveItems} getItems={getItems} ALL_UNITS={ALL_UNITS} />
+
+            <div className="mx-3 md:mx-4 mt-1 mb-4 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-3 md:p-4 shadow-sm pb-10">
+              <div className="flex items-center gap-2 mb-2">
+                <Info className="w-4 h-4 text-[#5865F2]" />
+                <h4 className="text-[11px] font-bold text-[#F2F3F5] uppercase tracking-wider">How the Forecast Works</h4>
+              </div>
+              <p className="text-[11.5px] text-[#949BA4] leading-relaxed">
+                The <strong>Market Forecast</strong> system goes beyond raw value. It uses an advanced algorithm to predict the success of a trade. <strong className="text-[#DBDEE1]">Scores &gt; 0</strong> indicate a mathematical win, while <strong className="text-[#DBDEE1]">Scores &lt; 0</strong> indicate a loss.
+              </p>
+              <div className="mt-3 flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#FAA61A] mt-1.5 shrink-0" />
+                  <p className="text-[11px] text-[#B5BAC1] leading-snug"><strong className="text-[#DBDEE1]">Short-Term Flip</strong> prioritizes immediate liquidity (Demand ÷ Supply) and hyped momentum tags.</p>
+                </div>
+                <div className="flex gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#5865F2] mt-1.5 shrink-0" />
+                  <p className="text-[11px] text-[#B5BAC1] leading-snug"><strong className="text-[#DBDEE1]">Long-Term Hold</strong> severely punishes unstable/hyped units and rewards high-rarity assets that retain value.</p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {isComposerOpen && <AdComposer />}
-
-      {undoCache && (
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[1000] bg-[#111214] border border-[rgba(255,255,255,0.08)] px-4 py-2.5 rounded-[8px] shadow-[0_8px_16px_rgba(0,0,0,0.4)] flex items-center gap-4 animate-fade-in w-max max-w-[90vw]">
-          <span className="text-[13px] font-medium text-[#DBDEE1]">Trade cleared.</span>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={handleUndo} 
-              className="text-[13px] font-bold text-[#5865F2] hover:text-[#4752C4] hover:underline transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] rounded-[3px] px-1"
-            >
-              Undo
-            </button>
-            <div className="w-[1px] h-3 bg-[rgba(255,255,255,0.1)]"></div>
-            <button 
-              onClick={() => { setUndoCache(null); if (undoTimerRef.current) clearTimeout(undoTimerRef.current); }}
-              className="text-[#80848E] hover:text-[#DBDEE1] p-2 -m-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] rounded-[3px]"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
+        </>
       )}
     </>
   );
@@ -482,9 +476,6 @@ export function TradeAnalyzerPanel({
           </div>
 
           {renderCalculatorContent()}
-
-          {/* Render AdComposer inside the mobile sheet if open */}
-          {isComposerOpen && <AdComposer />}
         </div>
       </>
     );

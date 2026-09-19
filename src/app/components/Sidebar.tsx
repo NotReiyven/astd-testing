@@ -23,15 +23,15 @@ const CATEGORIES: CategoryConfig[] = [
     channels: [
       { id: "home", label: "home", isLocked: true },
       { id: "tutorial", label: "tutorial", isLocked: true },
-      { id: "inventory", label: "my-inventory", isLocked: true, icon: Package },
       { id: "extra-notices", label: "extra-notices", isLocked: true, icon: Megaphone },
     ]
   },
   {
     id: "trading", label: "trading",
     channels: [
+      { id: "inventory", label: "my-inventory", isLocked: true, icon: Package },
+      { id: "trading-ads", label: "trading-ads", isLocked: false, icon: Megaphone },
       { id: "value-list", label: "value-list", isLocked: false, hasThreads: true },
-      { id: "trading-ads", label: "trading-ads", isLocked: false, icon: Megaphone }
     ]
   },
   {

@@ -127,7 +127,8 @@ const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, on
     const isInventory = ad.ad_type === "inventory";
 
     const discordUrl = ad.profiles?.discord_id ? `https://discord.com/users/${ad.profiles.discord_id}` : null;
-    const forecast = getTradeForecast(ad.give_items, ad.get_items, ALL_UNITS);
+    // Evaluated from the viewer's POV: Viewer gives what poster wants (get_items) and gets what poster offers (give_items)
+    const forecast = getTradeForecast(ad.get_items, ad.give_items, ALL_UNITS);
     const setViewingUser = useInventoryStore(s => s.setViewingUser);
 
     const handleInspectVault = () => {
@@ -230,7 +231,7 @@ const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, on
             </div>
           ) : (
             /* Standard / LF Offers Layout */
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 md:gap-2 items-start">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-stretch">
               
               <div className="flex flex-col gap-2 bg-[#1E1F22] p-3 rounded-[6px] border border-[rgba(255,255,255,0.03)] shadow-inner">
                 <div className="flex items-center justify-between pb-1.5 border-b border-[rgba(255,255,255,0.04)]">
@@ -238,10 +239,6 @@ const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, on
                   <span className="font-mono text-[11px] font-bold text-[#DBDEE1]">{giveVal.toLocaleString()}</span>
                 </div>
                 <MinimalUnitList items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} />
-              </div>
-
-              <div className="hidden md:flex flex-col justify-center items-center h-full px-1 text-[#4E5058]">
-                <ArrowRight className="w-4 h-4" />
               </div>
 
               <div className="flex flex-col gap-2 bg-[#1E1F22] p-3 rounded-[6px] border border-[rgba(255,255,255,0.03)] shadow-inner">
@@ -270,10 +267,10 @@ const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, on
                 </span>
               </div>
               {forecast.calculable && (
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-[#80848E] uppercase tracking-wider">Algorithm:</span>
-                  <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${forecast.st >= 0 || forecast.lt >= 0 ? 'bg-[#23a559]/10 text-[#23a559] border-[#23a559]/30' : 'bg-[#ed4245]/10 text-[#ed4245] border-[#ed4245]/30'}`}>
-                    {forecast.st >= 0 || forecast.lt >= 0 ? "Win" : "Loss"}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-[#80848E] uppercase tracking-wider">Metrics:</span>
+                  <span className="text-[10.5px] font-mono font-bold text-[#DBDEE1] bg-[#1E1F22] px-2 py-0.5 rounded-[4px] border border-[rgba(255,255,255,0.04)]">
+                    ST: {forecast.st > 0 ? '+' : ''}{forecast.st.toFixed(1)} | LT: {forecast.lt > 0 ? '+' : ''}{forecast.lt.toFixed(1)}
                   </span>
                 </div>
               )}
@@ -395,7 +392,7 @@ export function TradingAdsChannel() {
             <button
               type="button"
               onClick={loginWithDiscord}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-[6px] bg-[#1E1F22] hover:bg-[#35373C] text-[#DBDEE1] text-[12px] font-bold uppercase tracking-wider transition-colors border border-[rgba(255,255,255,0.04)] focus-visible:outline-none shrink-0"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-[6px] bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] text-[#DBDEE1] text-[12px] font-bold uppercase tracking-wider transition-colors hover:bg-[#35373C] focus-visible:outline-none shrink-0"
             >
               <Lock className="w-3.5 h-3.5 text-[#5865F2]" />
               <span className="hidden sm:inline">Login to Post</span>
