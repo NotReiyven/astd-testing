@@ -1,3 +1,5 @@
+// FILE: src/app/components/TradeAnalyzer/AdComposer.tsx
+
 import { useState } from "react";
 import { Check, X, Megaphone, AlertCircle, BookOpen, Package } from "lucide-react";
 import { useTradeStore } from "../../../store/useTradeStore";
@@ -26,7 +28,7 @@ const PRESET_NOTES = [
 export function AdComposer() {
   const { profile } = useAuthStore();
   const { giveItems, getItems, composerMode, setComposerOpen } = useTradeStore();
-  const { createAd } = useTradingAdsStore();
+  const { createAd, ads } = useTradingAdsStore();
   const { items: inventoryItems } = useInventoryStore();
   const { units: ALL_UNITS } = useUnits();
 
@@ -36,9 +38,38 @@ export function AdComposer() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [error, setError] = useState("");
 
+  const role = profile?.role;
+  const canModerate = role === 'master' || role === 'admin' || role === 'mod';
+
   const handlePublish = async () => {
     if (!profile) return;
     
+    // --- RATE LIMITING & COOLDOWNS ---
+    if (!canModerate) {
+      const userAds = ads.filter(a => a.user_id === profile.id);
+      
+      // Limit: 1 Active Ad Max
+      if (userAds.length >= 1) {
+        setError("Regular users are limited to 1 active listing. Please delete your current ad to post a new one.");
+        setTimeout(() => setError(""), 6000);
+        return;
+      }
+
+      // Cooldown: 15 Minutes
+      const lastPosted = localStorage.getItem('astd_last_ad_post');
+      if (lastPosted) {
+        const timeSinceLastPost = Date.now() - parseInt(lastPosted, 10);
+        const cooldownPeriod = 15 * 60 * 1000; // 15 minutes
+        if (timeSinceLastPost < cooldownPeriod) {
+          const remainingMins = Math.ceil((cooldownPeriod - timeSinceLastPost) / 60000);
+          setError(`You are on cooldown. Please wait ${remainingMins} minute(s) before posting another ad.`);
+          setTimeout(() => setError(""), 6000);
+          return;
+        }
+      }
+    }
+    // ---------------------------------
+
     let submitGive = giveItems;
 
     if (adType === "inventory") {
@@ -81,6 +112,11 @@ export function AdComposer() {
         ttlHours: ttl,
         adType
       });
+      
+      // Log successful post timestamp for regular users
+      if (!canModerate) {
+        localStorage.setItem('astd_last_ad_post', Date.now().toString());
+      }
       
       setComposerOpen(false);
       window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'trading-ads' }));

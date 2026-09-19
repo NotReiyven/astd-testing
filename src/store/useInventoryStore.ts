@@ -1,3 +1,5 @@
+// FILE: src/store/useInventoryStore.ts
+
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 
@@ -10,23 +12,38 @@ export interface InventoryItem {
   created_at?: string;
 }
 
+export interface WishlistItem {
+  id: string;
+  user_id: string;
+  unit_id: string;
+  created_at?: string;
+}
+
 interface InventoryState {
   items: InventoryItem[];
+  wishlistItems: WishlistItem[];
+  viewedItems: InventoryItem[];
+  viewedWishlist: WishlistItem[];
   isLoading: boolean;
   viewingUserId: string | null;
   viewingUsername: string | null;
   setViewingUser: (userId: string | null, username?: string | null) => void;
-  fetchInventory: (userId: string) => Promise<void>;
+  fetchInventory: (userId: string, isViewing?: boolean) => Promise<void>;
+  fetchWishlist: (userId: string, isViewing?: boolean) => Promise<void>;
   addOrUpdateUnit: (userId: string, unitId: string, quantityDelta: number) => Promise<void>;
   removeUnit: (userId: string, unitId: string) => Promise<void>;
   restoreItem: (item: InventoryItem) => Promise<void>;
   togglePin: (userId: string, unitId: string, currentPinStatus: boolean) => Promise<void>;
   clearInventory: (userId: string) => Promise<void>;
   clearUnpinned: (userId: string) => Promise<void>;
+  toggleWishlist: (userId: string, unitId: string) => Promise<void>;
 }
 
 export const useInventoryStore = create<InventoryState>((set, get) => ({
   items: [],
+  wishlistItems: [],
+  viewedItems: [],
+  viewedWishlist: [],
   isLoading: false,
   viewingUserId: null,
   viewingUsername: null,
@@ -34,11 +51,14 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   setViewingUser: (userId, username = null) => {
     set({ viewingUserId: userId, viewingUsername: username });
     if (userId) {
-      get().fetchInventory(userId);
+      get().fetchInventory(userId, true);
+      get().fetchWishlist(userId, true);
+    } else {
+      set({ viewedItems: [], viewedWishlist: [] });
     }
   },
 
-  fetchInventory: async (userId: string) => {
+  fetchInventory: async (userId: string, isViewing = false) => {
     set({ isLoading: true });
     const { data, error } = await supabase
       .from('user_inventory')
@@ -47,15 +67,30 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       .order('created_at', { ascending: false });
 
     if (!error && data) {
-      set({ items: data, isLoading: false });
+      if (isViewing) set({ viewedItems: data, isLoading: false });
+      else set({ items: data, isLoading: false });
     } else {
       set({ isLoading: false });
       if (error) console.error("Failed to fetch inventory:", error.message);
     }
   },
 
+  fetchWishlist: async (userId: string, isViewing = false) => {
+    const { data, error } = await supabase
+      .from('user_wishlist')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      if (isViewing) set({ viewedWishlist: data });
+      else set({ wishlistItems: data });
+    } else if (error) {
+      console.error("Failed to fetch wishlist:", error.message);
+    }
+  },
+
   addOrUpdateUnit: async (userId: string, unitId: string, quantityDelta: number) => {
-    if (get().viewingUserId) return; // Read-only guard
     const previousItems = get().items;
     const existingItem = previousItems.find(i => i.unit_id === unitId);
     
@@ -90,7 +125,6 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   },
 
   removeUnit: async (userId: string, unitId: string) => {
-    if (get().viewingUserId) return;
     const previousItems = get().items;
     set({ items: previousItems.filter(i => i.unit_id !== unitId) });
     try {
@@ -103,7 +137,6 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   },
 
   restoreItem: async (item: InventoryItem) => {
-    if (get().viewingUserId) return;
     const previousItems = get().items;
     set({ items: [item, ...previousItems] });
     try {
@@ -117,7 +150,6 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   },
 
   togglePin: async (userId: string, unitId: string, currentPinStatus: boolean) => {
-    if (get().viewingUserId) return;
     const previousItems = get().items;
     const nextStatus = !currentPinStatus;
     set({ items: previousItems.map(i => i.unit_id === unitId ? { ...i, is_pinned: nextStatus } : i) });
@@ -131,7 +163,6 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   },
 
   clearInventory: async (userId: string) => {
-    if (get().viewingUserId) return;
     const previousItems = get().items;
     set({ items: [] });
     try {
@@ -144,7 +175,6 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   },
 
   clearUnpinned: async (userId: string) => {
-    if (get().viewingUserId) return;
     const previousItems = get().items;
     set({ items: previousItems.filter(i => i.is_pinned) });
     try {
@@ -152,6 +182,28 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       if (error) throw error;
     } catch (error) {
       set({ items: previousItems });
+      throw error;
+    }
+  },
+
+  toggleWishlist: async (userId: string, unitId: string) => {
+    const previousItems = get().wishlistItems;
+    const existing = previousItems.find(i => i.unit_id === unitId);
+
+    try {
+      if (existing) {
+        set({ wishlistItems: previousItems.filter(i => i.unit_id !== unitId) });
+        const { error } = await supabase.from('user_wishlist').delete().eq('user_id', userId).eq('unit_id', unitId);
+        if (error) throw error;
+      } else {
+        const newItem = { user_id: userId, unit_id: unitId };
+        const optimisticItem: WishlistItem = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...newItem };
+        set({ wishlistItems: [optimisticItem, ...previousItems] });
+        const { error } = await supabase.from('user_wishlist').insert(newItem);
+        if (error) throw error;
+      }
+    } catch (error) {
+      set({ wishlistItems: previousItems });
       throw error;
     }
   }

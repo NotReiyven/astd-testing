@@ -1,5 +1,6 @@
 import { TradeCard, MasterUnit } from "../../../types";
 
+// Levenshtein distance for fuzzy string matching
 const getEditDistance = (a: string, b: string): number => {
     const lenA = a.length;
     const lenB = b.length;
@@ -34,13 +35,13 @@ let cachedUnits: MasterUnit[] = [];
 let DICTIONARY: LexiconEntry[] = [];
 const LEXICON_MAP = new Map<string, LexiconEntry>();
 
+// Keep % and numbers to allow matching "100%" or "bot 12" without breaking tokenization
 const normalizeKey = (value: string): string => {
     return value
         .toLowerCase()
-        .replace(/[%]/g, " percent ")
         .replace(/[*]/g, "")
         .replace(/[’']/g, "")
-        .replace(/[^a-z0-9\s-]/g, " ")
+        .replace(/[^a-z0-9\s-%]/g, " ")
         .replace(/\s+/g, " ")
         .trim();
 };
@@ -97,11 +98,9 @@ const buildLexicon = (ALL_UNITS: MasterUnit[]) => {
         if (u.id === "beardcutter") addLexicon("goblin", u, "alias");
         if (u.id === "yamato") {
             addLexicon("yamato 5", u, "alias");
-            addLexicon("yamato 5*", u, "alias");
         }
         if (nameStr.includes("oni princess") && !nameStr.includes("5")) {
             addLexicon("yamato 6", u, "alias");
-            addLexicon("yamato 6*", u, "alias");
         }
 
         const words = u.name.split(/[\s-]+/).filter(Boolean);
@@ -165,25 +164,37 @@ const cleanTradeText = (input: string): string[] => {
         .replace(/^\s*>\s?/gm, "")
         .replace(/^\s*-\s*/gm, "");
 
-    const rawTokens = text.split(/[\n;&•]+/);
+    // Split by comma, ampersand, newlines, or the word "and"
+    const rawTokens = text.split(/[\n;&•,+]|\band\b/i);
     return rawTokens.map(t => t.trim()).filter(Boolean);
 };
 
 const extractQuantityAndClean = (rawToken: string): { qty: number; cleanText: string } => {
     let text = rawToken;
 
-    text = text.replace(/\b(my|ur|your|his|hers|hes|he's|their|accept|taking|wanted|any good offers|good offers?|offers?|offer|traid|trade|trading|upgrading|downgrading|adds?|good|bad|idk|overpay|op|worth|nty|fair|any|s tier|a tier|b tier|c tier|pure tier|oddities|gamepasses|gamepass)\b/gi, " ");
+    // Notice we do NOT strip words like "pure" or "gamepass" anymore
+    text = text.replace(/\b(my|ur|your|his|hers|hes|he's|their|accept|taking|wanted|any good offers|good offers?|offers?|offer|traid|trade|trading|upgrading|downgrading|adds?|good|bad|idk|overpay|op|worth|nty|fair|any|s tier|a tier|b tier|c tier|oddities)\b/gi, " ");
 
     let qty = 1;
-    const frontMatch = text.match(/^(\d+)\s+(.+)$/);
-    if (frontMatch && !frontMatch[2].startsWith("%")) {
-        qty = parseInt(frontMatch[1], 10);
-        text = frontMatch[2];
+    
+    // Front match: "2x goku", "x2 goku"
+    const frontXMatch = text.match(/^(?:x\s*(\d+)|(\d+)\s*x)\s+(.+)$/i);
+    if (frontXMatch) {
+        qty = parseInt(frontXMatch[1] || frontXMatch[2], 10);
+        text = frontXMatch[3];
     } else {
-        const backMatch = text.match(/^(.+?)\s*[x×]\s*(\d+)$/i);
-        if (backMatch) {
-            qty = parseInt(backMatch[2], 10);
-            text = backMatch[1];
+        // Back match: "goku x2", "goku 2x"
+        const backXMatch = text.match(/^(.+?)\s+(?:x\s*(\d+)|(\d+)\s*x)$/i);
+        if (backXMatch) {
+            qty = parseInt(backXMatch[2] || backXMatch[3], 10);
+            text = backXMatch[1];
+        } else {
+            // "2 goku", explicitly preventing matching percentage strings like "100% egg"
+            const frontNumMatch = text.match(/^(\d+)\s+(.+)$/);
+            if (frontNumMatch && !frontNumMatch[2].startsWith("%") && !frontNumMatch[2].startsWith("k")) {
+                qty = parseInt(frontNumMatch[1], 10);
+                text = frontNumMatch[2];
+            }
         }
     }
 
@@ -217,20 +228,31 @@ const matchTokenToUnit = (unitText: string, ALL_UNITS: MasterUnit[]): ParsedItem
         };
     }
 
-    const threshold = Math.min(3, Math.max(1, Math.floor(normalized.length * 0.25)));
-    const scored = ALL_UNITS.map(unit => {
-        const candidates = [unit.name, ...(unit.aliases ?? []), unit.subtitle ?? ""].filter(Boolean).map(normalizeKey);
-        const distance = Math.min(...candidates.map(c => getEditDistance(normalized, c)));
-        return { unit, distance };
-    }).filter(e => e.distance <= threshold).sort((a, b) => a.distance - b.distance);
+    const inputWords = normalized.split(/\s+/);
+    
+    const scored = DICTIONARY.map(entry => {
+        let score = getEditDistance(normalized, entry.key);
+        
+        const targetWords = entry.key.split(/\s+/);
+        // If the user's subset of words are fully contained in the dictionary target (e.g. "broly" hits "dbz broly")
+        const allWordsIncluded = inputWords.every(w => targetWords.includes(w));
+        if (allWordsIncluded) {
+            const lengthPenalty = Math.abs(entry.key.length - normalized.length) * 0.1;
+            score = Math.min(score, 1 + lengthPenalty);
+        }
+        
+        return { entry, score };
+    }).filter(e => e.score <= Math.max(2, normalized.length * 0.3)).sort((a, b) => a.score - b.score);
 
     if (scored.length > 0) {
-        const bestDist = scored[0].distance;
-        const closeMatches = scored.filter(e => e.distance <= bestDist + 1).slice(0, 3);
+        const bestDist = scored[0].score;
+        const closeMatches = scored.filter(e => e.score <= bestDist + 0.5).flatMap(e => e.entry.units);
+        const uniqueMatches = Array.from(new Map(closeMatches.map(u => [u.id, u])).values());
+        
         return {
             rawName: unitText,
             qty: 1,
-            options: closeMatches.map(e => e.unit),
+            options: uniqueMatches.slice(0, 4),
             confidence: 60
         };
     }
@@ -255,36 +277,40 @@ export const parseSmartTrade = (smartInput: string, ALL_UNITS: MasterUnit[]): Pa
     let givePart = smartInput;
     let getPart = "";
 
-    const lowerInput = smartInput.toLowerCase();
-    const splitKeywords = [" for ", " want ", " gets ", " looking for "];
-    for (const kw of splitKeywords) {
-        if (lowerInput.includes(kw)) {
-            const idx = lowerInput.indexOf(kw);
-            givePart = smartInput.substring(0, idx);
-            getPart = smartInput.substring(idx + kw.length);
-            break;
+    // Regex explicitly targets standard phrasing schemas.
+    const hwRegex = /\b(?:have|h|give|giving)\b\s*[:\-]?\s*(.*?)\s*\b(?:want|w|lf|looking for|get|getting)\b\s*[:\-]?\s*(.*)/i;
+    const forRegex = /(.*?)\s+(?:for|want|wants|gets|looking for|lf|->|=>)\s+(.*)/i;
+
+    const hwMatch = smartInput.match(hwRegex);
+    if (hwMatch) {
+        givePart = hwMatch[1];
+        getPart = hwMatch[2];
+    } else {
+        const forMatch = smartInput.match(forRegex);
+        if (forMatch) {
+            givePart = forMatch[1];
+            getPart = forMatch[2];
         }
     }
 
-    const parseChunk = (chunkText: string): TradeCard[] => {
+    const parseChunk = (chunkText: string, col: "give" | "get"): { cards: TradeCard[], ambiguous: AmbiguousToken[] } => {
         const tokens = cleanTradeText(chunkText);
         const parsedItems: ParsedItem[] = [];
 
         for (const token of tokens) {
-            const subTokens = token.split(/[,+]+/);
-            for (const sub of subTokens) {
-                const { qty, cleanText } = extractQuantityAndClean(sub);
-                if (!cleanText) continue;
+            const { qty, cleanText } = extractQuantityAndClean(token);
+            if (!cleanText) continue;
 
-                const matched = matchTokenToUnit(cleanText, ALL_UNITS);
-                if (matched) {
-                    matched.qty = qty;
-                    parsedItems.push(matched);
-                }
+            const matched = matchTokenToUnit(cleanText, ALL_UNITS);
+            if (matched) {
+                matched.qty = qty;
+                parsedItems.push(matched);
             }
         }
 
         const cards: TradeCard[] = [];
+        const ambiguous: AmbiguousToken[] = [];
+        
         for (const item of parsedItems) {
             const uniqueOptions = Array.from(new Map(item.options.map(u => [u.id, u])).values());
             if (uniqueOptions.length === 1 && item.confidence >= 60) {
@@ -302,19 +328,28 @@ export const parseSmartTrade = (smartInput: string, ALL_UNITS: MasterUnit[]): Pa
                         qty: item.qty
                     });
                 }
+            } else if (uniqueOptions.length > 1) {
+                ambiguous.push({
+                    rawName: item.rawName,
+                    qty: item.qty,
+                    col,
+                    options: uniqueOptions
+                });
             }
         }
-        return cards;
+        return { cards, ambiguous };
     };
 
-    const giveCards = parseChunk(givePart);
-    const getCards = getPart ? parseChunk(getPart) : [];
+    const giveRes = parseChunk(givePart, "give");
+    const getRes = getPart ? parseChunk(getPart, "get") : { cards: [], ambiguous: [] };
 
-    const totalCount = giveCards.length + getCards.length;
+    const totalCount = giveRes.cards.length + getRes.cards.length;
+    const totalAmbiguous = giveRes.ambiguous.length + getRes.ambiguous.length;
+    
     return {
-        giveCards,
-        getCards,
-        ambiguous: [],
-        error: totalCount === 0 ? "No matching units found. Check for typos." : null
+        giveCards: giveRes.cards,
+        getCards: getRes.cards,
+        ambiguous: [...giveRes.ambiguous, ...getRes.ambiguous],
+        error: (totalCount === 0 && totalAmbiguous === 0) ? "No matching units found. Check for typos." : null
     };
 };

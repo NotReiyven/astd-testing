@@ -1,3 +1,5 @@
+// FILE: src/app/components/Sidebar.tsx
+
 import { useState, useMemo } from "react";
 import { 
   Hash, 
@@ -8,16 +10,18 @@ import {
   LucideIcon,
   Shield,
   FileText,
-  Package
+  Package,
+  ShieldAlert
 } from "lucide-react";
 import { FilterKey } from "../../types";
 import { useUnits } from "../../context/UnitContext";
 import { getTier } from "../../data";
+import { useAuthStore } from "../../store/useAuthStore";
 
 type ChannelConfig = { id: string; label: string; isLocked: boolean; hasThreads?: boolean; icon?: LucideIcon; };
 type CategoryConfig = { id: string; label: string; channels: ChannelConfig[]; };
 
-const CATEGORIES: CategoryConfig[] = [
+const BASE_CATEGORIES: CategoryConfig[] = [
   {
     id: "important", label: "important",
     channels: [
@@ -56,6 +60,23 @@ export function Sidebar({
 }) {
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const { units } = useUnits();
+  const { profile } = useAuthStore();
+
+  const role = profile?.role;
+  const canModerate = role === 'master' || role === 'admin' || role === 'mod';
+
+  const CATEGORIES = useMemo(() => {
+    const cats = [...BASE_CATEGORIES];
+    if (canModerate) {
+      cats.push({
+        id: "administration", label: "administration",
+        channels: [
+          { id: "admin-panel", label: "admin-panel", isLocked: true, icon: ShieldAlert }
+        ]
+      });
+    }
+    return cats;
+  }, [canModerate]);
 
   const dynamicTierGroups = useMemo(() => {
     const order = ["S", "A", "B", "C", "Pure", "Oddities", "Untiered"];

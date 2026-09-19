@@ -1,3 +1,5 @@
+// FILE: src/app/components/TradingAdsChannel.tsx
+
 import { useState, useEffect, useMemo, memo } from "react";
 import { 
   Megaphone, Search, Plus, Trash2, Clock, 
@@ -86,14 +88,16 @@ const SlotGrid = ({ items, ALL_UNITS, onInspectUnit, label }: { items: TradeCard
   );
 };
 
-const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, onSendToCalculator }: { ad: TradingAd; currentUserId?: string; onDelete: (id: string) => void; ALL_UNITS: MasterUnit[]; onInspectUnit: (unitId: string) => void; onSendToCalculator: (give: TradeCard[], get: TradeCard[]) => void; }) => {
+const AdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL_UNITS, onInspectUnit, onSendToCalculator }: { ad: TradingAd; currentUserId?: string; currentUserRole?: string; onDelete: (id: string) => void; ALL_UNITS: MasterUnit[]; onInspectUnit: (unitId: string) => void; onSendToCalculator: (give: TradeCard[], get: TradeCard[]) => void; }) => {
     const isOwner = currentUserId === ad.user_id;
+    const canModerate = currentUserRole === 'master' || currentUserRole === 'admin' || currentUserRole === 'mod';
+    const canDelete = isOwner || canModerate;
+
     const giveVal = ad.give_items.reduce((sum, item) => sum + item.value * item.qty, 0);
     
     const isTakingOffers = ad.ad_type === "lf_offers" || (ad.ad_type === "standard" && ad.get_items.length === 0);
     const isInventory = ad.ad_type === "inventory";
 
-    const discordUrl = ad.profiles?.discord_id ? `https://discord.com/users/${ad.profiles.discord_id}` : null;
     const setViewingUser = useInventoryStore(s => s.setViewingUser);
 
     const handleInspectVault = () => {
@@ -244,11 +248,11 @@ const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, on
               </button>
             )}
 
-            {isOwner && (
+            {canDelete && (
               <button
                 onClick={() => onDelete(ad.id)}
                 className="p-1.5 text-[#80848E] hover:text-[#ed4245] transition-colors focus-visible:outline-none"
-                title="Delete listing"
+                title={isOwner ? "Delete your listing" : "Moderator: Delete listing"}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -263,11 +267,10 @@ const AdCard = memo(({ ad, currentUserId, onDelete, ALL_UNITS, onInspectUnit, on
 export function TradingAdsChannel() {
   const { ads, isLoading, fetchAds, subscribeToAds, deleteAd } = useTradingAdsStore();
   const { profile, loginWithDiscord } = useAuthStore();
-  const { overwrite } = useTradeStore();
+  const { overwrite, setComposerOpen } = useTradeStore();
   const { units: ALL_UNITS } = useUnits();
   const openHistoryModal = useHistoryModalStore((state) => state.openModal);
 
-  const [activeTab, setActiveTab] = useState<"board" | "create">("board");
   const [searchFilter, setSearchFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortMode, setSortMode] = useState("newest");
@@ -315,8 +318,7 @@ export function TradingAdsChannel() {
   };
 
   const handleCreateAdClick = () => {
-    setActiveTab("create");
-    useTradeStore.getState().setComposerOpen(true, "standard");
+    setComposerOpen(true, "standard");
   };
 
   return (
@@ -325,20 +327,7 @@ export function TradingAdsChannel() {
       {/* Top Navigation Sub-Bar */}
       <div className="flex-shrink-0 px-4 md:px-6 py-4 bg-[#2B2D31] border-b border-[rgba(0,0,0,0.22)] shadow-sm flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <div className="flex bg-[#1E1F22] rounded-[6px] p-1 border border-[rgba(255,255,255,0.04)] shadow-inner">
-            <button
-              onClick={() => { setActiveTab("board"); useTradeStore.getState().setComposerOpen(false); }}
-              className={`px-5 py-1.5 rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-all ${activeTab === "board" ? "bg-[#5865F2] text-white shadow-sm" : "text-[#949BA4] hover:text-[#DBDEE1]"}`}
-            >
-              Board
-            </button>
-            <button
-              onClick={handleCreateAdClick}
-              className={`px-5 py-1.5 rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-all ${activeTab === "create" ? "bg-[#5865F2] text-white shadow-sm" : "text-[#949BA4] hover:text-[#DBDEE1]"}`}
-            >
-              Create Trade Ad
-            </button>
-          </div>
+          <h2 className="text-[16px] font-black text-[#F2F3F5] tracking-tight">Active Listings</h2>
 
           {profile ? (
             <button
@@ -361,44 +350,42 @@ export function TradingAdsChannel() {
           )}
         </div>
 
-        {activeTab === "board" && (
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            <div className="relative w-full sm:flex-1">
-              <Search className="w-4 h-4 text-[#80848E] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                value={searchFilter}
-                onChange={(e) => setSearchFilter(e.target.value)}
-                placeholder="Search by item..."
-                className="w-full bg-[#1E1F22] text-[#F2F3F5] text-[13px] pl-9 pr-3 py-2 rounded-[6px] outline-none border border-[rgba(255,255,255,0.04)] focus:border-[#5865F2] transition-colors shadow-inner"
-              />
-            </div>
-            
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                className="flex-1 sm:flex-none bg-[#1E1F22] text-[#DBDEE1] text-[12px] font-bold uppercase tracking-wider px-3 py-2 rounded-[6px] outline-none border border-[rgba(255,255,255,0.04)] focus:border-[#5865F2] shadow-inner cursor-pointer"
-              >
-                <option value="all">All Listings</option>
-                <option value="standard">Specific Trades</option>
-                <option value="lf_offers">LF Offers</option>
-                <option value="inventory">Vault Showcases</option>
-              </select>
-
-              <select
-                value={sortMode}
-                onChange={(e) => setSortMode(e.target.value)}
-                className="flex-1 sm:flex-none bg-[#1E1F22] text-[#DBDEE1] text-[12px] font-bold uppercase tracking-wider px-3 py-2 rounded-[6px] outline-none border border-[rgba(255,255,255,0.04)] focus:border-[#5865F2] shadow-inner cursor-pointer"
-              >
-                <option value="newest">Recently Posted</option>
-                <option value="oldest">Oldest First</option>
-                <option value="value-desc">Highest Value</option>
-                <option value="value-asc">Lowest Value</option>
-              </select>
-            </div>
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="relative w-full sm:flex-1">
+            <Search className="w-4 h-4 text-[#80848E] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              placeholder="Search by item..."
+              className="w-full bg-[#1E1F22] text-[#F2F3F5] text-[13px] pl-9 pr-3 py-2 rounded-[6px] outline-none border border-[rgba(255,255,255,0.04)] focus:border-[#5865F2] transition-colors shadow-inner"
+            />
           </div>
-        )}
+          
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="flex-1 sm:flex-none bg-[#1E1F22] text-[#DBDEE1] text-[12px] font-bold uppercase tracking-wider px-3 py-2 rounded-[6px] outline-none border border-[rgba(255,255,255,0.04)] focus:border-[#5865F2] shadow-inner cursor-pointer"
+            >
+              <option value="all">All Listings</option>
+              <option value="standard">Specific Trades</option>
+              <option value="lf_offers">LF Offers</option>
+              <option value="inventory">Vault Showcases</option>
+            </select>
+
+            <select
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value)}
+              className="flex-1 sm:flex-none bg-[#1E1F22] text-[#DBDEE1] text-[12px] font-bold uppercase tracking-wider px-3 py-2 rounded-[6px] outline-none border border-[rgba(255,255,255,0.04)] focus:border-[#5865F2] shadow-inner cursor-pointer"
+            >
+              <option value="newest">Recently Posted</option>
+              <option value="oldest">Oldest First</option>
+              <option value="value-desc">Highest Value</option>
+              <option value="value-asc">Lowest Value</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* Main Viewport */}
@@ -422,6 +409,7 @@ export function TradingAdsChannel() {
                 key={ad.id}
                 ad={ad}
                 currentUserId={profile?.id}
+                currentUserRole={profile?.role}
                 onDelete={deleteAd}
                 ALL_UNITS={ALL_UNITS}
                 onInspectUnit={(unitId) => openHistoryModal(unitId)}

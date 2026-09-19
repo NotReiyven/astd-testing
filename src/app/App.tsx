@@ -20,6 +20,7 @@ const InventoryChannel = lazy(() => import("./components/InventoryChannel").then
 const TradingAdsChannel = lazy(() => import("./components/TradingAdsChannel").then(module => ({ default: module.TradingAdsChannel })));
 const ExtraNoticesChannel = lazy(() => import("./components/ExtraNoticesChannel").then(module => ({ default: module.ExtraNoticesChannel })));
 const LegalChannel = lazy(() => import("./components/LegalChannel").then(module => ({ default: module.LegalChannel })));
+const AdminChannel = lazy(() => import("./components/AdminChannel").then(module => ({ default: module.AdminChannel }))); // NEW
 
 const CHANNEL_INFO: Record<string, { title: string; subtitle: string }> = {
   "home": { title: "home", subtitle: "Welcome to the ASTD Value List! Important information and update logs are posted here." },
@@ -29,7 +30,8 @@ const CHANNEL_INFO: Record<string, { title: string; subtitle: string }> = {
   "inventory": { title: "my-inventory", subtitle: "Manage your personal unit collection and vault." },
   "extra-notices": { title: "extra-notices", subtitle: "Additional rules, exceptions, and community notes." },
   "terms-of-service": { title: "terms-of-service", subtitle: "Rules and guidelines for using the ASTD Value List." },
-  "privacy-policy": { title: "privacy-policy", subtitle: "How we handle and protect your data." }
+  "privacy-policy": { title: "privacy-policy", subtitle: "How we handle and protect your data." },
+  "admin-panel": { title: "admin-panel", subtitle: "Moderation and User Management Database." } // NEW
 };
 
 type BootStage = 'loading' | 'tension' | 'strike' | 'fracture' | 'complete';
@@ -129,7 +131,8 @@ export default function App() {
       import("./components/InventoryChannel"),
       import("./components/TradingAdsChannel"),
       import("./components/ExtraNoticesChannel"),
-      import("./components/LegalChannel")
+      import("./components/LegalChannel"),
+      import("./components/AdminChannel") // NEW
     ]).then(() => {
       setTimeout(() => {
         setBootStage('tension');
@@ -512,6 +515,7 @@ export default function App() {
               ) : activeChannel === "extra-notices" ? ( <ExtraNoticesChannel />
               ) : activeChannel === "terms-of-service" ? ( <LegalChannel type="tos" />
               ) : activeChannel === "privacy-policy" ? ( <LegalChannel type="privacy" />
+              ) : activeChannel === "admin-panel" ? ( <AdminChannel /> // NEW
               ) : (
                 <div className="flex-1 flex items-center justify-center bg-[#313338] px-4">
                    <div className="text-center"><h2 className="text-2xl font-bold text-[#F2F3F5] mb-2 capitalize">Welcome to {activeChannel}</h2><p className="text-[#949BA4]">This channel is currently under construction.</p></div>

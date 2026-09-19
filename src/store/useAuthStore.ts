@@ -1,3 +1,5 @@
+// FILE: src/store/useAuthStore.ts
+
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 
@@ -6,7 +8,7 @@ interface UserProfile {
   discord_id: string;
   username: string;
   avatar_url: string;
-  role: 'user' | 'mod' | 'admin' | 'master';
+  role: 'user' | 'mod' | 'admin' | 'master' | 'banned';
 }
 
 interface AuthState {
@@ -24,14 +26,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: true,
 
   initialize: () => {
-    // Check active session on load
     supabase.auth.getSession().then(({ data: { session } }) => {
       set({ session });
       if (session) fetchProfile(session.user.id);
       else set({ isLoading: false });
     });
 
-    // Listen for auth changes (login/logout/refresh)
     supabase.auth.onAuthStateChange((_event, session) => {
       set({ session });
       if (session) {
