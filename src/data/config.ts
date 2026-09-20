@@ -74,3 +74,98 @@ export const SEARCHABLE_UNITS: { id: string; name: string; subtitle: string; val
   { id: "azure-specter", name: "Azure Specter", subtitle: "Neon Edge",     value: 3200 },
   { id: "ember-shard",   name: "Ember Shard",   subtitle: "Classic Pure",  value: 900 },
 ];
+
+export const AQUA_DIALOGUES: Record<string, string[]> = {
+  main: [
+    "",
+    "Listen up, you shut-in NEET! I, the beautiful and wise Goddess Aqua, have descended to save you from getting !!completely scammed!!! First, click the ^^Value List^^ channel in the sidebar so we can begin!",
+    "Hmph, even someone with your pitiful intelligence stat can do this part. Let's build a mock trade. ^^Click or tap^^ any unit card to open its menu, then toss it into your *Give* or *Get* side! !!Don't mess this up!!!",
+    "!!W-Wait! Don't just accept a trade blindly!!! Are you trying to lose all your value?! Use the divine tool I've graciously bestowed upon you! Click that glowing ^^Calculator^^ button up top—or tap the ^^Trade Bar^^ at the bottom on your phone—to open the Analyzer!",
+    "See?! It instantly breaks down the value differences and market momentum! But wait—you're not done! I've enrolled you in the Academy to finish your training. Go complete your Graduation Checklist!"
+  ],
+  channels: [
+    "",
+    "Lost, are we? Typical. Pay attention to the sidebar on the left! ^^Home^^ has patch notes, ^^Tutorial^^ is where you learn how to trade, and ^^Extra Notices^^ has crucial market rules you probably ignored!"
+  ],
+  advanced: [
+    "",
+    "Want to be a pro? The Academy Sandbox tracks your progress. Go finish your Graduation Checklist before you bother me again!"
+  ],
+  developer: [
+    "",
+    "Oh, you want to know who built this shrine to my greatness? It was my loyal head developer, ^^Reiyven!^^ He spent way too much time coding this instead of going outside."
+  ],
+  filters: [
+    "",
+    "Don't just blindly scroll! Open the ^^Status Dropdown^^ and filter out the trash! Holding onto !!Dropping!! units is a one-way ticket to being as broke as I am! Read the Market Theory tab if you're confused!"
+  ],
+  dictionary: [
+    "",
+    "I'm a Goddess, not a mind reader! Click the ^^Wand^^ icon in the Calculator to open the Smart Parser. It uses the exact Dictionary logic you can test in the Academy! Teach me your weird abbreviations!"
+  ],
+  stats: [
+    "",
+    "Stop staring at the raw value like an idiot! Read the ^^Market Theory^^ tab to understand Rarity, Supply, and Demand. High value means nothing if the unit has terrible Demand!"
+  ],
+  management: [
+    "",
+    "Listen closely! When testing offers, click the ^^Pin^^ icon on your 'Give' units. That way, when you clear the board, your core inventory stays put! The Academy tracks this, so go do it!"
+  ],
+  annoyed: [
+    "",
+    "!!Stop poking me!!! Figure it out yourself or go bother ^^Reiyven^^ with a support ticket! I have Goddess things to do!"
+  ],
+  academy_grad: [
+    "",
+    "Oh ho? You actually completed the Graduation Checklist?! I didn't think a NEET like you had the attention span!",
+    "I guess my divine guidance is just *that* good! You're officially a certified trader now. Don't go losing all your value, or I'll laugh at you! ^^Praise Aqua!^^"
+  ]
+};
+
+export const THEORY_STATUS_TAGS = [
+  { tag: "Stable", bg: "#3b3924", border: "#6b5f2a", color: "#E6D8A1", def: "Fair and consistently decent offers. Units that are stable are most likely not to move unless something happens." },
+  { tag: "Unstable", bg: "#1e3040", border: "#3a6480", color: "#6B9EB5", def: "If a unit is unstable, it means it could rise or drop at any moment, or stabilize." },
+  { tag: "Rising", bg: "#153324", border: "#246640", color: "#30A163", def: "If a unit is rising, it means the unit is being consistently overpaid." },
+  { tag: "Dropping", bg: "#3d0a09", border: "#7a1410", color: "#E60A18", def: "If a unit is dropping, it means owners are constantly taking underpays." },
+  { tag: "Inflated", bg: "#2d1a0a", border: "#5c3515", color: "#c27a40", def: "If a unit has this tag, they are inflated and cost way more than they should be worth." },
+  { tag: "Deflated", bg: "#0e2345", border: "#1e4a8a", color: "#3C81F3", def: "If a unit is underpriced, they are deflated and are way cheaper than they should be worth." },
+  { tag: "Varies", bg: "#201b42", border: "#3d3480", color: "#9b8de8", def: "If a unit varies, then it can get fair but it can also get lowballs or highballs." },
+  { tag: "Lowballed", bg: "#3d220a", border: "#7a4412", color: "#E66C19", def: "If a unit has this tag, it can get fair at most, but also gets lowballs." },
+  { tag: "Highballed", bg: "#003d40", border: "#007a80", color: "#01EFFD", def: "If a unit has this tag, it can get fair at minimum, but also gets highballs." }
+];
+
+export const THEORY_SECONDARY_TAGS = [
+  { tag: "Hyped", bg: "#0e1f3a", border: "#1a3a6b", color: "#3A7CE6", def: "If a unit is hyped, then it can either be a new unit, or something big changed, skyrocketing a units value and demand." },
+  { tag: "Gatekept", bg: "#30202e", border: "#603d5a", color: "#AF78A8", def: "If a unit is gatekept, it means owners are refusing to trade this unit for any reason, waiting for a rise or huge overpay, usually." },
+  { tag: "Black Market", bg: "#1e2228", border: "#3a4250", color: "#9aa3b2", def: "If a unit has this tag, it means that people who buy units with outside-game currency are heavily impacting this unit." }
+];
+
+export const THEORY_RARITY_SCALE = [
+  { val: 0, def: "Forever Obtainable", color: "#8B0000", textColor: "#fff" },
+  { val: 1, def: "Extremely Common", color: "#FF0000", textColor: "#fff" },
+  { val: 2, def: "Very Common", color: "#FF0000", textColor: "#fff" },
+  { val: 3, def: "Common", color: "#FF0000", textColor: "#fff" },
+  { val: 4, def: "Pretty Common", color: "#FF0000", textColor: "#fff" },
+  { val: 5, def: "Slightly Uncommon", color: "#FF0000", textColor: "#fff" },
+  { val: 6, def: "Uncommon", color: "#FFA500", textColor: "#fff" },
+  { val: 7, def: "Pretty Uncommon", color: "#FFA500", textColor: "#fff" },
+  { val: 8, def: "Very Uncommon", color: "#FFA500", textColor: "#fff" },
+  { val: 9, def: "Slightly Rare", color: "#90EE90", textColor: "#000" },
+  { val: 10, def: "Pretty Rare - About as rare as Aqua (5,000 Copies)", color: "#90EE90", textColor: "#000" },
+  { val: 11, def: "Decently Rare", color: "#90EE90", textColor: "#000" },
+  { val: 12, def: "Rare", color: "#90EE90", textColor: "#000" },
+  { val: 13, def: "Very Rare - About as Rare as Padoru/Sinbad (1,000 Copies)", color: "#90EE90", textColor: "#000" },
+  { val: 14, def: "Very very Rare", color: "#90EE90", textColor: "#000" },
+  { val: 15, def: "Extremely rare - About as Rare as Mai/Douma (500 Copies)", color: "#90EE90", textColor: "#000" },
+  { val: 16, def: "Absurdly Rare", color: "#90EE90", textColor: "#000" },
+  { val: 17, def: "Super Rare - About as Rare as Gold Muramasa (Expected around 100-150 Copies)", color: "#32CD32", textColor: "#fff" },
+  { val: 18, def: "Mega Rare", color: "#32CD32", textColor: "#fff" },
+  { val: 19, def: "Ultra Rare", color: "#00FFFF", textColor: "#000" },
+  { val: 20, def: "Ultra Mega Rare (20 Copies or Less)", color: "#00FFFF", textColor: "#000" }
+];
+
+export const THEORY_LIQUIDITY_SCALE = [
+  { val: "Low", def: "Hard to trade the unit (Supply > Demand)", color: "#E57373", bg: "#111214" },
+  { val: "Average", def: "Average difficulty to trade the unit", color: "#B5BAC1", bg: "#111214" },
+  { val: "High", def: "Easy to trade the unit (Supply < Demand)", color: "#4DB6AC", bg: "#111214" }
+];

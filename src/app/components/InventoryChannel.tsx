@@ -1,323 +1,41 @@
-// FILE: src/app/components/InventoryChannel.tsx
-
-import { useState, useMemo, useRef, useCallback, memo, useEffect } from "react";
+import { useState, useRef } from "react";
 import { 
-  Package, Search, Trash2, Pin, Plus, Minus, ArrowUpDown, 
-  Settings2, AlertTriangle, X, Wand2, UploadCloud, 
-  Check, ChevronDown, Copy, ArrowUpCircle, ArrowDownCircle, 
-  Star, MousePointerSquareDashed, Scale, Lock as LockIcon,
-  TrendingUp, TrendingDown, Flame, EyeOff, ChevronsUp, ChevronsDown, Activity, Heart,
-  Info, ArrowLeft, Megaphone
+  Package, Search, Trash2, Plus, ArrowUpDown, 
+  Settings2, X, Wand2, UploadCloud, Check, ChevronDown, 
+  Copy, ArrowUpCircle, ArrowDownCircle, MousePointerSquareDashed, 
+  Lock as LockIcon, TrendingUp, TrendingDown, Heart, Info, ArrowLeft, Megaphone, History, Pin
 } from "lucide-react";
-import { useInventoryStore, InventoryItem } from "../../store/useInventoryStore";
-import { useAuthStore } from "../../store/useAuthStore";
-import { useTradeStore } from "../../store/useTradeStore";
 import { useUnits } from "../../context/UnitContext";
-import { getProxyImage, handleImageError, TIER_CONFIG, getTier, FILTERS, GRID_STATUS_CFG } from "../../data";
+import { getProxyImage, handleImageError, TIER_CONFIG, FILTERS, getTier, GRID_STATUS_CFG } from "../../data";
 import { getAvatarStyle, getInitials } from "./TradeAnalyzer/summaryUtils";
 import { QuantitySelector } from "./ui/QuantitySelector";
 import { CustomDropdown, useClickOutside } from "./MainCanvas/CustomDropdown";
-import { FilterKey, MasterUnit, TradeCard } from "../../types";
-import { parseSmartTrade } from "./TradeAnalyzer/smartParser";
 import { triggerHaptic } from "../../data/helpers";
-import { useStickyState } from "../../hooks/useStickyState";
 
-const SORT_OPTIONS = {
-  "value-desc": "Value: High to Low",
-  "value-asc": "Value: Low to High",
-  "alpha-asc": "Alphabetical (A-Z)",
-  "recent-desc": "Recently Added"
-};
-
-const TIER_ORDER: FilterKey[] = ["S", "A", "B", "C", "Pure", "Oddities", "Untiered"];
-
-const getUnitConservativeValue = (master: MasterUnit): number => {
-  if (master.value === "owner" || master.valueDisplay === "Owner's Choice" || master.valueDisplay === "O/C") return 0;
-  if (typeof master.value === "number" && master.value > 0) return master.value;
-  if (typeof master.valueMin === "number" && master.valueMin > 0) return master.valueMin;
-  return 0; 
-};
-
-function AuthenticStatusIcon({ status }: { status?: string | null }) {
-  if (!status) return null;
-  const lower = status.toLowerCase();
-  const sz = "w-3 h-3 shrink-0";
-  
-  if (lower === "rising") return <ChevronsUp className={sz} />;
-  if (lower === "dropping") return <ChevronsDown className={sz} />;
-  if (lower === "unstable") return <Activity className={sz} />;
-  if (lower === "inflated") return <TrendingUp className={sz} />;
-  if (lower === "deflated") return <TrendingDown className={sz} />;
-  if (lower === "highballed") return <ArrowUpCircle className={sz} />;
-  if (lower === "hyped") return <Flame className={sz} />;
-  if (lower === "gatekept") return <LockIcon className={sz} />;
-  if (lower === "black-marketed") return <EyeOff className={sz} />;
-  if (lower === "stable") return <span className="flex items-center justify-center w-3 h-3 font-black text-[12px] leading-none shrink-0">≈</span>;
-  if (lower === "varies") return <span className="flex items-center justify-center w-3 h-3 font-black text-[12px] leading-none shrink-0">↕</span>;
-  if (lower === "lowballed") return <span className="flex items-center justify-center w-3 h-3 font-black text-[12px] leading-none shrink-0">↓</span>;
-  return null;
-}
-
-const Sparkline = () => (
-  <svg className="absolute bottom-0 left-0 w-full h-[65%] opacity-[0.15] pointer-events-none z-0" preserveAspectRatio="none" viewBox="0 0 100 100">
-    <path d="M0,100 C15,80 25,95 40,65 C60,25 80,45 100,10 L100,100 Z" fill="url(#sparkGradient)" />
-    <path d="M0,100 C15,80 25,95 40,65 C60,25 80,45 100,10" fill="none" stroke="#23a559" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-    <defs>
-      <linearGradient id="sparkGradient" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#23a559" stopOpacity="1" />
-        <stop offset="100%" stopColor="#23a559" stopOpacity="0" />
-      </linearGradient>
-    </defs>
-  </svg>
-);
-
-const TradingCardSlot = memo(({ 
-  item, 
-  master, 
-  onInspect, 
-  isSelectMode, 
-  isSelected, 
-  toggleSelect,
-  stagedGiveQty,
-  stagedGetQty,
-  onQtyChange,
-  isSandbox,
-  isReadOnly,
-  isWishlist,
-  onQuickTransfer
-}: { 
-  item: InventoryItem; 
-  master: MasterUnit; 
-  onInspect: (item: InventoryItem, master: MasterUnit) => void;
-  isSelectMode: boolean;
-  isSelected: boolean;
-  toggleSelect: (item: InventoryItem) => void;
-  stagedGiveQty: number;
-  stagedGetQty: number;
-  onQtyChange: (unitId: string, delta: number) => void;
-  isSandbox?: boolean;
-  isReadOnly?: boolean;
-  isWishlist?: boolean;
-  onQuickTransfer?: (unitId: string) => void;
-}) => {
-  const tierKey = getTier(master);
-  const tierColor = TIER_CONFIG[tierKey]?.badgeColor || "#5865F2";
-  const proxyUrl = getProxyImage(master.id, master.imageUrl);
-  const dropCfg = master.status ? GRID_STATUS_CFG[master.status as keyof typeof GRID_STATUS_CFG] : null;
-
-  const totalStaged = stagedGiveQty + stagedGetQty;
-  const isFullyStaged = totalStaged >= item.quantity;
-
-  const displayVal = master.value === "owner" 
-    ? "Owner's Choice" 
-    : (master.valueDisplay && master.valueDisplay !== "N/A" 
-        ? master.valueDisplay 
-        : (getUnitConservativeValue(master) || "N/A").toLocaleString());
-
-  const obtainability = (() => {
-    const note = (master.notice || "").toLowerCase();
-    if (note.includes("(unobtainable)") || note.includes("[unobtainable]") || note.includes("unobtainable")) return "UNOB";
-    if (note.includes("(obtainable)") || note.includes("[obtainable]")) return "OBN";
-    return master.obtainability || "UNOB";
-  })();
-
-  const handleDragStart = (e: React.DragEvent) => {
-    if (item.is_pinned || isSelectMode || isSandbox || isReadOnly || isWishlist) {
-      e.preventDefault();
-      return;
-    }
-    const numericValue = typeof master.value === "number" ? master.value : master.valueMin || 0;
-    const popupUnit = { id: master.id, name: master.name, subtitle: master.subtitle, value: numericValue };
-    e.dataTransfer.setData("unit", JSON.stringify(popupUnit));
-    e.dataTransfer.effectAllowed = "copy";
-  };
-
-  const handleClick = () => {
-    if (isSelectMode) toggleSelect(item);
-    else onInspect(item, master);
-  };
-
-  const tagBgTint = dropCfg?.bg ? dropCfg.bg : "transparent";
-
-  return (
-    <div
-      onClick={handleClick}
-      draggable={!item.is_pinned && !isSelectMode && !isSandbox && !isReadOnly && !isWishlist}
-      onDragStart={handleDragStart}
-      className={`group relative flex flex-col bg-[#2B2D31] rounded-[8px] transition-all cursor-pointer overflow-hidden border will-change-transform ${
-        isSelected 
-          ? "border-[#5865F2] ring-2 ring-[#5865F2] scale-[0.98]" 
-          : isFullyStaged && !isWishlist
-            ? "border-[rgba(255,255,255,0.02)] opacity-50"
-            : "border-[rgba(255,255,255,0.05)] hover:border-[rgba(255,255,255,0.18)] hover:-translate-y-0.5"
-      }`}
-      style={{ boxShadow: "0 4px 14px rgba(0,0,0,0.2)" }}
-    >
-      {!isSelectMode && !isSandbox && !isReadOnly && !isWishlist && (
-        <div className="absolute top-0 bottom-[35%] left-0 w-8 bg-[#111214] border-r border-[rgba(255,255,255,0.05)] flex flex-col justify-center items-center py-2 gap-2 -translate-x-full group-hover:translate-x-0 transition-transform duration-200 z-50 rounded-br-[8px]" onClick={(e) => e.stopPropagation()}>
-          <button onClick={() => onQtyChange(item.unit_id, 1)} className="w-6 h-6 flex items-center justify-center bg-[rgba(255,255,255,0.05)] hover:bg-[#23a559]/20 rounded-[4px] transition-colors focus-visible:outline-none"><Plus className="w-4 h-4 text-[#23a559]" /></button>
-          <span className="font-mono font-bold text-[11px] text-[#DBDEE1] py-1">{item.quantity}</span>
-          <button onClick={() => onQtyChange(item.unit_id, -1)} className="w-6 h-6 flex items-center justify-center bg-[rgba(255,255,255,0.05)] hover:bg-[#ed4245]/20 rounded-[4px] transition-colors focus-visible:outline-none"><Minus className="w-4 h-4 text-[#ed4245]" /></button>
-        </div>
-      )}
-
-      {isSelected && (
-        <div className="absolute top-2 right-2 z-50 bg-[#5865F2] text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md">
-          <Check className="w-4 h-4 stroke-[3]" />
-        </div>
-      )}
-
-      <div 
-        className="relative w-full overflow-hidden flex items-center justify-center border-b border-[rgba(255,255,255,0.03)] bg-[#111214]"
-        style={{ aspectRatio: "1/1", background: `radial-gradient(circle at 50% 30%, ${tagBgTint} 0%, #18191C 85%)` }}
-      >
-        {dropCfg && !isSelected && (
-          <div 
-            className="absolute top-2 left-2 z-30 flex items-center gap-1.5 px-2 py-1 rounded-full shadow-sm max-w-[70%]"
-            style={{ background: dropCfg.bg, border: `1px solid ${dropCfg.border}`, color: dropCfg.color }}
-          >
-            <AuthenticStatusIcon status={master.status} />
-            <span className="text-[9.5px] font-bold tracking-wide border-b border-dashed border-[rgba(255,255,255,0.4)] truncate">
-              {dropCfg.label}
-            </span>
-          </div>
-        )}
-
-        <div className="absolute top-2 right-2 z-30 flex items-center gap-1">
-          {item.is_pinned && !isReadOnly && !isWishlist && (
-            <div className="bg-[#ed4245] text-white p-1 rounded-[4px] shadow-sm flex items-center justify-center" title="Locked">
-              <LockIcon className="w-3 h-3 fill-current" />
-            </div>
-          )}
-          {!isWishlist && (
-            <div className="bg-[#111214]/90 backdrop-blur-sm text-[#DBDEE1] font-mono font-bold text-[11px] px-2 py-0.5 rounded-[4px] border border-[rgba(255,255,255,0.08)] shadow-sm">
-              x{item.quantity}
-            </div>
-          )}
-        </div>
-
-        <div className="absolute inset-0 flex items-center justify-center text-white font-black text-4xl z-0 opacity-40 select-none" style={getAvatarStyle(master.name)}>
-          {getInitials(master.name)}
-        </div>
-        {proxyUrl && (
-          <img 
-            src={proxyUrl} 
-            alt={master.name} 
-            className="absolute inset-0 w-full h-full object-cover z-10 transition-transform duration-500 group-hover:scale-105" 
-            style={{ objectPosition: "center 15%" }}
-            onError={(e) => handleImageError(e, master.id)} 
-          />
-        )}
-        
-        {isWishlist && !isSelectMode && !isReadOnly && (
-          <div className="absolute inset-0 bg-[rgba(0,0,0,0.7)] opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-40 flex items-center justify-center p-4">
-             <button onClick={(e) => { e.stopPropagation(); onQuickTransfer?.(item.unit_id); }} className="w-full bg-[#23a559] hover:bg-[#1f914e] text-white text-[11px] font-bold py-2 rounded-[6px] shadow-sm flex items-center justify-center gap-1.5 transition-transform active:scale-95">
-               <Package className="w-3.5 h-3.5"/> To Vault
-             </button>
-          </div>
-        )}
-        
-        {!isWishlist && !isSelectMode && (
-          <div className="absolute inset-0 bg-[rgba(0,0,0,0.6)] opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30 flex items-center justify-center pointer-events-none">
-            <Search className="w-5 h-5 text-white" />
-          </div>
-        )}
-      </div>
-
-      <div className="p-3 flex flex-col flex-1 bg-[#2B2D31]">
-        <div className="flex flex-col mb-2">
-          <span className="text-[14px] font-black text-[#F2F3F5] tracking-tight truncate leading-snug">
-            {master.name}
-          </span>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#949BA4] truncate mt-0.5">
-            {master.subtitle || "Official Unit"}
-          </span>
-
-          <div className="flex items-center gap-2 mt-1.5">
-            <span className={`text-[9.5px] font-bold uppercase px-1.5 py-0.5 rounded-[3px] border tracking-wider leading-none ${
-              obtainability === "UNOB" 
-                ? "bg-[#1E1F22] text-[#949BA4] border-[rgba(255,255,255,0.06)]" 
-                : "bg-[rgba(255,255,255,0.05)] text-[#DBDEE1] border-[rgba(255,255,255,0.1)]"
-            }`}>
-              {obtainability}
-            </span>
-          </div>
-        </div>
-
-        <div className="mt-auto pt-2 border-t border-[rgba(255,255,255,0.03)]">
-          <div className="pl-2.5 border-l-[3px] mb-2.5" style={{ borderColor: tierColor }}>
-            <span className={`text-[15px] font-black font-mono tracking-tight block truncate ${
-              displayVal === "Owner's Choice" 
-                ? "bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400" 
-                : "text-[#F2F3F5]"
-            }`}>
-              {displayVal}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-1.5">
-            <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[4px] p-1.5 flex flex-col justify-center">
-              <span className="text-[8px] font-bold uppercase tracking-wider text-[#80848E]">Rarity</span>
-              <span className="text-[12px] font-mono font-bold text-[#4DB6AC]">
-                {master.rarity ?? "N/A"}
-              </span>
-            </div>
-            <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[4px] p-1.5 flex flex-col justify-center">
-              <span className="text-[8px] font-bold uppercase tracking-wider text-[#80848E]">Liquidity</span>
-              <span className={`text-[11px] font-mono font-bold uppercase truncate ${
-                (master.liquidity || "").toLowerCase() === "high" ? "text-[#4DB6AC]" :
-                (master.liquidity || "").toLowerCase() === "low" ? "text-[#E57373]" : "text-[#B5BAC1]"
-              }`}>
-                {master.liquidity || "AVG"}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-});
+import { SORT_OPTIONS, TIER_ORDER, getUnitConservativeValue } from "./InventoryChannel/inventoryUtils";
+import { Sparkline } from "./InventoryChannel/Sparkline";
+import { TradingCardSlot } from "./InventoryChannel/TradingCardSlot";
+import { useInventoryManager } from "../../hooks/useInventoryManager";
+import { useHistoryModalStore } from "../../store/useHistoryModalStore";
+import { useTradeStore } from "../../store/useTradeStore";
 
 export function InventoryChannel() {
   const { units: ALL_UNITS } = useUnits();
-  const { 
-    items: myItems, 
-    wishlistItems: myWishlist, 
-    viewedItems, 
-    viewedWishlist, 
-    addOrUpdateUnit, 
-    removeUnit, 
-    togglePin, 
-    restoreItem, 
-    clearInventory, 
-    clearUnpinned, 
-    toggleWishlist, 
-    viewingUserId, 
-    viewingUsername, 
-    setViewingUser 
-  } = useInventoryStore();
+  const openModal = useHistoryModalStore(state => state.openModal);
+  const { giveItems, getItems, addCard, overwrite, setComposerOpen } = useTradeStore();
   
-  const { addCard, giveItems, getItems, overwrite, setComposerOpen } = useTradeStore();
-  const { profile } = useAuthStore();
+  const {
+    vaultView, isSandbox, sandboxMockItems, displayInventory, top3Units,
+    searchQuery, setSearchQuery, activeTierFilter, setActiveTierFilter, sortMode, setSortMode,
+    collapsedTiers, setCollapsedTiers, isSelectMode, setIsSelectMode, selectedUnits, setSelectedUnits,
+    inspectTarget, setInspectTarget, importText, setImportText, isImporting, confirmClear, setConfirmClear,
+    toast, setToast, isReadOnly, viewingUsername, setViewingUser, profile,
+    metrics, vaultLiquidValue, tierGroupedUnits, unownedSearchResults, parsedImportItems,
+    handleTabSwitch, handleUndo, handleQtyChange, handleTogglePin, handleRemove, handleClearAction,
+    handleCopyVault, handleSendToAnalyzer, handlePostAsAd, handleQuickTransfer, toggleSelectUnit,
+    handleQuickAdd, executeMassImport
+  } = useInventoryManager(ALL_UNITS);
   
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeTierFilter, setActiveTierFilter] = useState<FilterKey | "Pinned">("All");
-  const [sortMode, setSortMode] = useState("value-desc");
-  const [collapsedTiers, setCollapsedTiers] = useState<Record<string, boolean>>({});
-
-  // Extremely strict read-only lock. If viewingUserId is truthy, we are completely isolated from personal items.
-  const isReadOnly = viewingUserId !== null && viewingUserId !== "";
-
-  const items = isReadOnly ? viewedItems : myItems;
-  const wishlistItems = isReadOnly ? viewedWishlist : myWishlist;
-
-  const [vaultView, setVaultView] = useState<"owned" | "wishlist">("owned");
-  const [sandboxDismissed, setSandboxDismissed] = useStickyState(false, "astd_sandbox_dismissed_v1");
-
-  const [isSelectMode, setIsSelectMode] = useState(false);
-  const [selectedUnits, setSelectedUnits] = useState<Set<string>>(new Set());
-  const [inspectTarget, setInspectTarget] = useState<{ item: InventoryItem; master: MasterUnit } | null>(null);
-
   const [isOmniboxOpen, setIsOmniboxOpen] = useState(false);
   const [omniboxIndex, setOmniboxIndex] = useState(-1);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -325,305 +43,11 @@ export function InventoryChannel() {
   useClickOutside(omniboxRef, () => setIsOmniboxOpen(false));
 
   const [importMenuOpen, setImportMenuOpen] = useState(false);
-  const [importText, setImportText] = useState("");
-  const [isImporting, setIsImporting] = useState(false);
   const importInputRef = useRef<HTMLTextAreaElement>(null);
 
   const [manageOpen, setManageOpen] = useState(false);
-  const [confirmClear, setConfirmClear] = useState<"unpinned" | "all" | null>(null);
   const manageRef = useRef<HTMLDivElement>(null);
   useClickOutside(manageRef, () => { setManageOpen(false); setConfirmClear(null); });
-
-  const [toast, setToast] = useState<{ id: number, message: string, isError: boolean, itemToRestore?: InventoryItem } | null>(null);
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
-  const showToast = useCallback((message: string, isError = false, itemToRestore?: InventoryItem) => {
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    setToast({ id: Date.now(), message, isError, itemToRestore });
-    toastTimerRef.current = setTimeout(() => setToast(null), 4000);
-  }, []);
-
-  const handleTabSwitch = (view: "owned" | "wishlist") => {
-    setVaultView(view);
-    setIsSelectMode(false);
-    setSelectedUnits(new Set());
-    setSearchQuery("");
-  };
-
-  const handleUndo = useCallback(async () => {
-    if (toast?.itemToRestore && profile && !isReadOnly) {
-      try {
-        await restoreItem(toast.itemToRestore);
-        setToast(null);
-      } catch (e) { showToast("Failed to restore unit.", true); }
-    }
-  }, [toast, profile, restoreItem, showToast, isReadOnly]);
-
-  const handleQtyChange = useCallback(async (unitId: string, delta: number) => {
-    if (!profile || delta === 0 || isReadOnly || vaultView === "wishlist") return;
-    try { 
-      await addOrUpdateUnit(profile.id, unitId, delta);
-      setInspectTarget(prev => {
-        if (!prev || prev.item.unit_id !== unitId) return prev;
-        const updatedQty = prev.item.quantity + delta;
-        if (updatedQty <= 0) return null;
-        return { ...prev, item: { ...prev.item, quantity: updatedQty } };
-      });
-    } catch (e) { showToast("Failed to update quantity.", true); }
-  }, [profile, addOrUpdateUnit, showToast, isReadOnly, vaultView]);
-
-  const handleTogglePin = useCallback(async (unitId: string, status: boolean) => {
-    if (!profile || isReadOnly) return;
-    try { 
-      await togglePin(profile.id, unitId, status); 
-      setInspectTarget(prev => prev && prev.item.unit_id === unitId ? { ...prev, item: { ...prev.item, is_pinned: !status } } : prev);
-    } catch (e) { showToast("Failed to pin unit.", true); }
-  }, [profile, togglePin, showToast, isReadOnly]);
-
-  const handleRemove = useCallback(async (item: InventoryItem, master: MasterUnit) => {
-    if (!profile || isReadOnly) return;
-    try {
-      if (vaultView === "wishlist") {
-        await toggleWishlist(profile.id, item.unit_id);
-      } else {
-        await removeUnit(profile.id, item.unit_id);
-      }
-      setInspectTarget(null);
-      showToast(`Removed ${master.name}`, false, vaultView === "wishlist" ? undefined : item);
-    } catch (e) { showToast("Failed to remove unit.", true); }
-  }, [profile, removeUnit, toggleWishlist, showToast, isReadOnly, vaultView]);
-
-  const handleClearAction = useCallback(async () => {
-    if (!profile || !confirmClear || isReadOnly) return;
-    try {
-      if (confirmClear === "unpinned") await clearUnpinned(profile.id);
-      if (confirmClear === "all") await clearInventory(profile.id);
-      setManageOpen(false);
-      setConfirmClear(null);
-    } catch (e) { showToast("Failed to clear inventory.", true); }
-  }, [profile, confirmClear, clearUnpinned, clearInventory, showToast, isReadOnly]);
-
-  const activeItems = useMemo(() => {
-    if (vaultView === "wishlist") {
-      return wishlistItems.map(w => ({ ...w, quantity: 1, is_pinned: false }) as InventoryItem);
-    }
-    return items;
-  }, [items, wishlistItems, vaultView]);
-
-  const vaultLiquidValue = useMemo(() => {
-    let liqVal = 0;
-    const sourceItems = isReadOnly ? viewedItems : myItems;
-    sourceItems.forEach(item => {
-      const master = ALL_UNITS.find(u => u.id === item.unit_id);
-      if (master) {
-        const liq = (master.liquidity || "Average").toLowerCase();
-        if (liq === "high" || liq === "average") {
-          liqVal += getUnitConservativeValue(master) * item.quantity;
-        }
-      }
-    });
-    return liqVal;
-  }, [myItems, viewedItems, isReadOnly, ALL_UNITS]);
-
-  const { 
-    resolvedInventory, 
-    estimatedValue, 
-    liquidValue, 
-    totalQuantity, 
-    uniqueCount, 
-    unpinnedCount, 
-    unobPercentage,
-    marketMomentum,
-    liqDistribution,
-    liqTotal,
-    highPct,
-    avgPct,
-    lowPct
-  } = useMemo(() => {
-    let estVal = 0, liqVal = 0, totQty = 0, unpinned = 0;
-    let unobVal = 0;
-    let risingCount = 0, droppingCount = 0;
-    let highLiq = 0, avgLiq = 0, lowLiq = 0;
-
-    const resolved = activeItems.map(item => {
-      const master = ALL_UNITS.find(u => u.id === item.unit_id);
-      if (master) {
-        totQty += item.quantity;
-        const conservativeVal = getUnitConservativeValue(master) * item.quantity;
-        estVal += conservativeVal;
-
-        const isUnob = (master.notice || "").toLowerCase().includes("unobtainable") || master.obtainability === "UNOB";
-        if (isUnob) unobVal += conservativeVal;
-
-        if (master.status === "rising") risingCount += item.quantity;
-        if (master.status === "dropping") droppingCount += item.quantity;
-
-        const liq = (master.liquidity || "Average").toLowerCase();
-        if (liq === "high") {
-          liqVal += conservativeVal;
-          highLiq += conservativeVal;
-        } else if (liq === "average") {
-          liqVal += conservativeVal;
-          avgLiq += conservativeVal;
-        } else {
-          lowLiq += conservativeVal;
-        }
-
-        if (!item.is_pinned) unpinned++;
-      }
-      return { ...item, master };
-    }).filter(i => i.master !== undefined) as (typeof activeItems[0] & { master: MasterUnit })[];
-
-    const unobPct = estVal > 0 ? (unobVal / estVal) * 100 : 0;
-    const netMomentum = risingCount - droppingCount;
-
-    const totalVal = estVal > 0 ? estVal : 1;
-    const hPct = (highLiq / totalVal) * 100;
-    const aPct = (avgLiq / totalVal) * 100;
-    const lPct = (lowLiq / totalVal) * 100;
-
-    return { 
-      resolvedInventory: resolved, 
-      estimatedValue: estVal, 
-      liquidValue: liqVal,
-      totalQuantity: totQty, 
-      uniqueCount: resolved.length, 
-      unpinnedCount: unpinned,
-      unobPercentage: unobPct,
-      marketMomentum: { net: netMomentum, rising: risingCount, dropping: droppingCount },
-      liqDistribution: { high: highLiq, avg: avgLiq, low: lowLiq },
-      liqTotal: totalVal,
-      highPct: hPct,
-      avgPct: aPct,
-      lowPct: lPct
-    };
-  }, [activeItems, ALL_UNITS]);
-
-  const isSandbox = !isReadOnly && vaultView !== "wishlist" && uniqueCount === 0 && !sandboxDismissed;
-  
-  const sandboxMockItems = useMemo(() => {
-    if (!isSandbox) return [];
-    const mocks = [
-      { unit_id: "bunny-girl", quantity: 1, is_pinned: false },
-      { unit_id: "the-ripper", quantity: 3, is_pinned: false },
-      { unit_id: "death", quantity: 1, is_pinned: true }
-    ];
-    return mocks.map(item => ({
-      ...item,
-      id: `sandbox-${item.unit_id}`,
-      user_id: "sandbox",
-      created_at: new Date().toISOString(),
-      master: ALL_UNITS.find(u => u.id === item.unit_id)!
-    })).filter(i => i.master) as (InventoryItem & { master: MasterUnit })[];
-  }, [isSandbox, ALL_UNITS]);
-
-  const displayInventory = isSandbox ? sandboxMockItems : resolvedInventory;
-
-  const top3Units = useMemo(() => {
-    return [...displayInventory]
-      .sort((a, b) => (getUnitConservativeValue(b.master) * b.quantity) - (getUnitConservativeValue(a.master) * a.quantity))
-      .slice(0, 3);
-  }, [displayInventory]);
-
-  const handleCopyVault = useCallback(() => {
-    const header = isReadOnly && viewingUsername 
-      ? `${viewingUsername}'s ASTD ${vaultView === "wishlist" ? "Wishlist" : "Vault"}` 
-      : `My ASTD ${vaultView === "wishlist" ? "Wishlist" : "Vault"}`;
-      
-    const text = `${header} (Total: ${estimatedValue.toLocaleString()} | Liquid: ${liquidValue.toLocaleString()} | UNOB: ${unobPercentage.toFixed(0)}%):\n` +
-      displayInventory.map(i => `- ${i.quantity > 1 ? `${i.quantity}x ` : ''}${i.master.name}`).join('\n');
-    navigator.clipboard.writeText(text);
-    showToast(`${vaultView === "wishlist" ? "Wishlist" : "Vault"} summary copied to clipboard!`);
-  }, [displayInventory, estimatedValue, liquidValue, unobPercentage, showToast, isReadOnly, viewingUsername, vaultView]);
-
-  const handleSendToAnalyzer = (type: "give" | "get", targetMaster?: MasterUnit) => {
-    triggerHaptic('medium');
-    
-    if (isSelectMode && selectedUnits.size > 0) {
-      let count = 0;
-      selectedUnits.forEach(itemId => {
-        const invItem = displayInventory.find(i => i.id === itemId);
-        if (invItem && !invItem.is_pinned) { 
-          const numVal = getUnitConservativeValue(invItem.master);
-          addCard(type, { id: invItem.master.id, name: invItem.master.name, subtitle: invItem.master.subtitle, value: numVal, qty: invItem.quantity });
-          count++;
-        }
-      });
-      showToast(`Added ${count} units to You ${type === "give" ? "Give" : "Get"}`);
-      setSelectedUnits(new Set());
-      setIsSelectMode(false);
-      return;
-    }
-
-    const master = targetMaster || inspectTarget?.master;
-    if (!master) return;
-    
-    const qty = targetMaster ? 1 : (inspectTarget?.item.quantity || 1);
-    const numericValue = getUnitConservativeValue(master);
-    addCard(type, { id: master.id, name: master.name, subtitle: master.subtitle, value: numericValue, qty });
-    showToast(`Added ${master.name} to You ${type === "give" ? "Give" : "Get"}!`);
-    window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: master.name, type } }));
-    if (!targetMaster) setInspectTarget(null);
-  };
-
-  const handlePostAsAd = () => {
-    triggerHaptic('heavy');
-    const cardsToGive: TradeCard[] = [];
-    selectedUnits.forEach(itemId => {
-      const invItem = displayInventory.find(i => i.id === itemId);
-      if (invItem && !invItem.is_pinned) { 
-        const numVal = getUnitConservativeValue(invItem.master);
-        cardsToGive.push({ id: invItem.master.id, name: invItem.master.name, subtitle: invItem.master.subtitle, value: numVal, qty: invItem.quantity });
-      }
-    });
-    overwrite(cardsToGive, []);
-    setComposerOpen(true, "standard");
-    window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'trading-ads' }));
-    setSelectedUnits(new Set());
-    setIsSelectMode(false);
-  };
-
-  const handleQuickTransfer = async (unitId: string) => {
-    if (!profile) return;
-    try {
-      await toggleWishlist(profile.id, unitId);
-      await addOrUpdateUnit(profile.id, unitId, 1);
-      showToast("Moved unit to Vault successfully!", false);
-    } catch(e) {
-      showToast("Failed to move unit.", true);
-    }
-  };
-
-  const toggleSelectUnit = (item: InventoryItem) => {
-    if (item.is_pinned) {
-      showToast("Cannot select locked units.", true);
-      triggerHaptic('light');
-      return;
-    }
-    triggerHaptic('light');
-    setSelectedUnits(prev => {
-      const next = new Set(prev);
-      if (next.has(item.id)) next.delete(item.id);
-      else next.add(item.id);
-      return next;
-    });
-  };
-
-  const handleQuickAdd = async (master: MasterUnit) => {
-    if (!profile || isReadOnly) return;
-    try {
-      if (vaultView === "wishlist") {
-        await toggleWishlist(profile.id, master.id);
-      } else {
-        await addOrUpdateUnit(profile.id, master.id, 1);
-      }
-      if (isSandbox) setSandboxDismissed(true);
-      setSearchQuery("");
-      setIsOmniboxOpen(false);
-      setOmniboxIndex(-1);
-      showToast(`Added ${master.name} to ${vaultView === "wishlist" ? "Wishlist" : "Vault"}.`);
-    } catch (e) { showToast("Failed to add unit.", true); }
-  };
 
   const handleOmniboxKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
@@ -636,94 +60,16 @@ export function InventoryChannel() {
       e.preventDefault();
       if (omniboxIndex >= 0 && unownedSearchResults[omniboxIndex]) {
         handleQuickAdd(unownedSearchResults[omniboxIndex]);
+        setIsOmniboxOpen(false);
       } else if (unownedSearchResults.length > 0) {
         handleQuickAdd(unownedSearchResults[0]);
+        setIsOmniboxOpen(false);
       }
     } else if (e.key === "Escape") {
       setIsOmniboxOpen(false);
       searchInputRef.current?.blur();
     }
   };
-
-  const executeMassImport = async () => {
-    if (!profile || parsedImportItems.length === 0 || isReadOnly || vaultView === "wishlist") return;
-    setIsImporting(true);
-    let successCount = 0;
-    
-    for (const item of parsedImportItems) {
-      try {
-        await addOrUpdateUnit(profile.id, item.id, item.qty);
-        successCount++;
-      } catch (e) { console.error("Failed to import", item.name); }
-    }
-    
-    if (isSandbox && successCount > 0) setSandboxDismissed(true);
-
-    setIsImporting(false);
-    setImportMenuOpen(false);
-    setImportText("");
-    if (successCount > 0) showToast(`Imported ${successCount} items successfully.`, false);
-  };
-
-  const tierGroupedUnits = useMemo(() => {
-    let filtered = displayInventory;
-    const q = searchQuery.toLowerCase().trim();
-    
-    if (q) {
-      filtered = filtered.filter(i => {
-        const m = i.master;
-        return m.name.toLowerCase().includes(q) || (m.subtitle && m.subtitle.toLowerCase().includes(q)) || (m.aliases && m.aliases.some(a => a.toLowerCase().includes(q)));
-      });
-    }
-
-    if (activeTierFilter === "Pinned") {
-      filtered = filtered.filter(i => i.is_pinned);
-    } else if (activeTierFilter !== "All") {
-      filtered = filtered.filter(i => getTier(i.master) === activeTierFilter);
-    }
-
-    const groups: Record<string, typeof filtered> = {};
-    TIER_ORDER.forEach(t => { groups[t] = []; });
-
-    filtered.forEach(item => {
-      const t = getTier(item.master);
-      if (groups[t]) groups[t].push(item);
-    });
-
-    Object.keys(groups).forEach(tier => {
-      groups[tier].sort((a, b) => {
-        if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
-        if (sortMode === "value-desc" || sortMode === "value-asc") {
-          const valA = getUnitConservativeValue(a.master);
-          const valB = getUnitConservativeValue(b.master);
-          if (valA !== valB) return sortMode === "value-desc" ? valB - valA : valA - valB;
-        } else if (sortMode === "alpha-asc") return a.master.name.localeCompare(b.master.name);
-        else if (sortMode === "recent-desc") {
-          const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
-          const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
-          if (timeA !== timeB) return timeB - timeA;
-        }
-        return a.master.name.localeCompare(b.master.name);
-      });
-    });
-
-    return groups;
-  }, [displayInventory, searchQuery, activeTierFilter, sortMode]);
-
-  const unownedSearchResults = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim();
-    if (!q || isReadOnly) return [];
-    const ownedIds = new Set(activeItems.map(i => i.unit_id));
-    return ALL_UNITS.filter(u => {
-      if (ownedIds.has(u.id)) return false;
-      return u.name.toLowerCase().includes(q) || (u.subtitle && u.subtitle.toLowerCase().includes(q)) || (u.aliases && u.aliases.some(a => a.toLowerCase().includes(q)));
-    }).slice(0, 10);
-  }, [searchQuery, activeItems, ALL_UNITS, isReadOnly]);
-
-  const parsedImportItems = useMemo(() => {
-    if (!importText.trim()) return [];
-    return parseSmartTrade(importText, ALL_UNITS).giveCards;
-  }, [importText, ALL_UNITS]);
 
   if (!profile && !isReadOnly) {
     return (
@@ -735,7 +81,7 @@ export function InventoryChannel() {
     );
   }
 
-  const goalProgress = estimatedValue > 0 ? Math.min(100, (vaultLiquidValue / estimatedValue) * 100) : 0;
+  const goalProgress = metrics.estimatedValue > 0 ? Math.min(100, (vaultLiquidValue / metrics.estimatedValue) * 100) : 0;
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#313338] h-full select-none font-sans relative">
@@ -771,11 +117,10 @@ export function InventoryChannel() {
             {!isReadOnly && vaultView !== "wishlist" && (
               <div className="flex items-center pr-2 border-r border-[rgba(255,255,255,0.06)] mr-1 shrink-0">
                 <button 
-                  onClick={() => { setIsSelectMode(!isSelectMode); setSelectedUnits(new Set()); }}
+                  onClick={() => { triggerHaptic('light'); setIsSelectMode(!isSelectMode); setSelectedUnits(new Set()); }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] ${isSelectMode ? 'bg-[rgba(88,101,242,0.15)] text-[#5865F2] ring-1 ring-[#5865F2]/50' : 'bg-[#1E1F22] text-[#80848E] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.04)]'}`}
                 >
-                  <MousePointerSquareDashed className="w-3.5 h-3.5" />
-                  Select
+                  <MousePointerSquareDashed className="w-3.5 h-3.5" /> Select
                 </button>
               </div>
             )}
@@ -836,7 +181,7 @@ export function InventoryChannel() {
                       {confirmClear ? (
                         <div className="p-3 bg-[rgba(237,66,69,0.1)] border border-[rgba(237,66,69,0.2)] rounded-[6px] flex flex-col gap-3">
                           <span className="text-[12.5px] text-[#F2F3F5] font-medium leading-snug">
-                            Remove {confirmClear === "unpinned" ? <span className="font-bold text-[#ed4245]">{unpinnedCount} unlocked</span> : <span className="font-bold text-[#ed4245]">all {uniqueCount}</span>} units? This cannot be undone.
+                            Remove {confirmClear === "unpinned" ? <span className="font-bold text-[#ed4245]">{metrics.unpinnedCount} unlocked</span> : <span className="font-bold text-[#ed4245]">all {metrics.uniqueCount}</span>} units? This cannot be undone.
                           </span>
                           <div className="flex items-center gap-2">
                             <button onClick={() => setConfirmClear(null)} className="flex-1 px-3 py-2 bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] rounded-[4px] text-[12px] font-bold text-[#DBDEE1] transition-colors focus-visible:outline-none">Cancel</button>
@@ -849,11 +194,11 @@ export function InventoryChannel() {
                             Import from Text <Wand2 className="w-3.5 h-3.5 text-[#80848E]" />
                           </button>
                           <div className="w-full h-px bg-[rgba(255,255,255,0.04)] my-1" />
-                          <button onClick={() => { if (unpinnedCount > 0) setConfirmClear("unpinned"); }} disabled={unpinnedCount === 0} className="w-full text-left px-3 py-2.5 rounded-[4px] text-[12.5px] font-semibold text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none flex items-center justify-between">
-                            Clear Unlocked <span className="text-[#80848E] font-mono font-bold text-[11px]">{unpinnedCount}</span>
+                          <button onClick={() => { if (metrics.unpinnedCount > 0) setConfirmClear("unpinned"); }} disabled={metrics.unpinnedCount === 0} className="w-full text-left px-3 py-2.5 rounded-[4px] text-[12.5px] font-semibold text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none flex items-center justify-between">
+                            Clear Unlocked <span className="text-[#80848E] font-mono font-bold text-[11px]">{metrics.unpinnedCount}</span>
                           </button>
-                          <button onClick={() => { if (uniqueCount > 0) setConfirmClear("all"); }} disabled={uniqueCount === 0} className="w-full text-left px-3 py-2.5 rounded-[4px] text-[12.5px] font-semibold text-[#ed4245] hover:bg-[rgba(237,66,69,0.1)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none flex items-center justify-between">
-                            Clear Entire Inventory <span className="text-[#ed4245] opacity-70 font-mono font-bold text-[11px]">{uniqueCount}</span>
+                          <button onClick={() => { if (metrics.uniqueCount > 0) setConfirmClear("all"); }} disabled={metrics.uniqueCount === 0} className="w-full text-left px-3 py-2.5 rounded-[4px] text-[12.5px] font-semibold text-[#ed4245] hover:bg-[rgba(237,66,69,0.1)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none flex items-center justify-between">
+                            Clear Entire Inventory <span className="text-[#ed4245] opacity-70 font-mono font-bold text-[11px]">{metrics.uniqueCount}</span>
                           </button>
                         </>
                       )}
@@ -870,7 +215,7 @@ export function InventoryChannel() {
                     return (
                       <button
                         key={u.id}
-                        onClick={() => handleQuickAdd(u)}
+                        onClick={() => { handleQuickAdd(u); setIsOmniboxOpen(false); }}
                         onMouseEnter={() => setOmniboxIndex(i)}
                         className={`flex items-center gap-2.5 w-full p-2 rounded-[4px] transition-colors focus-visible:outline-none ${isSelected ? 'bg-[#5865F2] text-white' : 'bg-transparent hover:bg-[rgba(255,255,255,0.04)] text-[#F2F3F5]'}`}
                       >
@@ -915,7 +260,7 @@ export function InventoryChannel() {
                       : "Search for units using the bar above to set your trading targets. Track your progress automatically as your vault grows."}
                   </p>
                 </>
-              ) : !isSandbox && uniqueCount === 0 ? (
+              ) : !isSandbox && metrics.uniqueCount === 0 ? (
                 <div className="relative z-10 flex flex-col items-center w-full max-w-xl text-center px-2">
                   <div className="w-16 h-16 md:w-20 md:h-20 rounded-[12px] bg-[#1E1F22] border border-[#5865F2]/30 flex items-center justify-center shadow-[0_0_40px_rgba(88,101,242,0.15)] mb-5">
                     <Package className="w-8 h-8 md:w-10 md:h-10 text-[#5865F2]" />
@@ -943,7 +288,6 @@ export function InventoryChannel() {
                           <span className="text-[12px] text-[#949BA4]">Try adjusting quantities or moving these dummy units to the Calculator. Adding any real unit clears the sandbox.</span>
                        </div>
                     </div>
-                    <button onClick={() => setSandboxDismissed(true)} className="px-4 py-2 bg-[#5865F2] hover:bg-[#4752C4] text-white text-[12px] font-bold rounded-[4px] transition-colors focus-visible:outline-none shrink-0">Exit Sandbox</button>
                  </div>
               )}
 
@@ -957,7 +301,7 @@ export function InventoryChannel() {
                        </h3>
                        <div className="flex justify-between items-end mb-2">
                          <div className="flex flex-col">
-                           <span className="text-[28px] md:text-[36px] font-black text-[#F2F3F5] font-mono leading-none">{vaultLiquidValue.toLocaleString()} <span className="text-[#80848E] text-[16px] md:text-[20px]">/ {estimatedValue.toLocaleString()}</span></span>
+                           <span className="text-[28px] md:text-[36px] font-black text-[#F2F3F5] font-mono leading-none">{vaultLiquidValue.toLocaleString()} <span className="text-[#80848E] text-[16px] md:text-[20px]">/ {metrics.estimatedValue.toLocaleString()}</span></span>
                            <span className="text-[11px] text-[#949BA4] mt-1.5">Vault Liquid Value vs Wishlist Target Value</span>
                          </div>
                          <span className="text-[24px] font-black text-[#5865F2]">{goalProgress.toFixed(1)}%</span>
@@ -1004,13 +348,13 @@ export function InventoryChannel() {
                           <div className="flex items-center gap-1.5 text-[11px] font-bold font-mono">
                             {isSandbox ? (
                                <span className="text-[#949BA4] bg-[#1E1F22] px-2 py-0.5 rounded-[4px] border border-[rgba(255,255,255,0.04)]">Sandbox Value</span>
-                            ) : marketMomentum.net > 0 ? (
+                            ) : metrics.marketMomentum.net > 0 ? (
                               <span className="text-[#23a559] flex items-center gap-1 bg-[#23a559]/10 px-2 py-0.5 rounded-[4px] border border-[#23a559]/20">
-                                <TrendingUp className="w-3 h-3" /> +{marketMomentum.net} Net Rising
+                                <TrendingUp className="w-3 h-3" /> +{metrics.marketMomentum.net} Net Rising
                               </span>
-                            ) : marketMomentum.net < 0 ? (
+                            ) : metrics.marketMomentum.net < 0 ? (
                               <span className="text-[#ed4245] flex items-center gap-1 bg-[#ed4245]/10 px-2 py-0.5 rounded-[4px] border border-[#ed4245]/20">
-                                <TrendingDown className="w-3 h-3" /> {Math.abs(marketMomentum.net)} Net Dropping
+                                <TrendingDown className="w-3 h-3" /> {Math.abs(metrics.marketMomentum.net)} Net Dropping
                               </span>
                             ) : (
                               <span className="text-[#949BA4] bg-[#1E1F22] px-2 py-0.5 rounded-[4px] border border-[rgba(255,255,255,0.04)]">Market Stable</span>
@@ -1019,17 +363,17 @@ export function InventoryChannel() {
                         </div>
 
                         <h2 className="text-[32px] md:text-[40px] font-black text-[#F2F3F5] tracking-tighter leading-none font-mono">
-                          {isSandbox ? sandboxMockItems.reduce((acc, c) => acc + (c.master.value as number)*c.quantity, 0).toLocaleString() : estimatedValue.toLocaleString()}
+                          {isSandbox ? sandboxMockItems.reduce((acc, c) => acc + (c.master.value as number)*c.quantity, 0).toLocaleString() : metrics.estimatedValue.toLocaleString()}
                         </h2>
 
                         <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-[rgba(255,255,255,0.04)]">
                           <div className="bg-[#111214] p-2.5 rounded-[6px] border border-[rgba(255,255,255,0.02)] flex flex-col shadow-inner">
                             <span className="text-[9px] font-bold text-[#80848E] uppercase tracking-wider">Liquid Assets</span>
-                            <span className="text-[14px] font-bold text-[#4DB6AC] font-mono mt-0.5">{isSandbox ? "0" : liquidValue.toLocaleString()}</span>
+                            <span className="text-[14px] font-bold text-[#4DB6AC] font-mono mt-0.5">{isSandbox ? "0" : metrics.liquidValue.toLocaleString()}</span>
                           </div>
                           <div className="bg-[#111214] p-2.5 rounded-[6px] border border-[rgba(255,255,255,0.02)] flex flex-col shadow-inner">
                             <span className="text-[9px] font-bold text-[#80848E] uppercase tracking-wider">UNOB Proportion</span>
-                            <span className="text-[14px] font-bold text-[#FAA61A] font-mono mt-0.5">{isSandbox ? "0" : unobPercentage.toFixed(0)}% Unobtainable</span>
+                            <span className="text-[14px] font-bold text-[#FAA61A] font-mono mt-0.5">{isSandbox ? "0" : metrics.unobPercentage.toFixed(0)}% Unobtainable</span>
                           </div>
                         </div>
                       </div>
@@ -1038,17 +382,17 @@ export function InventoryChannel() {
                         <div className="flex flex-col gap-1.5 mt-5 relative z-10">
                           <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">
                             <span>Demand Distribution</span>
-                            <span>{((liquidValue / liqTotal) * 100).toFixed(0)}% Liquid</span>
+                            <span>{((metrics.liquidValue / metrics.liqTotal) * 100).toFixed(0)}% Liquid</span>
                           </div>
                           <div className="w-full h-2 rounded-[2px] bg-[#111214] overflow-hidden flex shadow-inner border border-[rgba(255,255,255,0.02)]">
-                            <div className="h-full bg-[#4DB6AC] transition-all duration-700 ease-out" style={{ width: `${highPct}%` }} title={`High Demand: ${highPct.toFixed(0)}%`} />
-                            <div className="h-full bg-[#B5BAC1] transition-all duration-700 ease-out" style={{ width: `${avgPct}%` }} title={`Average Demand: ${avgPct.toFixed(0)}%`} />
-                            <div className="h-full bg-[#E57373] transition-all duration-700 ease-out" style={{ width: `${lowPct}%` }} title={`Low Demand: ${lowPct.toFixed(0)}%`} />
+                            <div className="h-full bg-[#4DB6AC] transition-all duration-700 ease-out" style={{ width: `${metrics.highPct}%` }} title={`High Demand: ${metrics.highPct.toFixed(0)}%`} />
+                            <div className="h-full bg-[#B5BAC1] transition-all duration-700 ease-out" style={{ width: `${metrics.avgPct}%` }} title={`Average Demand: ${metrics.avgPct.toFixed(0)}%`} />
+                            <div className="h-full bg-[#E57373] transition-all duration-700 ease-out" style={{ width: `${metrics.lowPct}%` }} title={`Low Demand: ${metrics.lowPct.toFixed(0)}%`} />
                           </div>
                           <div className="flex justify-between items-center text-[9px] font-bold text-[#80848E]">
-                            <span className="text-[#4DB6AC]">High: {highPct.toFixed(0)}%</span>
-                            <span className="text-[#B5BAC1]">Avg: {avgPct.toFixed(0)}%</span>
-                            <span className="text-[#E57373]">Low: {lowPct.toFixed(0)}%</span>
+                            <span className="text-[#4DB6AC]">High: {metrics.highPct.toFixed(0)}%</span>
+                            <span className="text-[#B5BAC1]">Avg: {metrics.avgPct.toFixed(0)}%</span>
+                            <span className="text-[#E57373]">Low: {metrics.lowPct.toFixed(0)}%</span>
                           </div>
                         </div>
                       )}
@@ -1061,7 +405,7 @@ export function InventoryChannel() {
                         {top3Units.map((item, idx) => {
                           const proxyUrl = getProxyImage(item.master.id, item.master.imageUrl);
                           const unitVal = getUnitConservativeValue(item.master) * item.quantity;
-                          const share = estimatedValue > 0 ? (unitVal / estimatedValue) * 100 : 0;
+                          const share = metrics.estimatedValue > 0 ? (unitVal / metrics.estimatedValue) * 100 : 0;
                           const rankColor = idx === 0 ? "#FAA61A" : idx === 1 ? "#B5BAC1" : "#A0714F";
                           const rankBg = idx === 0 ? "rgba(250,166,26,0.1)" : idx === 1 ? "rgba(181,186,193,0.1)" : "rgba(160,113,79,0.1)";
 
@@ -1386,23 +730,13 @@ export function InventoryChannel() {
                 vaultView === "wishlist" ? (
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <button onClick={async () => {
-                      try {
-                        await toggleWishlist(profile!.id, inspectTarget.master.id);
-                        await addOrUpdateUnit(profile!.id, inspectTarget.master.id, 1);
-                        setInspectTarget(null);
-                        showToast(`Moved ${inspectTarget.master.name} to Vault`, false);
-                      } catch(e) { showToast("Failed to move unit.", true); }
+                      await handleQuickTransfer(inspectTarget.master.id);
+                      setInspectTarget(null);
                     }} className="flex items-center justify-center gap-2 py-2 rounded-[4px] text-[12px] font-bold text-[#DBDEE1] bg-[#23a559] hover:bg-[#1f914e] transition-colors focus-visible:outline-none shadow-sm">
                       <Package className="w-3.5 h-3.5" />
                       <span>Move to Vault</span>
                     </button>
-                    <button onClick={async () => {
-                      try {
-                        await toggleWishlist(profile!.id, inspectTarget.master.id);
-                        setInspectTarget(null);
-                        showToast(`Removed ${inspectTarget.master.name} from Wishlist`, false);
-                      } catch(e) { showToast("Failed to remove unit.", true); }
-                    }} className="flex items-center justify-center gap-2 py-2 rounded-[4px] text-[12px] font-bold text-[#80848E] hover:text-[#ed4245] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.04)] focus-visible:outline-none">
+                    <button onClick={() => handleRemove(inspectTarget.item, inspectTarget.master)} className="flex items-center justify-center gap-2 py-2 rounded-[4px] text-[12px] font-bold text-[#80848E] hover:text-[#ed4245] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.04)] focus-visible:outline-none">
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>Remove</span>
                     </button>

@@ -1,54 +1,8 @@
 import React from "react";
-
-const STATUS_TAGS = [
-  { tag: "Stable", bg: "#3b3924", border: "#6b5f2a", color: "#E6D8A1", def: "Fair and consistently decent offers. Units that are stable are most likely not to move unless something happens." },
-  { tag: "Unstable", bg: "#1e3040", border: "#3a6480", color: "#6B9EB5", def: "If a unit is unstable, it means it could rise or drop at any moment, or stabilize." },
-  { tag: "Rising", bg: "#153324", border: "#246640", color: "#30A163", def: "If a unit is rising, it means the unit is being consistently overpaid." },
-  { tag: "Dropping", bg: "#3d0a09", border: "#7a1410", color: "#E60A18", def: "If a unit is dropping, it means owners are constantly taking underpays." },
-  { tag: "Inflated", bg: "#2d1a0a", border: "#5c3515", color: "#c27a40", def: "If a unit has this tag, they are inflated and cost way more than they should be worth." },
-  { tag: "Deflated", bg: "#0e2345", border: "#1e4a8a", color: "#3C81F3", def: "If a unit is underpriced, they are deflated and are way cheaper than they should be worth." },
-  { tag: "Varies", bg: "#201b42", border: "#3d3480", color: "#9b8de8", def: "If a unit varies, then it can get fair but it can also get lowballs or highballs." },
-  { tag: "Lowballed", bg: "#3d220a", border: "#7a4412", color: "#E66C19", def: "If a unit has this tag, it can get fair at most, but also gets lowballs." },
-  { tag: "Highballed", bg: "#003d40", border: "#007a80", color: "#01EFFD", def: "If a unit has this tag, it can get fair at minimum, but also gets highballs." }
-];
-
-const SECONDARY_TAGS = [
-  { tag: "Hyped", bg: "#0e1f3a", border: "#1a3a6b", color: "#3A7CE6", def: "If a unit is hyped, then it can either be a new unit, or something big changed, skyrocketing a units value and demand." },
-  { tag: "Gatekept", bg: "#30202e", border: "#603d5a", color: "#AF78A8", def: "If a unit is gatekept, it means owners are refusing to trade this unit for any reason, waiting for a rise or huge overpay, usually." },
-  { tag: "Black Market", bg: "#1e2228", border: "#3a4250", color: "#9aa3b2", def: "If a unit has this tag, it means that people who buy units with outside-game currency are heavily impacting this unit." }
-];
-
-const RARITY_SCALE = [
-  { val: 0, def: "Forever Obtainable", color: "#8B0000", textColor: "#fff" },
-  { val: 1, def: "Extremely Common", color: "#FF0000", textColor: "#fff" },
-  { val: 2, def: "Very Common", color: "#FF0000", textColor: "#fff" },
-  { val: 3, def: "Common", color: "#FF0000", textColor: "#fff" },
-  { val: 4, def: "Pretty Common", color: "#FF0000", textColor: "#fff" },
-  { val: 5, def: "Slightly Uncommon", color: "#FF0000", textColor: "#fff" },
-  { val: 6, def: "Uncommon", color: "#FFA500", textColor: "#fff" },
-  { val: 7, def: "Pretty Uncommon", color: "#FFA500", textColor: "#fff" },
-  { val: 8, def: "Very Uncommon", color: "#FFA500", textColor: "#fff" },
-  { val: 9, def: "Slightly Rare", color: "#90EE90", textColor: "#000" },
-  { val: 10, def: "Pretty Rare - About as rare as Aqua (5,000 Copies)", color: "#90EE90", textColor: "#000" },
-  { val: 11, def: "Decently Rare", color: "#90EE90", textColor: "#000" },
-  { val: 12, def: "Rare", color: "#90EE90", textColor: "#000" },
-  { val: 13, def: "Very Rare - About as Rare as Padoru/Sinbad (1,000 Copies)", color: "#90EE90", textColor: "#000" },
-  { val: 14, def: "Very very Rare", color: "#90EE90", textColor: "#000" },
-  { val: 15, def: "Extremely rare - About as Rare as Mai/Douma (500 Copies)", color: "#90EE90", textColor: "#000" },
-  { val: 16, def: "Absurdly Rare", color: "#90EE90", textColor: "#000" },
-  { val: 17, def: "Super Rare - About as Rare as Gold Muramasa (Expected around 100-150 Copies)", color: "#32CD32", textColor: "#fff" },
-  { val: 18, def: "Mega Rare", color: "#32CD32", textColor: "#fff" },
-  { val: 19, def: "Ultra Rare", color: "#00FFFF", textColor: "#000" },
-  { val: 20, def: "Ultra Mega Rare (20 Copies or Less)", color: "#00FFFF", textColor: "#000" }
-];
-
-const LIQUIDITY_SCALE = [
-  { val: "Low", def: "Hard to trade the unit (Supply > Demand)", color: "#E57373", bg: "#111214" },
-  { val: "Average", def: "Average difficulty to trade the unit", color: "#B5BAC1", bg: "#111214" },
-  { val: "High", def: "Easy to trade the unit (Supply < Demand)", color: "#4DB6AC", bg: "#111214" }
-];
+import { THEORY_STATUS_TAGS, THEORY_SECONDARY_TAGS, THEORY_RARITY_SCALE, THEORY_LIQUIDITY_SCALE } from "../../../data";
 
 const FIRE_ZIO_AVATAR = "/units/firezio.webp";
+
 export function TheoryTab() {
   return (
     <div className="flex flex-col gap-8 max-w-5xl mx-auto animate-fade-in pb-8 font-sans">
@@ -77,7 +31,7 @@ export function TheoryTab() {
                     </tr>
                  </thead>
                  <tbody>
-                    {STATUS_TAGS.map((t) => (
+                    {THEORY_STATUS_TAGS.map((t) => (
                        <tr key={t.tag} className="border-b border-[rgba(255,255,255,0.02)] last:border-0 hover:bg-[rgba(255,255,255,0.01)] transition-colors">
                           <td className="px-5 py-3 align-middle">
                              <span className="text-[10px] font-bold uppercase px-2 py-1 rounded-[4px] border block text-center w-full" style={{ backgroundColor: t.bg, color: t.color, borderColor: t.border }}>
@@ -91,7 +45,7 @@ export function TheoryTab() {
                        <td className="px-5 py-3 font-bold text-center">Secondary Tags</td>
                        <td className="px-5 py-3 font-bold">Tags placed with Values or Liquidity to better define a situation</td>
                     </tr>
-                    {SECONDARY_TAGS.map((t) => (
+                    {THEORY_SECONDARY_TAGS.map((t) => (
                        <tr key={t.tag} className="border-b border-[rgba(255,255,255,0.02)] last:border-0 hover:bg-[rgba(255,255,255,0.01)] transition-colors">
                           <td className="px-5 py-3 align-middle">
                              <span className="text-[10px] font-bold uppercase px-2 py-1 rounded-[4px] border block text-center w-full" style={{ backgroundColor: t.bg, color: t.color, borderColor: t.border }}>
@@ -131,7 +85,7 @@ export function TheoryTab() {
                     </tr>
                  </thead>
                  <tbody>
-                    {RARITY_SCALE.map((r) => (
+                    {THEORY_RARITY_SCALE.map((r) => (
                        <tr key={r.val} className="border-b border-[rgba(255,255,255,0.02)] last:border-0 hover:bg-[rgba(255,255,255,0.01)] transition-colors">
                           <td className="px-5 py-2.5 align-middle text-center bg-[#1E1F22] border-r border-[rgba(255,255,255,0.02)]">
                              <span className="text-[12px] font-black font-mono px-2 py-1 rounded-[4px]" style={{ backgroundColor: r.color, color: r.textColor }}>{r.val}</span>
@@ -168,7 +122,7 @@ export function TheoryTab() {
                   </tr>
                </thead>
                <tbody>
-                  {LIQUIDITY_SCALE.map((s) => (
+                  {THEORY_LIQUIDITY_SCALE.map((s) => (
                      <tr key={s.val} className="border-b border-[rgba(255,255,255,0.02)] last:border-0">
                         <td className="px-5 py-2.5 align-middle text-center bg-[#1E1F22] border-r border-[rgba(255,255,255,0.04)]">
                            <span className="text-[12px] font-black font-mono px-2 py-1 rounded-[4px]" style={{ color: s.color }}>{s.val.toUpperCase()}</span>

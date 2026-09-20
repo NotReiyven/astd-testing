@@ -19,5 +19,3 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #111214; 
 }
-
-/* Make sure to delete scrollbarWidth: "none" from your inline styles! */

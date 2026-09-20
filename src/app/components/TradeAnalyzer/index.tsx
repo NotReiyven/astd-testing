@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Calculator, RotateCcw, Share2, Check, ArrowUpDown, Wand2, X, Info, ChevronUp, Megaphone, ArrowLeft } from "lucide-react";
-import { TradeCard } from "../../../types";
+import { Calculator, RotateCcw, Share2, Check, ArrowUpDown, Wand2, X, Megaphone, ArrowLeft } from "lucide-react";
 import { TradeSectionPanel } from "./TradeSectionPanel";
 import { TradeNotices } from "./TradeNotices";
 import { SmartParserMenu } from "./SmartParserMenu";
@@ -13,6 +12,8 @@ import { GuideType } from "../guides/AquaGuideOverlay";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { triggerHaptic } from "../../../data/helpers";
 import { useAuthStore } from "../../../store/useAuthStore";
+import { useTradeUndo } from "../../../hooks/useTradeUndo";
+import { useTradeGlobalInput } from "../../../hooks/useTradeGlobalInput";
 
 export function TradeAnalyzerPanel({
   isOpen = true,
@@ -38,26 +39,20 @@ export function TradeAnalyzerPanel({
     clearSection, 
     addCard, 
     swap, 
-    overwrite, 
     pinnedIds, 
     togglePin, 
-    clearAllUnpinned,
     isComposerOpen,
     setComposerOpen
   } = useTradeStore();
 
   const [copied, setCopied] = useState(false);
-  const [isGlobalDragging, setIsGlobalDragging] = useState(false);
-  const [smartMenuOpen, setSmartMenuOpen] = useState(false);
-  const [initialParserText, setInitialParserText] = useState("");
-  
-  const [confirmClear, setConfirmClear] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
   const { panelWidth, startResize, panelRef } = usePanelResize(480, 420, 800);
-
-  const [undoCache, setUndoCache] = useState<{give: TradeCard[], get: TradeCard[]} | null>(null);
-  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Custom Hook Injections
+  const { undoCache, confirmClear, saveUndoState, handleSafeClear, handleUndo } = useTradeUndo();
+  const { isGlobalDragging, smartMenuOpen, setSmartMenuOpen, initialParserText, setInitialParserText } = useTradeGlobalInput();
 
   const sheetRef = useRef<HTMLDivElement>(null);
   const touchStartYRef = useRef<number | null>(null);
@@ -68,35 +63,6 @@ export function TradeAnalyzerPanel({
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  useEffect(() => {
-    const handleDragStart = (e: DragEvent) => {
-      if (e.dataTransfer?.types.includes("unit")) setIsGlobalDragging(true);
-    };
-    const handleDragEnd = () => setIsGlobalDragging(false);
-    window.addEventListener("dragstart", handleDragStart);
-    window.addEventListener("dragend", handleDragEnd);
-    return () => {
-      window.removeEventListener("dragstart", handleDragStart);
-      window.removeEventListener("dragend", handleDragEnd);
-    };
-  }, []);
-
-  useEffect(() => {
-    const handlePaste = (e: ClipboardEvent) => {
-      const activeEl = document.activeElement;
-      if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) return;
-
-      const text = e.clipboardData?.getData("text");
-      if (text && text.trim().length > 0) {
-        window.dispatchEvent(new Event("open-analyzer"));
-        setInitialParserText(text);
-        setSmartMenuOpen(true);
-      }
-    };
-    window.addEventListener("paste", handlePaste);
-    return () => window.removeEventListener("paste", handlePaste);
   }, []);
 
   const { giveTotal, getTotal, givePercent, getPercent, forecastData } = useMemo(() => {
@@ -112,40 +78,6 @@ export function TradeAnalyzerPanel({
       forecastData: forecast
     };
   }, [giveItems, getItems, ALL_UNITS]);
-
-  const saveUndoState = useCallback(() => {
-    setUndoCache({ give: [...giveItems], get: [...getItems] });
-    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    undoTimerRef.current = setTimeout(() => setUndoCache(null), 4000);
-  }, [giveItems, getItems]);
-
-  const handleGlobalClear = useCallback(() => {
-    const previousState = clearAllUnpinned();
-    setUndoCache(previousState);
-    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    undoTimerRef.current = setTimeout(() => {
-      setUndoCache(null);
-    }, 4000);
-  }, [clearAllUnpinned]);
-
-  const handleSafeClear = () => {
-    if (giveItems.length === 0 && getItems.length === 0) return;
-    if (!confirmClear) {
-      setConfirmClear(true);
-      setTimeout(() => setConfirmClear(false), 3000);
-    } else {
-      handleGlobalClear();
-      setConfirmClear(false);
-    }
-  };
-
-  const handleUndo = useCallback(() => {
-    if (undoCache) {
-      overwrite(undoCache.give, undoCache.get);
-      setUndoCache(null);
-      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    }
-  }, [undoCache, overwrite]);
 
   const handleShare = useCallback(() => {
     const text = getShareText(giveItems, getItems, giveTotal, getTotal, ALL_UNITS);
@@ -252,6 +184,16 @@ export function TradeAnalyzerPanel({
           </button>
         ) : (
           <>
+            {undoCache && (
+               <button 
+                 onClick={handleUndo} 
+                 className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white bg-[#ed4245] hover:bg-[#c9383b] focus-visible:outline-none relative z-35 pointer-events-auto animate-fade-in shadow-sm mr-1"
+                 title="Undo Clear"
+               >
+                 <RotateCcw className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Undo Clear</span>
+               </button>
+            )}
+
             <button 
               onClick={() => { setSmartMenuOpen(!smartMenuOpen); startGuide("dictionary"); }} 
               className={`flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto ${
@@ -276,7 +218,7 @@ export function TradeAnalyzerPanel({
               }`} 
               title={confirmClear ? "Click again to confirm" : "Clear trade"}
             >
-              {confirmClear ? <Check className="w-4 h-4 md:w-4 md:h-4" /> : <RotateCcw className="w-4 h-4 md:w-3.5 md:h-3.5" />}
+              {confirmClear ? <Check className="w-4 h-4 md:w-4 md:h-4" /> : <X className="w-4 h-4 md:w-4 md:h-4" />}
             </button>
             <button 
               onClick={handleShare} 
@@ -388,26 +330,6 @@ export function TradeAnalyzerPanel({
             />
 
             <TradeNotices giveItems={giveItems} getItems={getItems} ALL_UNITS={ALL_UNITS} />
-
-            <div className="mx-3 md:mx-4 mt-1 mb-4 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-3 md:p-4 shadow-sm pb-10">
-              <div className="flex items-center gap-2 mb-2">
-                <Info className="w-4 h-4 text-[#5865F2]" />
-                <h4 className="text-[11px] font-bold text-[#F2F3F5] uppercase tracking-wider">How the Forecast Works</h4>
-              </div>
-              <p className="text-[11.5px] text-[#949BA4] leading-relaxed">
-                The <strong>Market Forecast</strong> system goes beyond raw value. It uses an advanced algorithm to predict the success of a trade. <strong className="text-[#DBDEE1]">Scores &gt; 0</strong> indicate a mathematical win, while <strong className="text-[#DBDEE1]">Scores &lt; 0</strong> indicate a loss.
-              </p>
-              <div className="mt-3 flex flex-col gap-2">
-                <div className="flex gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#FAA61A] mt-1.5 shrink-0" />
-                  <p className="text-[11px] text-[#B5BAC1] leading-snug"><strong className="text-[#DBDEE1]">Short-Term Flip</strong> prioritizes immediate liquidity (Demand ÷ Supply) and hyped momentum tags.</p>
-                </div>
-                <div className="flex gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#5865F2] mt-1.5 shrink-0" />
-                  <p className="text-[11px] text-[#B5BAC1] leading-snug"><strong className="text-[#DBDEE1]">Long-Term Hold</strong> severely punishes unstable/hyped units and rewards high-rarity assets that retain value.</p>
-                </div>
-              </div>
-            </div>
           </div>
         </>
       )}
@@ -425,7 +347,6 @@ export function TradeAnalyzerPanel({
           />
         )}
 
-        {/* Mobile Resting State (Bottom Bar) */}
         <div 
           className={`fixed left-0 right-0 bottom-0 bg-[#2B2D31] border-t border-[rgba(255,255,255,0.08)] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer 
           ${isOpen ? 'translate-y-[100%] opacity-0 pointer-events-none z-[80]' : 'bottom-0 translate-y-0 opacity-100'} 
@@ -442,21 +363,9 @@ export function TradeAnalyzerPanel({
               <span className="text-[10px] font-bold text-[#949BA4] uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#5865F2]" /> You Get</span>
               <span className="text-[14px] font-black text-[#F2F3F5] font-mono truncate">{getTotal.toLocaleString()}</span>
             </div>
-
-            <div className="flex items-center gap-2 pl-3">
-               {forecastData.calculable ? (
-                 <div className={`px-2 py-1 rounded-[4px] font-black font-mono text-[12px] border ${forecastData.st > 0 ? 'bg-[#23a559]/10 text-[#23a559] border-[#23a559]/30' : forecastData.st < 0 ? 'bg-[#ed4245]/10 text-[#ed4245] border-[#ed4245]/30' : 'bg-[#1E1F22] text-[#80848E] border-[rgba(255,255,255,0.06)]'}`}>
-                   {forecastData.st > 0 ? '+' : ''}{forecastData.st.toFixed(0)}
-                 </div>
-               ) : (
-                 <Calculator className="w-5 h-5 text-[#80848E]" />
-               )}
-               <ChevronUp className="w-5 h-5 text-[#80848E] ml-1 animate-bounce" />
-            </div>
           </div>
         </div>
 
-        {/* Mobile Full Expanded Sheet */}
         <div 
           ref={sheetRef}
           className={`fixed left-0 right-0 bottom-0 bg-[#2B2D31] flex flex-col shadow-[0_-12px_40px_rgba(0,0,0,0.8)] rounded-t-[16px] overflow-hidden transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isElevated ? "!z-[100000]" : "z-[100]"}`}
@@ -465,7 +374,6 @@ export function TradeAnalyzerPanel({
             transform: isOpen ? 'translateY(0%)' : 'translateY(100%)'
           }}
         >
-          {/* Dedicated Grab Bar */}
           <div 
             className="w-full pt-3 pb-1 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none flex-shrink-0 select-none"
             onTouchStart={onTouchStart}
@@ -481,7 +389,6 @@ export function TradeAnalyzerPanel({
     );
   }
 
-  // Desktop Side Panel View
   return (
     <div 
       className={`hidden md:block relative top-0 bottom-0 right-0 flex-shrink-0 overflow-hidden transition-all duration-300 ease-out will-change-[width,transform] ${isOpen ? 'translate-x-0 pointer-events-auto' : 'translate-x-full pointer-events-none'} ${analyzerZ}`}

@@ -1,15 +1,18 @@
-import { useState, useEffect, Suspense, lazy, useRef, useCallback } from "react";
-import { Hash, Check, GraduationCap, Package } from "lucide-react";
-import { FilterKey, PopupUnit } from "../types";
+import { useState, useEffect, Suspense, lazy, useCallback } from "react";
+import { Hash, Check, GraduationCap } from "lucide-react";
+import { FilterKey } from "../types";
 import { useStickyState, isBoolean, isNonEmptyString } from "../hooks/useStickyState";
-import { AquaGuideOverlay, GuideType } from "./components/guides/AquaGuideOverlay";
+import { AquaGuideOverlay } from "./components/guides/AquaGuideOverlay";
 import { TopBar } from "./components/layout/TopBar";
 import { WelcomeModal } from "./components/WelcomeModal";
 import { useTradeStore } from "../store/useTradeStore";
 import { HistoryModal } from "./components/MainCanvas/HistoryModal";
-import { triggerHaptic } from "../data/helpers";
-import { useAuthStore } from "../store/useAuthStore";
-import { useInventoryStore } from "../store/useInventoryStore";
+
+// Extracted Business Logic Hooks
+import { useAppBoot } from "../hooks/useAppBoot";
+import { useGuideSystem } from "../hooks/useGuideSystem";
+import { useGlobalEvents } from "../hooks/useGlobalEvents";
+import { useMobileSwipe } from "../hooks/useMobileSwipe";
 
 const TradeAnalyzerPanel = lazy(() => import("./components/TradeAnalyzer").then(module => ({ default: module.TradeAnalyzerPanel })));
 const Sidebar = lazy(() => import("./components/Sidebar").then(module => ({ default: module.Sidebar })));
@@ -20,7 +23,7 @@ const InventoryChannel = lazy(() => import("./components/InventoryChannel").then
 const TradingAdsChannel = lazy(() => import("./components/TradingAdsChannel").then(module => ({ default: module.TradingAdsChannel })));
 const ExtraNoticesChannel = lazy(() => import("./components/ExtraNoticesChannel").then(module => ({ default: module.ExtraNoticesChannel })));
 const LegalChannel = lazy(() => import("./components/LegalChannel").then(module => ({ default: module.LegalChannel })));
-const AdminChannel = lazy(() => import("./components/AdminChannel").then(module => ({ default: module.AdminChannel }))); // NEW
+const AdminChannel = lazy(() => import("./components/AdminChannel").then(module => ({ default: module.AdminChannel }))); 
 
 const CHANNEL_INFO: Record<string, { title: string; subtitle: string }> = {
   "home": { title: "home", subtitle: "Welcome to the ASTD Value List! Important information and update logs are posted here." },
@@ -31,88 +34,39 @@ const CHANNEL_INFO: Record<string, { title: string; subtitle: string }> = {
   "extra-notices": { title: "extra-notices", subtitle: "Additional rules, exceptions, and community notes." },
   "terms-of-service": { title: "terms-of-service", subtitle: "Rules and guidelines for using the ASTD Value List." },
   "privacy-policy": { title: "privacy-policy", subtitle: "How we handle and protect your data." },
-  "admin-panel": { title: "admin-panel", subtitle: "Moderation and User Management Database." } // NEW
+  "admin-panel": { title: "admin-panel", subtitle: "Moderation and User Management Database." } 
 };
 
-type BootStage = 'loading' | 'tension' | 'strike' | 'fracture' | 'complete';
-
 export default function App() {
-  const [bootStage, setBootStage] = useState<BootStage>('loading');
-  const [guideState, setGuideState] = useState<{ type: GuideType; step: number }>({ type: null, step: 0 });
-  const [helpMenuOpen, setHelpMenuOpen] = useState(false);
-
   const giveItems = useTradeStore((s) => s.giveItems);
   const getItems = useTradeStore((s) => s.getItems);
   const pinnedIds = useTradeStore((s) => s.pinnedIds);
   
-  const initializeAuth = useAuthStore((s) => s.initialize);
-  const fetchInventory = useInventoryStore((s) => s.fetchInventory);
-  const profile = useAuthStore((s) => s.profile);
-
   const [activeChannel, setActiveChannel] = useStickyState("home", "astd_channel", isNonEmptyString);
   const [tutorialTab, setTutorialTab] = useState<"sandbox" | "simulator" | "theory" | "dictionary">("sandbox");
   const [activeTierFilter, setActiveTierFilter] = useStickyState<FilterKey>("S", "astd_tier");
-
-  const [completedGuides, setCompletedGuides] = useStickyState<Record<string, boolean>>(
-    {}, 
-    "astd_completed_guides", 
-    (v): v is Record<string, boolean> => typeof v === "object" && v !== null
-  );
-
   const [scrollToSection, setScrollToSection] = useState<{ tier: string; sectionId: string } | null>(null);
   const [isRosterOpen, setIsRosterOpen] = useStickyState(window.innerWidth >= 768, "astd_roster", isBoolean);
   const [isAnalyzerOpen, setIsAnalyzerOpen] = useStickyState(false, "astd_analyzer", isBoolean);
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
 
-  const touchStartPos = useRef<{x: number, y: number} | null>(null);
-
-  const [toast, setToast] = useState<{ id: number; unitName: string; count: number; type: "give" | "get" } | null>(null);
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { bootStage, isMobile } = useAppBoot();
   
-  const [academyToast, setAcademyToast] = useState<{ step: number } | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
-  const prevCompletedCount = useRef(0);
+  const { guideState, setGuideState, helpMenuOpen, setHelpMenuOpen, completedGuides, setCompletedGuides, startGuide, endGuide } = useGuideSystem({ 
+    setActiveChannel, setIsRosterOpen, setIsAnalyzerOpen, setTutorialTab, bootStage 
+  });
+  
+  const { toast, academyToast } = useGlobalEvents({ 
+    giveItems, getItems, pinnedIds, completedGuides, setCompletedGuides, 
+    setActiveChannel, setIsRosterOpen, setIsAnalyzerOpen, setTutorialTab, setGuideState 
+  });
+  
+  const { handleTouchStart, handleTouchEnd } = useMobileSwipe(isRosterOpen, setIsRosterOpen);
 
   const activeItemsCount = giveItems.reduce((acc, c) => acc + c.qty, 0) + getItems.reduce((acc, c) => acc + c.qty, 0);
   const isDictionaryActive = activeChannel === "tutorial" && tutorialTab === "dictionary";
 
-  const [isMobile, setIsMobile] = useState(false);
-  
-  useEffect(() => {
-    initializeAuth();
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    setIsMounted(true);
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, [initializeAuth]);
-
-  useEffect(() => {
-    if (profile) {
-      fetchInventory(profile.id);
-    }
-  }, [profile, fetchInventory]);
-
-  useEffect(() => {
-    const currentCompletedCount = (
-      (giveItems.length > 0 || getItems.length > 0 ? 1 : 0) + 
-      (pinnedIds.length > 0 ? 1 : 0) + 
-      (completedGuides.hasFiltered ? 1 : 0) + 
-      (completedGuides.hasUsedParser ? 1 : 0)
-    );
-
-    if (isMounted && currentCompletedCount > prevCompletedCount.current && currentCompletedCount < 4) {
-      setAcademyToast({ step: currentCompletedCount });
-    }
-    prevCompletedCount.current = currentCompletedCount;
-  }, [giveItems.length, getItems.length, pinnedIds.length, completedGuides.hasFiltered, completedGuides.hasUsedParser, isMounted]);
-
-  useEffect(() => {
-    if (!academyToast) return;
-    const timer = setTimeout(() => setAcademyToast(null), 3500);
-    return () => clearTimeout(timer);
-  }, [academyToast]);
-
+  // Search logic routing
   useEffect(() => {
     if (globalSearchQuery.trim().length > 0) {
       if (activeChannel !== "value-list") setActiveChannel("value-list");
@@ -122,178 +76,8 @@ export default function App() {
   }, [globalSearchQuery, activeChannel, activeTierFilter, setActiveChannel, setActiveTierFilter, isRosterOpen, setIsRosterOpen]);
 
   useEffect(() => {
-    Promise.all([
-      import("./components/TradeAnalyzer"),
-      import("./components/Sidebar"),
-      import("./components/MainCanvas"),
-      import("./components/HomeChannel"),
-      import("./components/TutorialChannel"),
-      import("./components/InventoryChannel"),
-      import("./components/TradingAdsChannel"),
-      import("./components/ExtraNoticesChannel"),
-      import("./components/LegalChannel"),
-      import("./components/AdminChannel") // NEW
-    ]).then(() => {
-      setTimeout(() => {
-        setBootStage('tension');
-        setTimeout(() => {
-          setBootStage('strike');
-          setTimeout(() => {
-            setBootStage('fracture');
-            setTimeout(() => setBootStage('complete'), 900);
-          }, 200);
-        }, 900);
-      }, 700);
-    }).catch(() => setBootStage('complete'));
-  }, []);
-
-  useEffect(() => {
-    if (bootStage !== 'complete') return;
-    const timer = setTimeout(() => {
-      if (localStorage.getItem("astd_welcome_acknowledged") !== "true") {
-        window.dispatchEvent(new Event("open-welcome-modal"));
-      } else if (!completedGuides["main"]) {
-        setGuideState({ type: "main", step: 1 });
-        if (window.innerWidth < 768) setIsRosterOpen(true);
-      }
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [setIsRosterOpen, completedGuides, bootStage]);
-
-  useEffect(() => {
-    const handleSetTab = (e: Event) => setTutorialTab((e as CustomEvent).detail);
-    const handleAcademyEvent = (e: Event) => {
-      if (e.type === "academy-used-parser") setCompletedGuides(p => ({ ...p, hasUsedParser: true }));
-      if (e.type === "academy-used-filter") setCompletedGuides(p => ({ ...p, hasFiltered: true }));
-    };
-    const handleWelcomeClosed = () => {
-      if (!completedGuides["main"]) {
-        setGuideState({ type: "main", step: 1 });
-        if (window.innerWidth < 768) setIsRosterOpen(true);
-      }
-    };
-
-    window.addEventListener("set-tutorial-tab", handleSetTab);
-    window.addEventListener("academy-used-parser", handleAcademyEvent);
-    window.addEventListener("academy-used-filter", handleAcademyEvent);
-    window.addEventListener("welcome-closed", handleWelcomeClosed);
-
-    return () => {
-      window.removeEventListener("set-tutorial-tab", handleSetTab);
-      window.removeEventListener("academy-used-parser", handleAcademyEvent);
-      window.removeEventListener("academy-used-filter", handleAcademyEvent);
-      window.removeEventListener("welcome-closed", handleWelcomeClosed);
-    };
-  }, [setCompletedGuides, completedGuides]);
-
-  useEffect(() => {
-    const handleTradeAdded = (e: Event) => {
-      const customEvent = e as CustomEvent<{ name: string; type: "give" | "get" }>;
-      if (!customEvent.detail) return;
-      triggerHaptic('medium'); 
-      
-      setToast(prev => {
-        const count = (prev && prev.type === customEvent.detail.type) ? prev.count + 1 : 1;
-        const nameToKeep = (prev && prev.type === customEvent.detail.type) ? prev.unitName : customEvent.detail.name;
-        return { id: Date.now(), unitName: nameToKeep, count, type: customEvent.detail.type };
-      });
-
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-      toastTimerRef.current = setTimeout(() => setToast(null), 2500);
-
-      setGuideState(prev => (prev.type === "main" && prev.step === 2) ? { ...prev, step: 3 } : prev);
-    };
-
-    const handleNavigate = (e: Event) => {
-      const target = (e as CustomEvent<string>).detail;
-      if (target) {
-        setActiveChannel(target);
-        if (window.innerWidth < 768) setIsRosterOpen(false);
-      }
-    };
-
-    const handleOpenAnalyzer = () => {
-      setIsAnalyzerOpen(true);
-      setGuideState(prev => (prev.type === "main" && prev.step === 3) ? { ...prev, step: 4 } : prev);
-    };
-
-    window.addEventListener("trade-added", handleTradeAdded);
-    window.document.addEventListener("navigate", handleNavigate);
-    window.addEventListener("open-analyzer", handleOpenAnalyzer);
-
-    return () => {
-      window.removeEventListener("trade-added", handleTradeAdded);
-      window.document.removeEventListener("navigate", handleNavigate);
-      window.removeEventListener("open-analyzer", handleOpenAnalyzer);
-    };
-  }, [setActiveChannel, setIsRosterOpen, setIsAnalyzerOpen]);
-
-  const startGuide = useCallback((type: GuideType, force: boolean = false) => {
-    if (!force && type && completedGuides[type]) return;
-
-    setHelpMenuOpen(false);
-    setGuideState({ type, step: 1 });
-
-    if (type === "developer") setActiveChannel("home");
-    else if (type === "channels" || type === "main") {
-      if (window.innerWidth < 768) setIsRosterOpen(true);
-    } 
-    else if (type === "advanced" || type === "management") {
-      setActiveChannel("tutorial");
-      setTutorialTab("sandbox");
-      if (type === "advanced") setIsAnalyzerOpen(true);
-    } else if (type === "filters" || type === "stats") {
-      setActiveChannel("tutorial");
-      setTutorialTab("theory");
-    } else if (type === "dictionary") {
-      setActiveChannel("tutorial");
-      setTutorialTab("dictionary");
-      setIsAnalyzerOpen(true);
-    }
-  }, [completedGuides, setActiveChannel, setIsAnalyzerOpen, setIsRosterOpen, setTutorialTab]);
-
-  const endGuide = useCallback(() => {
-    if (guideState.type) setCompletedGuides(prev => ({ ...prev, [guideState.type as string]: true }));
-    setGuideState({ type: null, step: 0 });
-  }, [guideState.type, setCompletedGuides]);
-
-  useEffect(() => {
     if (window.innerWidth < 768) setIsRosterOpen(false);
   }, [setIsRosterOpen]);
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const x = e.touches[0].clientX;
-    const y = e.touches[0].clientY;
-
-    const edgeWidth = 40;
-    const isLeftEdge = x <= edgeWidth;
-
-    const isSafeYZone = y > window.innerHeight * 0.2 && y < window.innerHeight * 0.8;
-
-    if ((isLeftEdge && isSafeYZone) || isRosterOpen) {
-      touchStartPos.current = { x, y };
-    } else {
-      touchStartPos.current = null;
-    }
-  }, [isRosterOpen]);
-
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (!touchStartPos.current) return;
-    const dx = e.changedTouches[0].clientX - touchStartPos.current.x;
-    const dy = e.changedTouches[0].clientY - touchStartPos.current.y;
-
-    if (Math.abs(dy) > Math.abs(dx) * 0.8) {
-      touchStartPos.current = null;
-      return;
-    }
-
-    if (dx > 60 && !isRosterOpen && window.innerWidth < 768) {
-      setIsRosterOpen(true);
-    } else if (dx < -60 && isRosterOpen) {
-      setIsRosterOpen(false);
-    }
-    touchStartPos.current = null;
-  }, [isRosterOpen, setIsRosterOpen]);
 
   const handleChannelChange = useCallback((id: string) => {
     setActiveChannel(id);
@@ -301,7 +85,7 @@ export default function App() {
       setGuideState(prev => ({ ...prev, step: 2 }));
       if (window.innerWidth < 768) setIsRosterOpen(false);
     }
-  }, [setActiveChannel, guideState, setIsRosterOpen]);
+  }, [setActiveChannel, guideState, setIsRosterOpen, setGuideState]);
 
   const handleThreadClick = useCallback((tier: FilterKey, sectionId: string) => {
     setActiveChannel("value-list");
@@ -315,7 +99,7 @@ export default function App() {
   const handleToggleAnalyzer = useCallback(() => {
     setIsAnalyzerOpen(prev => !prev);
     if (guideState.type === "main" && guideState.step === 3) setGuideState(prev => ({ ...prev, step: 4 }));
-  }, [setIsAnalyzerOpen, guideState]);
+  }, [setIsAnalyzerOpen, guideState, setGuideState]);
 
   const currentChannelInfo = CHANNEL_INFO[activeChannel] || { title: activeChannel, subtitle: "" };
 
@@ -515,7 +299,7 @@ export default function App() {
               ) : activeChannel === "extra-notices" ? ( <ExtraNoticesChannel />
               ) : activeChannel === "terms-of-service" ? ( <LegalChannel type="tos" />
               ) : activeChannel === "privacy-policy" ? ( <LegalChannel type="privacy" />
-              ) : activeChannel === "admin-panel" ? ( <AdminChannel /> // NEW
+              ) : activeChannel === "admin-panel" ? ( <AdminChannel /> 
               ) : (
                 <div className="flex-1 flex items-center justify-center bg-[#313338] px-4">
                    <div className="text-center"><h2 className="text-2xl font-bold text-[#F2F3F5] mb-2 capitalize">Welcome to {activeChannel}</h2><p className="text-[#949BA4]">This channel is currently under construction.</p></div>

@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Info, BookOpen, ShieldAlert, LucideIcon, Inbox, Search, Pin, Megaphone, Eye } from "lucide-react";
+import { Info, BookOpen, ShieldAlert, LucideIcon, Inbox, Search, Pin, Megaphone } from "lucide-react";
 import { useUnits } from "../../context/UnitContext";
 import { TiltCard } from "./ui/TiltCard";
 
@@ -30,16 +30,16 @@ export function ExtraNoticesChannel() {
     });
   }, [notices, searchQuery, pinnedTitles]);
 
-  // Semantic Matcher
+  // Semantic Matcher adhering to Discord palette
   const getStyleForNotice = (title: string): { icon: LucideIcon, color: string } => {
     const lower = title.toLowerCase();
     if (/(manipulat|cult|leak|scam|warn|drop|unstable|fake|trap)/.test(lower)) {
       return { icon: ShieldAlert, color: "#ed4245" }; // Discord Red
     }
     if (/(demand|og|shiny|value|guide|info|convert|update)/.test(lower)) {
-      return { icon: Info, color: "#5865F2" }; // Discord Blurple
+      return { icon: Info, color: "#7289da" }; // Discord Blurple
     }
-    return { icon: BookOpen, color: "#4e5058" }; // Stealth Gray
+    return { icon: BookOpen, color: "#424549" }; // Slate Gray
   };
 
   return (
@@ -47,20 +47,20 @@ export function ExtraNoticesChannel() {
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1A1B1E; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e2124; border-radius: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #111214; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
       `}</style>
 
       {/* Unified Discord-Style Header */}
-      <div className="flex-shrink-0 px-5 py-4 bg-[#2B2D31] border-b border-[rgba(0,0,0,0.2)] shadow-sm z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex-shrink-0 px-5 py-4 bg-[#282b30] border-b border-[rgba(0,0,0,0.22)] shadow-sm z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[8px] bg-[#1E1F22] border border-[rgba(255,255,255,0.06)] flex items-center justify-center shadow-inner shrink-0">
-            <Megaphone className="w-5 h-5 text-[#5865F2]" />
+          <div className="w-10 h-10 rounded-[8px] bg-[#1e2124] border border-[rgba(255,255,255,0.06)] flex items-center justify-center shadow-inner shrink-0">
+            <Megaphone className="w-5 h-5 text-[#7289da]" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">Market Intelligence</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#B5BAC1]">Market Intelligence</span>
             <h2 className="text-[17px] font-black text-[#F2F3F5] tracking-tight">Extra Notices</h2>
           </div>
         </div>
@@ -73,7 +73,7 @@ export function ExtraNoticesChannel() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search announcements..."
-              className="w-full bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-full pl-9 pr-4 py-2 text-[13px] text-[#F2F3F5] outline-none placeholder-[#80848E] focus:ring-1 focus:ring-[#5865F2] focus:border-[#5865F2] transition-all shadow-inner"
+              className="w-full bg-[#1e2124] border border-[rgba(255,255,255,0.04)] rounded-[6px] pl-9 pr-4 py-2 text-[13px] text-[#F2F3F5] outline-none placeholder-[#80848E] focus:ring-1 focus:ring-[#7289da] focus:border-[#7289da] transition-all shadow-inner"
             />
           </div>
         )}
@@ -82,10 +82,10 @@ export function ExtraNoticesChannel() {
       <div className="flex-1 overflow-y-auto custom-scrollbar p-5 md:p-6 flex flex-col gap-6">
         
         {/* Fire Zio Channel Banner */}
-        <div className="bg-[#111214] border-l-4 border-l-[#ed4245] border-y border-y-[rgba(255,255,255,0.04)] border-r border-r-[rgba(255,255,255,0.04)] rounded-r-[8px] p-4 shadow-inner flex items-start gap-4">
-           <img src={FIRE_ZIO_AVATAR} className="w-10 h-10 rounded-full border border-[#ed4245] object-cover shrink-0 bg-[#1e1f22]" alt="Fire Zio" />
+        <div className="bg-[#282b30] border border-[rgba(255,255,255,0.06)] border-l-4 border-l-[#424549] rounded-[8px] p-4 shadow-sm flex items-start gap-4">
+           <img src={FIRE_ZIO_AVATAR} className="w-10 h-10 rounded-full border border-[rgba(255,255,255,0.1)] object-cover shrink-0" alt="Fire Zio" />
            <div className="flex flex-col gap-1">
-             <span className="text-[11px] font-black uppercase tracking-widest text-[#ed4245]">Fire Zio's Briefing</span>
+             <span className="text-[11px] font-black uppercase tracking-widest text-[#B5BAC1]">Fire Zio's Briefing</span>
              <p className="text-[#949BA4] text-[13px] italic font-medium leading-relaxed">
                "Read these notices before you open your mouth in the trading channels. If you ask a question that is already answered here, don't expect me to be nice about it."
              </p>
@@ -94,7 +94,7 @@ export function ExtraNoticesChannel() {
 
         {processedNotices.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full opacity-60 mt-10">
-            <div className="w-16 h-16 bg-[#2B2D31] rounded-full flex items-center justify-center border border-[rgba(255,255,255,0.04)] mb-4">
+            <div className="w-16 h-16 bg-[#282b30] rounded-full flex items-center justify-center border border-[rgba(255,255,255,0.04)] mb-4 shadow-inner">
               <Inbox className="w-8 h-8 text-[#4e5058]" />
             </div>
             <p className="text-[#F2F3F5] text-[15px] font-bold tracking-tight">
@@ -118,18 +118,16 @@ export function ExtraNoticesChannel() {
                   className="break-inside-avoid mb-5 group"
                 >
                   <div 
-                    className="flex flex-col h-full relative z-10 border-l-[3px] rounded-r-[8px] transition-colors duration-300 border-y border-r shadow-sm overflow-hidden"
+                    className="flex flex-col h-full relative z-10 border-l-[4px] rounded-r-[8px] transition-colors duration-300 border-y border-r shadow-md overflow-hidden"
                     style={{ 
                       borderLeftColor: activeColor,
-                      backgroundColor: isPinned ? "rgba(250,166,26,0.04)" : "#1E1F22",
-                      borderTopColor: "rgba(255,255,255,0.03)",
-                      borderRightColor: "rgba(255,255,255,0.03)",
-                      borderBottomColor: "rgba(255,255,255,0.03)",
+                      backgroundColor: isPinned ? "rgba(250,166,26,0.04)" : "#36393e",
+                      borderColor: "rgba(255,255,255,0.06)",
                     }}
                   >
                     
                     {/* Header Row */}
-                    <div className="px-5 pt-5 pb-3 flex items-start justify-between gap-3 border-b border-[rgba(255,255,255,0.03)] bg-[rgba(0,0,0,0.1)]">
+                    <div className="px-5 pt-4 pb-3 flex items-start justify-between gap-3 border-b border-[rgba(255,255,255,0.06)] bg-[#282b30]">
                       <div className="flex items-center gap-3 min-w-0">
                         <Icon className="w-[18px] h-[18px] shrink-0" style={{ color: activeColor }} />
                         <h3 className="text-[14px] font-black text-[#F2F3F5] tracking-tight uppercase truncate">
@@ -139,7 +137,7 @@ export function ExtraNoticesChannel() {
                       
                       <div className="flex items-center gap-2 shrink-0">
                         {notice.date && (
-                          <span className="text-[10px] font-mono font-bold text-[#80848E] bg-[rgba(255,255,255,0.03)] px-2 py-1 rounded-[4px] border border-[rgba(255,255,255,0.05)]">
+                          <span className="text-[10px] font-mono font-bold text-[#B5BAC1] bg-[#1e2124] px-2 py-1 rounded-[4px] border border-[rgba(255,255,255,0.04)]">
                             {notice.date}
                           </span>
                         )}
@@ -149,7 +147,7 @@ export function ExtraNoticesChannel() {
                           className={`p-1.5 rounded-[4px] transition-all focus-visible:outline-none ${
                             isPinned 
                               ? "bg-[rgba(250,166,26,0.15)] text-[#FAA61A] opacity-100 border border-[rgba(250,166,26,0.3)]" 
-                              : "text-[#4e5058] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.05)] opacity-0 group-hover:opacity-100"
+                              : "text-[#80848E] hover:text-[#DBDEE1] hover:bg-[#1e2124] opacity-0 group-hover:opacity-100"
                           }`}
                         >
                           <Pin className={`w-3.5 h-3.5 ${isPinned ? "fill-current" : ""}`} />
@@ -158,7 +156,7 @@ export function ExtraNoticesChannel() {
                     </div>
                     
                     {/* Content Body */}
-                    <div className="p-5 text-[13px] text-[#B5BAC1] leading-[1.65] whitespace-pre-wrap flex-1">
+                    <div className="p-5 text-[13px] text-[#DBDEE1] leading-[1.65] whitespace-pre-wrap flex-1">
                       {notice.content}
                     </div>
 
