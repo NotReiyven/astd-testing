@@ -229,7 +229,9 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
         const newItem = { user_id: userId, unit_id: unitId };
         const optimisticItem: WishlistItem = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...newItem };
         set({ wishlistItems: [optimisticItem, ...previousItems] });
-        const { error } = await supabase.from('user_wishlist').insert(newItem);
+        
+        // FIXED: Replaced .insert() with .upsert() and added the onConflict constraint to prevent 409 errors
+        const { error } = await supabase.from('user_wishlist').upsert(newItem, { onConflict: 'user_id, unit_id' });
         if (error) throw error;
       }
     } catch (error) {

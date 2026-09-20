@@ -41,6 +41,14 @@ interface AdInteractionState {
   voteComment: (commentId: string, userId: string, value: number) => Promise<void>;
 }
 
+// Anti-Phishing & Scam Link Filter
+const containsPhishingOrLink = (text: string) => {
+  const lower = text.toLowerCase();
+  // Catches URLs, domains, discord invites, Telegram links, shorteners, etc.
+  const urlPattern = /(https?:\/\/|www\.|[a-zA-Z0-9-]+\.(com|net|org|gg|ru|io|me|co|xyz|to|link|tk)|discord\.gg|t\.me|bit\.ly)/i;
+  return urlPattern.test(lower);
+};
+
 export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
   activeAdId: null,
   comments: [],
@@ -59,7 +67,6 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
     });
 
     const fetchInteractions = async () => {
-      // 1. Fetch Comments with explicit foreign key relationship
       const { data: commentsData, error: commentsError } = await supabase
         .from('ad_comments')
         .select(`*, profiles!ad_comments_user_id_fkey(username, avatar_url, role, discord_id)`)
@@ -72,7 +79,6 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
 
       const comments = (commentsData as AdComment[]) || [];
       
-      // 2. Fetch Ad Votes
       const { data: adVotesData } = await supabase
         .from('ad_votes')
         .select('*')
@@ -87,7 +93,6 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
         });
       }
 
-      // 3. Fetch Comment Votes
       const commentVoteMap: Record<string, VoteData> = {};
       const commentIds = comments.map(c => c.id);
       
@@ -135,6 +140,12 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
   },
 
   postComment: async (adId, userId, content, parentId = null) => {
+    // Block Phishing and Scam Links
+    if (containsPhishingOrLink(content)) {
+      alert("ACTION BLOCKED: External links, domains, and invite URLs are strictly prohibited to prevent phishing and scams.");
+      return false;
+    }
+
     set({ isActionPending: true });
     const { error } = await supabase.from('ad_comments').insert({
       ad_id: adId,

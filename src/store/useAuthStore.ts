@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-import { Session } from '@supabase/supabase-js';
+import { Session, RealtimeChannel } from '@supabase/supabase-js';
 
 export interface UserProfile {
   id: string;
@@ -31,6 +31,9 @@ const clearLocalAuthCache = () => {
   }
 };
 
+// Module-scoped channel tracker to prevent duplicate subscription races
+let activeProfileChannel: RealtimeChannel | null = null;
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   profile: null,
@@ -50,6 +53,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
+    if (activeProfileChannel) {
+      supabase.removeChannel(activeProfileChannel);
+      activeProfileChannel = null;
+    }
     await supabase.auth.signOut();
     clearLocalAuthCache();
     set({ session: null, profile: null });
@@ -73,8 +80,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       set({ profile: data });
 
-      // FIX: Chain .on() BEFORE .subscribe() to avoid the "cannot add callbacks after subscribe" error
-      supabase.channel(`user-profile-${userId}`)
+      // Cleanly destroy any existing profile channel before creating a new one
+      if (activeProfileChannel) {
+        supabase.removeChannel(activeProfileChannel);
+        activeProfileChannel = null;
+      }
+
+      activeProfileChannel = supabase.channel(`user-profile-${userId}`);
+      activeProfileChannel
         .on(
           'postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
@@ -106,6 +119,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (session?.user) {
         get().fetchProfile(session.user.id);
       } else {
+        if (activeProfileChannel) {
+          supabase.removeChannel(activeProfileChannel);
+          activeProfileChannel = null;
+        }
         set({ profile: null });
       }
     });
