@@ -20,8 +20,17 @@ interface AuthState {
   loginWithDiscord: () => Promise<void>;
   logout: () => Promise<void>;
   fetchProfile: (userId: string) => Promise<void>;
-  initialize: () => void; // Fixed name here
+  initialize: () => void;
 }
+
+// Utility to aggressively nuke local storage auth tokens to prevent login loops
+const clearLocalAuthCache = () => {
+  for (let key in localStorage) {
+    if (key.startsWith('sb-')) {
+      localStorage.removeItem(key);
+    }
+  }
+};
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
@@ -29,17 +38,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: true,
 
   loginWithDiscord: async () => {
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'discord',
       options: {
-        // This dynamically sends them back to whatever domain they clicked "Login" from
-        redirectTo: window.location.origin, 
+        redirectTo: window.location.origin,
       }
     });
+    if (error) {
+      console.error("Discord Login Error:", error);
+      alert("Failed to initialize login. Please clear your browser cache and try again.");
+    }
   },
 
   logout: async () => {
     await supabase.auth.signOut();
+    clearLocalAuthCache();
     set({ session: null, profile: null });
   },
 
@@ -54,25 +67,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (data) {
       // 1. Initial login check
       if (data.role === 'banned') {
-        get().logout();
+        await get().logout();
         alert("This account has been permanently banned from the platform.");
+        window.location.href = '/';
         return;
       }
 
       set({ profile: data });
 
-      // 2. REAL-TIME BAN HAMMER: Instantly kick the user if an Admin bans them while they are active
+      // 2. REAL-TIME BAN HAMMER
       supabase.channel(`user-profile-${userId}`)
         .on(
           'postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
-          (payload) => {
+          async (payload) => {
             if (payload.new.role === 'banned') {
-              get().logout();
+              await get().logout();
               alert("This account has been permanently banned from the platform.");
-              window.location.href = '/'; // Force them to the splash/login page
+              window.location.href = '/'; 
             } else {
-              // Update state normally if their role changes to something else (e.g. promoted to mod)
               set({ profile: payload.new as UserProfile });
             }
           }
@@ -81,9 +94,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  initialize: () => { // Fixed name here
-    // Check active sessions and sets up the listener
-    supabase.auth.getSession().then(({ data: { session } }) => {
+  initialize: () => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) clearLocalAuthCache();
       set({ session, isLoading: false });
       if (session?.user) {
         get().fetchProfile(session.user.id);

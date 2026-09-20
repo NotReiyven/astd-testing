@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { 
   Search, ShieldAlert, Shield, Package, 
   Trash2, Ban, X, Copy, Check, Activity, 
-  Users, Megaphone, ArrowRight, AlertTriangle, UserCircle2, ArrowUpRight
+  Users, Megaphone, ArrowRight, AlertTriangle, 
+  UserCircle2, ArrowUpRight, RefreshCw, Eraser
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -167,6 +168,22 @@ export function AdminChannel() {
     window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'inventory' }));
   };
 
+  // --- MODERATION TOOLS ---
+
+  const handleResetProfile = async () => {
+    if (!selectedUser) return;
+    if (!confirm(`Reset profile for ${selectedUser.username}? This will replace their username and avatar.`)) return;
+    
+    triggerHaptic('heavy');
+    const { error } = await supabase.from('profiles').update({ username: 'Moderated User', avatar_url: '' }).eq('id', selectedUser.id);
+    
+    if (error) showToast("Failed to reset profile.", "error");
+    else {
+      showToast("Profile reset to defaults.");
+      fetchUsers(searchQuery);
+    }
+  };
+
   const handlePurgeAds = async () => {
     if (!selectedUser) return;
     if (!confirm(`Are you sure you want to delete ALL active ads for ${selectedUser.username}?`)) return;
@@ -196,19 +213,38 @@ export function AdminChannel() {
     }
   };
 
-  const handleBanAndPurge = async () => {
+  const handleWipeWishlist = async () => {
     if (!selectedUser) return;
-    if (!confirm(`Are you sure you want to BAN ${selectedUser.username} and PURGE their ads?`)) return;
+    if (!confirm(`Are you sure you want to WIPE the wishlist of ${selectedUser.username}?`)) return;
+    
+    triggerHaptic('heavy');
+    const { error } = await supabase.from('user_wishlist').delete().eq('user_id', selectedUser.id);
+    
+    if (error) showToast("Failed to wipe wishlist.", "error");
+    else showToast("Wishlist wiped successfully.");
+  };
+
+  const handleTotalAccountNuke = async () => {
+    if (!selectedUser) return;
+    const confirmation = prompt(`Type "NUKE" to permanently ban ${selectedUser.username} and wipe all their data (Ads, Inventory, Wishlist).`);
+    if (confirmation !== "NUKE") {
+      showToast("Account wipe cancelled.", "error");
+      return;
+    }
     
     triggerHaptic('heavy');
     
     const banSuccess = await updateUserRole(selectedUser.id, 'banned');
     if (!banSuccess) return;
 
-    await supabase.from('trading_ads').delete().eq('user_id', selectedUser.id);
-    setUserIntel(prev => ({ ...prev, adCount: 0 }));
-    
-    showToast(`${selectedUser.username} has been successfully banned and purged.`);
+    await Promise.all([
+      supabase.from('trading_ads').delete().eq('user_id', selectedUser.id),
+      supabase.from('user_inventory').delete().eq('user_id', selectedUser.id),
+      supabase.from('user_wishlist').delete().eq('user_id', selectedUser.id)
+    ]);
+
+    setUserIntel({ netWorth: 0, adCount: 0, isLoading: false });
+    showToast(`ACCOUNT NUKED: ${selectedUser.username} has been eradicated.`);
     loadMetrics();
   };
 
@@ -228,7 +264,7 @@ export function AdminChannel() {
       {/* Top Navigation & Metrics Bar */}
       <div className="flex-shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4 px-4 md:px-6 py-4 bg-[#2B2D31] border-b border-[rgba(0,0,0,0.22)] shadow-sm z-20">
         <h2 className="text-[16px] font-black text-[#F2F3F5] tracking-tight uppercase flex items-center gap-2">
-          <ShieldAlert className="w-5 h-5 text-[#ed4245]" /> Command Center
+          <ShieldAlert className="w-5 h-5 text-[#ed4245]" /> Fire Zio's Hall
         </h2>
         <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar">
           <div className="flex items-center gap-2 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] px-3 py-1.5 rounded-[6px] shrink-0">
@@ -324,15 +360,20 @@ export function AdminChannel() {
                 </button>
               </div>
 
-              {/* Profile Header (Discord Native Style) */}
-              <div className="relative h-[120px] bg-[#111214] border-b border-[rgba(255,255,255,0.04)]">
+              {/* Profile Header */}
+              <div className={`relative h-[120px] border-b border-[rgba(255,255,255,0.04)] ${selectedUser.role === 'banned' ? 'bg-[#ed4245]/20' : 'bg-[#111214]'}`}>
                 <div className="absolute -bottom-12 left-6">
                   <img src={selectedUser.avatar_url || "/units/firezio.webp"} className="w-[100px] h-[100px] rounded-full object-cover border-[6px] border-[#313338] bg-[#313338]" alt="" />
                 </div>
               </div>
 
               <div className="mt-14 px-6 flex flex-col">
-                <h2 className="text-[20px] font-bold text-[#F2F3F5] tracking-tight">{selectedUser.username}</h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-[20px] font-bold text-[#F2F3F5] tracking-tight">{selectedUser.username}</h2>
+                  {selectedUser.role === 'banned' && (
+                    <span className="px-2 py-0.5 rounded-[4px] bg-[#ed4245] text-white text-[10px] font-black uppercase tracking-wider">Banned</span>
+                  )}
+                </div>
                 <div className="flex items-center gap-2 mt-0.5 w-fit group">
                   <span className="text-[13px] text-[#DBDEE1]">
                     {selectedUser.discord_id}
@@ -348,7 +389,7 @@ export function AdminChannel() {
                 {/* Moderation Intel */}
                 <div className="bg-[#2B2D31] rounded-[8px] p-4 flex flex-col shadow-sm border border-[rgba(255,255,255,0.02)]">
                   <h3 className="text-[11px] font-bold text-[#80848E] uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <Activity className="w-3.5 h-3.5" /> Moderation Intel
+                    <Activity className="w-3.5 h-3.5" /> Information
                   </h3>
                   {userIntel.isLoading ? (
                     <div className="h-[60px] flex items-center gap-3 text-[#80848E] text-[13px] font-medium animate-pulse">
@@ -366,19 +407,24 @@ export function AdminChannel() {
                       </div>
                     </div>
                   )}
+                  
+                  <div className="mt-3 pt-3 border-t border-[rgba(255,255,255,0.04)]">
+                    <button 
+                      onClick={handleInspectVault}
+                      className="w-full flex items-center justify-between px-3 py-2 bg-[#1E1F22] hover:bg-[#35373C] border border-[rgba(255,255,255,0.04)] text-[#DBDEE1] hover:text-white text-[12px] font-bold rounded-[6px] transition-colors focus-visible:outline-none"
+                    >
+                      <span className="flex items-center gap-2"><Package className="w-4 h-4 text-[#80848E]" /> Inspect Inv</span>
+                      <ArrowUpRight className="w-4 h-4 text-[#80848E]" />
+                    </button>
+                  </div>
                 </div>
 
-                <div className="h-px w-full bg-[rgba(255,255,255,0.04)]" />
-
-                {/* Role Management (Pills) */}
+                {/* Role Management */}
                 <div className="flex flex-col gap-3">
-                  <h3 className="text-[11px] font-bold text-[#80848E] uppercase tracking-widest">System Role</h3>
+                  <h3 className="text-[11px] font-bold text-[#80848E] uppercase tracking-widest">Access Role</h3>
                   <div className="flex flex-wrap gap-2">
-                    {['user', 'mod', 'admin', 'banned'].map((r) => {
-                      // Only master can assign admin/mod
+                    {['user', 'mod', 'admin'].map((r) => {
                       const disabled = selectedUser.id === profile?.id || (!isMaster && (r === 'admin' || r === 'mod' || selectedUser.role === 'master' || selectedUser.role === 'admin'));
-                      if (r === 'master') return null; // Cannot assign master role via UI
-                      
                       const isAssigned = selectedUser.role === r;
                       const style = getRoleStyle(r);
 
@@ -387,7 +433,7 @@ export function AdminChannel() {
                           key={r}
                           disabled={disabled}
                           onClick={() => updateUserRole(selectedUser.id, r)}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] border text-[11px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none ${
+                          className={`flex items-center gap-1.5 px-4 py-2 rounded-[6px] border text-[11px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none ${
                             isAssigned 
                               ? `${style.bg} ${style.border}${style.text}` 
                               : `bg-transparent border-[rgba(255,255,255,0.08)] text-[#80848E] hover:bg-[rgba(255,255,255,0.04)] hover:text-[#DBDEE1] ${disabled ? 'opacity-30 cursor-not-allowed' : ''}`
@@ -400,50 +446,74 @@ export function AdminChannel() {
                   </div>
                 </div>
 
-                {/* Inspect Tool */}
-                <div className="flex flex-col gap-3 mt-2">
-                  <h3 className="text-[11px] font-bold text-[#80848E] uppercase tracking-widest">Investigation Tools</h3>
-                  <button 
-                    onClick={handleInspectVault}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-[#1E1F22] hover:bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.1)] text-[#DBDEE1] hover:text-[#F2F3F5] text-[13px] font-bold rounded-[6px] transition-colors focus-visible:outline-none"
-                  >
-                    <span className="flex items-center gap-2"><Package className="w-4 h-4 text-[#80848E]" /> Inspect Target Vault</span>
-                    <ArrowUpRight className="w-4 h-4 text-[#80848E]" />
-                  </button>
-                </div>
-
-                {/* Danger Zone */}
+                {/* MODERATION TOOLKIT */}
                 {selectedUser.id !== profile?.id && (
-                  <div className="flex flex-col gap-3 mt-4">
+                  <div className="flex flex-col gap-4 mt-2">
                     <h3 className="text-[11px] font-bold text-[#ed4245] uppercase tracking-widest flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5" /> Danger Zone
+                      <AlertTriangle className="w-3.5 h-3.5" /> Chud Toolkit
                     </h3>
                     
-                    <div className="flex flex-col gap-2">
-                      <button 
-                        onClick={handlePurgeAds}
-                        className="flex items-center justify-between w-full p-3 bg-transparent border border-[rgba(237,66,69,0.3)] text-[#ed4245] hover:bg-[#ed4245] hover:text-white rounded-[6px] transition-colors group focus-visible:outline-none"
-                      >
-                        <span className="text-[13px] font-bold">Purge Active Ads</span>
-                        <Trash2 className="w-4 h-4 opacity-70 group-hover:opacity-100" />
-                      </button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {/* Column 1: Content Moderation */}
+                      <div className="flex flex-col gap-2 bg-[#2B2D31] p-3 rounded-[8px] border border-[rgba(255,255,255,0.02)]">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4] mb-1">Content Controls</span>
+                        <button 
+                          onClick={handlePurgeAds}
+                          className="flex items-center gap-2 w-full p-2.5 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] hover:border-[#ed4245]/50 text-[#DBDEE1] hover:text-[#ed4245] rounded-[6px] transition-colors focus-visible:outline-none"
+                        >
+                          <Trash2 className="w-4 h-4" /> <span className="text-[12px] font-bold">Purge Active Ads</span>
+                        </button>
+                        <button 
+                          onClick={handleResetProfile}
+                          className="flex items-center gap-2 w-full p-2.5 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] hover:border-[#FAA61A]/50 text-[#DBDEE1] hover:text-[#FAA61A] rounded-[6px] transition-colors focus-visible:outline-none"
+                        >
+                          <RefreshCw className="w-4 h-4" /> <span className="text-[12px] font-bold">Reset Profile Info</span>
+                        </button>
+                      </div>
 
-                      <button 
-                        onClick={handleWipeInventory}
-                        className="flex items-center justify-between w-full p-3 bg-transparent border border-[rgba(237,66,69,0.3)] text-[#ed4245] hover:bg-[#ed4245] hover:text-white rounded-[6px] transition-colors group focus-visible:outline-none"
-                      >
-                        <span className="text-[13px] font-bold">Wipe Inventory</span>
-                        <ShieldAlert className="w-4 h-4 opacity-70 group-hover:opacity-100" />
-                      </button>
-
-                      <button 
-                        onClick={handleBanAndPurge}
-                        className="w-full mt-2 flex items-center justify-center gap-2 p-3 bg-[#ed4245] hover:bg-[#c9383a] text-white rounded-[6px] transition-colors shadow-md focus-visible:outline-none active:scale-95"
-                      >
-                        <Ban className="w-4 h-4" />
-                        <span className="text-[13px] font-bold uppercase tracking-wide">Quick Ban & Purge</span>
-                      </button>
+                      {/* Column 2: Data Wipes */}
+                      <div className="flex flex-col gap-2 bg-[#2B2D31] p-3 rounded-[8px] border border-[rgba(255,255,255,0.02)]">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4] mb-1">Asset Wipes</span>
+                        <button 
+                          onClick={handleWipeInventory}
+                          className="flex items-center gap-2 w-full p-2.5 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] hover:border-[#ed4245]/50 text-[#DBDEE1] hover:text-[#ed4245] rounded-[6px] transition-colors focus-visible:outline-none"
+                        >
+                          <Eraser className="w-4 h-4" /> <span className="text-[12px] font-bold">Wipe Inventory</span>
+                        </button>
+                        <button 
+                          onClick={handleWipeWishlist}
+                          className="flex items-center gap-2 w-full p-2.5 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] hover:border-[#ed4245]/50 text-[#DBDEE1] hover:text-[#ed4245] rounded-[6px] transition-colors focus-visible:outline-none"
+                        >
+                          <Eraser className="w-4 h-4" /> <span className="text-[12px] font-bold">Wipe Wishlist</span>
+                        </button>
+                      </div>
                     </div>
+
+                    {/* Nuclear Option */}
+                    <div className="mt-2 flex flex-col gap-2">
+                      {selectedUser.role !== 'banned' ? (
+                        <button 
+                          onClick={handleTotalAccountNuke}
+                          className="w-full flex items-center justify-center gap-2 p-3.5 bg-transparent border-2 border-[#ed4245] hover:bg-[#ed4245] text-[#ed4245] hover:text-white rounded-[6px] transition-colors shadow-sm focus-visible:outline-none group"
+                        >
+                          <Ban className="w-4 h-4" />
+                          <span className="text-[13px] font-black uppercase tracking-widest">Nuke Account</span>
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => updateUserRole(selectedUser.id, 'user')}
+                          className="w-full flex items-center justify-center gap-2 p-3.5 bg-[#2B2D31] border-2 border-[#23a559] hover:bg-[#23a559] text-[#23a559] hover:text-white rounded-[6px] transition-colors shadow-sm focus-visible:outline-none group"
+                        >
+                          <Shield className="w-4 h-4" />
+                          <span className="text-[13px] font-black uppercase tracking-widest">Revoke Ban & Restore Access</span>
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-[#80848E] text-center mt-1">
+                      {selectedUser.role !== 'banned' 
+                        ? "Nuking will permanently delete all ads, inventory, and wishlists associated with this user." 
+                        : "Restoring access will not recover wiped data."}
+                    </p>
                   </div>
                 )}
 
