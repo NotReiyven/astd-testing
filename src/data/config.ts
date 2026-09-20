@@ -22,18 +22,18 @@ export const TIER_STYLES: Record<string, string> = {
 };
 
 export const GRID_STATUS_CFG: Record<UnitStatus, { label: string; tip: string; bg: string; border: string; color: string }> = {
-  stable:          { label: "Stable",        tip: "Fair and consistently decent offers. Most likely won't move unless something happens.", bg: "#3b3924", border: "#6b5f2a", color: "#E6D8A1" },
-  unstable:        { label: "Unstable",      tip: "Could rise or drop at any moment, or stabilize.",                                       bg: "#1e3040", border: "#3a6480", color: "#6B9EB5" },
-  rising:          { label: "Rising",        tip: "If a unit is rising, it means the unit is being consistently overpaid.",                bg: "#153324", border: "#246640", color: "#30A163" },
-  dropping:        { label: "Dropping",      tip: "If a unit is dropping, it means owners are constantly taking underpays.",               bg: "#3d0a09", border: "#7a1410", color: "#E60A18" },
-  inflated:        { label: "Inflated",      tip: "If a unit has this tag, they are inflated and cost way more than they should be worth.", bg: "#2d1a0a", border: "#5c3515", color: "#c27a40" },
-  deflated:        { label: "Deflated",      tip: "If a unit is underpriced, they are deflated and are way cheaper than they should be.",   bg: "#0e2345", border: "#1e4a8a", color: "#3C81F3" },
-  varies:          { label: "Varies",        tip: "If a unit varies, then it can get fair but it can also get lowballs or highballs.",      bg: "#201b42", border: "#3d3480", color: "#9b8de8" },
-  lowballed:       { label: "Lowballed",     tip: "If a unit has this tag, it can get fair at most, but also gets lowballs.",               bg: "#3d220a", border: "#7a4412", color: "#E66C19" },
-  highballed:      { label: "Highballed",    tip: "If a unit has this tag, it can get fair at minimum, but also gets highballs.",           bg: "#003d40", border: "#007a80", color: "#01EFFD" },
-  hyped:           { label: "Hyped",         tip: "If a unit is hyped, something big changed, skyrocketing value and demand.",              bg: "#0e1f3a", border: "#1a3a6b", color: "#3A7CE6" },
-  gatekept:        { label: "Gatekept",      tip: "If a unit is gatekept, owners are refusing to trade this unit waiting for a rise.",      bg: "#30202e", border: "#603d5a", color: "#AF78A8" },
-  "black-marketed":{ label: "Black Market",  tip: "People who buy units with outside-game currency are heavily impacting it.",              bg: "#1e2228", border: "#3a4250", color: "#9aa3b2" },
+  stable:          { label: "Stable",        tip: "Fair and consistently decent offers. Most likely won't move unless something happens.", bg: "rgba(30, 33, 36, 0.95)", border: "#E6D8A166", color: "#E6D8A1" },
+  unstable:        { label: "Unstable",      tip: "Could rise or drop at any moment, or stabilize.",                                       bg: "rgba(30, 33, 36, 0.95)", border: "#6B9EB566", color: "#6B9EB5" },
+  rising:          { label: "Rising",        tip: "If a unit is rising, it means the unit is being consistently overpaid.",                bg: "rgba(30, 33, 36, 0.95)", border: "#30A16366", color: "#30A163" },
+  dropping:        { label: "Dropping",      tip: "If a unit is dropping, it means owners are constantly taking underpays.",               bg: "rgba(30, 33, 36, 0.95)", border: "#E60A1866", color: "#E60A18" },
+  inflated:        { label: "Inflated",      tip: "If a unit has this tag, they are inflated and cost way more than they should be worth.",bg: "rgba(30, 33, 36, 0.95)", border: "#c27a4066", color: "#c27a40" },
+  deflated:        { label: "Deflated",      tip: "If a unit is underpriced, they are deflated and are way cheaper than they should be.",  bg: "rgba(30, 33, 36, 0.95)", border: "#3C81F366", color: "#3C81F3" },
+  varies:          { label: "Varies",        tip: "If a unit varies, then it can get fair but it can also get lowballs or highballs.",     bg: "rgba(30, 33, 36, 0.95)", border: "#9b8de866", color: "#9b8de8" },
+  lowballed:       { label: "Lowballed",     tip: "If a unit has this tag, it can get fair at most, but also gets lowballs.",              bg: "rgba(30, 33, 36, 0.95)", border: "#E66C1966", color: "#E66C19" },
+  highballed:      { label: "Highballed",    tip: "If a unit has this tag, it can get fair at minimum, but also gets highballs.",          bg: "rgba(30, 33, 36, 0.95)", border: "#01EFFD66", color: "#01EFFD" },
+  hyped:           { label: "Hyped",         tip: "If a unit is hyped, something big changed, skyrocketing value and demand.",             bg: "rgba(30, 33, 36, 0.95)", border: "#3A7CE666", color: "#3A7CE6" },
+  gatekept:        { label: "Gatekept",      tip: "If a unit is gatekept, owners are refusing to trade this unit waiting for a rise.",     bg: "rgba(30, 33, 36, 0.95)", border: "#AF78A866", color: "#AF78A8" },
+  "black-marketed":{ label: "Black Market",  tip: "People who buy units with outside-game currency are heavily impacting it.",             bg: "rgba(30, 33, 36, 0.95)", border: "#9aa3b266", color: "#9aa3b2" },
 };
 
 export const RARITY_SCALE: { min: number; max: number; label: string }[] = [
@@ -78,9 +78,9 @@ export const SEARCHABLE_UNITS: { id: string; name: string; subtitle: string; val
 export const AQUA_DIALOGUES: Record<string, string[]> = {
   main: [
     "",
-    "Listen up, you shut-in NEET! I, the beautiful and wise Goddess Aqua, have descended to save you from getting !!completely scammed!!! First, click the ^^Value List^^ channel in the sidebar so we can begin!",
-    "Hmph, even someone with your pitiful intelligence stat can do this part. Let's build a mock trade. ^^Click or tap^^ any unit card to open its menu, then toss it into your *Give* or *Get* side! !!Don't mess this up!!!",
-    "!!W-Wait! Don't just accept a trade blindly!!! Are you trying to lose all your value?! Use the divine tool I've graciously bestowed upon you! Click that glowing ^^Calculator^^ button up top—or tap the ^^Trade Bar^^ at the bottom on your phone—to open the Analyzer!",
+    "Listen up, you shut-in NEET! I, the beautiful and wise Goddess Aqua, have descended to save you from getting completely scammed! First, click the ^^Value List^^ channel in the sidebar so we can begin!",
+    "Hmph, even someone with your pitiful intelligence stat can do this part. Let's build a mock trade. ^^Click or tap^^ any unit card to open its menu, then toss it into your *Give* or *Get* side! Don't mess this up!",
+    "W-Wait! Don't just accept a trade blindly! Are you trying to lose all your value?! Use the divine tool I've graciously bestowed upon you! Click that glowing ^^Calculator^^ button up top—or tap the ^^Trade Bar^^ at the bottom on your phone—to open the Analyzer!",
     "See?! It instantly breaks down the value differences and market momentum! But wait—you're not done! I've enrolled you in the Academy to finish your training. Go complete your Graduation Checklist!"
   ],
   channels: [
@@ -97,7 +97,7 @@ export const AQUA_DIALOGUES: Record<string, string[]> = {
   ],
   filters: [
     "",
-    "Don't just blindly scroll! Open the ^^Status Dropdown^^ and filter out the trash! Holding onto !!Dropping!! units is a one-way ticket to being as broke as I am! Read the Market Theory tab if you're confused!"
+    "Don't just blindly scroll! Open the ^^Status Dropdown^^ and filter out the trash! Holding onto Dropping units is a one-way ticket to being as broke as I am! Read the Market Theory tab if you're confused!"
   ],
   dictionary: [
     "",
@@ -113,7 +113,7 @@ export const AQUA_DIALOGUES: Record<string, string[]> = {
   ],
   annoyed: [
     "",
-    "!!Stop poking me!!! Figure it out yourself or go bother ^^Reiyven^^ with a support ticket! I have Goddess things to do!"
+    "Stop poking me! Figure it out yourself or go bother ^^Reiyven^^ with a support ticket! I have Goddess things to do!"
   ],
   academy_grad: [
     "",
@@ -123,21 +123,21 @@ export const AQUA_DIALOGUES: Record<string, string[]> = {
 };
 
 export const THEORY_STATUS_TAGS = [
-  { tag: "Stable", bg: "#3b3924", border: "#6b5f2a", color: "#E6D8A1", def: "Fair and consistently decent offers. Units that are stable are most likely not to move unless something happens." },
-  { tag: "Unstable", bg: "#1e3040", border: "#3a6480", color: "#6B9EB5", def: "If a unit is unstable, it means it could rise or drop at any moment, or stabilize." },
-  { tag: "Rising", bg: "#153324", border: "#246640", color: "#30A163", def: "If a unit is rising, it means the unit is being consistently overpaid." },
-  { tag: "Dropping", bg: "#3d0a09", border: "#7a1410", color: "#E60A18", def: "If a unit is dropping, it means owners are constantly taking underpays." },
-  { tag: "Inflated", bg: "#2d1a0a", border: "#5c3515", color: "#c27a40", def: "If a unit has this tag, they are inflated and cost way more than they should be worth." },
-  { tag: "Deflated", bg: "#0e2345", border: "#1e4a8a", color: "#3C81F3", def: "If a unit is underpriced, they are deflated and are way cheaper than they should be worth." },
-  { tag: "Varies", bg: "#201b42", border: "#3d3480", color: "#9b8de8", def: "If a unit varies, then it can get fair but it can also get lowballs or highballs." },
-  { tag: "Lowballed", bg: "#3d220a", border: "#7a4412", color: "#E66C19", def: "If a unit has this tag, it can get fair at most, but also gets lowballs." },
-  { tag: "Highballed", bg: "#003d40", border: "#007a80", color: "#01EFFD", def: "If a unit has this tag, it can get fair at minimum, but also gets highballs." }
+  { tag: "Stable", bg: "rgba(30, 33, 36, 0.95)", border: "#E6D8A166", color: "#E6D8A1", def: "Fair and consistently decent offers. Units that are stable are most likely not to move unless something happens." },
+  { tag: "Unstable", bg: "rgba(30, 33, 36, 0.95)", border: "#6B9EB566", color: "#6B9EB5", def: "If a unit is unstable, it means it could rise or drop at any moment, or stabilize." },
+  { tag: "Rising", bg: "rgba(30, 33, 36, 0.95)", border: "#30A16366", color: "#30A163", def: "If a unit is rising, it means the unit is being consistently overpaid." },
+  { tag: "Dropping", bg: "rgba(30, 33, 36, 0.95)", border: "#E60A1866", color: "#E60A18", def: "If a unit is dropping, it means owners are constantly taking underpays." },
+  { tag: "Inflated", bg: "rgba(30, 33, 36, 0.95)", border: "#c27a4066", color: "#c27a40", def: "If a unit has this tag, they are inflated and cost way more than they should be worth." },
+  { tag: "Deflated", bg: "rgba(30, 33, 36, 0.95)", border: "#3C81F366", color: "#3C81F3", def: "If a unit is underpriced, they are deflated and are way cheaper than they should be worth." },
+  { tag: "Varies", bg: "rgba(30, 33, 36, 0.95)", border: "#9b8de866", color: "#9b8de8", def: "If a unit varies, then it can get fair but it can also get lowballs or highballs." },
+  { tag: "Lowballed", bg: "rgba(30, 33, 36, 0.95)", border: "#E66C1966", color: "#E66C19", def: "If a unit has this tag, it can get fair at most, but also gets lowballs." },
+  { tag: "Highballed", bg: "rgba(30, 33, 36, 0.95)", border: "#01EFFD66", color: "#01EFFD", def: "If a unit has this tag, it can get fair at minimum, but also gets highballs." }
 ];
 
 export const THEORY_SECONDARY_TAGS = [
-  { tag: "Hyped", bg: "#0e1f3a", border: "#1a3a6b", color: "#3A7CE6", def: "If a unit is hyped, then it can either be a new unit, or something big changed, skyrocketing a units value and demand." },
-  { tag: "Gatekept", bg: "#30202e", border: "#603d5a", color: "#AF78A8", def: "If a unit is gatekept, it means owners are refusing to trade this unit for any reason, waiting for a rise or huge overpay, usually." },
-  { tag: "Black Market", bg: "#1e2228", border: "#3a4250", color: "#9aa3b2", def: "If a unit has this tag, it means that people who buy units with outside-game currency are heavily impacting this unit." }
+  { tag: "Hyped", bg: "rgba(30, 33, 36, 0.95)", border: "#3A7CE666", color: "#3A7CE6", def: "If a unit is hyped, then it can either be a new unit, or something big changed, skyrocketing a units value and demand." },
+  { tag: "Gatekept", bg: "rgba(30, 33, 36, 0.95)", border: "#AF78A866", color: "#AF78A8", def: "If a unit is gatekept, it means owners are refusing to trade this unit for any reason, waiting for a rise or huge overpay, usually." },
+  { tag: "Black Market", bg: "rgba(30, 33, 36, 0.95)", border: "#9aa3b266", color: "#9aa3b2", def: "If a unit has this tag, it means that people who buy units with outside-game currency are heavily impacting this unit." }
 ];
 
 export const THEORY_RARITY_SCALE = [

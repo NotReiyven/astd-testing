@@ -1,5 +1,5 @@
-import { useState, useEffect, memo, useCallback, useMemo } from "react";
-import { X, Plus, Minus, Pin } from "lucide-react";
+import { useCallback, useMemo, memo } from "react";
+import { X, Pin } from "lucide-react";
 import { TradeCard } from "../../../types";
 import { GRID_STATUS_CFG, getProxyImage, handleImageError } from "../../../data";
 import { useUnits } from "../../../context/UnitContext";
@@ -38,25 +38,24 @@ export const ActiveCardRow = memo(function ActiveCardRow({
 
   return (
     <div 
-      className={`flex flex-col md:flex-row md:items-center gap-2.5 bg-[#2B2D31] hover:bg-[rgba(255,255,255,0.04)] p-3 md:p-2 rounded-[8px] border transition-colors group ${isPinned ? "border-[#5865F2] shadow-[0_0_8px_rgba(88,101,242,0.15)]" : "border-[rgba(255,255,255,0.04)]"}`}
+      className={`flex flex-col md:flex-row md:items-center gap-2.5 bg-card hover:bg-white/5 p-3 md:p-2 rounded-[8px] border transition-colors group ${isPinned ? "border-primary shadow-[0_0_8px_var(--primary)]" : "border-border"}`}
     >
-      {/* Top Row on Mobile / Single Row on Desktop */}
       <div className="flex items-center gap-2.5 w-full min-w-0">
-        <div className={`relative w-11 h-11 md:w-10 md:h-10 flex-shrink-0 rounded-[6px] bg-[#111214] overflow-hidden flex items-center justify-center border ${isPinned ? "border-[rgba(88,101,242,0.5)]" : "border-[rgba(255,255,255,0.04)]"}`}>
+        <div className={`relative w-11 h-11 md:w-10 md:h-10 flex-shrink-0 rounded-[6px] bg-popover overflow-hidden flex items-center justify-center border ${isPinned ? "border-primary/50" : "border-border"}`}>
            <div className="absolute inset-0 flex items-center justify-center text-white font-black text-[13px] z-0" style={getAvatarStyle(card.name)}>
              {getInitials(card.name)}
            </div>
            <img 
-             src={proxyUrl} 
+             src={proxyUrl || undefined} 
              alt={card.name} 
              onError={(e) => handleImageError(e, card.id)}
-             className="absolute inset-0 w-full h-full object-cover object-[center_15%] z-10 bg-[#111214] transition-opacity duration-300" 
+             className="absolute inset-0 w-full h-full object-cover object-[center_15%] z-10 bg-popover transition-opacity duration-300" 
            />
         </div>
 
         <div className="flex flex-col min-w-0 flex-1">
            <div className="flex items-center gap-1.5 min-w-0">
-             <span className="text-[14px] font-extrabold text-[#F2F3F5] truncate" style={{ fontFamily: "'Inter', sans-serif" }}>
+             <span className="text-[14px] font-extrabold text-foreground truncate">
                {card.name}
              </span>
              {dropCfg && (
@@ -65,7 +64,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
                   style={{ background: dropCfg.bg, border: `1px solid ${dropCfg.border}` }}
                 >
                   <StatusIcon status={masterData?.status} />
-                  <span className="text-[8px] font-bold leading-none uppercase tracking-wide" style={{ color: dropCfg.color, fontFamily: "'Inter', sans-serif" }}>
+                  <span className="text-[8px] font-bold leading-none uppercase tracking-wide" style={{ color: dropCfg.color }}>
                     <JargonWrap title={dropCfg.label} tip={dropCfg.tip}>
                       {dropCfg.label}
                     </JargonWrap>
@@ -74,16 +73,15 @@ export const ActiveCardRow = memo(function ActiveCardRow({
              )}
            </div>
            {card.subtitle && (
-             <span className="text-[10px] font-bold text-[#80848E] uppercase tracking-wide truncate mt-0.5" style={{ fontFamily: "'Inter', sans-serif" }}>
+             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide truncate mt-0.5">
                {card.subtitle}
              </span>
            )}
         </div>
 
-        {/* Total Value & Desktop Actions */}
         <div className="flex items-center gap-2 flex-shrink-0">
            <span 
-             className="text-[14px] font-bold text-[#F2F3F5] font-mono tracking-tight text-right truncate max-w-[90px]" 
+             className="text-[14px] font-bold text-foreground font-mono tracking-tight text-right truncate max-w-[90px]" 
              title={isOwnerChoice ? "" : (card.value * card.qty).toLocaleString()}
            >
              {isOwnerChoice ? (
@@ -93,20 +91,19 @@ export const ActiveCardRow = memo(function ActiveCardRow({
              ) : (card.value * card.qty).toLocaleString()}
            </span>
 
-           {/* Desktop Quantity Selector & Actions */}
            <div className="hidden md:flex items-center gap-2">
              <QuantitySelector qty={card.qty} onChange={handleQtyInput} minQty={1} />
              <div className="flex items-center ml-0.5 flex-shrink-0 gap-0.5">
                <button 
                  onClick={handlePin} 
                  title={isPinned ? "Unpin unit" : "Pin unit (prevents clearing)"}
-                 className={`w-7 h-7 flex items-center justify-center transition-colors flex-shrink-0 active:scale-90 rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] ${isPinned ? "text-[#DBDEE1]" : "text-[#80848E] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)]"}`}
+                 className={`w-7 h-7 flex items-center justify-center transition-colors flex-shrink-0 active:scale-90 rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${isPinned ? "text-foreground bg-white/5" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}
                >
                  <Pin className="w-[14px] h-[14px]" style={{ fill: isPinned ? "currentColor" : "none" }} />
                </button>
                <button 
                  onClick={handleRemove} 
-                 className="w-7 h-7 flex items-center justify-center text-[#80848E] hover:text-[#ed4245] hover:bg-[rgba(237,66,69,0.1)] transition-colors flex-shrink-0 active:scale-90 rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ed4245]"
+                 className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0 active:scale-90 rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
                >
                  <X className="w-[15px] h-[15px]" />
                </button>
@@ -115,22 +112,21 @@ export const ActiveCardRow = memo(function ActiveCardRow({
         </div>
       </div>
 
-      {/* Bottom Row on Mobile (Quantity Selector & Pin/Remove) */}
-      <div className="flex md:hidden items-center justify-between pt-2 border-t border-[rgba(255,255,255,0.04)] w-full">
-         <span className="text-[11px] font-bold text-[#80848E] uppercase tracking-wider">Quantity</span>
+      <div className="flex md:hidden items-center justify-between pt-2 border-t border-border w-full">
+         <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Quantity</span>
          <div className="flex items-center gap-3">
            <QuantitySelector qty={card.qty} onChange={handleQtyInput} minQty={1} />
            <div className="flex items-center gap-1">
              <button 
                onClick={handlePin} 
                title={isPinned ? "Unpin unit" : "Pin unit"}
-               className={`w-9 h-9 flex items-center justify-center rounded-[6px] ${isPinned ? "bg-[#5865F2] text-white" : "bg-[#1E1F22] text-[#80848E]"}`}
+               className={`w-9 h-9 flex items-center justify-center rounded-[6px] border ${isPinned ? "bg-primary text-primary-foreground border-primary" : "bg-popover text-muted-foreground border-border"}`}
              >
                <Pin className="w-4 h-4" style={{ fill: isPinned ? "currentColor" : "none" }} />
              </button>
              <button 
                onClick={handleRemove} 
-               className="w-9 h-9 flex items-center justify-center bg-[#1E1F22] hover:bg-[#ed4245]/20 text-[#80848E] hover:text-[#ed4245] rounded-[6px]"
+               className="w-9 h-9 flex items-center justify-center bg-popover border border-border hover:bg-destructive/20 text-muted-foreground hover:text-destructive rounded-[6px]"
              >
                <X className="w-4 h-4" />
              </button>

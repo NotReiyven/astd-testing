@@ -128,8 +128,8 @@ export default function App() {
         @keyframes masterSlash { 
           0% { transform: scaleX(0) rotate(-45deg); opacity: 0; } 
           20% { transform: scaleX(0.15) rotate(-45deg); opacity: 1; } 
-          50% { transform: scaleX(1.1) rotate(-45deg); opacity: 1; filter: drop-shadow(0 0 16px #01EFFD); } 
-          100% { transform: scaleX(1.4) rotate(-45deg); opacity: 0; filter: drop-shadow(0 0 8px #7289da); } 
+          50% { transform: scaleX(1.1) rotate(-45deg); opacity: 1; filter: drop-shadow(0 0 16px var(--primary)); } 
+          100% { transform: scaleX(1.4) rotate(-45deg); opacity: 0; filter: drop-shadow(0 0 8px var(--primary)); } 
         }
         .animate-master-slash { animation: masterSlash 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
 
@@ -147,8 +147,8 @@ export default function App() {
         .animate-spark-2 { animation: sparkFly2 0.3s cubic-bezier(0.16,1,0.3,1) forwards; }
 
         @keyframes edgeGlow {
-          0% { box-shadow: inset 0 0 40px rgba(1, 239, 253, 0.7), inset 0 0 15px rgba(114, 137, 218, 0.5); }
-          100% { box-shadow: inset 0 0 0px rgba(1, 239, 253, 0), inset 0 0 0px rgba(114, 137, 218, 0); }
+          0% { box-shadow: inset 0 0 40px rgba(114, 137, 218, 0.7), inset 0 0 15px rgba(114, 137, 218, 0.5); }
+          100% { box-shadow: inset 0 0 0px rgba(114, 137, 218, 0), inset 0 0 0px rgba(114, 137, 218, 0); }
         }
         .animate-edge-glow { animation: edgeGlow 0.8s ease-out forwards; }
 
@@ -171,42 +171,39 @@ export default function App() {
         <div className="fixed inset-0 z-[1000000] pointer-events-none flex items-center justify-center overflow-hidden bg-transparent">
           <div className="absolute inset-0 w-full h-full">
             <div className={`absolute inset-0 transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${bootStage === 'fracture' ? '-translate-x-full -translate-y-full opacity-0' : 'translate-x-0 translate-y-0 opacity-100'} ${bootStage === 'fracture' ? 'animate-edge-glow' : ''}`}>
-               <div className="absolute inset-0 bg-[#313338]" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
+               <div className="absolute inset-0 bg-background" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
             </div>
             <div className={`absolute inset-0 transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${bootStage === 'fracture' ? 'translate-x-full translate-y-full opacity-0' : 'translate-x-0 translate-y-0 opacity-100'} ${bootStage === 'fracture' ? 'animate-edge-glow' : ''}`}>
-               <div className="absolute inset-0 bg-[#313338]" style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 100%)' }} />
+               <div className="absolute inset-0 bg-background" style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 100%)' }} />
             </div>
           </div>
           {(bootStage === 'strike' || bootStage === 'fracture') && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="absolute w-12 h-12 bg-white rounded-full blur-[4px] animate-lens-glint z-40" />
-              <div className="w-[160vw] h-[2px] bg-gradient-to-r from-transparent via-[#01EFFD] to-transparent shadow-[0_0_25px_4px_#7289da] animate-master-slash rounded-full z-40" />
-              <div className="absolute w-[35vw] h-[1.5px] bg-[#01EFFD] shadow-[0_0_12px_#7289da] animate-spark-1 z-30" />
-              <div className="absolute w-[25vw] h-[1px] bg-white shadow-[0_0_12px_#7289da] animate-spark-2 z-30" />
+              <div className="w-[160vw] h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_25px_4px_var(--primary)] animate-master-slash rounded-full z-40" />
+              <div className="absolute w-[35vw] h-[1.5px] bg-primary shadow-[0_0_12px_var(--primary)] animate-spark-1 z-30" />
+              <div className="absolute w-[25vw] h-[1px] bg-white shadow-[0_0_12px_var(--primary)] animate-spark-2 z-30" />
             </div>
           )}
           <div className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-500 ease-in-out ${bootStage === 'loading' ? 'opacity-100 scale-100 blur-none' : 'opacity-0 scale-95 blur-sm'}`}>
             <div className="relative flex items-center justify-center mb-6">
-               <div className="absolute w-24 h-24 bg-[#7289da] rounded-full blur-[40px] opacity-30 animate-pulse"></div>
-               <div className="w-16 h-16 bg-[#2B2D31] rounded-[16px] border border-[rgba(255,255,255,0.06)] flex items-center justify-center shadow-xl relative z-10">
-                 <Hash className="w-8 h-8 text-[#7289da]" />
+               <div className="absolute w-24 h-24 bg-primary rounded-full blur-[40px] opacity-30 animate-pulse"></div>
+               <div className="w-16 h-16 bg-card rounded-[16px] border border-border flex items-center justify-center shadow-xl relative z-10">
+                 <Hash className="w-8 h-8 text-primary" />
                </div>
             </div>
-            <h3 className="text-[#F2F3F5] font-extrabold text-[18px] tracking-tight mb-1">ASTD Value List</h3>
-            <p className="text-[#949BA4] text-[12px] font-medium uppercase tracking-widest mb-6 animate-pulse">Starting Engine...</p>
-            <div className="w-48 h-[3px] bg-[#1E1F22] rounded-full overflow-hidden border border-[rgba(255,255,255,0.02)] relative">
-              <div className="absolute top-0 bottom-0 left-0 bg-[#7289da] rounded-full animate-loading-bar shadow-[0_0_8px_rgba(114,137,218,0.8)]"></div>
+            <h3 className="text-foreground font-extrabold text-[18px] tracking-tight mb-1">ASTD Value List</h3>
+            <p className="text-muted-foreground text-[12px] font-medium uppercase tracking-widest mb-6 animate-pulse">Starting Engine...</p>
+            <div className="w-48 h-[3px] bg-popover rounded-full overflow-hidden border border-border relative">
+              <div className="absolute top-0 bottom-0 left-0 bg-primary rounded-full animate-loading-bar shadow-[0_0_8px_var(--primary)]"></div>
             </div>
           </div>
         </div>
       )}
 
       <div 
-        className="flex h-screen overflow-hidden relative" 
+        className="flex h-screen overflow-hidden relative bg-background text-foreground" 
         style={{ 
-          background: "#313338", 
-          fontFamily: "'Inter', sans-serif", 
-          color: "#F2F3F5",
           transform: bootStage === 'complete' ? 'none' : (bootStage === 'fracture' ? 'scale(1)' : 'scale(1.05)'),
           filter: bootStage === 'complete' ? 'none' : (bootStage === 'fracture' ? 'blur(0px)' : 'blur(8px)'),
           transition: 'transform 0.7s cubic-bezier(0.16,1,0.3,1), filter 0.7s cubic-bezier(0.16,1,0.3,1)'
@@ -225,25 +222,25 @@ export default function App() {
             className={`fixed bottom-[140px] md:bottom-8 left-1/2 -translate-x-1/2 pointer-events-none transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col gap-2 items-center ${guideState.type ? 'z-[100002]' : 'z-[9999]'}`}
           >
             {academyToast && (
-              <div className="flex items-center gap-3 px-5 py-3.5 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.6)] border border-[#7289da]/30 bg-[#2B2D31]/95 backdrop-blur-md animate-slide-up">
-                 <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 bg-[#7289da] shadow-sm">
+              <div className="flex items-center gap-3 px-5 py-3.5 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.6)] border border-primary/30 bg-card/95 backdrop-blur-md animate-slide-up">
+                 <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 bg-primary shadow-sm">
                    <GraduationCap className="w-4 h-4 text-white" />
                  </div>
-                 <span className="text-[#F2F3F5] text-[13.5px] font-medium tracking-wide whitespace-nowrap">
-                   Academy Task Complete! <strong className="font-black text-[#7289da]">({academyToast.step}/4)</strong>
+                 <span className="text-foreground text-[13.5px] font-medium tracking-wide whitespace-nowrap">
+                   Academy Task Complete! <strong className="font-black text-primary">({academyToast.step}/4)</strong>
                  </span>
               </div>
             )}
 
             <div className={`transition-all duration-300 ${toast ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-6 scale-90"}`}>
               {toast && (
-                <div className="flex items-center gap-3 px-5 py-3.5 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.6)] border border-[rgba(255,255,255,0.1)] bg-[#2B2D31]/95 backdrop-blur-md">
+                <div className="flex items-center gap-3 px-5 py-3.5 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.6)] border border-border bg-card/95 backdrop-blur-md">
                    <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 bg-[#23a559] shadow-sm">
                      <Check className="w-4 h-4 text-white" />
                    </div>
-                   <span className="text-[#F2F3F5] text-[13.5px] font-medium tracking-wide whitespace-nowrap">
+                   <span className="text-foreground text-[13.5px] font-medium tracking-wide whitespace-nowrap">
                      Added <strong className="font-black text-white">{toast.unitName}</strong>
-                     {toast.count > 1 && <span className="text-[#A1A5AC] ml-1 font-bold">({toast.count - 1} more)</span>}
+                     {toast.count > 1 && <span className="text-muted-foreground ml-1 font-bold">({toast.count - 1} more)</span>}
                      {" "}to {toast.type === "give" ? "Give" : "Get"}
                    </span>
                 </div>
@@ -260,7 +257,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className={`flex-1 flex flex-col min-w-0 bg-[#313338] md:pb-0 pb-[80px] ${mainContentZ}`}>
+          <div className={`flex-1 flex flex-col min-w-0 bg-background md:pb-0 pb-[80px] ${mainContentZ}`}>
             <div className={`relative ${helpMenuOpen || isMainStep3 ? '!z-[100002] shadow-[0_20px_50px_rgba(0,0,0,0.8)]' : 'z-40'}`}>
               <SyncBanner />
               <TopBar 
@@ -304,8 +301,8 @@ export default function App() {
               ) : activeChannel === "privacy-policy" ? ( <LegalChannel type="privacy" />
               ) : activeChannel === "admin-panel" ? ( <AdminChannel /> 
               ) : (
-                <div className="flex-1 flex items-center justify-center bg-[#313338] px-4">
-                   <div className="text-center"><h2 className="text-2xl font-bold text-[#F2F3F5] mb-2 capitalize">Welcome to {activeChannel}</h2><p className="text-[#949BA4]">This channel is currently under construction.</p></div>
+                <div className="flex-1 flex items-center justify-center bg-background px-4">
+                   <div className="text-center"><h2 className="text-2xl font-bold text-foreground mb-2 capitalize">Welcome to {activeChannel}</h2><p className="text-muted-foreground">This channel is currently under construction.</p></div>
                 </div>
               )}
             </div>

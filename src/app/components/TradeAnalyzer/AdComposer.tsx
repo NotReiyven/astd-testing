@@ -111,33 +111,33 @@ export function AdComposer() {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-[#282b30] overflow-y-auto custom-scrollbar animate-fade-in h-full">
+    <div className="flex-1 flex flex-col bg-card overflow-y-auto custom-scrollbar animate-fade-in h-full">
       <div className="p-4 md:p-5 flex flex-col gap-5 flex-1">
         {error && (
-          <div className="bg-[#ed4245]/10 border border-[#ed4245]/30 p-3 rounded-[6px] text-[#ed4245] text-[12px] font-bold flex items-start gap-2.5">
+          <div className="bg-destructive/10 border border-destructive/30 p-3 rounded-[6px] text-destructive text-[12px] font-bold flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span className="leading-snug">{error}</span>
           </div>
         )}
 
         <div className="flex flex-col gap-2">
-          <label className="text-[10px] font-bold uppercase tracking-widest text-[#b9bbbe]">Format</label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 bg-[#1e2124] p-1.5 rounded-[6px] border border-[#424549] shadow-inner">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Format</label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 bg-popover p-1.5 rounded-[6px] border border-border shadow-inner">
             <button 
               onClick={() => setAdType("standard")} 
-              className={`py-2.5 px-2 text-[11px] md:text-[12px] font-bold tracking-wide rounded-[4px] transition-all focus-visible:outline-none text-center ${adType === "standard" ? "bg-[#282b30] text-[#ffffff] shadow-sm border border-[#424549]" : "text-[#72767d] hover:text-[#b9bbbe] border border-transparent"}`}
+              className={`py-2.5 px-2 text-[11px] md:text-[12px] font-bold tracking-wide rounded-[4px] transition-all focus-visible:outline-none text-center ${adType === "standard" ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground border border-transparent"}`}
             >
               Specific Trade
             </button>
             <button 
               onClick={() => setAdType("lf_offers")} 
-              className={`py-2.5 px-2 text-[11px] md:text-[12px] font-bold tracking-wide rounded-[4px] transition-all focus-visible:outline-none text-center ${adType === "lf_offers" ? "bg-[rgba(250,166,26,0.1)] border border-[rgba(250,166,26,0.2)] text-[#FAA61A] shadow-sm" : "text-[#72767d] hover:text-[#b9bbbe] border border-transparent"}`}
+              className={`py-2.5 px-2 text-[11px] md:text-[12px] font-bold tracking-wide rounded-[4px] transition-all focus-visible:outline-none text-center ${adType === "lf_offers" ? "bg-[#FAA61A]/10 border border-[#FAA61A]/20 text-[#FAA61A] shadow-sm" : "text-muted-foreground hover:text-foreground border border-transparent"}`}
             >
               Taking Offers
             </button>
             <button 
               onClick={() => setAdType("inventory")} 
-              className={`py-2.5 px-2 text-[11px] md:text-[12px] font-bold tracking-wide rounded-[4px] transition-all focus-visible:outline-none text-center ${adType === "inventory" ? "bg-[rgba(35,165,89,0.1)] border border-[rgba(35,165,89,0.2)] text-[#23a559] shadow-sm" : "text-[#72767d] hover:text-[#b9bbbe] border border-transparent"}`}
+              className={`py-2.5 px-2 text-[11px] md:text-[12px] font-bold tracking-wide rounded-[4px] transition-all focus-visible:outline-none text-center ${adType === "inventory" ? "bg-[#23a559]/10 border border-[#23a559]/20 text-[#23a559] shadow-sm" : "text-muted-foreground hover:text-foreground border border-transparent"}`}
             >
               Vault Showcase
             </button>
@@ -148,15 +148,15 @@ export function AdComposer() {
 
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-[#b9bbbe]">Trader Note</label>
-            <span className="text-[10px] text-[#72767d] font-mono">{note.length}/150</span>
+            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Trader Note</label>
+            <span className="text-[10px] text-muted-foreground font-mono">{note.length}/150</span>
           </div>
           <div className="flex flex-wrap gap-1.5 mb-1">
             {PRESET_NOTES.map((preset) => (
               <button
                 key={preset}
                 onClick={() => setNote(preset)}
-                className="text-[10.5px] font-semibold bg-[#1e2124] hover:bg-[#424549] text-[#b9bbbe] hover:text-[#ffffff] px-2.5 py-1.5 rounded-[4px] border border-[#424549] transition-colors focus-visible:outline-none shadow-sm"
+                className="text-[10.5px] font-semibold bg-popover hover:bg-muted text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-[4px] border border-border transition-colors focus-visible:outline-none shadow-sm"
               >
                 {preset}
               </button>
@@ -167,16 +167,16 @@ export function AdComposer() {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Type custom note or select a preset above..."
-            className="bg-[#1e2124] text-[#ffffff] text-[13px] px-3.5 py-3 rounded-[6px] outline-none border border-[#424549] focus:border-[#7289da] shadow-inner w-full resize-none h-[80px]"
+            className="bg-input text-foreground text-[13px] px-3.5 py-3 rounded-[6px] outline-none border border-border focus:border-primary shadow-inner w-full resize-none h-[80px]"
           />
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-[10px] font-bold uppercase tracking-widest text-[#b9bbbe]">Listing Duration</label>
+          <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Listing Duration</label>
           <select
             value={ttl}
             onChange={(e) => setTtl(Number(e.target.value))}
-            className="bg-[#1e2124] text-[#ffffff] text-[13px] px-3.5 py-3 rounded-[6px] outline-none border border-[#424549] focus:border-[#7289da] shadow-inner w-full cursor-pointer"
+            className="bg-input text-foreground text-[13px] px-3.5 py-3 rounded-[6px] outline-none border border-border focus:border-primary shadow-inner w-full cursor-pointer"
           >
             {TTL_OPTIONS.map((o) => (
               <option key={o.hours} value={o.hours}>{o.label}</option>
@@ -185,17 +185,17 @@ export function AdComposer() {
         </div>
       </div>
 
-      <div className="p-4 bg-[#1e2124] border-t border-[#424549] flex items-center justify-end gap-3 shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] md:pb-4">
+      <div className="p-4 bg-popover border-t border-border flex items-center justify-end gap-3 shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] md:pb-4">
         <button
           onClick={() => setComposerOpen(false)}
-          className="px-5 py-2.5 text-[12px] font-bold text-[#b9bbbe] hover:text-[#ffffff] hover:bg-[#424549] border border-transparent hover:border-[#424549] rounded-[4px] focus-visible:outline-none transition-colors"
+          className="px-5 py-2.5 text-[12px] font-bold text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border rounded-[4px] focus-visible:outline-none transition-colors"
         >
           Cancel
         </button>
         <button
           onClick={handlePublish}
           disabled={isPublishing || (adType !== 'inventory' && giveItems.length === 0)}
-          className="px-6 py-2.5 bg-[#7289da] hover:bg-[#5b6eae] disabled:bg-[#424549] disabled:text-[#b9bbbe] text-white text-[12px] font-bold uppercase tracking-wider rounded-[4px] transition-colors shadow-md flex items-center gap-2 focus-visible:outline-none active:scale-[0.98]"
+          className="px-6 py-2.5 bg-primary hover:bg-primary/80 disabled:bg-popover disabled:text-muted-foreground text-primary-foreground text-[12px] font-bold uppercase tracking-wider rounded-[4px] transition-colors shadow-md flex items-center gap-2 focus-visible:outline-none active:scale-[0.98]"
         >
           {isPublishing ? "Publishing..." : <><Check className="w-4 h-4" /> Publish Ad</>}
         </button>

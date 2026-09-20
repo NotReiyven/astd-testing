@@ -1,11 +1,8 @@
 import { useState, useRef, useEffect, memo, useMemo } from "react";
 import { Search, X } from "lucide-react";
 import { TradeCard } from "../../../types";
-import { GRID_STATUS_CFG, getProxyImage, handleImageError } from "../../../data";
 import { useUnits } from "../../../context/UnitContext";
 import { ActiveCardRow } from "./ActiveCardRow";
-import { getAvatarStyle, getInitials } from "./summaryUtils";
-import { StatusIcon } from "../MainCanvas/UnitGrid";
 
 const HighlightedText = ({ text, query }: { text: string; query: string }) => {
   if (!query || !text) return <>{text}</>;
@@ -15,7 +12,7 @@ const HighlightedText = ({ text, query }: { text: string; query: string }) => {
     <>
       {parts.map((part, i) => 
         part.toLowerCase() === query.toLowerCase() 
-          ? <span key={i} className="bg-[rgba(250,166,26,0.35)] text-[#FAA61A] rounded-[2px]">{part}</span> 
+          ? <span key={i} className="bg-[#FAA61A]/30 text-[#FAA61A] rounded-[2px]">{part}</span> 
           : <span key={i}>{part}</span>
       )}
     </>
@@ -125,17 +122,17 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
   };
 
   const isGive = type === "give";
-  const accentColorHex = isGive ? "#FAA61A" : "#5865F2";
+  const accentColorHex = isGive ? "#FAA61A" : "var(--primary)";
   
   let dropZoneClasses = "flex flex-col justify-center rounded-[8px] transition-all duration-200 ";
   let dropZoneStyle: React.CSSProperties = { minHeight: items.length === 0 ? "90px" : "auto" };
 
   if (isDraggingOver) {
-    dropZoneClasses += "bg-[#1E1F22] border";
+    dropZoneClasses += "bg-popover border";
     dropZoneStyle.borderColor = accentColorHex;
     dropZoneStyle.boxShadow = `0 0 0 1px ${accentColorHex}40`; 
   } else if (items.length === 0) {
-    dropZoneClasses += "bg-[#1E1F22] border border-[rgba(255,255,255,0.02)] shadow-inner";
+    dropZoneClasses += "bg-popover border border-border shadow-inner";
   } else {
     dropZoneClasses += "bg-transparent border border-transparent";
   }
@@ -146,13 +143,13 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: accentColorHex }} />
           <p
-            className="text-[12px] md:text-[13px] font-extrabold uppercase tracking-widest text-[#F2F3F5]"
-            style={{ fontFamily: "'Inter', sans-serif" }}
+            className="text-[12px] md:text-[13px] font-extrabold uppercase tracking-widest text-foreground"
+            style={{ fontFamily: "var(--font-sans)" }}
           >
             {label}
           </p>
           {type === "give" && (
-            <span className="hidden md:inline-flex px-1.5 py-[2px] bg-white/5 rounded-[4px] text-[9px] font-semibold text-[#80848E] ml-1">
+            <span className="hidden md:inline-flex px-1.5 py-[2px] bg-white/5 rounded-[4px] text-[9px] font-semibold text-muted-foreground ml-1 border border-border">
               Press /
             </span>
           )}
@@ -161,8 +158,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
         <div className="flex items-center gap-3">
           {items.length > 0 && (
             <button
-              className="text-[11px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] rounded-[4px] px-3 py-2 md:px-2 md:py-1 bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(237,66,69,0.1)] hover:text-[#ed4245] active:scale-95"
-              style={{ color: "#949BA4" }}
+              className="text-[11px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[4px] px-3 py-2 md:px-2 md:py-1 bg-white/5 border border-transparent hover:border-destructive/30 hover:bg-destructive/10 text-muted-foreground hover:text-destructive active:scale-95"
               onClick={onClear}
             >
               Clear {isGive ? "Give" : "Get"}
@@ -173,21 +169,19 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
 
       <div className="relative mb-3">
         <div
-          className="flex items-center gap-2 px-3 py-2 rounded-[6px] focus-within:ring-2 focus-within:ring-[#5865F2] shadow-inner"
+          className="flex items-center gap-2 px-3 py-2 rounded-[6px] focus-within:ring-2 focus-within:ring-primary shadow-inner bg-input transition-all duration-150"
           style={{
-            background: "#1E1F22",
-            border: open ? `1px solid ${accentColorHex}66` : "1px solid rgba(255,255,255,0.04)",
-            transition: "all 0.15s",
+            border: open ? `1px solid ${accentColorHex}66` : "1px solid var(--border)",
           }}
         >
-          <Search style={{ width: 14, height: 14, color: "#80848E", flexShrink: 0 }} />
+          <Search className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
           <input
             ref={searchInputRef}
             type="text"
             value={query}
             placeholder={`Search to add units...`}
-            className="flex-1 bg-transparent outline-none text-[13px] font-medium"
-            style={{ color: "#DBDEE1", fontFamily: "'Inter', sans-serif", caretColor: accentColorHex }}
+            className="flex-1 bg-transparent outline-none text-[13px] font-medium text-foreground placeholder-muted-foreground"
+            style={{ caretColor: accentColorHex }}
             onChange={(e) => { 
               setQuery(e.target.value); 
               setOpen(true); 
@@ -221,85 +215,41 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
           />
           {query.length > 0 && (
             <button
-              className="flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] rounded-[3px] p-2 -m-2 md:p-0.5 md:-m-0 hover:bg-[rgba(255,255,255,0.08)] transition-colors"
-              style={{ color: "#80848E" }}
+              className="flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[3px] p-2 -m-2 md:p-0.5 md:-m-0 hover:bg-white/10 transition-colors text-muted-foreground"
               onMouseDown={(e) => { e.preventDefault(); setQuery(""); }}
             >
-              <X style={{ width: 14, height: 14 }} />
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
 
         {open && results.length > 0 && (
           <div
-            className="absolute left-0 right-0 mt-1 rounded-[8px] overflow-hidden"
-            style={{
-              background: "#2B2D31",
-              border: "1px solid rgba(255,255,255,0.08)",
-              boxShadow: "0 8px 16px rgba(0,0,0,0.24)",
-              zIndex: 999999,
-            }}
+            className="absolute left-0 right-0 mt-1 rounded-[8px] overflow-hidden bg-card border border-border shadow-lg z-[999999]"
             onMouseDown={(e) => e.preventDefault()}
           >
-            <p
-              className="px-3 pt-2.5 pb-1.5 text-[10px] font-bold uppercase tracking-wider"
-              style={{ color: "#949BA4", fontFamily: "'Inter', sans-serif" }}
-            >
+            <p className="px-3 pt-2.5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
               Quick Add
             </p>
             {results.map((u, i) => {
-              const dropCfg = u?.status ? GRID_STATUS_CFG[u.status as keyof typeof GRID_STATUS_CFG] : null;
               const isSelected = i === selectedIndex;
-              const proxyUrl = getProxyImage(u.id, u.imageUrl);
-
               return (
                 <button
                   key={u.id}
                   onClick={() => handleAdd(u)}
                   onMouseEnter={() => setSelectedIndex(i)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors text-left focus-visible:outline-none ${isSelected ? 'bg-[rgba(255,255,255,0.06)]' : 'bg-transparent hover:bg-[rgba(255,255,255,0.04)]'}`}
-                  style={{ borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.04)" }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors text-left focus-visible:outline-none ${isSelected ? 'bg-white/5' : 'bg-transparent hover:bg-white/5'}`}
+                  style={{ borderTop: i === 0 ? "none" : "1px solid var(--border)" }}
                 >
-                  <div
-                    className="flex-shrink-0 rounded-[4px] flex items-center justify-center relative overflow-hidden"
-                    style={{ width: 32, height: 32, background: "#111214", border: "1px solid rgba(255,255,255,0.04)" }}
-                  >
-                    {proxyUrl ? (
-                      <img 
-                        src={proxyUrl} 
-                        alt={u.name} 
-                        onError={(e) => handleImageError(e, u.id)}
-                        className="absolute inset-0 w-full h-full"
-                        style={{ objectFit: "cover", objectPosition: "center 15%" }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-white font-bold text-[11px]" style={getAvatarStyle(u.name)}>
-                        {getInitials(u.name)}
-                      </div>
-                    )}
-                  </div>
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <div className="flex items-center gap-1.5 mb-[1px]">
-                      <p className="text-[13px] font-bold leading-tight truncate" style={{ color: "#F2F3F5", fontFamily: "'Inter', sans-serif" }}>
-                        <HighlightedText text={u.name} query={query} />
-                      </p>
-                      {dropCfg && (
-                        <div
-                          className="flex-shrink-0 flex items-center gap-1 px-1.5 py-[1.5px] rounded-[4px]"
-                          style={{ background: dropCfg.bg, border: `1px solid ${dropCfg.border}` }}
-                        >
-                          <StatusIcon status={u.status} />
-                          <span className="text-[8px] font-bold leading-none uppercase tracking-wide" style={{ color: dropCfg.color, fontFamily: "'Inter', sans-serif" }}>
-                            {dropCfg.label}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider leading-tight mt-[1px] truncate" style={{ color: "#949BA4", fontFamily: "'Inter', sans-serif" }}>
+                    <p className="text-[13px] font-bold leading-tight truncate text-foreground">
+                      <HighlightedText text={u.name} query={query} />
+                    </p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider leading-tight mt-[1px] truncate text-muted-foreground">
                       <HighlightedText text={u.subtitle || ""} query={query} />
                     </p>
                   </div>
-                  <span className="text-[12px] font-bold flex-shrink-0" style={{ color: "#B5BAC1", fontFamily: "'JetBrains Mono', monospace" }}>
+                  <span className="text-[12px] font-bold flex-shrink-0 text-muted-foreground font-mono">
                     {typeof u.value === "number" ? u.value.toLocaleString() : u.value === "owner" ? "O/C" : u.valueDisplay || "???"}
                   </span>
                 </button>
@@ -312,11 +262,11 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
       <div style={dropZoneStyle} className={dropZoneClasses} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center pointer-events-none gap-0.5 py-4 opacity-70">
-            <p className="text-[13px] font-bold" style={{ color: isDraggingOver ? "#F2F3F5" : "#949BA4" }}>
+            <p className="text-[13px] font-bold" style={{ color: isDraggingOver ? "var(--foreground)" : "var(--muted-foreground)" }}>
               {isDraggingGlobal ? "Drop unit here" : "Empty Section"}
             </p>
             {!isDraggingGlobal && (
-              <p className="text-[11px] font-medium text-[#80848E] text-center">
+              <p className="text-[11px] font-medium text-muted-foreground text-center">
                 <span className="hidden md:inline">Search above or drag units here.</span>
                 <span className="md:hidden">Search above or tap units in the list.</span>
               </p>

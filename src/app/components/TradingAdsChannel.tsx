@@ -68,24 +68,24 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
   const displayItems = items.slice(0, limit);
   const extraCount = items.length > limit ? items.length - limit + 1 : 0; 
 
-  const slotBase = "w-11 h-11 sm:w-[48px] sm:h-[48px] rounded-[6px] shrink-0";
+  const slotBase = "w-10 h-10 sm:w-[48px] sm:h-[48px] rounded-[6px] shrink-0";
 
   return (
     <div className="grid grid-cols-4 gap-2 sm:gap-2.5 w-fit">
       {slots.map((_, i) => {
         if (isOfferTile && i === 0) {
           return (
-            <div key="offer-tile" className={`${slotBase} bg-[#1e2124] border-2 border-[#7289da] flex flex-col items-center justify-center gap-0.5`}>
-              <Search className="w-4 h-4 sm:w-5 sm:h-5 text-[#7289da]" />
-              <span className="text-[8px] font-black text-[#7289da] uppercase tracking-wider">Offer</span>
+            <div key="offer-tile" className={`${slotBase} bg-popover border-2 border-primary flex flex-col items-center justify-center gap-0.5`}>
+              <Search className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              <span className="text-[8px] font-black text-primary uppercase tracking-wider">Offer</span>
             </div>
           );
         }
 
         if (extraCount > 0 && i === limit - 1) {
           return (
-            <div key="extra-slot" className={`relative ${slotBase} bg-[#1e2124] border border-[#424549] overflow-hidden flex items-center justify-center shadow-inner`}>
-               <span className="relative z-10 text-[14px] font-black text-[#b9bbbe]">+{extraCount}</span>
+            <div key="extra-slot" className={`relative ${slotBase} bg-popover border border-border overflow-hidden flex items-center justify-center shadow-inner`}>
+               <span className="relative z-10 text-[14px] font-black text-muted-foreground">+{extraCount}</span>
             </div>
           );
         }
@@ -98,17 +98,17 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
             <div
               key={`item-${i}`}
               onClick={() => onInspectUnit(item.id)}
-              className={`relative ${slotBase} bg-[#1e2124] border border-[#424549] hover:border-[#7289da] cursor-pointer transition-colors overflow-visible flex items-center justify-center group shadow-sm`}
+              className={`relative ${slotBase} bg-popover border border-border hover:border-primary cursor-pointer transition-colors overflow-visible flex items-center justify-center group shadow-sm`}
               title={`${item.qty > 1 ? `${item.qty}x ` : ''}${item.name}`}
             >
               <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white z-0 rounded-[6px] overflow-hidden" style={getAvatarStyle(item.name)}>
                 {getInitials(item.name)}
               </div>
               {proxyUrl && (
-                <img src={proxyUrl} alt={item.name} className="absolute inset-0 w-full h-full object-cover z-10 bg-[#1e2124] rounded-[6px] transition-transform duration-300 group-hover:scale-110" style={{ objectPosition: "center 15%" }} onError={(e) => handleImageError(e, item.id)} />
+                <img src={proxyUrl} alt={item.name} className="absolute inset-0 w-full h-full object-cover z-10 bg-popover rounded-[6px] transition-transform duration-300 group-hover:scale-110" style={{ objectPosition: "center 15%" }} onError={(e) => handleImageError(e, item.id)} />
               )}
               {item.qty > 1 && (
-                <div className="absolute -bottom-1.5 -right-1.5 bg-[#1e2124] text-[#7289da] text-[10px] font-black px-1.5 py-0.5 rounded-[4px] z-20 border border-[#424549] shadow-sm leading-none whitespace-nowrap">
+                <div className="absolute -bottom-1.5 -right-1.5 bg-popover text-primary text-[10px] font-black px-1.5 py-0.5 rounded-[4px] z-20 border border-border shadow-sm leading-none whitespace-nowrap">
                   x{item.qty}
                 </div>
               )}
@@ -117,8 +117,8 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
         }
 
         return (
-          <div key={`empty-${i}`} className={`${slotBase} bg-transparent border-2 border-dashed border-[#424549] flex items-center justify-center`}>
-            <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-[#424549]" strokeWidth={2.5} />
+          <div key={`empty-${i}`} className={`${slotBase} bg-transparent border-2 border-dashed border-border flex items-center justify-center`}>
+            <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-border" strokeWidth={2.5} />
           </div>
         );
       })}
@@ -180,7 +180,6 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
 
     const handleInspectVault = () => {
       triggerHaptic('medium');
-      // Pass "trading-ads" directly so the vault knows exactly where to return
       setViewingUser(ad.user_id, ad.profiles?.username || "Trader", "trading-ads");
       window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'inventory' }));
     };
@@ -196,61 +195,61 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
     const score = votes.up - votes.down;
     
     let badgeTitle = "TRADE";
-    let badgeBg = "bg-[#7289da]";
-    let themeColor = "#7289da";
+    let badgeBg = "bg-primary";
+    let themeColor = "var(--primary)";
 
     if (isTakingOffers) {
       badgeTitle = "LF OFFERS";
-      badgeBg = "bg-[#424549]";
-      themeColor = "#424549"; 
+      badgeBg = "bg-popover";
+      themeColor = "var(--border)"; 
     } else if (isInventory) {
       badgeTitle = "SHOWCASE";
-      badgeBg = "bg-[#1e2124]";
-      themeColor = "#1e2124";
+      badgeBg = "bg-popover";
+      themeColor = "var(--border)";
     }
 
     return (
-      <div className="relative bg-[#282b30] rounded-[8px] p-5 sm:p-6 flex flex-col h-full overflow-hidden border border-[#424549] shadow-md hover:border-[#7289da]/50 transition-colors">
+      <div className="relative bg-card rounded-[8px] p-4 sm:p-6 flex flex-col h-full overflow-hidden border border-border shadow-md hover:border-primary/50 transition-colors">
         
         <div className="absolute top-0 left-0 right-0 h-[4px]" style={{ backgroundColor: themeColor }} />
 
         <div className="flex items-start justify-between mb-4 h-[44px] relative z-10">
-          <div className="flex items-center gap-3.5 cursor-pointer group/user min-w-0" onClick={handleCopyId} title="Click to copy Discord ID">
+          <div className="flex items-center gap-3 cursor-pointer group/user min-w-0" onClick={handleCopyId} title="Click to copy Discord ID">
             <div className="relative shrink-0">
               <img 
                 src={ad.profiles?.avatar_url || "/units/firezio.webp"} 
-                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#1e2124] object-cover ring-2 ring-offset-2 ring-offset-[#282b30]" 
-                style={{ '--tw-ring-color': '#7289da' } as React.CSSProperties}
+                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-popover object-cover ring-2 ring-offset-2 ring-offset-card" 
+                style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
                 alt=""
               />
             </div>
             <div className="flex flex-col min-w-0 pt-0.5">
-               <span className="text-[15px] sm:text-[16px] font-bold text-[#ffffff] tracking-tight leading-none mb-1.5 flex items-center gap-1.5 group-hover/user:underline truncate">
+               <span className="text-[14px] sm:text-[16px] font-bold text-foreground tracking-tight leading-none mb-1.5 flex items-center gap-1.5 group-hover/user:underline truncate">
                  {ad.profiles?.username || "Unknown"}
                  {copiedId && <Check className="w-3.5 h-3.5 text-[#23a559] shrink-0" />}
                </span>
-               <span className="text-[12px] text-[#b9bbbe] font-medium leading-none flex items-center gap-1.5">
+               <span className="text-[11px] sm:text-[12px] text-muted-foreground font-medium leading-none flex items-center gap-1.5">
                  {getTimeAgo(ad.created_at)}
                </span>
             </div>
           </div>
-          <span className={`px-2.5 py-1 rounded-[4px] text-[9px] font-black uppercase tracking-wider text-white shrink-0 ml-2 border border-[#424549] ${badgeBg}`}>
+          <span className={`px-2 py-1 sm:px-2.5 sm:py-1 rounded-[4px] text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-white shrink-0 ml-2 border border-border ${badgeBg}`}>
             {badgeTitle}
           </span>
         </div>
 
-        <hr className="border-t border-[#424549] mb-4 w-full" />
+        <hr className="border-t border-border mb-4 w-full" />
 
-        <div className="mb-5 bg-[#1e2124] border border-[#424549] rounded-[6px] p-3.5 shadow-inner">
+        <div className="mb-4 sm:mb-5 bg-popover border border-border rounded-[6px] p-3 sm:p-3.5 shadow-inner">
           {ad.note ? (
             <div 
-              className="text-[13px] text-[#ffffff] font-medium leading-relaxed break-words overflow-hidden"
+              className="text-[12px] sm:text-[13px] text-foreground font-medium leading-relaxed break-words overflow-hidden"
               style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
             >
               {ad.note}
             </div>
           ) : (
-            <div className="text-[13px] text-[#72767d] font-medium italic">
+            <div className="text-[12px] sm:text-[13px] text-muted-foreground font-medium italic">
               No notes provided.
             </div>
           )}
@@ -259,43 +258,43 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
         <div className="flex flex-col w-full flex-1 relative z-10">
           {isInventory ? (
             <>
-              <h4 className="text-[11px] font-bold uppercase tracking-wider mb-2 text-[#b9bbbe]">Showcase Assets</h4>
+              <h4 className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-2 text-muted-foreground">Showcase Assets</h4>
               <FixedSlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} limit={20} />
             </>
           ) : (
             <div className="flex flex-col">
               <div>
-                <h4 className="text-[11px] font-bold uppercase tracking-wider mb-2 text-[#b9bbbe]">Offering</h4>
+                <h4 className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-2 text-muted-foreground">Offering</h4>
                 <FixedSlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} limit={8} />
               </div>
               
-              <div className="w-full h-px bg-[#424549] my-4" />
+              <div className="w-full h-px bg-border my-3 sm:my-4" />
               
               <div>
-                <h4 className="text-[11px] font-bold uppercase tracking-wider mb-2 text-[#b9bbbe]">Requesting</h4>
+                <h4 className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-2 text-muted-foreground">Requesting</h4>
                 <FixedSlotGrid items={ad.get_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} isOfferTile={isTakingOffers} limit={8} />
               </div>
             </div>
           )}
         </div>
 
-        <div className="mt-5 pt-4 border-t border-[#424549] flex flex-col gap-3.5 relative z-10">
+        <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-border flex flex-col gap-3 sm:gap-3.5 relative z-10">
           
           <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-0.5 bg-[#1e2124] rounded-[4px] border border-[#424549] p-0.5">
-               <button onClick={() => handleVote(1)} className={`p-1 rounded-[3px] hover:bg-[#424549] transition-colors focus-visible:outline-none ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-[#72767d] hover:text-[#23a559]'}`}>
-                  <ArrowBigUp className={`w-4 h-4 ${votes.userVote === 1 ? 'fill-current' : ''}`} />
+            <div className="flex items-center gap-0.5 bg-popover rounded-[4px] border border-border p-0.5">
+               <button onClick={() => handleVote(1)} className={`p-1 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground hover:text-[#23a559]'}`}>
+                  <ArrowBigUp className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${votes.userVote === 1 ? 'fill-current' : ''}`} />
                </button>
-               <span className={`text-[12px] font-bold min-w-[24px] text-center ${score > 0 ? 'text-[#23a559]' : score < 0 ? 'text-[#ed4245]' : 'text-[#b9bbbe]'}`}>
+               <span className={`text-[11px] sm:text-[12px] font-bold min-w-[20px] sm:min-w-[24px] text-center ${score > 0 ? 'text-[#23a559]' : score < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
                  {score}
                </span>
-               <button onClick={() => handleVote(-1)} className={`p-1 rounded-[3px] hover:bg-[#424549] transition-colors focus-visible:outline-none ${votes.userVote === -1 ? 'text-[#ed4245]' : 'text-[#72767d] hover:text-[#ed4245]'}`}>
-                  <ArrowBigDown className={`w-4 h-4 ${votes.userVote === -1 ? 'fill-current' : ''}`} />
+               <button onClick={() => handleVote(-1)} className={`p-1 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none ${votes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}>
+                  <ArrowBigDown className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${votes.userVote === -1 ? 'fill-current' : ''}`} />
                </button>
             </div>
 
-            <div className="flex items-center gap-1.5 text-[#72767d]">
-              <Clock className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               <CountdownTimer expiresAt={ad.expires_at} />
             </div>
           </div>
@@ -304,17 +303,17 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
             <div className="flex items-center gap-2">
               <button
                 onClick={handleCopyId}
-                className="px-3 py-2 flex items-center gap-1.5 text-[12px] font-bold rounded-[4px] border border-[#424549] bg-[#1e2124] hover:bg-[#36393e] text-[#b9bbbe] hover:text-[#ffffff] transition-colors focus-visible:outline-none shadow-sm"
+                className="px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none shadow-sm"
               >
-                {copiedId ? <Check className="w-4 h-4 text-[#23a559]" /> : <Copy className="w-4 h-4" />}
+                {copiedId ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#23a559]" /> : <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                 <span className="hidden xl:inline">ID</span>
               </button>
 
               <button
                 onClick={() => { triggerHaptic('light'); openAdContext(ad.id, currentUserId); }}
-                className="px-3 py-2 flex items-center gap-1.5 text-[12px] font-bold rounded-[4px] border border-[#424549] bg-[#1e2124] hover:bg-[#36393e] text-[#b9bbbe] hover:text-[#ffffff] transition-colors focus-visible:outline-none shadow-sm"
+                className="px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none shadow-sm"
               >
-                <MessageSquare className="w-4 h-4" />
+                <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Thread</span>
               </button>
             </div>
@@ -322,19 +321,19 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
             <div className="flex items-center gap-2">
               <button 
                 onClick={() => isInventory ? handleInspectVault() : onSendToCalculator(ad.give_items, ad.get_items)}
-                className="px-4 py-2 flex items-center gap-1.5 text-[12px] font-bold rounded-[4px] text-white bg-[#7289da] hover:bg-[#5b6eae] transition-colors focus-visible:outline-none shadow-sm active:scale-95"
+                className="px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] text-primary-foreground bg-primary hover:bg-primary/80 transition-colors focus-visible:outline-none shadow-sm active:scale-95"
               >
-                {isInventory ? <Package className="w-4 h-4" /> : <Calculator className="w-4 h-4" />}
+                {isInventory ? <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Calculator className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                 <span className="hidden sm:inline">{isInventory ? "Inspect" : "Evaluate"}</span>
               </button>
 
               {canDelete && (
                 <button
                   onClick={() => onDelete(ad.id)}
-                  className="p-2 border border-[#424549] text-[#72767d] hover:text-[#ffffff] hover:border-[#ed4245] bg-[#1e2124] hover:bg-[#ed4245] rounded-[4px] transition-colors focus-visible:outline-none shadow-sm"
+                  className="p-1.5 sm:p-2 border border-border text-muted-foreground hover:text-foreground hover:border-destructive bg-popover hover:bg-destructive rounded-[4px] transition-colors focus-visible:outline-none shadow-sm"
                   title="Delete listing"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               )}
             </div>
@@ -404,23 +403,23 @@ export function TradingAdsChannel() {
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#36393e] h-full select-none font-sans relative">
+    <div className="flex-1 flex flex-col overflow-hidden bg-background h-full select-none font-sans relative">
       
-      <div className="flex-shrink-0 flex flex-col px-4 md:px-6 py-4 bg-[#282b30] border-b border-[#424549] shadow-sm z-20 gap-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex-shrink-0 flex flex-col px-3 md:px-6 py-3 md:py-4 bg-card border-b border-border shadow-sm z-20 gap-3 md:gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="relative flex items-center justify-center">
-              <div className="w-2.5 h-2.5 bg-[#7289da] rounded-full z-10" />
-              <div className="absolute inset-0 bg-[#7289da] rounded-full animate-ping opacity-60" />
+              <div className="w-2.5 h-2.5 bg-primary rounded-full z-10" />
+              <div className="absolute inset-0 bg-primary rounded-full animate-ping opacity-60" />
             </div>
-            <h2 className="text-[16px] font-black text-[#ffffff] tracking-tight">Live Trading Board</h2>
+            <h2 className="text-[15px] md:text-[16px] font-black text-foreground tracking-tight">Live Trading Board</h2>
           </div>
 
           {profile ? (
             <button
               type="button"
               onClick={handleCreateAdClick}
-              className="flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-[4px] bg-[#7289da] hover:bg-[#5b6eae] text-white text-[13px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none shrink-0 shadow-sm"
+              className="flex items-center justify-center gap-1.5 px-4 md:px-5 py-2 md:py-2.5 rounded-[4px] bg-primary hover:bg-primary/80 text-primary-foreground text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none shrink-0 shadow-sm w-full md:w-auto"
             >
               <Plus className="w-4 h-4" />
               <span>Create Ad</span>
@@ -429,65 +428,65 @@ export function TradingAdsChannel() {
             <button
               type="button"
               onClick={loginWithDiscord}
-              className="flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-[4px] bg-[#1e2124] border border-[#424549] text-[#b9bbbe] text-[13px] font-bold uppercase tracking-wider transition-colors hover:bg-[#36393e] focus-visible:outline-none shrink-0"
+              className="flex items-center justify-center gap-1.5 px-4 md:px-5 py-2 md:py-2.5 rounded-[4px] bg-popover border border-border text-muted-foreground text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-colors hover:bg-muted focus-visible:outline-none shrink-0 w-full md:w-auto"
             >
-              <Lock className="w-4 h-4 text-[#7289da]" />
+              <Lock className="w-4 h-4 text-primary" />
               <span>Login to Post</span>
             </button>
           )}
         </div>
 
-        <div className="flex flex-col xl:flex-row xl:items-center gap-4 w-full">
-          <div className="flex bg-[#1e2124] rounded-[4px] p-1 border border-[#424549] w-full md:w-fit overflow-x-auto hide-scrollbar shrink-0 shadow-inner">
+        <div className="flex flex-col xl:flex-row xl:items-center gap-3 w-full">
+          <div className="flex bg-popover rounded-[4px] p-1 border border-border w-full md:w-fit overflow-x-auto hide-scrollbar shrink-0 shadow-inner">
             {[{ id: "all", label: "All" }, { id: "standard", label: "Trades" }, { id: "lf_offers", label: "LF Offers" }, { id: "inventory", label: "Showcases" }].map(t => (
               <button
                 key={t.id}
                 onClick={() => setTypeFilter(t.id)}
-                className={`flex-1 md:flex-none px-5 py-1.5 rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none whitespace-nowrap ${typeFilter === t.id ? 'bg-[#7289da] text-white shadow-sm' : 'text-[#72767d] hover:text-[#b9bbbe]'}`}
+                className={`flex-1 md:flex-none px-4 py-1.5 rounded-[4px] text-[11px] md:text-[12px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none whitespace-nowrap ${typeFilter === t.id ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 {t.label}
               </button>
             ))}
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
             <div className="relative w-full">
-              <Search className="w-4 h-4 text-[#72767d] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
                 placeholder="Search board by unit name..."
-                className="w-full bg-[#1e2124] text-[#ffffff] text-[14px] pl-10 pr-4 py-2 rounded-[4px] outline-none border border-[#424549] focus:border-[#7289da] transition-colors font-medium shadow-inner"
+                className="w-full bg-popover text-foreground text-[13px] md:text-[14px] pl-9 pr-4 py-2 rounded-[4px] outline-none border border-border focus:border-primary transition-colors font-medium shadow-inner"
               />
             </div>
             
-            <div className="w-full sm:w-auto shrink-0">
+            <div className="w-full sm:w-[150px] shrink-0">
               <CustomDropdown icon={Clock} value={sortMode} options={SORT_OPTIONS} onChange={setSortMode} defaultLabel="Sort By" />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col bg-[#36393e] relative z-10">
-        <div className="w-full h-full max-w-[1400px] mx-auto p-4 md:p-6 lg:p-8 pb-24">
+      <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col bg-background relative z-10">
+        <div className="w-full h-full max-w-[1400px] mx-auto p-3 md:p-6 lg:p-8 pb-24">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-[#b9bbbe] gap-3">
-              <Activity className="w-8 h-8 animate-pulse text-[#7289da]" />
-              <span className="text-[13px] font-bold uppercase tracking-widest">Connecting to live market...</span>
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
+              <Activity className="w-8 h-8 animate-pulse text-primary" />
+              <span className="text-[12px] md:text-[13px] font-bold uppercase tracking-widest">Connecting to live market...</span>
             </div>
           ) : filteredAndSortedAds.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
-              <div className="w-20 h-20 bg-[#282b30] rounded-full flex items-center justify-center border border-[#424549] mb-2 shadow-inner">
-                <Megaphone className="w-10 h-10 text-[#424549]" />
+            <div className="flex flex-col items-center justify-center py-24 text-center gap-3 md:gap-4 px-4">
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-card rounded-full flex items-center justify-center border border-border mb-2 shadow-inner">
+                <Megaphone className="w-8 h-8 md:w-10 md:h-10 text-muted-foreground" />
               </div>
-              <span className="text-[20px] font-black text-[#ffffff] tracking-tight">No Active Listings</span>
-              <p className="text-[14px] text-[#b9bbbe] max-w-md leading-relaxed">
+              <span className="text-[18px] md:text-[20px] font-black text-foreground tracking-tight">No Active Listings</span>
+              <p className="text-[13px] md:text-[14px] text-muted-foreground max-w-md leading-relaxed">
                 There are currently no trading ads matching your search parameters. Try adjusting your filters or post a new ad yourself.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full animate-fade-in">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 w-full animate-fade-in">
               {filteredAndSortedAds.map((ad) => (
                 <VanguardAdCard
                   key={ad.id}

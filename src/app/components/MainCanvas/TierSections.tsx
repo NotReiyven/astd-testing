@@ -116,13 +116,13 @@ export function buildSections(units: MasterUnit[], sortMode: string, statusFilte
 
 export function TierBanner({ tier }: { tier: { label: string; badgeColor: string } }) {
   return (
-    <div className="relative w-full mb-8 overflow-hidden rounded-xl" style={{ background: `linear-gradient(135deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.015) 50%, rgba(0,0,0,0.08) 100%), #2B2D31`, border: "1px solid rgba(255,255,255,0.07)", boxShadow: `0 8px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.035)` }}>
-      <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse at 50% -30%, ${tier.badgeColor}30 0%, ${tier.badgeColor}12 35%, transparent 70%)` }} />
-      <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: `linear-gradient(90deg, transparent 0%, ${tier.badgeColor} 25%, ${tier.badgeColor} 75%, transparent 100%)`, boxShadow: `0 0 14px ${tier.badgeColor}80` }} />
+    <div className="relative w-full mb-8 overflow-hidden rounded-xl bg-card border border-border shadow-sm">
+      <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse at 50% -30%, ${tier.badgeColor}25 0%, transparent 70%)` }} />
+      <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: tier.badgeColor }} />
       <div className="relative z-10 flex min-h-[88px] items-center justify-center px-6">
         <div className="flex flex-col items-center">
-          <span className="mb-2 text-[10px] font-bold uppercase tracking-[0.35em] opacity-60" style={{ color: tier.badgeColor }}>Tier</span>
-          <h1 className="text-[28px] font-black uppercase tracking-[0.18em] leading-none text-center" style={{ color: tier.badgeColor, textShadow: `0 2px 8px rgba(0,0,0,0.45), 0 0 18px ${tier.badgeColor}35` }}>{tier.label}</h1>
+          <span className="mb-2 text-[10px] font-bold uppercase tracking-[0.35em] opacity-80" style={{ color: tier.badgeColor }}>Tier</span>
+          <h1 className="text-[28px] font-black uppercase tracking-[0.18em] leading-none text-center" style={{ color: tier.badgeColor }}>{tier.label}</h1>
         </div>
       </div>
     </div>
@@ -133,11 +133,11 @@ export function TierSubHeader({ label, valueRange, count }: { label: string; val
   return (
     <div className="flex items-center gap-3 mb-3 mt-4">
       <div className="flex items-baseline gap-2 flex-shrink-0">
-        <span className="text-[12px] font-bold uppercase tracking-wider text-[#949BA4]">{label}</span>
-        <span className="text-[12px] font-semibold text-[#DBDEE1]">{valueRange}</span>
+        <span className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
+        <span className="text-[12px] font-semibold text-foreground">{valueRange}</span>
       </div>
-      <div className="flex-1 h-px bg-[rgba(255,255,255,0.06)]" />
-      <span className="text-[10px] font-bold px-1.5 py-[2px] rounded-[4px] bg-[rgba(255,255,255,0.04)] text-[#949BA4]">{count}</span>
+      <div className="flex-1 h-px bg-border" />
+      <span className="text-[10px] font-bold px-1.5 py-[2px] rounded-[4px] bg-white/5 text-muted-foreground border border-border">{count}</span>
     </div>
   );
 }

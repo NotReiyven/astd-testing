@@ -83,7 +83,7 @@ export function HistoryModal() {
   const latestSnap: HistorySnapshot | undefined = displayHistory[displayHistory.length - 1];
 
   const metricConfigs = {
-    value: { label: "Value Trend History", color: "#5865F2", gradientId: "valueGrad", unitLabel: "Value" },
+    value: { label: "Value Trend History", color: "var(--primary)", gradientId: "valueGrad", unitLabel: "Value" },
     rarity: { label: "Rarity Trend History", color: "#4DB6AC", gradientId: "rarityGrad", unitLabel: "Rarity" },
     liquidity: { label: "Liquidity Trend History", color: "#81C784", gradientId: "liqGrad", unitLabel: "Liquidity" },
   };
@@ -170,8 +170,8 @@ export function HistoryModal() {
     if (isMax) {
       return (
         <g>
-          <circle cx={cx} cy={cy} r={5} fill="#43b581" stroke="#111214" strokeWidth={2} />
-          <circle cx={cx} cy={cy} r={10} fill="none" stroke="#43b581" strokeWidth={1} opacity={0.6} className="animate-ping" />
+          <circle cx={cx} cy={cy} r={5} fill="#23a559" stroke="#111214" strokeWidth={2} />
+          <circle cx={cx} cy={cy} r={10} fill="none" stroke="#23a559" strokeWidth={1} opacity={0.6} className="animate-ping" />
         </g>
       );
     }
@@ -179,29 +179,29 @@ export function HistoryModal() {
     if (isMin) {
       return (
         <g>
-          <circle cx={cx} cy={cy} r={5} fill="#ed4245" stroke="#111214" strokeWidth={2} />
-          <circle cx={cx} cy={cy} r={10} fill="none" stroke="#ed4245" strokeWidth={1} opacity={0.6} />
+          <circle cx={cx} cy={cy} r={5} fill="var(--destructive)" stroke="#111214" strokeWidth={2} />
+          <circle cx={cx} cy={cy} r={10} fill="none" stroke="var(--destructive)" strokeWidth={1} opacity={0.6} />
         </g>
       );
     }
 
-    return <circle cx={cx} cy={cy} r={3} fill="#1E1F22" stroke={currentConfig.color} strokeWidth={1.5} />;
+    return <circle cx={cx} cy={cy} r={3} fill="var(--popover)" stroke={currentConfig.color} strokeWidth={1.5} />;
   };
 
   return (
     <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-0 sm:p-5 animate-fade-in">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={closeModal} />
 
-      <div className="bg-[#18191C] border border-[rgba(255,255,255,0.06)] rounded-none sm:rounded-[8px] w-full h-full sm:h-auto sm:max-w-5xl sm:max-h-[94vh] flex flex-col relative shadow-2xl overflow-hidden animate-slide-up">
+      <div className="bg-background border border-border rounded-none sm:rounded-[8px] w-full h-full sm:h-auto sm:max-w-5xl sm:max-h-[94vh] flex flex-col relative shadow-2xl overflow-hidden animate-slide-up">
 
         <div className="absolute top-0 left-0 right-0 h-[4px] z-[200]" style={{ background: tierCfg.badgeColor }} />
 
-        <div className={`px-5 sm:px-6 pt-6 pb-4 shrink-0 z-[100] bg-[#1E1F22] transition-all duration-300 ${isScrolled ? 'border-b border-[rgba(255,255,255,0.08)] shadow-sm' : 'border-b border-transparent'}`}>
+        <div className={`px-5 sm:px-6 pt-6 pb-4 shrink-0 z-[100] bg-popover transition-all duration-300 ${isScrolled ? 'border-b border-border shadow-sm' : 'border-b border-transparent'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 sm:gap-5 min-w-0">
               <div className="relative shrink-0">
                 <div 
-                  className="relative overflow-hidden bg-[#111214] flex items-center justify-center border border-[rgba(255,255,255,0.1)] w-20 h-20 sm:w-24 sm:h-24 rounded-[6px]"
+                  className="relative overflow-hidden bg-black/20 flex items-center justify-center border border-border w-20 h-20 sm:w-24 sm:h-24 rounded-[6px]"
                 >
                   <div className="absolute inset-0 flex items-center justify-center text-white font-black text-xl sm:text-2xl z-0" style={getAvatarStyle(currentUnit.name)}>
                     {getInitials(currentUnit.name)}
@@ -210,7 +210,7 @@ export function HistoryModal() {
                     <img 
                       src={proxyUrl} 
                       alt={currentUnit.name} 
-                      className="absolute inset-0 w-full h-full object-cover z-10 bg-[#111214]" 
+                      className="absolute inset-0 w-full h-full object-cover z-10 bg-black/20" 
                       onError={(e) => handleImageError(e, currentUnit.id)}
                     />
                   )}
@@ -219,7 +219,7 @@ export function HistoryModal() {
 
               <div className="flex flex-col min-w-0 justify-center">
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  <h2 className="text-[#F2F3F5] text-[20px] sm:text-[24px] font-black tracking-tight truncate">
+                  <h2 className="text-foreground text-[20px] sm:text-[24px] font-black tracking-tight truncate">
                     {currentUnit.name}
                   </h2>
                   {statusCfg && (
@@ -231,9 +231,9 @@ export function HistoryModal() {
                 </div>
 
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  <span className="text-[#949BA4] text-[11px] sm:text-[12px] font-bold uppercase tracking-wider">{currentUnit.subtitle || "Official Unit"}</span>
-                  <span className="text-[#4e5058]">•</span>
-                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-[4px] bg-[#5865F2]/10 text-[#5865F2] border border-[#5865F2]/20">
+                  <span className="text-muted-foreground text-[11px] sm:text-[12px] font-bold uppercase tracking-wider">{currentUnit.subtitle || "Official Unit"}</span>
+                  <span className="text-muted-foreground">•</span>
+                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-[4px] bg-primary/10 text-primary border border-primary/20">
                     Tier {tierKey}
                   </span>
                 </div>
@@ -242,7 +242,7 @@ export function HistoryModal() {
 
             <button 
               onClick={closeModal} 
-              className="text-[#949BA4] hover:text-[#F2F3F5] bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.08)] p-2 rounded-[4px] transition-colors focus-visible:outline-none shrink-0 self-start border border-[rgba(255,255,255,0.04)] active:scale-95"
+              className="text-muted-foreground hover:text-foreground bg-white/5 hover:bg-white/10 p-2 rounded-[4px] transition-colors focus-visible:outline-none shrink-0 self-start border border-border active:scale-95"
             >
               <X className="w-5 h-5" />
             </button>
@@ -252,7 +252,7 @@ export function HistoryModal() {
         <div 
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto custom-scrollbar relative bg-[#18191C]"
+          className="flex-1 overflow-y-auto custom-scrollbar relative bg-background"
         >
           <div className="p-5 sm:p-6 flex flex-col lg:flex-row gap-6 lg:gap-8">
 
@@ -260,58 +260,58 @@ export function HistoryModal() {
               <div className="grid grid-cols-2 gap-3">
                 <div 
                   onClick={() => setActiveMetric('value')}
-                  className={`col-span-2 rounded-[6px] p-4 flex flex-col justify-center cursor-pointer transition-colors relative overflow-hidden group ${activeMetric === 'value' ? 'bg-[#2B2D31] border border-[#5865F2]' : 'bg-[#1E1F22] hover:bg-[#2B2D31] border border-[rgba(255,255,255,0.04)]'}`}
+                  className={`col-span-2 rounded-[6px] p-4 flex flex-col justify-center cursor-pointer transition-colors relative overflow-hidden group ${activeMetric === 'value' ? 'bg-card border border-primary' : 'bg-popover hover:bg-card border border-border'}`}
                 >
-                  {activeMetric === 'value' && <div className="absolute top-0 left-0 bottom-0 w-1 bg-[#5865F2]" />}
+                  {activeMetric === 'value' && <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary" />}
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4] group-hover:text-[#F2F3F5] transition-colors">Current Value</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">Current Value</span>
                     {displayHistory.length > 1 && oldestSnapVal && oldestSnapVal > 0 && (
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[3px] flex items-center gap-0.5 ${pctChange >= 0 ? 'bg-[#43b581]/10 text-[#43b581]' : 'bg-[#ed4245]/10 text-[#ed4245]'}`}>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[3px] flex items-center gap-0.5 ${pctChange >= 0 ? 'bg-[#23a559]/10 text-[#23a559]' : 'bg-destructive/10 text-destructive'}`}>
                         {pctChange >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                         {pctChange >= 0 ? `+${pctChange.toFixed(1)}%` : `${pctChange.toFixed(1)}%`}
                       </span>
                     )}
                   </div>
-                  <span className="text-[18px] sm:text-[20px] font-black font-mono text-[#F2F3F5] mt-1.5 truncate">
+                  <span className="text-[18px] sm:text-[20px] font-black font-mono text-foreground mt-1.5 truncate">
                     {currentUnit.value === "owner" || currentUnit.valueDisplay === "Owner's Choice" ? "Owner's Choice" : currentUnit.valueDisplay || (currentUnit.value as number).toLocaleString()}
                   </span>
                 </div>
 
                 <div 
                   onClick={() => setActiveMetric('rarity')}
-                  className={`rounded-[6px] p-4 flex flex-col justify-center cursor-pointer transition-colors relative overflow-hidden group ${activeMetric === 'rarity' ? 'bg-[#2B2D31] border border-[#4DB6AC]' : 'bg-[#1E1F22] hover:bg-[#2B2D31] border border-[rgba(255,255,255,0.04)]'}`}
+                  className={`rounded-[6px] p-4 flex flex-col justify-center cursor-pointer transition-colors relative overflow-hidden group ${activeMetric === 'rarity' ? 'bg-card border border-[#4DB6AC]' : 'bg-popover hover:bg-card border border-border'}`}
                 >
                   {activeMetric === 'rarity' && <div className="absolute top-0 left-0 bottom-0 w-1 bg-[#4DB6AC]" />}
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4] group-hover:text-[#F2F3F5] transition-colors">Rarity (0-20)</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">Rarity (0-20)</span>
                   <span className="text-[16px] font-black font-mono text-[#4DB6AC] mt-1.5">{latestSnap?.rarity ?? currentUnit.rarity ?? 0}</span>
                 </div>
 
                 <div 
                   onClick={() => setActiveMetric('liquidity')}
-                  className={`rounded-[6px] p-4 flex flex-col justify-center cursor-pointer transition-colors relative overflow-hidden group ${activeMetric === 'liquidity' ? 'bg-[#2B2D31] border border-[#81C784]' : 'bg-[#1E1F22] hover:bg-[#2B2D31] border border-[rgba(255,255,255,0.04)]'}`}
+                  className={`rounded-[6px] p-4 flex flex-col justify-center cursor-pointer transition-colors relative overflow-hidden group ${activeMetric === 'liquidity' ? 'bg-card border border-[#81C784]' : 'bg-popover hover:bg-card border border-border'}`}
                 >
                   {activeMetric === 'liquidity' && <div className="absolute top-0 left-0 bottom-0 w-1 bg-[#81C784]" />}
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4] group-hover:text-[#F2F3F5] transition-colors">Liquidity</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">Liquidity</span>
                   <span className="text-[13px] font-black font-mono text-[#81C784] mt-1.5 uppercase">{latestSnap?.liquidity ?? currentUnit.liquidity ?? "Average"}</span>
                 </div>
               </div>
 
               {(currentUnit.notice || (currentUnit.secondaryTags && currentUnit.secondaryTags.length > 0)) && (
-                <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[6px] p-4 flex flex-col gap-3">
+                <div className="bg-popover border border-border rounded-[6px] p-4 flex flex-col gap-3">
                   {currentUnit.notice && (
                     <div className="flex flex-col gap-2">
-                      <span className="flex w-fit items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-[4px] bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/30 shrink-0">
+                      <span className="flex w-fit items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-[4px] bg-primary/20 text-primary border border-primary/30 shrink-0">
                         <AlertCircle className="w-3.5 h-3.5" /> Notice
                       </span>
-                      <p className="text-[12px] font-medium text-[#DBDEE1] leading-relaxed">{currentUnit.notice}</p>
+                      <p className="text-[12px] font-medium text-foreground leading-relaxed">{currentUnit.notice}</p>
                     </div>
                   )}
                   {currentUnit.secondaryTags && currentUnit.secondaryTags.length > 0 && (
-                    <div className="flex flex-col gap-2 pt-2 border-t border-[rgba(255,255,255,0.04)] mt-1">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">Market Tags:</span>
+                    <div className="flex flex-col gap-2 pt-2 border-t border-border mt-1">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Market Tags:</span>
                       <div className="flex flex-wrap gap-2">
                         {currentUnit.secondaryTags.map(tag => (
-                          <span key={tag} className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-[4px] bg-[#111214] text-[#F2F3F5] border border-[rgba(255,255,255,0.08)]">
+                          <span key={tag} className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-[4px] bg-black/20 text-foreground border border-border">
                             {tag}
                           </span>
                         ))}
@@ -325,36 +325,36 @@ export function HistoryModal() {
             <div className="flex-1 flex flex-col gap-6 min-w-0">
 
               {loading ? (
-                <div className="h-[280px] flex flex-col items-center justify-center text-[#949BA4] animate-pulse gap-3 font-medium text-sm bg-[#1E1F22] rounded-[6px] border border-[rgba(255,255,255,0.04)]">
-                  <Sparkles className="w-6 h-6 animate-spin text-[#5865F2]" />
+                <div className="h-[280px] flex flex-col items-center justify-center text-muted-foreground animate-pulse gap-3 font-medium text-sm bg-popover rounded-[6px] border border-border">
+                  <Sparkles className="w-6 h-6 animate-spin text-primary" />
                   Syncing historical snapshots...
                 </div>
               ) : error ? (
-                <div className="text-[#ed4245] text-sm text-center py-8 bg-[#1E1F22] rounded-[6px] border border-[rgba(237,66,69,0.2)]">Failed to load history: {error}</div>
+                <div className="text-destructive text-sm text-center py-8 bg-popover rounded-[6px] border border-destructive/20">Failed to load history: {error}</div>
               ) : displayHistory.length <= 1 ? (
-                <div className="flex flex-col items-center justify-center h-[280px] text-center bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[6px]">
-                  <TrendingUp className="w-10 h-10 text-[#949BA4] mb-3 opacity-50" />
-                  <p className="text-[#F2F3F5] font-bold text-[14px]">Tracking Initiated</p>
-                  <p className="text-[#949BA4] text-[12px] mt-1 max-w-sm px-6 leading-relaxed">Baseline snapshot recorded for {currentUnit.name}. Trend charts will generate as market shifts happen.</p>
+                <div className="flex flex-col items-center justify-center h-[280px] text-center bg-popover border border-border rounded-[6px]">
+                  <TrendingUp className="w-10 h-10 text-muted-foreground mb-3 opacity-50" />
+                  <p className="text-foreground font-bold text-[14px]">Tracking Initiated</p>
+                  <p className="text-muted-foreground text-[12px] mt-1 max-w-sm px-6 leading-relaxed">Baseline snapshot recorded for {currentUnit.name}. Trend charts will generate as market shifts happen.</p>
                 </div>
               ) : (
-                <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] p-4 rounded-[6px] flex flex-col gap-4">
+                <div className="bg-popover border border-border p-4 rounded-[6px] flex flex-col gap-4">
                   <div className="flex items-center justify-between flex-wrap gap-3">
-                    <h3 className="text-[#F2F3F5] text-[12px] font-bold uppercase tracking-wider flex items-center gap-2 shrink-0">
+                    <h3 className="text-foreground text-[12px] font-bold uppercase tracking-wider flex items-center gap-2 shrink-0">
                       <BarChart2 className="w-4 h-4" style={{ color: currentConfig.color }} /> {currentConfig.label}
                     </h3>
                     <div className="flex items-center gap-3">
-                      <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-bold text-[#949BA4] uppercase">
-                        <span className="w-2 h-2 rounded-[2px] bg-[#43b581] inline-block" /> Peak
-                        <span className="w-2 h-2 rounded-[2px] bg-[#ed4245] inline-block ml-1" /> Low
+                      <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase">
+                        <span className="w-2 h-2 rounded-[2px] bg-[#23a559] inline-block" /> Peak
+                        <span className="w-2 h-2 rounded-[2px] bg-destructive inline-block ml-1" /> Low
                       </div>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-[4px] bg-[#111214] text-[#949BA4] font-mono border border-[rgba(255,255,255,0.04)] uppercase tracking-wider">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-[4px] bg-black/20 text-muted-foreground font-mono border border-border uppercase tracking-wider">
                         {displayHistory.length} Snapshots
                       </span>
                     </div>
                   </div>
 
-                  <div className="h-[240px] sm:h-[260px] w-full bg-[#111214]/60 p-2 rounded-[4px] border border-[rgba(255,255,255,0.02)]">
+                  <div className="h-[240px] sm:h-[260px] w-full bg-black/20 p-2 rounded-[4px] border border-border">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                         <defs>
@@ -364,15 +364,15 @@ export function HistoryModal() {
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="2 4" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                        <XAxis dataKey="date" stroke="#80848E" fontSize={10} tickLine={false} axisLine={false} tickMargin={8} />
+                        <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={10} tickLine={false} axisLine={false} tickMargin={8} />
                         <YAxis 
-                          stroke="#80848E" fontSize={10} tickLine={false} axisLine={false} width={45} 
+                          stroke="var(--muted-foreground)" fontSize={10} tickLine={false} axisLine={false} width={45} 
                           tickFormatter={(v) => activeMetric === 'liquidity' ? (v === 3 ? 'HIGH' : v === 2 ? 'AVG' : v === 1 ? 'LOW' : '') : (activeMetric === 'value' && v >= 1000 ? `${(v/1000).toFixed(0)}k` : v)}
                           domain={activeMetric === 'liquidity' ? [0, 4] : ['auto', 'auto']}
                         />
                         <Tooltip 
-                          contentStyle={{ backgroundColor: '#18191C', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '8px 12px' }}
-                          labelStyle={{ color: '#80848E', fontSize: '10px', marginBottom: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}
+                          contentStyle={{ backgroundColor: 'var(--background)', border: '1px solid var(--border)', borderRadius: '6px', padding: '8px 12px' }}
+                          labelStyle={{ color: 'var(--muted-foreground)', fontSize: '10px', marginBottom: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}
                           formatter={(value: any, name: any, props: any) => [props.payload.label, currentConfig.unitLabel]}
                           labelFormatter={(label, payload) => payload.length > 0 ? payload[0].payload.fullDate : label}
                         />
@@ -397,25 +397,25 @@ export function HistoryModal() {
 
               {timeline.length > 0 && (
                 <div className="flex flex-col gap-3">
-                  <h3 className="text-[#949BA4] text-[12px] font-bold uppercase tracking-widest flex items-center gap-2">
-                    <History className="w-4 h-4 text-[#5865F2]" /> Audit Timeline
+                  <h3 className="text-muted-foreground text-[12px] font-bold uppercase tracking-widest flex items-center gap-2">
+                    <History className="w-4 h-4 text-primary" /> Audit Timeline
                   </h3>
 
-                  <div className="relative pl-6 ml-2 border-l border-[rgba(255,255,255,0.06)] flex flex-col gap-4 pb-4">
+                  <div className="relative pl-6 ml-2 border-l border-border flex flex-col gap-4 pb-4">
                     {timeline.map((t, idx) => {
                       const currCfg = GRID_STATUS_CFG[t.snap.status as keyof typeof GRID_STATUS_CFG];
                       const prevCfg = GRID_STATUS_CFG[t.prev.status as keyof typeof GRID_STATUS_CFG];
 
                       return (
                         <div key={idx} className="relative group">
-                          <div className="absolute -left-[29px] top-1.5 w-2 h-2 bg-[#5865F2] rounded-sm ring-4 ring-[#18191C]" />
+                          <div className="absolute -left-[29px] top-1.5 w-2 h-2 bg-primary rounded-sm ring-4 ring-background" />
 
-                          <div className="bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[6px] p-4 flex flex-col gap-3 hover:border-[rgba(255,255,255,0.08)] transition-colors">
-                            <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.04)] pb-2 flex-wrap gap-2">
-                              <span className="text-[#949BA4] text-[11px] font-mono font-bold uppercase tracking-wider">{t.date}</span>
+                          <div className="bg-popover border border-border rounded-[6px] p-4 flex flex-col gap-3 hover:border-muted-foreground transition-colors">
+                            <div className="flex items-center justify-between border-b border-border pb-2 flex-wrap gap-2">
+                              <span className="text-muted-foreground text-[11px] font-mono font-bold uppercase tracking-wider">{t.date}</span>
                               <div className="flex gap-1.5 flex-wrap">
                                 {t.changed.map((c: string) => (
-                                  <span key={c} className="text-[9px] font-bold bg-[#111214] text-[#DBDEE1] px-2 py-0.5 rounded-[3px] border border-[rgba(255,255,255,0.06)] uppercase tracking-wider">
+                                  <span key={c} className="text-[9px] font-bold bg-black/20 text-foreground px-2 py-0.5 rounded-[3px] border border-border uppercase tracking-wider">
                                     {c}
                                   </span>
                                 ))}
@@ -424,26 +424,26 @@ export function HistoryModal() {
 
                             <div className="flex flex-col gap-2">
                               {t.changed.includes("Value") && (
-                                <div className="flex items-center justify-between bg-[#111214] px-3 py-2 rounded-[4px] border border-[rgba(255,255,255,0.02)] flex-wrap gap-2">
-                                  <span className="text-[11px] text-[#80848E] font-bold uppercase tracking-wider">Value Shift</span>
+                                <div className="flex items-center justify-between bg-black/20 px-3 py-2 rounded-[4px] border border-border flex-wrap gap-2">
+                                  <span className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">Value Shift</span>
                                   <div className="flex items-center gap-3 font-mono text-[12px] font-bold">
-                                    <span className="text-[#80848E] line-through decoration-[#ed4245]">{t.prev.value_display || (t.prev.value ?? 0).toLocaleString()}</span>
-                                    <span className="text-[#5865F2]">➔</span>
-                                    <span className="text-[#F2F3F5]">{t.snap.value_display || (t.snap.value ?? 0).toLocaleString()}</span>
+                                    <span className="text-muted-foreground line-through decoration-destructive">{t.prev.value_display || (t.prev.value ?? 0).toLocaleString()}</span>
+                                    <span className="text-primary">➔</span>
+                                    <span className="text-foreground">{t.snap.value_display || (t.snap.value ?? 0).toLocaleString()}</span>
                                   </div>
                                 </div>
                               )}
 
                               {t.changed.includes("Status") && (
-                                <div className="flex items-center justify-between bg-[#111214] px-3 py-2 rounded-[4px] border border-[rgba(255,255,255,0.02)] flex-wrap gap-2">
-                                  <span className="text-[11px] text-[#80848E] font-bold uppercase tracking-wider">Status Badge</span>
+                                <div className="flex items-center justify-between bg-black/20 px-3 py-2 rounded-[4px] border border-border flex-wrap gap-2">
+                                  <span className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">Status Badge</span>
                                   <div className="flex items-center gap-3 text-[10px] font-bold tracking-wider">
-                                    <span className="px-2 py-0.5 rounded-[3px] border uppercase inline-flex items-center gap-1" style={{ backgroundColor: prevCfg?.bg || '#2B2D31', color: prevCfg?.color || '#949BA4', borderColor: prevCfg?.border || 'rgba(255,255,255,0.1)' }}>
+                                    <span className="px-2 py-0.5 rounded-[3px] border uppercase inline-flex items-center gap-1" style={{ backgroundColor: prevCfg?.bg || 'var(--card)', color: prevCfg?.color || 'var(--muted-foreground)', borderColor: prevCfg?.border || 'var(--border)' }}>
                                       <StatusIcon status={t.prev.status} />
                                       {prevCfg?.label || t.prev.status}
                                     </span>
-                                    <span className="text-[#5865F2]">➔</span>
-                                    <span className="px-2 py-0.5 rounded-[3px] border uppercase inline-flex items-center gap-1" style={{ backgroundColor: currCfg?.bg || '#2B2D31', color: currCfg?.color || '#F2F3F5', borderColor: currCfg?.border || 'rgba(255,255,255,0.1)' }}>
+                                    <span className="text-primary">➔</span>
+                                    <span className="px-2 py-0.5 rounded-[3px] border uppercase inline-flex items-center gap-1" style={{ backgroundColor: currCfg?.bg || 'var(--card)', color: currCfg?.color || 'var(--foreground)', borderColor: currCfg?.border || 'var(--border)' }}>
                                       <StatusIcon status={t.snap.status} />
                                       {currCfg?.label || t.snap.status}
                                     </span>
@@ -452,19 +452,19 @@ export function HistoryModal() {
                               )}
 
                               {t.changed.includes("Rarity") && (
-                                <div className="flex items-center justify-between bg-[#111214] px-3 py-2 rounded-[4px] border border-[rgba(255,255,255,0.02)] flex-wrap gap-2">
-                                  <span className="text-[11px] text-[#80848E] font-bold uppercase tracking-wider">Rarity Shift</span>
-                                  <div className="flex gap-3 font-mono text-[11px] font-bold text-[#DBDEE1]">
-                                    <span className="text-[#80848E]">{t.prev.rarity}</span> ➔ <span className="text-[#4DB6AC]">{t.snap.rarity}</span>
+                                <div className="flex items-center justify-between bg-black/20 px-3 py-2 rounded-[4px] border border-border flex-wrap gap-2">
+                                  <span className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">Rarity Shift</span>
+                                  <div className="flex gap-3 font-mono text-[11px] font-bold text-foreground">
+                                    <span className="text-muted-foreground">{t.prev.rarity}</span> ➔ <span className="text-[#4DB6AC]">{t.snap.rarity}</span>
                                   </div>
                                 </div>
                               )}
 
                               {t.changed.includes("Liquidity") && (
-                                <div className="flex items-center justify-between bg-[#111214] px-3 py-2 rounded-[4px] border border-[rgba(255,255,255,0.02)] flex-wrap gap-2">
-                                  <span className="text-[11px] text-[#80848E] font-bold uppercase tracking-wider">Liquidity Shift</span>
-                                  <div className="flex gap-3 font-mono text-[11px] font-bold text-[#DBDEE1] uppercase">
-                                    <span className="text-[#80848E]">{t.prev.liquidity || 'Average'}</span> ➔ <span className="text-[#81C784]">{t.snap.liquidity || 'Average'}</span>
+                                <div className="flex items-center justify-between bg-black/20 px-3 py-2 rounded-[4px] border border-border flex-wrap gap-2">
+                                  <span className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">Liquidity Shift</span>
+                                  <div className="flex gap-3 font-mono text-[11px] font-bold text-foreground uppercase">
+                                    <span className="text-muted-foreground">{t.prev.liquidity || 'Average'}</span> ➔ <span className="text-[#81C784]">{t.snap.liquidity || 'Average'}</span>
                                   </div>
                                 </div>
                               )}

@@ -34,38 +34,38 @@ export function InventoryChannel() {
   const TIER_FILTERS = ["All", "Pinned", "S", "A", "B", "C", "Pure", "Oddities"];
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#36393e] h-full font-sans relative">
+    <div className="flex-1 flex flex-col overflow-hidden bg-background h-full font-sans relative">
       
       {/* HEADER SECTION */}
-      <div className="flex-shrink-0 flex flex-col bg-[#282b30] border-b border-[#424549] shadow-sm z-20">
+      <div className="flex-shrink-0 flex flex-col bg-card border-b border-border shadow-sm z-20">
         <div className="px-4 md:px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           
           <div className="flex items-center gap-3">
             {isReadOnly ? (
               <button 
                 onClick={handleCloseVault}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1e2124] hover:bg-[#36393e] border border-[#424549] text-[#b9bbbe] hover:text-[#ffffff] rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-popover hover:bg-muted border border-border text-muted-foreground hover:text-foreground rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none"
               >
                 <ArrowLeft className="w-4 h-4" /> Return
               </button>
             ) : (
-              <div className="flex bg-[#1e2124] rounded-[4px] p-1 border border-[#424549] shadow-inner">
+              <div className="flex bg-popover rounded-[4px] p-1 border border-border shadow-inner">
                 <button 
                   onClick={() => handleTabSwitch("owned")}
-                  className={`px-4 py-1.5 rounded-[3px] text-[12px] font-bold uppercase tracking-wider transition-colors ${vaultView === "owned" ? 'bg-[#7289da] text-white shadow-sm' : 'text-[#72767d] hover:text-[#b9bbbe]'}`}
+                  className={`px-4 py-1.5 rounded-[3px] text-[12px] font-bold uppercase tracking-wider transition-colors ${vaultView === "owned" ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   My Vault
                 </button>
                 <button 
                   onClick={() => handleTabSwitch("wishlist")}
-                  className={`px-4 py-1.5 rounded-[3px] text-[12px] font-bold uppercase tracking-wider transition-colors ${vaultView === "wishlist" ? 'bg-[#7289da] text-white shadow-sm' : 'text-[#72767d] hover:text-[#b9bbbe]'}`}
+                  className={`px-4 py-1.5 rounded-[3px] text-[12px] font-bold uppercase tracking-wider transition-colors ${vaultView === "wishlist" ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   Wishlist
                 </button>
               </div>
             )}
             
-            <h2 className="text-[16px] font-black text-[#ffffff] tracking-tight ml-2 hidden md:block">
+            <h2 className="text-[16px] font-black text-foreground tracking-tight ml-2 hidden md:block">
               {isReadOnly ? `${viewingUsername}'s Showcase` : vaultView === "owned" ? "Inventory Management" : "Target Wishlist"}
             </h2>
           </div>
@@ -75,7 +75,7 @@ export function InventoryChannel() {
               <button
                 onClick={() => setIsSelectMode(!isSelectMode)}
                 className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-colors border focus-visible:outline-none ${
-                  isSelectMode ? "bg-[#7289da]/10 text-[#7289da] border-[#7289da]/30" : "bg-[#1e2124] text-[#b9bbbe] border-[#424549] hover:text-[#ffffff] hover:bg-[#36393e]"
+                  isSelectMode ? "bg-primary/10 text-primary border-primary/30" : "bg-popover text-muted-foreground border-border hover:text-foreground hover:bg-muted"
                 }`}
               >
                 {isSelectMode ? "Cancel Selection" : "Bulk Select"}
@@ -85,7 +85,7 @@ export function InventoryChannel() {
             {!isReadOnly && vaultView === "owned" && profile && (
               <button
                 onClick={() => setConfirmClear("unpinned")}
-                className="flex items-center gap-1.5 px-4 py-1.5 bg-[#1e2124] hover:bg-[#ed4245]/10 border border-[#424549] hover:border-[#ed4245]/30 text-[#b9bbbe] hover:text-[#ed4245] rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none"
+                className="flex items-center gap-1.5 px-4 py-1.5 bg-popover hover:bg-destructive/10 border border-border hover:border-destructive/30 text-muted-foreground hover:text-destructive rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Clear Unpinned
               </button>
@@ -95,22 +95,22 @@ export function InventoryChannel() {
 
         {/* METRICS BAR */}
         {vaultView === "owned" && !isSandbox && (
-          <div className="bg-[#1e2124] px-4 md:px-6 py-2.5 border-t border-[#424549] flex items-center gap-6 overflow-x-auto hide-scrollbar text-[11px] uppercase tracking-widest font-bold">
+          <div className="bg-popover px-4 md:px-6 py-2.5 border-t border-border flex items-center gap-6 overflow-x-auto hide-scrollbar text-[11px] uppercase tracking-widest font-bold">
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-[#72767d]">Total Value:</span>
-              <span className="text-[#ffffff] font-mono">{metrics.estimatedValue.toLocaleString()}</span>
+              <span className="text-muted-foreground">Total Value:</span>
+              <span className="text-foreground font-mono">{metrics.estimatedValue.toLocaleString()}</span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-[#72767d]">Liquid Value:</span>
+              <span className="text-muted-foreground">Liquid Value:</span>
               <span className="text-[#23a559] font-mono">{vaultLiquidValue.toLocaleString()}</span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-[#72767d]">Unique Units:</span>
-              <span className="text-[#ffffff] font-mono">{metrics.uniqueCount}</span>
+              <span className="text-muted-foreground">Unique Units:</span>
+              <span className="text-foreground font-mono">{metrics.uniqueCount}</span>
             </div>
             {!isReadOnly && (
               <div className="flex items-center gap-2 shrink-0 ml-auto">
-                <button onClick={handleCopyVault} className="text-[#7289da] hover:text-[#5b6eae] flex items-center gap-1 transition-colors">
+                <button onClick={handleCopyVault} className="text-primary hover:text-primary/80 flex items-center gap-1 transition-colors">
                   <ArrowUpRight className="w-3.5 h-3.5" /> Export Text
                 </button>
               </div>
@@ -119,18 +119,18 @@ export function InventoryChannel() {
         )}
 
         {/* CONTROLS BAR */}
-        <div className="px-4 md:px-6 py-3 border-t border-[#424549] flex flex-col md:flex-row md:items-center gap-3">
+        <div className="px-4 md:px-6 py-3 border-t border-border flex flex-col md:flex-row md:items-center gap-3">
           <div className="relative w-full md:w-64 shrink-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#72767d]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search units..."
-              className="w-full bg-[#1e2124] border border-[#424549] rounded-[4px] pl-9 pr-3 py-1.5 text-[13px] text-[#ffffff] outline-none placeholder-[#72767d] focus:border-[#7289da] transition-colors shadow-inner"
+              className="w-full bg-popover border border-border rounded-[4px] pl-9 pr-3 py-1.5 text-[13px] text-foreground outline-none placeholder-muted-foreground focus:border-primary transition-colors shadow-inner"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#72767d] hover:text-[#ffffff]">
+              <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
@@ -143,8 +143,8 @@ export function InventoryChannel() {
                 onClick={() => setActiveTierFilter(f as FilterKey | "Pinned")}
                 className={`px-3 py-1 rounded-[4px] text-[11px] font-bold uppercase tracking-wider shrink-0 transition-colors border focus-visible:outline-none ${
                   activeTierFilter === f 
-                    ? "bg-[#7289da] text-white border-[#7289da]" 
-                    : "bg-[#1e2124] text-[#b9bbbe] border-[#424549] hover:text-[#ffffff] hover:bg-[#36393e]"
+                    ? "bg-primary text-primary-foreground border-primary" 
+                    : "bg-popover text-muted-foreground border-border hover:text-foreground hover:bg-muted"
                 }`}
               >
                 {f}
@@ -155,7 +155,7 @@ export function InventoryChannel() {
           <select
             value={sortMode}
             onChange={(e) => setSortMode(e.target.value)}
-            className="bg-[#1e2124] text-[#b9bbbe] text-[11px] font-bold uppercase tracking-wider px-2 py-1.5 rounded-[4px] outline-none border border-[#424549] focus:border-[#7289da] shrink-0 cursor-pointer"
+            className="bg-popover text-muted-foreground text-[11px] font-bold uppercase tracking-wider px-2 py-1.5 rounded-[4px] outline-none border border-border focus:border-primary shrink-0 cursor-pointer"
           >
             <option value="value-desc">Highest Value</option>
             <option value="value-asc">Lowest Value</option>
@@ -167,16 +167,16 @@ export function InventoryChannel() {
 
       {/* MULTI-SELECT ACTION BAR */}
       {isSelectMode && selectedUnits.size > 0 && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#282b30] border border-[#7289da] shadow-[0_10px_40px_rgba(0,0,0,0.8)] px-5 py-3 rounded-[8px] flex items-center gap-4 animate-slide-up">
-          <span className="text-[13px] font-bold text-[#ffffff]"><span className="text-[#7289da]">{selectedUnits.size}</span> Units Selected</span>
-          <div className="w-px h-5 bg-[#424549]" />
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border border-primary shadow-[0_10px_40px_rgba(0,0,0,0.8)] px-5 py-3 rounded-[8px] flex items-center gap-4 animate-slide-up">
+          <span className="text-[13px] font-bold text-foreground"><span className="text-primary">{selectedUnits.size}</span> Units Selected</span>
+          <div className="w-px h-5 bg-border" />
           <button onClick={() => handleSendToAnalyzer("give")} className="flex items-center gap-1.5 text-[12px] font-bold bg-[#FAA61A] text-white px-3 py-1.5 rounded-[4px] hover:bg-[#d98b14] transition-colors">
             <ArrowUpCircle className="w-3.5 h-3.5" /> Give
           </button>
-          <button onClick={() => handleSendToAnalyzer("get")} className="flex items-center gap-1.5 text-[12px] font-bold bg-[#5865F2] text-white px-3 py-1.5 rounded-[4px] hover:bg-[#4752C4] transition-colors">
+          <button onClick={() => handleSendToAnalyzer("get")} className="flex items-center gap-1.5 text-[12px] font-bold bg-primary text-primary-foreground px-3 py-1.5 rounded-[4px] hover:bg-primary/80 transition-colors">
             <ArrowDownCircle className="w-3.5 h-3.5" /> Get
           </button>
-          <div className="w-px h-5 bg-[#424549]" />
+          <div className="w-px h-5 bg-border" />
           <button onClick={handlePostAsAd} className="flex items-center gap-1.5 text-[12px] font-bold bg-[#23a559] text-white px-3 py-1.5 rounded-[4px] hover:bg-[#1f914e] transition-colors">
             Post as Ad
           </button>
@@ -188,20 +188,20 @@ export function InventoryChannel() {
         
         {/* ADD UNIT SEARCH RESULTS (WHEN SEARCHING) */}
         {!isReadOnly && searchQuery && unownedSearchResults.length > 0 && (
-          <div className="mb-6 bg-[#282b30] border border-[#7289da]/30 rounded-[8px] p-4 shadow-sm">
-            <h3 className="text-[11px] font-bold text-[#7289da] uppercase tracking-widest mb-3">Add to {vaultView === "wishlist" ? "Wishlist" : "Vault"}</h3>
+          <div className="mb-6 bg-card border border-primary/30 rounded-[8px] p-4 shadow-sm">
+            <h3 className="text-[11px] font-bold text-primary uppercase tracking-widest mb-3">Add to {vaultView === "wishlist" ? "Wishlist" : "Vault"}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
               {unownedSearchResults.map(u => (
                 <button
                   key={u.id}
                   onClick={() => handleQuickAdd(u)}
-                  className="flex items-center justify-between p-2.5 bg-[#1e2124] hover:bg-[#36393e] border border-[#424549] rounded-[4px] text-left transition-colors group focus-visible:outline-none"
+                  className="flex items-center justify-between p-2.5 bg-popover hover:bg-muted border border-border rounded-[4px] text-left transition-colors group focus-visible:outline-none"
                 >
                   <div className="flex flex-col min-w-0 pr-2">
-                    <span className="text-[13px] font-bold text-[#ffffff] truncate">{u.name}</span>
-                    {u.subtitle && <span className="text-[10px] text-[#72767d] truncate">{u.subtitle}</span>}
+                    <span className="text-[13px] font-bold text-foreground truncate">{u.name}</span>
+                    {u.subtitle && <span className="text-[10px] text-muted-foreground truncate">{u.subtitle}</span>}
                   </div>
-                  <Plus className="w-4 h-4 text-[#72767d] group-hover:text-[#23a559] shrink-0" />
+                  <Plus className="w-4 h-4 text-muted-foreground group-hover:text-[#23a559] shrink-0" />
                 </button>
               ))}
             </div>
@@ -211,14 +211,14 @@ export function InventoryChannel() {
         {/* EMPTY STATES */}
         {displayInventory.length === 0 && !searchQuery ? (
           <div className="flex flex-col items-center justify-center h-full text-center opacity-70">
-            <div className="w-16 h-16 bg-[#282b30] border border-[#424549] rounded-full flex items-center justify-center mb-4">
-              {vaultView === "wishlist" ? <BookOpen className="w-8 h-8 text-[#72767d]" /> : <Archive className="w-8 h-8 text-[#72767d]" />}
+            <div className="w-16 h-16 bg-card border border-border rounded-full flex items-center justify-center mb-4">
+              {vaultView === "wishlist" ? <BookOpen className="w-8 h-8 text-muted-foreground" /> : <Archive className="w-8 h-8 text-muted-foreground" />}
             </div>
-            <h3 className="text-[18px] font-black text-[#ffffff] mb-1">
+            <h3 className="text-[18px] font-black text-foreground mb-1">
               {isReadOnly ? `Empty ${vaultView === "wishlist" ? "Wishlist" : "Showcase"}` : `Your ${vaultView === "wishlist" ? "Wishlist" : "Vault"} is empty`}
             </h3>
             {!isReadOnly && (
-              <p className="text-[13px] text-[#b9bbbe] max-w-sm mt-2">
+              <p className="text-[13px] text-muted-foreground max-w-sm mt-2">
                 Use the search bar above to find and add units, or use the Mass Import tool below.
               </p>
             )}
@@ -240,8 +240,8 @@ export function InventoryChannel() {
                     <span className="text-[12px] font-bold uppercase tracking-widest transition-colors" style={{ color: cfg.badgeColor }}>
                       {tier} {["Pure", "Oddities", "Untiered"].includes(tier) ? "" : "Tier"}
                     </span>
-                    <div className="flex-1 h-px bg-[#424549] group-hover:bg-[#72767d] transition-colors" />
-                    <span className="text-[10px] font-bold text-[#72767d] bg-[#1e2124] px-2 py-0.5 rounded-[4px] border border-[#424549]">
+                    <div className="flex-1 h-px bg-border group-hover:bg-muted-foreground transition-colors" />
+                    <span className="text-[10px] font-bold text-muted-foreground bg-popover px-2 py-0.5 rounded-[4px] border border-border">
                       {itemsInTier.length}
                     </span>
                   </button>
@@ -276,22 +276,22 @@ export function InventoryChannel() {
         
         {/* MASS IMPORT WIDGET */}
         {!isReadOnly && vaultView === "owned" && (
-          <div className="mt-8 bg-[#282b30] border border-[#424549] rounded-[8px] p-5 shadow-sm">
-            <h3 className="text-[12px] font-bold text-[#ffffff] uppercase tracking-wider mb-1 flex items-center gap-2">
-              <Download className="w-4 h-4 text-[#7289da]" /> Mass Import Inventory
+          <div className="mt-8 bg-card border border-border rounded-[8px] p-5 shadow-sm">
+            <h3 className="text-[12px] font-bold text-foreground uppercase tracking-wider mb-1 flex items-center gap-2">
+              <Download className="w-4 h-4 text-primary" /> Mass Import Inventory
             </h3>
-            <p className="text-[11px] text-[#b9bbbe] mb-3">Paste a list of your units (e.g., "3x Goku, 1x Vegeta") to instantly populate your vault.</p>
+            <p className="text-[11px] text-muted-foreground mb-3">Paste a list of your units (e.g., "3x Goku, 1x Vegeta") to instantly populate your vault.</p>
             <div className="flex flex-col md:flex-row gap-3">
               <textarea
                 value={importText}
                 onChange={e => setImportText(e.target.value)}
                 placeholder="Paste trade format text here..."
-                className="flex-1 bg-[#1e2124] border border-[#424549] rounded-[4px] p-3 text-[13px] text-[#ffffff] outline-none placeholder-[#72767d] resize-none h-20 focus:border-[#7289da] transition-colors"
+                className="flex-1 bg-popover border border-border rounded-[4px] p-3 text-[13px] text-foreground outline-none placeholder-muted-foreground resize-none h-20 focus:border-primary transition-colors"
               />
               <button
                 onClick={executeMassImport}
                 disabled={!importText.trim() || isImporting || parsedImportItems.length === 0}
-                className="bg-[#7289da] hover:bg-[#5b6eae] disabled:bg-[#424549] disabled:text-[#72767d] text-white px-6 rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none flex flex-col items-center justify-center py-3 md:py-0"
+                className="bg-primary hover:bg-primary/80 disabled:bg-border disabled:text-muted-foreground text-primary-foreground px-6 rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none flex flex-col items-center justify-center py-3 md:py-0"
               >
                 {isImporting ? "Importing..." : "Import"}
                 {parsedImportItems.length > 0 && <span className="text-[9px] font-medium normal-case mt-0.5 opacity-80">({parsedImportItems.length} units parsed)</span>}
@@ -306,34 +306,34 @@ export function InventoryChannel() {
       {inspectTarget && (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setInspectTarget(null)} />
-          <div className="relative bg-[#282b30] border border-[#424549] rounded-[8px] w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden">
-            <div className="p-4 border-b border-[#424549] bg-[#1e2124] flex items-center justify-between">
-              <span className="text-[12px] font-bold text-[#b9bbbe] uppercase tracking-wider">Unit Details</span>
-              <button onClick={() => setInspectTarget(null)} className="text-[#72767d] hover:text-[#ffffff] transition-colors focus-visible:outline-none"><X className="w-4 h-4" /></button>
+          <div className="relative bg-card border border-border rounded-[8px] w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden">
+            <div className="p-4 border-b border-border bg-popover flex items-center justify-between">
+              <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Unit Details</span>
+              <button onClick={() => setInspectTarget(null)} className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none"><X className="w-4 h-4" /></button>
             </div>
             
             <div className="p-5 flex flex-col items-center text-center">
-              <h3 className="text-[18px] font-black text-[#ffffff] leading-tight mb-1">{inspectTarget.master.name}</h3>
-              <p className="text-[12px] font-medium text-[#b9bbbe] uppercase tracking-wider">{inspectTarget.master.subtitle}</p>
+              <h3 className="text-[18px] font-black text-foreground leading-tight mb-1">{inspectTarget.master.name}</h3>
+              <p className="text-[12px] font-medium text-muted-foreground uppercase tracking-wider">{inspectTarget.master.subtitle}</p>
               
-              <div className="my-5 bg-[#1e2124] w-full p-4 rounded-[6px] border border-[#424549] flex justify-between items-center">
-                <span className="text-[12px] font-bold text-[#72767d] uppercase tracking-wider">Value</span>
-                <span className="text-[16px] font-mono font-black text-[#ffffff]">{getUnitConservativeValue(inspectTarget.master).toLocaleString()}</span>
+              <div className="my-5 bg-popover w-full p-4 rounded-[6px] border border-border flex justify-between items-center">
+                <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Value</span>
+                <span className="text-[16px] font-mono font-black text-foreground">{getUnitConservativeValue(inspectTarget.master).toLocaleString()}</span>
               </div>
 
               {!isReadOnly && vaultView === "owned" && (
                 <div className="w-full flex flex-col gap-3">
-                  <div className="flex items-center justify-between bg-[#1e2124] p-1 rounded-[4px] border border-[#424549]">
-                     <button onClick={() => handleQtyChange(inspectTarget.item.unit_id, -1)} className="w-10 h-8 flex items-center justify-center text-[#ed4245] hover:bg-[#ed4245]/10 rounded-[3px] transition-colors">-</button>
-                     <span className="font-mono font-bold text-[14px] text-[#ffffff]">{inspectTarget.item.quantity}</span>
+                  <div className="flex items-center justify-between bg-popover p-1 rounded-[4px] border border-border">
+                     <button onClick={() => handleQtyChange(inspectTarget.item.unit_id, -1)} className="w-10 h-8 flex items-center justify-center text-destructive hover:bg-destructive/10 rounded-[3px] transition-colors">-</button>
+                     <span className="font-mono font-bold text-[14px] text-foreground">{inspectTarget.item.quantity}</span>
                      <button onClick={() => handleQtyChange(inspectTarget.item.unit_id, 1)} className="w-10 h-8 flex items-center justify-center text-[#23a559] hover:bg-[#23a559]/10 rounded-[3px] transition-colors">+</button>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => handleTogglePin(inspectTarget.item.unit_id, inspectTarget.item.is_pinned)} className={`py-2 text-[12px] font-bold rounded-[4px] border transition-colors flex items-center justify-center gap-1.5 ${inspectTarget.item.is_pinned ? 'bg-[#7289da]/10 text-[#7289da] border-[#7289da]/30' : 'bg-[#1e2124] text-[#b9bbbe] border-[#424549] hover:bg-[#36393e]'}`}>
+                    <button onClick={() => handleTogglePin(inspectTarget.item.unit_id, inspectTarget.item.is_pinned)} className={`py-2 text-[12px] font-bold rounded-[4px] border transition-colors flex items-center justify-center gap-1.5 ${inspectTarget.item.is_pinned ? 'bg-primary/10 text-primary border-primary/30' : 'bg-popover text-muted-foreground border-border hover:bg-muted'}`}>
                       <Lock className="w-3.5 h-3.5" /> {inspectTarget.item.is_pinned ? "Unlock" : "Lock"}
                     </button>
-                    <button onClick={() => handleRemove(inspectTarget.item, inspectTarget.master)} className="py-2 text-[12px] font-bold rounded-[4px] border border-[#424549] bg-[#1e2124] text-[#ed4245] hover:bg-[#ed4245]/10 transition-colors flex items-center justify-center gap-1.5">
+                    <button onClick={() => handleRemove(inspectTarget.item, inspectTarget.master)} className="py-2 text-[12px] font-bold rounded-[4px] border border-border bg-popover text-destructive hover:bg-destructive/10 transition-colors flex items-center justify-center gap-1.5">
                       <Trash2 className="w-3.5 h-3.5" /> Remove
                     </button>
                   </div>
@@ -341,11 +341,11 @@ export function InventoryChannel() {
               )}
 
               {/* Analyzer Send Actions */}
-              <div className="w-full flex gap-2 mt-4 pt-4 border-t border-[#424549]">
+              <div className="w-full flex gap-2 mt-4 pt-4 border-t border-border">
                 <button onClick={() => handleSendToAnalyzer("give")} className="flex-1 py-2 text-[12px] font-bold rounded-[4px] bg-[#FAA61A] hover:bg-[#d98b14] text-white transition-colors flex items-center justify-center gap-1.5 shadow-sm">
                   <ArrowUpCircle className="w-3.5 h-3.5" /> Give
                 </button>
-                <button onClick={() => handleSendToAnalyzer("get")} className="flex-1 py-2 text-[12px] font-bold rounded-[4px] bg-[#7289da] hover:bg-[#5b6eae] text-white transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                <button onClick={() => handleSendToAnalyzer("get")} className="flex-1 py-2 text-[12px] font-bold rounded-[4px] bg-primary hover:bg-primary/80 text-white transition-colors flex items-center justify-center gap-1.5 shadow-sm">
                   <ArrowDownCircle className="w-3.5 h-3.5" /> Get
                 </button>
               </div>
@@ -358,14 +358,14 @@ export function InventoryChannel() {
       {/* CONFIRMATION OVERLAY */}
       {confirmClear && (
         <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#282b30] border border-[#424549] rounded-[8px] p-6 max-w-sm w-full shadow-2xl flex flex-col text-center">
-            <h3 className="text-[18px] font-black text-[#ffffff] mb-2">Are you absolutely sure?</h3>
-            <p className="text-[13px] text-[#b9bbbe] mb-6 leading-relaxed">
+          <div className="bg-card border border-border rounded-[8px] p-6 max-w-sm w-full shadow-2xl flex flex-col text-center">
+            <h3 className="text-[18px] font-black text-foreground mb-2">Are you absolutely sure?</h3>
+            <p className="text-[13px] text-muted-foreground mb-6 leading-relaxed">
               This will permanently delete {confirmClear === "unpinned" ? "all unpinned items" : "EVERYTHING"} from your inventory.
             </p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmClear(null)} className="flex-1 py-2.5 rounded-[4px] bg-[#1e2124] hover:bg-[#36393e] border border-[#424549] text-[#ffffff] text-[13px] font-bold transition-colors">Cancel</button>
-              <button onClick={handleClearAction} className="flex-1 py-2.5 rounded-[4px] bg-[#ed4245] hover:bg-[#c9383b] text-white text-[13px] font-bold transition-colors shadow-md">Wipe It</button>
+              <button onClick={() => setConfirmClear(null)} className="flex-1 py-2.5 rounded-[4px] bg-popover hover:bg-muted border border-border text-foreground text-[13px] font-bold transition-colors">Cancel</button>
+              <button onClick={handleClearAction} className="flex-1 py-2.5 rounded-[4px] bg-destructive hover:bg-destructive/80 text-destructive-foreground text-[13px] font-bold transition-colors shadow-md">Wipe It</button>
             </div>
           </div>
         </div>
@@ -374,12 +374,12 @@ export function InventoryChannel() {
       {/* TOASTS */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-[1000000] animate-slide-up">
-          <div className={`px-4 py-3 rounded-[6px] shadow-2xl flex items-center gap-3 border ${toast.isError ? 'bg-[#1e2124] border-[#ed4245]/50 text-[#ed4245]' : 'bg-[#1e2124] border-[#23a559]/50 text-[#23a559]'}`}>
+          <div className={`px-4 py-3 rounded-[6px] shadow-2xl flex items-center gap-3 border ${toast.isError ? 'bg-popover border-destructive/50 text-destructive' : 'bg-popover border-[#23a559]/50 text-[#23a559]'}`}>
             <span className="text-[13px] font-bold">{toast.message}</span>
             {toast.itemToRestore && (
               <button onClick={handleUndo} className="ml-2 text-[11px] uppercase tracking-wider font-bold underline hover:text-white transition-colors">Undo</button>
             )}
-            <button onClick={() => setToast(null)} className="ml-2 text-[#72767d] hover:text-white"><X className="w-3.5 h-3.5" /></button>
+            <button onClick={() => setToast(null)} className="ml-2 text-muted-foreground hover:text-foreground"><X className="w-3.5 h-3.5" /></button>
           </div>
         </div>
       )}

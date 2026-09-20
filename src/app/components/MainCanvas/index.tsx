@@ -14,7 +14,7 @@ import { GuideType } from "../guides/AquaGuideOverlay";
 import { useCanvasVirtualization } from "./useCanvasVirtualization";
 import { useCanvasScroll } from "../../../hooks/useCanvasScroll";
 
-const STICKY_HEADER_CLASS = "bg-[#313338] pt-2 md:pt-3 pb-3 -mx-2 px-2 md:-mx-8 md:px-8";
+const STICKY_HEADER_CLASS = "bg-background pt-2 md:pt-3 pb-3 -mx-2 px-2 md:-mx-8 md:px-8";
 const FIRE_ZIO_AVATAR = "/units/firezio.webp";
 
 export const MainCanvas = memo(function MainCanvas({
@@ -57,7 +57,6 @@ export const MainCanvas = memo(function MainCanvas({
 
         if (c !== colsRef.current) {
            colsRef.current = c;
-           // Defer state update to prevent flushSync warning
            requestAnimationFrame(() => {
              setCols(c);
            });
@@ -149,12 +148,12 @@ export const MainCanvas = memo(function MainCanvas({
   const headerHeight = isMobile ? 110 : 60;
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#313338] relative z-10">
+    <div className="flex-1 flex flex-col overflow-hidden bg-background relative z-10">
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #2B2D31; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1A1B1E; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #111214; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: var(--card); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--muted); }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -166,7 +165,7 @@ export const MainCanvas = memo(function MainCanvas({
 
       <div 
         ref={headerRef}
-        className={`flex flex-col absolute top-0 left-0 right-0 w-full transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${guideState?.type === "filters" ? "ring-2 ring-[#5865F2] rounded-[8px] bg-[rgba(88,101,242,0.15)] shadow-[0_0_20px_rgba(88,101,242,0.4)] z-[100005] animate-pulse" : "z-30 shadow-md"} translate-y-0`}
+        className={`flex flex-col absolute top-0 left-0 right-0 w-full transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${guideState?.type === "filters" ? "ring-2 ring-primary rounded-[8px] bg-primary/10 shadow-lg z-[100005] animate-pulse" : "z-30 shadow-sm"} translate-y-0`}
       >
         <CanvasControls 
           activeTierFilter={activeTierFilter}
@@ -183,7 +182,7 @@ export const MainCanvas = memo(function MainCanvas({
         />
 
         {(viewMode === "list" || viewMode === "compact") && !isLoading && (
-          <div className="hidden md:block w-full border-b border-[rgba(0,0,0,0.5)] bg-[#1E1F22]">
+          <div className="hidden md:block w-full border-b border-border bg-popover">
             <ListHeaderRow sortMode={sortMode} setSortMode={setSortMode} viewMode={viewMode} />
           </div>
         )}
@@ -201,13 +200,13 @@ export const MainCanvas = memo(function MainCanvas({
       >
         {isLoading ? (
           <div className="pt-4 md:pt-6">
-            <div className={`${STICKY_HEADER_CLASS} relative z-20 mb-4 shadow-[0_12px_20px_-15px_rgba(0,0,0,0.8)]`}>
+            <div className={`${STICKY_HEADER_CLASS} relative z-20 mb-4 shadow-sm`}>
               <TierBanner tier={TIER_CONFIG[activeTierFilter] ?? TIER_CONFIG["S"]} />
             </div>
             <CanvasSkeleton viewMode={viewMode} />
           </div>
         ) : (
-          <div className={`relative ${isStatsTarget ? 'ring-2 ring-[#5865F2] rounded-[8px] bg-[rgba(88,101,242,0.05)] shadow-[0_0_20px_rgba(88,101,242,0.2)] z-[100005]' : ''}`} style={{ height: virtualizer.getTotalSize(), width: '100%' }}>
+          <div className={`relative ${isStatsTarget ? 'ring-2 ring-primary rounded-[8px] bg-primary/5 shadow-lg z-[100005]' : ''}`} style={{ height: virtualizer.getTotalSize(), width: '100%' }}>
             {virtualizer.getVirtualItems().map((virtualRow) => {
               const item = flattenedItems[virtualRow.index];
 
@@ -223,49 +222,49 @@ export const MainCanvas = memo(function MainCanvas({
                   {item.type === 'space-bottom' && <div className="h-10 md:h-16" />}
 
                   {item.type === 'welcome' && (
-                    <div className="mb-4 md:mb-8 flex flex-col md:flex-row gap-3 md:gap-4 bg-[#2B2D31] md:bg-transparent p-3 md:p-0 rounded-[8px] md:rounded-none border md:border-none border-[rgba(255,255,255,0.04)] mx-2 md:mx-0 font-sans">
+                    <div className="mb-4 md:mb-8 flex flex-col md:flex-row gap-3 md:gap-4 bg-card md:bg-transparent p-3 md:p-0 rounded-[8px] md:rounded-none border md:border-none border-border mx-2 md:mx-0 font-sans">
                       <div className="flex items-start justify-between md:hidden w-full">
                         <div className="flex items-center gap-2">
-                          <img src={FIRE_ZIO_AVATAR} className="w-8 h-8 rounded-full border border-[#ed4245] object-cover shrink-0 bg-[#1e1f22]" alt="Fire Zio" />
-                          <h2 className="text-[16px] font-bold text-[#F2F3F5] tracking-tight">Listen up.</h2>
+                          <img src={FIRE_ZIO_AVATAR} className="w-8 h-8 rounded-full border border-destructive object-cover shrink-0 bg-popover" alt="Fire Zio" />
+                          <h2 className="text-[16px] font-bold text-foreground tracking-tight">Listen up.</h2>
                         </div>
-                        <button onClick={dismissWelcome} className="text-[#80848E] hover:text-[#DBDEE1] p-1"><X className="w-4 h-4" /></button>
+                        <button onClick={dismissWelcome} className="text-muted-foreground hover:text-foreground p-1"><X className="w-4 h-4" /></button>
                       </div>
 
-                      <img src={FIRE_ZIO_AVATAR} className="hidden md:block w-14 h-14 rounded-full border-2 border-[#ed4245] object-cover shrink-0 bg-[#1e1f22] shadow-md" alt="Fire Zio" />
+                      <img src={FIRE_ZIO_AVATAR} className="hidden md:block w-14 h-14 rounded-full border-2 border-destructive object-cover shrink-0 bg-popover shadow-sm" alt="Fire Zio" />
 
                       <div className="flex flex-col justify-center max-w-2xl">
-                        <h2 className="hidden md:block text-[20px] font-black text-[#F2F3F5] mb-1 tracking-tight">Stop getting scammed.</h2>
-                        <p className="text-[12px] md:text-[13px] text-[#B5BAC1] mb-2 md:mb-2.5 leading-relaxed">
+                        <h2 className="hidden md:block text-[20px] font-black text-foreground mb-1 tracking-tight">Stop getting scammed.</h2>
+                        <p className="text-[12px] md:text-[13px] text-muted-foreground mb-2 md:mb-2.5 leading-relaxed">
                           This is the value list. Tap any unit card to instantly throw it into <i>You Give</i> or <i>You Get</i>. Check your stats before you open your mouth in trade chat.
                         </p>
-                        <div className="flex flex-wrap items-center gap-1.5 md:gap-3 text-[9px] md:text-[11px] font-bold text-[#949BA4]">
-                          <span className="bg-[#1E1F22] px-2 py-1 rounded border border-[rgba(255,255,255,0.04)]">R = Rarity (/20)</span>
-                          <span className="bg-[#1E1F22] px-2 py-1 rounded border border-[rgba(255,255,255,0.04)]">S = Supply (/5)</span>
-                          <span className="bg-[#1E1F22] px-2 py-1 rounded border border-[rgba(255,255,255,0.04)]">D = Demand (/5)</span>
+                        <div className="flex flex-wrap items-center gap-1.5 md:gap-3 text-[9px] md:text-[11px] font-bold text-muted-foreground">
+                          <span className="bg-popover px-2 py-1 rounded border border-border">R = Rarity (/20)</span>
+                          <span className="bg-popover px-2 py-1 rounded border border-border">S = Supply (/5)</span>
+                          <span className="bg-popover px-2 py-1 rounded border border-border">D = Demand (/5)</span>
                         </div>
                       </div>
-                      <button onClick={dismissWelcome} className="hidden md:block ml-auto self-start text-[#80848E] hover:text-[#DBDEE1] p-2"><X className="w-5 h-5" /></button>
+                      <button onClick={dismissWelcome} className="hidden md:block ml-auto self-start text-muted-foreground hover:text-foreground p-2"><X className="w-5 h-5" /></button>
                     </div>
                   )}
 
                   {item.type === 'search-stats' && (
                     <div className="flex items-center gap-2 mb-2 mx-2 md:mx-0">
-                      <span className="text-[12px] font-bold uppercase tracking-wider text-[#949BA4]">Search Results</span>
-                      <span className="text-[11px] font-bold bg-[rgba(255,255,255,0.06)] text-[#DBDEE1] px-2 py-0.5 rounded transition-all">{item.count} Found</span>
+                      <span className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">Search Results</span>
+                      <span className="text-[11px] font-bold bg-white/5 text-foreground px-2 py-0.5 rounded transition-all">{item.count} Found</span>
                     </div>
                   )}
 
                   {item.type === 'no-results' && (
                     <div className="flex flex-col items-center justify-center py-20 gap-4">
-                      <div className="w-14 h-14 rounded-[8px] flex items-center justify-center bg-[rgba(255,255,255,0.04)]">
-                        <Search className="w-6 h-6 text-[#4e5058]" />
+                      <div className="w-14 h-14 rounded-[8px] flex items-center justify-center bg-white/5 border border-border">
+                        <Search className="w-6 h-6 text-muted-foreground" />
                       </div>
-                      <p className="text-sm font-bold text-[#4e5058]">No units match your current filters.</p>
+                      <p className="text-sm font-bold text-muted-foreground">No units match your current filters.</p>
 
                       <button 
                         onClick={handleResetFilters}
-                        className="mt-2 px-6 py-2.5 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-[6px] text-[13px] font-bold transition-all active:scale-95 shadow-md flex items-center gap-2"
+                        className="mt-2 px-6 py-2.5 bg-primary hover:bg-primary/80 text-primary-foreground rounded-[6px] text-[13px] font-bold transition-all active:scale-95 shadow-sm flex items-center gap-2 border border-border"
                       >
                         <X className="w-4 h-4" /> Clear Search & Filters
                       </button>
@@ -273,7 +272,7 @@ export const MainCanvas = memo(function MainCanvas({
                   )}
 
                   {item.type === 'tier-banner' && (
-                    <div className={`${STICKY_HEADER_CLASS} relative z-20 mb-4 shadow-[0_12px_20px_-15px_rgba(0,0,0,0.8)]`}>
+                    <div className={`${STICKY_HEADER_CLASS} relative z-20 mb-4`}>
                       <TierBanner tier={item.tier} />
                     </div>
                   )}
@@ -289,7 +288,7 @@ export const MainCanvas = memo(function MainCanvas({
                   )}
 
                   {item.type === 'list-row' && (
-                    <div className={`${isStatsTarget && virtualRow.index === 1 ? 'animate-pulse ring-2 ring-[#5865F2]' : ''}`}>
+                    <div className={`${isStatsTarget && virtualRow.index === 1 ? 'animate-pulse ring-2 ring-primary' : ''}`}>
                        <UnitListRow unit={item.unit} isLast={item.isLast} searchQuery={item.searchQuery} viewMode={viewMode} />
                     </div>
                   )}
@@ -303,7 +302,7 @@ export const MainCanvas = memo(function MainCanvas({
       <button
         ref={scrollTopBtnRef}
         onClick={scrollToTop}
-        className="absolute bottom-[90px] right-6 md:bottom-8 md:right-8 w-[46px] h-[46px] md:w-[52px] md:h-[52px] bg-[#5865F2] text-white rounded-full flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.4)] transition-all duration-300 ease-out hover:bg-[#4752C4] hover:-translate-y-1 z-50 opacity-0 translate-y-8 pointer-events-none"
+        className="absolute bottom-[90px] right-6 md:bottom-8 md:right-8 w-[46px] h-[46px] md:w-[52px] md:h-[52px] bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ease-out hover:bg-primary/80 hover:-translate-y-1 z-50 opacity-0 translate-y-8 pointer-events-none"
         title="Scroll to Top"
       >
         <ArrowUp className="w-5 h-5 md:w-6 md:h-6" />

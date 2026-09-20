@@ -35,54 +35,54 @@ export function TradeSummaryBox({
   const handleLeave = () => setActiveTip(null);
 
   return (
-    <div className={`flex-shrink-0 mx-3 md:mx-4 mt-4 rounded-[8px] px-4 py-3 md:px-5 md:py-4 relative bg-[#1E1F22] border transition-all duration-300 z-20 ${isMainStep4 ? 'border-[#5865F2] shadow-[0_0_20px_rgba(88,101,242,0.4)] ring-4 ring-[#5865F2]/30' : 'border-[rgba(255,255,255,0.04)]'}`}>
+    <div className={`flex-shrink-0 mx-3 md:mx-4 mt-4 rounded-[8px] px-4 py-3 md:px-5 md:py-4 relative bg-card border transition-all duration-300 z-20 ${isMainStep4 ? 'border-primary shadow-[0_0_20px_var(--primary)] ring-4 ring-primary/30' : 'border-border'}`}>
       <div className="mb-4">
         
         <div className="flex items-center justify-between mb-3 gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#949BA4] mb-1">Total Give</p>
-            <p className="text-[18px] font-black text-[#F2F3F5] font-mono truncate" title={giveTotal.toLocaleString()}>{giveTotal.toLocaleString()}</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Total Give</p>
+            <p className="text-[16px] sm:text-[18px] font-black text-foreground font-mono truncate" title={giveTotal.toLocaleString()}>{giveTotal.toLocaleString()}</p>
           </div>
           
           {giveTotal > 0 && getTotal > 0 && (
              <div className="flex flex-col items-center flex-shrink-0 px-2">
-                <span className={`text-[14px] font-black font-mono ${getTotal > giveTotal ? 'text-[#23a559]' : getTotal < giveTotal ? 'text-[#ed4245]' : 'text-[#DBDEE1]'}`}>
+                <span className={`text-[13px] sm:text-[14px] font-black font-mono ${getTotal > giveTotal ? 'text-[#23a559]' : getTotal < giveTotal ? 'text-destructive' : 'text-foreground'}`}>
                   {getTotal > giveTotal ? '+' : ''}{(getTotal - giveTotal).toLocaleString()}
                 </span>
-                <span className="text-[10px] font-bold text-[#80848E] uppercase tracking-wider">Raw Diff</span>
+                <span className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Raw Diff</span>
              </div>
           )}
 
           <div className="min-w-0 flex-1 text-right">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#949BA4] mb-1">Total Get</p>
-            <p className="text-[18px] font-black text-[#F2F3F5] font-mono truncate" title={getTotal.toLocaleString()}>{getTotal.toLocaleString()}</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Total Get</p>
+            <p className="text-[16px] sm:text-[18px] font-black text-foreground font-mono truncate" title={getTotal.toLocaleString()}>{getTotal.toLocaleString()}</p>
           </div>
         </div>
 
         <div className="flex w-full h-[6px] gap-1 mb-4">
-          {giveTotal > 0 && <div className="rounded-full bg-[#80848E]" style={{ width: `${givePercent}%`, transition: "width 0.8s cubic-bezier(0.16, 1, 0.3, 1)" }} />}
-          {getTotal > 0 && <div className="rounded-full bg-[#DBDEE1]" style={{ width: `${getPercent}%`, transition: "width 0.8s cubic-bezier(0.16, 1, 0.3, 1)" }} />}
-          {giveTotal === 0 && getTotal === 0 && <div className="w-full h-full rounded-full bg-[#111214] transition-all duration-500" />}
+          {giveTotal > 0 && <div className="rounded-full bg-[#FAA61A]" style={{ width: `${givePercent}%`, transition: "width 0.8s cubic-bezier(0.16, 1, 0.3, 1)" }} />}
+          {getTotal > 0 && <div className="rounded-full bg-primary" style={{ width: `${getPercent}%`, transition: "width 0.8s cubic-bezier(0.16, 1, 0.3, 1)" }} />}
+          {giveTotal === 0 && getTotal === 0 && <div className="w-full h-full rounded-full bg-popover transition-all duration-500" />}
         </div>
 
-        <div className="bg-[#111214] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-3 shadow-inner">
+        <div className="bg-popover border border-border rounded-[8px] p-3 shadow-sm">
           {forecast.calculable ? (
             <div className="flex justify-between items-stretch">
                <div 
-                 className="flex flex-col flex-1 border-r border-[rgba(255,255,255,0.06)] pr-3 py-1 relative cursor-help"
+                 className="flex flex-col flex-1 border-r border-border pr-3 py-1 relative cursor-help"
                  onMouseEnter={() => handleEnter('st')}
                  onMouseLeave={handleLeave}
                >
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <TrendingUp className="w-3.5 h-3.5 text-[#FAA61A]" />
-                    <span className="text-[11px] font-bold text-[#949BA4] uppercase tracking-wider">Short-Term Flip</span>
+                    <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Short-Term Flip</span>
                   </div>
                   <div className="flex items-baseline gap-1.5">
-                     <span className={`text-[20px] font-black font-mono leading-none ${forecast.st > 0 ? 'text-[#23a559] drop-shadow-[0_0_8px_rgba(35,165,89,0.4)]' : forecast.st < 0 ? 'text-[#ed4245] drop-shadow-[0_0_8px_rgba(237,66,69,0.4)]' : 'text-[#DBDEE1]'}`}>
+                     <span className={`text-[16px] sm:text-[20px] font-black font-mono leading-none ${forecast.st > 0 ? 'text-[#23a559]' : forecast.st < 0 ? 'text-destructive' : 'text-foreground'}`}>
                        {forecast.st > 0 ? '+' : ''}{forecast.st.toFixed(1)}
                      </span>
                   </div>
-                  <div className={`absolute top-full mt-2 left-0 w-[200px] bg-[#111214] border border-[rgba(255,255,255,0.08)] text-[#DBDEE1] text-[11px] p-3 rounded-[6px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] pointer-events-none transition-opacity z-[100] ${activeTip === 'st' ? 'opacity-100' : 'opacity-0'}`}>
+                  <div className={`absolute top-full mt-2 left-0 w-[200px] bg-popover border border-border text-foreground text-[11px] p-3 rounded-[6px] shadow-lg pointer-events-none transition-opacity z-[100] ${activeTip === 'st' ? 'opacity-100' : 'opacity-0'}`}>
                     <strong className="text-[#FAA61A] block mb-1">Short-Term Flip</strong>
                     Scores &gt; 0 are wins. Calculated using Raw Value, Liquidity, and immediate Market Tag momentum.
                   </div>
@@ -94,25 +94,25 @@ export function TradeSummaryBox({
                  onMouseLeave={handleLeave}
                >
                   <div className="flex items-center gap-1.5 mb-1.5">
-                    <Clock className="w-3.5 h-3.5 text-[#5865F2]" />
-                    <span className="text-[11px] font-bold text-[#949BA4] uppercase tracking-wider">Long-Term Hold</span>
+                    <Clock className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Long-Term Hold</span>
                   </div>
                   <div className="flex items-baseline gap-1.5">
-                     <span className={`text-[20px] font-black font-mono leading-none ${forecast.lt > 0 ? 'text-[#23a559] drop-shadow-[0_0_8px_rgba(35,165,89,0.4)]' : forecast.lt < 0 ? 'text-[#ed4245] drop-shadow-[0_0_8px_rgba(237,66,69,0.4)]' : 'text-[#DBDEE1]'}`}>
+                     <span className={`text-[16px] sm:text-[20px] font-black font-mono leading-none ${forecast.lt > 0 ? 'text-[#23a559]' : forecast.lt < 0 ? 'text-destructive' : 'text-foreground'}`}>
                        {forecast.lt > 0 ? '+' : ''}{forecast.lt.toFixed(1)}
                      </span>
                   </div>
-                  <div className={`absolute top-full mt-2 right-0 w-[200px] bg-[#111214] border border-[rgba(255,255,255,0.08)] text-[#DBDEE1] text-[11px] p-3 rounded-[6px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] pointer-events-none transition-opacity z-[100] ${activeTip === 'lt' ? 'opacity-100' : 'opacity-0'}`}>
-                    <strong className="text-[#5865F2] block mb-1">Long-Term Hold</strong>
+                  <div className={`absolute top-full mt-2 right-0 w-[200px] bg-popover border border-border text-foreground text-[11px] p-3 rounded-[6px] shadow-lg pointer-events-none transition-opacity z-[100] ${activeTip === 'lt' ? 'opacity-100' : 'opacity-0'}`}>
+                    <strong className="text-primary block mb-1">Long-Term Hold</strong>
                     Scores &gt; 0 are wins. Weighs Rarity heavily and mathematically punishes "Hyped" or "Unstable" units.
                   </div>
                </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-2 text-center gap-1">
-              <AlertTriangle className="w-5 h-5 text-[#FAA61A] opacity-80" />
-              <span className="text-[11px] font-bold text-[#DBDEE1]">Forecast Unavailable</span>
-              <span className="text-[10px] font-medium text-[#80848E]">
+              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-[#FAA61A] opacity-80" />
+              <span className="text-[10px] sm:text-[11px] font-bold text-foreground">Forecast Unavailable</span>
+              <span className="text-[9px] sm:text-[10px] font-medium text-muted-foreground">
                 {giveItems.length === 0 || getItems.length === 0 
                   ? "Add units to both sides to generate a market projection." 
                   : "Cannot accurately predict trades containing Owner's Choice units."}
@@ -123,30 +123,30 @@ export function TradeSummaryBox({
 
       </div>
 
-      <div className="grid grid-cols-2 gap-1.5 md:gap-2">
+      <div className="grid grid-cols-2 gap-1.5 sm:gap-2 w-full">
         {/* RARITY */}
         <div 
-          className="flex flex-col items-center p-1.5 md:p-2 rounded-[6px] bg-[#111214] border border-[rgba(255,255,255,0.03)] transition-all duration-300 hover:-translate-y-1 hover:shadow-md relative cursor-help"
+          className="flex flex-col items-center p-1.5 sm:p-2 rounded-[6px] bg-popover border border-border transition-all duration-300 hover:-translate-y-1 hover:shadow-md relative cursor-help"
           onMouseEnter={() => handleEnter('rarity')}
           onMouseLeave={handleLeave}
         >
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4] mb-0.5 md:mb-1">Rarity</span>
-          <span className="text-[10px] md:text-[12px] font-bold text-[#DBDEE1] font-mono flex items-center gap-1">{avgStat(giveItems, "rarity", ALL_UNITS)} <span className="text-[#80848E] text-[10px]">➔</span> {avgStat(getItems, "rarity", ALL_UNITS)}</span>
-          <div className={`absolute top-full mt-2 left-0 md:left-1/2 md:-translate-x-1/2 w-[160px] bg-[#111214] border border-[rgba(255,255,255,0.08)] text-[#DBDEE1] text-[11px] p-2.5 rounded-[6px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] pointer-events-none transition-opacity z-[100] text-left md:text-center ${activeTip === 'rarity' ? 'opacity-100' : 'opacity-0'}`}>
-            <strong className="text-[#F2F3F5] block mb-1">Rarity (0-20)</strong>
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">Rarity</span>
+          <span className="text-[10px] sm:text-[12px] font-bold text-foreground font-mono flex items-center gap-1">{avgStat(giveItems, "rarity", ALL_UNITS)} <span className="text-muted-foreground text-[9px] sm:text-[10px]">➔</span> {avgStat(getItems, "rarity", ALL_UNITS)}</span>
+          <div className={`absolute top-full mt-2 left-0 sm:left-1/2 sm:-translate-x-1/2 w-[160px] bg-popover border border-border text-foreground text-[11px] p-2.5 rounded-[6px] shadow-lg pointer-events-none transition-opacity z-[100] text-left sm:text-center ${activeTip === 'rarity' ? 'opacity-100' : 'opacity-0'}`}>
+            <strong className="text-foreground block mb-1">Rarity (0-20)</strong>
             <span className="text-[#23a559] font-bold">Higher is better.</span> Determines absolute scarcity. Impacts Long-Term hold scores heavily.
           </div>
         </div>
         {/* LIQUIDITY */}
         <div 
-          className="flex flex-col items-center p-1.5 md:p-2 rounded-[6px] bg-[#111214] border border-[rgba(255,255,255,0.03)] transition-all duration-300 hover:-translate-y-1 hover:shadow-md relative cursor-help"
+          className="flex flex-col items-center p-1.5 sm:p-2 rounded-[6px] bg-popover border border-border transition-all duration-300 hover:-translate-y-1 hover:shadow-md relative cursor-help"
           onMouseEnter={() => handleEnter('liquidity')}
           onMouseLeave={handleLeave}
         >
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4] mb-0.5 md:mb-1">Liquidity</span>
-          <span className="text-[10px] md:text-[12px] font-bold text-[#DBDEE1] font-mono flex items-center gap-1">{getLiqLabel(giveItems)} <span className="text-[#80848E] text-[10px]">➔</span> {getLiqLabel(getItems)}</span>
-          <div className={`absolute top-full mt-2 right-0 md:left-1/2 md:-translate-x-1/2 w-[160px] bg-[#111214] border border-[rgba(255,255,255,0.08)] text-[#DBDEE1] text-[11px] p-2.5 rounded-[6px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] pointer-events-none transition-opacity z-[100] text-right md:text-center ${activeTip === 'liquidity' ? 'opacity-100' : 'opacity-0'}`}>
-            <strong className="text-[#F2F3F5] block mb-1">Liquidity</strong>
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">Liquidity</span>
+          <span className="text-[10px] sm:text-[12px] font-bold text-foreground font-mono flex items-center gap-1">{getLiqLabel(giveItems)} <span className="text-muted-foreground text-[9px] sm:text-[10px]">➔</span> {getLiqLabel(getItems)}</span>
+          <div className={`absolute top-full mt-2 right-0 sm:left-1/2 sm:-translate-x-1/2 w-[160px] bg-popover border border-border text-foreground text-[11px] p-2.5 rounded-[6px] shadow-lg pointer-events-none transition-opacity z-[100] text-right sm:text-center ${activeTip === 'liquidity' ? 'opacity-100' : 'opacity-0'}`}>
+            <strong className="text-foreground block mb-1">Liquidity</strong>
             <span className="text-[#23a559] font-bold">High is better.</span> How fast you can find a buyer. Dictates short-term viability.
           </div>
         </div>

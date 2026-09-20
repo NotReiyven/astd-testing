@@ -101,11 +101,11 @@ export function TopBar({
   const showCalcPulse = isDictionaryActive && !isAnalyzerOpen;
 
   return (
-    <div className={`flex-shrink-0 flex items-center justify-between px-2 md:px-4 py-3 min-h-[48px] relative border-b border-[rgba(0,0,0,0.22)] shadow-sm bg-[#313338] ${calcHeaderZ}`}>
+    <div className={`flex-shrink-0 flex items-center justify-between px-2 md:px-4 py-2.5 md:py-3 min-h-[48px] relative border-b border-border shadow-sm bg-background ${calcHeaderZ}`}>
 
       {mobileSearchOpen && (
-        <div className="absolute inset-0 z-[100] bg-[#313338] px-3 flex items-center gap-2 animate-fade-in border-b border-[rgba(0,0,0,0.22)]">
-          <Search className="w-4 h-4 text-[#80848E] ml-1 shrink-0" />
+        <div className="absolute inset-0 z-[100] bg-background px-3 flex items-center gap-2 animate-fade-in border-b border-border">
+          <Search className="w-4 h-4 text-muted-foreground ml-1 shrink-0" />
           <input 
             ref={mobileInputRef}
             type="text" 
@@ -120,55 +120,68 @@ export function TopBar({
               }
             }}
             placeholder="Search all units..."
-            className="flex-1 bg-transparent outline-none text-[#DBDEE1] text-[14px] px-2 h-full"
+            className="flex-1 bg-transparent outline-none text-foreground text-[14px] px-2 h-full"
           />
           <button 
             onClick={() => { setMobileSearchOpen(false); setGlobalSearchQuery(""); }} 
-            className="p-3 text-[#80848E] hover:text-[#F2F3F5] active:scale-95 transition-colors focus-visible:outline-none"
+            className="p-3 text-muted-foreground hover:text-foreground active:scale-95 transition-colors focus-visible:outline-none"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
       )}
 
-      <div className="flex items-center gap-1 md:gap-3 overflow-hidden pr-2">
-        <button onClick={() => setIsRosterOpen(!isRosterOpen)} className={`p-2 transition-colors flex-shrink-0 focus-visible:outline-none ${isRosterOpen ? 'text-[#F2F3F5]' : 'text-[#80848E] hover:text-[#DBDEE1]'}`}>
-          <PanelLeft className="w-6 h-6 md:w-[20px] md:h-[20px]" />
+      {/* LEFT SECTION: Roster Toggle & Dynamic Title/Subtitle */}
+      <div className="flex items-center gap-2 md:gap-3 pr-2 flex-1 min-w-0">
+        <button onClick={() => setIsRosterOpen(!isRosterOpen)} className={`p-1.5 md:p-2 transition-colors flex-shrink-0 focus-visible:outline-none ${isRosterOpen ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+          <PanelLeft className="w-5 h-5 md:w-[20px] md:h-[20px]" />
         </button>
 
-        <div className="w-px h-5 mx-0.5 md:mx-1 flex-shrink-0" style={{ background: "rgba(255,255,255,0.08)" }} />
-        <Hash className="w-5 h-5 flex-shrink-0 text-[#80848E]" />
-        <span className="text-[14px] md:text-[15px] font-bold text-[#F2F3F5] whitespace-nowrap truncate">{currentChannelInfo.title}</span>
-
-        {currentChannelInfo.subtitle && (
-          <div className="hidden lg:flex items-center flex-shrink-0 min-w-0">
-            <div className="w-px h-5 mx-2" style={{ background: "rgba(255,255,255,0.08)" }} />
-            <span className="text-[13px] font-medium text-[#B5BAC1] truncate max-w-[300px] xl:max-w-none">{currentChannelInfo.subtitle}</span>
+        <div className="w-px h-5 flex-shrink-0 bg-border hidden sm:block" />
+        
+        <div className="flex flex-col md:flex-row md:items-center min-w-0 overflow-hidden w-full">
+          {/* Mobile: Show Title Only */}
+          <div className="flex md:hidden items-center gap-1.5 min-w-0">
+             <Hash className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
+             <span className="text-[14px] font-bold text-foreground whitespace-nowrap truncate">{currentChannelInfo.title}</span>
           </div>
-        )}
+
+          {/* Desktop: Show Subtitle if it exists, otherwise Title */}
+          <div className="hidden md:flex items-center min-w-0 flex-1">
+            {currentChannelInfo.subtitle ? (
+              <span className="text-[13px] font-medium text-muted-foreground truncate w-full">{currentChannelInfo.subtitle}</span>
+            ) : (
+              <>
+                <Hash className="w-4 h-4 flex-shrink-0 text-muted-foreground mr-1.5" />
+                <span className="text-[14px] font-bold text-foreground whitespace-nowrap truncate">{currentChannelInfo.title}</span>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+      {/* RIGHT SECTION: Controls */}
+      <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
         <LiveAvatars />
 
-        <div className="w-px h-5 mx-0.5 md:mx-1 flex-shrink-0 hidden md:block" style={{ background: "rgba(255,255,255,0.08)" }} />
+        <div className="w-px h-5 mx-0.5 md:mx-1 flex-shrink-0 hidden md:block bg-border" />
 
         {!isAuthLoading && (
           profile ? (
             <button 
               onClick={logout}
-              className="flex items-center gap-2 pl-1 pr-3 py-1 bg-[#1E1F22] hover:bg-[#ed4245]/20 border border-[rgba(255,255,255,0.06)] hover:border-[#ed4245]/50 rounded-full transition-all group"
+              className="flex items-center gap-2 pl-1 pr-3 py-1 bg-popover hover:bg-destructive/20 border border-border hover:border-destructive/50 rounded-full transition-all group shrink-0"
               title="Click to Logout"
             >
-              <img src={profile.avatar_url} alt="Avatar" className="w-6 h-6 rounded-full" />
-              <span className="text-[12px] font-bold text-[#DBDEE1] group-hover:hidden hidden sm:block max-w-[80px] truncate">{profile.username}</span>
-              <span className="text-[12px] font-bold text-[#ed4245] hidden group-hover:block hidden sm:block">Logout</span>
-              <LogOut className="w-3.5 h-3.5 text-[#ed4245] sm:hidden hidden group-hover:block" />
+              <img src={profile.avatar_url} alt="Avatar" className="w-5 h-5 md:w-6 md:h-6 rounded-full" />
+              <span className="text-[12px] font-bold text-card-foreground group-hover:hidden hidden sm:block max-w-[80px] truncate">{profile.username}</span>
+              <span className="text-[12px] font-bold text-destructive hidden group-hover:block hidden sm:block">Logout</span>
+              <LogOut className="w-3.5 h-3.5 text-destructive sm:hidden hidden group-hover:block" />
             </button>
           ) : (
             <button 
               onClick={loginWithDiscord}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[#7289da] hover:bg-[#5b6eae] text-white rounded-[6px] text-[12px] font-bold transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/80 text-primary-foreground rounded-[6px] text-[12px] font-bold transition-all shadow-sm shrink-0"
             >
               <LogIn className="w-4 h-4" />
               <span className="hidden sm:inline">Login</span>
@@ -179,7 +192,7 @@ export function TopBar({
         <div className="relative">
           <button 
             onClick={handleHelpClick}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 md:px-3 md:py-1.5 rounded-[6px] bg-[#2B2D31] border border-[rgba(255,255,255,0.06)] hover:bg-[#3F4147] text-[#DBDEE1] transition-all text-[12px] font-bold shadow-sm active:scale-95 focus-visible:outline-none"
+            className="flex items-center justify-center gap-2 px-3 py-2 md:px-3 md:py-1.5 rounded-[6px] bg-card border border-border hover:bg-secondary text-card-foreground transition-all text-[12px] font-bold shadow-sm active:scale-95 focus-visible:outline-none shrink-0"
             title="Need Help? Open Guides"
           >
             <HelpCircle className="w-4 h-4 sm:hidden flex-shrink-0" />
@@ -188,36 +201,36 @@ export function TopBar({
           {helpMenuOpen && (
             <>
               <div className="fixed inset-0 z-[99998]" onClick={() => setHelpMenuOpen(false)} />
-              <div className="absolute top-full right-0 mt-2 w-56 bg-[#2B2D31] border border-[rgba(255,255,255,0.08)] rounded-[8px] shadow-[0_8px_24px_rgba(0,0,0,0.5)] z-[99999] py-1.5 flex flex-col animate-fade-in max-h-[70vh] overflow-y-auto custom-scrollbar">
+              <div className="absolute top-full right-0 mt-2 w-56 bg-card border border-border rounded-[8px] shadow-[0_8px_24px_rgba(0,0,0,0.5)] z-[99999] py-1.5 flex flex-col animate-fade-in max-h-[70vh] overflow-y-auto custom-scrollbar">
 
-                <span className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">Platform Basics</span>
-                <button onClick={() => startGuide("main")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#7289da] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <span className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Platform Basics</span>
+                <button onClick={() => startGuide("main")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-card-foreground hover:bg-primary hover:text-primary-foreground transition-colors text-left text-[12.5px] font-semibold">
                   <GraduationCap className="w-4 h-4" /> Replay Tutorial
                 </button>
-                <button onClick={() => startGuide("channels")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#7289da] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("channels")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-card-foreground hover:bg-primary hover:text-primary-foreground transition-colors text-left text-[12.5px] font-semibold">
                   <Map className="w-4 h-4" /> Channel Guide
                 </button>
-                <button onClick={() => startGuide("stats")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#7289da] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("stats")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-card-foreground hover:bg-primary hover:text-primary-foreground transition-colors text-left text-[12.5px] font-semibold">
                   <Settings2 className="w-4 h-4" /> R / S / D Stats
                 </button>
 
-                <div className="w-full h-px bg-[rgba(255,255,255,0.04)] my-1" />
-                <span className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">Pro Tools</span>
-                <button onClick={() => startGuide("advanced")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#7289da] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <div className="w-full h-px bg-border my-1" />
+                <span className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Pro Tools</span>
+                <button onClick={() => startGuide("advanced")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-card-foreground hover:bg-primary hover:text-primary-foreground transition-colors text-left text-[12.5px] font-semibold">
                   <Settings2 className="w-4 h-4" /> Academy Checklist
                 </button>
-                <button onClick={() => startGuide("filters")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#7289da] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("filters")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-card-foreground hover:bg-primary hover:text-primary-foreground transition-colors text-left text-[12.5px] font-semibold">
                   <Search className="w-4 h-4" /> Market Status Filters
                 </button>
-                <button onClick={() => startGuide("dictionary")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#7289da] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("dictionary")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-card-foreground hover:bg-primary hover:text-primary-foreground transition-colors text-left text-[12.5px] font-semibold">
                   <Book className="w-4 h-4" /> Smart Dictionary
                 </button>
-                <button onClick={() => startGuide("management")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#7289da] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("management")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-card-foreground hover:bg-primary hover:text-primary-foreground transition-colors text-left text-[12.5px] font-semibold">
                   <Calculator className="w-4 h-4" /> Pinning & Clearing
                 </button>
 
-                <div className="w-full h-px bg-[rgba(255,255,255,0.04)] my-1" />
-                <button onClick={() => startGuide("developer")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#7289da] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <div className="w-full h-px bg-border my-1" />
+                <button onClick={() => startGuide("developer")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-card-foreground hover:bg-primary hover:text-primary-foreground transition-colors text-left text-[12.5px] font-semibold">
                   <User className="w-4 h-4" /> About the Developer
                 </button>
               </div>
@@ -227,12 +240,12 @@ export function TopBar({
 
         <button 
           onClick={() => setMobileSearchOpen(true)}
-          className="md:hidden flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-[4px] text-[#80848E] hover:bg-[rgba(255,255,255,0.05)] hover:text-[#F2F3F5] transition-colors focus-visible:outline-none"
+          className="md:hidden flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-[4px] text-muted-foreground hover:bg-white/5 hover:text-foreground transition-colors focus-visible:outline-none"
         >
-          <Search className="w-5 h-5" />
+          <Search className="w-4 h-4" />
         </button>
 
-        <div className="relative hidden md:flex items-center bg-[#1E1F22] rounded-[6px] px-2.5 h-[28px] w-[120px] focus-within:w-[180px] lg:w-48 lg:focus-within:w-64 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] border border-[rgba(255,255,255,0.04)] shadow-inner">
+        <div className="relative hidden md:flex items-center bg-input rounded-[6px] px-2.5 h-[28px] w-[120px] focus-within:w-[180px] lg:w-48 lg:focus-within:w-64 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] border border-border shadow-inner">
           <input 
             ref={desktopSearchRef}
             type="text" 
@@ -246,32 +259,32 @@ export function TopBar({
                 e.currentTarget.blur();
               }
             }}
-            className="bg-transparent text-[13px] text-[#DBDEE1] w-full h-full outline-none placeholder-[#80848E] font-medium tracking-wide" 
+            className="bg-transparent text-[13px] text-foreground w-full h-full outline-none placeholder-muted-foreground font-medium tracking-wide" 
           />
           {globalSearchQuery ? (
-            <button onClick={() => setGlobalSearchQuery("")} className="p-2 -mr-2 md:p-1 md:-mr-1 flex-shrink-0 text-[#949BA4] hover:text-[#DBDEE1] transition-colors focus-visible:outline-none">
+            <button onClick={() => setGlobalSearchQuery("")} className="p-2 -mr-2 md:p-1 md:-mr-1 flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none">
               <X className="w-3.5 h-3.5" />
             </button>
           ) : (
-            <Search className="w-3.5 h-3.5 flex-shrink-0 text-[#80848E]" />
+            <Search className="w-3.5 h-3.5 flex-shrink-0 text-muted-foreground" />
           )}
         </div>
 
-        <div className="hidden md:block w-px h-5 mx-0.5 md:mx-1 flex-shrink-0" style={{ background: "rgba(255,255,255,0.08)" }} />
+        <div className="hidden md:block w-px h-5 mx-0.5 md:mx-1 flex-shrink-0 bg-border" />
 
         <button 
           onClick={handleToggleAnalyzer} 
           className={`hidden md:flex relative items-center gap-2 px-3 py-1.5 rounded-[6px] transition-all duration-300 shadow-sm font-bold text-[12px] active:scale-95 focus-visible:outline-none ${
             isAnalyzerOpen 
-              ? 'bg-[#5b6eae] text-white shadow-[0_0_12px_rgba(114,137,218,0.4)]' 
-              : 'bg-[#7289da] hover:bg-[#5b6eae] text-white'
-          } ${isMainStep3 || showCalcPulse ? 'animate-pulse ring-4 ring-[#7289da] shadow-[0_0_20px_rgba(114,137,218,0.8)]' : ''}`}
+              ? 'bg-primary/80 text-primary-foreground shadow-[0_0_12px_var(--primary)]' 
+              : 'bg-primary hover:bg-primary/80 text-primary-foreground'
+          } ${isMainStep3 || showCalcPulse ? 'animate-pulse ring-4 ring-primary shadow-[0_0_20px_var(--primary)]' : ''}`}
           title="Toggle Trade Analyzer"
         >
           <Calculator className="w-4 h-4 flex-shrink-0" />
           <span>Calculator</span>
           {activeItemsCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 bg-[#ed4245] text-white font-mono font-bold text-[9px] w-4 h-4 rounded-full flex items-center justify-center shadow-md animate-pulse">
+            <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground font-mono font-bold text-[9px] w-4 h-4 rounded-full flex items-center justify-center shadow-md animate-pulse">
               {activeItemsCount > 9 ? '9+' : activeItemsCount}
             </span>
           )}

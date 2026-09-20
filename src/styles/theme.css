@@ -1,122 +1,96 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --font-size: 15px;
-  --background: #313338;
-  --foreground: #F2F3F5;
-  --card: #2B2D31;
-  --card-foreground: #F2F3F5;
-  --popover: #2B2D31;
-  --popover-foreground: #F2F3F5;
-  --primary: #5865F2;
-  --primary-foreground: #ffffff;
-  --secondary: #2B2D31;
-  --secondary-foreground: #F2F3F5;
-  --muted: #2B2D31;
-  --muted-foreground: #B5BAC1;
-  --accent: #5865F2;
-  --accent-foreground: #ffffff;
-  --destructive: #ed4245;
-  --destructive-foreground: #ffffff;
-  --border: rgba(0, 0, 0, 0.24);
-  --input: #1E1F22;
-  --input-background: #1E1F22;
-  --switch-background: #4f545c;
-  --font-weight-medium: 500;
-  --font-weight-normal: 400;
-  --ring: #5865F2;
-  --chart-1: #5865F2;
-  --chart-2: #57f287;
-  --chart-3: #fee75c;
-  --chart-4: #eb459e;
-  --chart-5: #ed4245;
-  --radius: 0.5rem;
-  --sidebar: #1E1F22;
-  --sidebar-foreground: #F2F3F5;
-  --sidebar-primary: #5865F2;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #2B2D31;
-  --sidebar-accent-foreground: #F2F3F5;
-  --sidebar-border: rgba(0, 0, 0, 0.32);
-  --sidebar-ring: #5865F2;
-}
+  /* Typography */
+  --font-size: 14px;
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
-.dark {
-  --background: #313338;
-  --foreground: #F2F3F5;
-  --card: #2B2D31;
-  --card-foreground: #F2F3F5;
-  --popover: #2B2D31;
-  --popover-foreground: #F2F3F5;
-  --primary: #5865F2;
+  /* Core Palette mapped from your image */
+  --discord-blurple: #7289da;
+  --discord-light-gray: #424549;
+  --discord-mid-gray: #36393e;
+  --discord-dark-gray: #282b30;
+  --discord-darker-gray: #1e2124;
+
+  /* App Backgrounds */
+  --background: var(--discord-mid-gray);
+  --foreground: #ffffff;
+
+  /* Cards & Panels */
+  --card: var(--discord-dark-gray);
+  --card-foreground: #dcddde;
+
+  /* Modals & Dropdowns */
+  --popover: var(--discord-darker-gray);
+  --popover-foreground: #dcddde;
+
+  /* Brand Colors */
+  --primary: var(--discord-blurple);
   --primary-foreground: #ffffff;
-  --secondary: #2B2D31;
-  --secondary-foreground: #F2F3F5;
-  --muted: #2B2D31;
-  --muted-foreground: #B5BAC1;
-  --accent: #5865F2;
+
+  /* Secondary Elements (Buttons, Badges) */
+  --secondary: var(--discord-light-gray);
+  --secondary-foreground: #ffffff;
+
+  /* Muted Elements (Subtitles, Disabled states) */
+  --muted: var(--discord-dark-gray);
+  --muted-foreground: #b9bbbe;
+
+  /* Accents & Hovers */
+  --accent: var(--discord-light-gray);
   --accent-foreground: #ffffff;
+
+  /* Alerts */
   --destructive: #ed4245;
   --destructive-foreground: #ffffff;
-  --border: rgba(0, 0, 0, 0.24);
-  --input: #1E1F22;
-  --ring: #5865F2;
-  --font-weight-medium: 500;
-  --font-weight-normal: 400;
-  --chart-1: #5865F2;
-  --chart-2: #57f287;
-  --chart-3: #fee75c;
-  --chart-4: #eb459e;
-  --chart-5: #ed4245;
-  --sidebar: #1E1F22;
-  --sidebar-foreground: #F2F3F5;
-  --sidebar-primary: #5865F2;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #2B2D31;
-  --sidebar-accent-foreground: #F2F3F5;
-  --sidebar-border: rgba(0, 0, 0, 0.32);
-  --sidebar-ring: #5865F2;
+
+  /* Structural */
+  --border: var(--discord-light-gray);
+  --input: var(--discord-darker-gray);
+  --input-background: var(--discord-darker-gray);
+  --switch-background: var(--discord-light-gray);
+  --ring: var(--discord-blurple);
+
+  /* Miscellaneous */
+  --radius: 6px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+  
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  
   --color-border: var(--border);
   --color-input: var(--input);
   --color-input-background: var(--input-background);
   --color-switch-background: var(--switch-background);
   --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
+  
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
   --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
 }
 
 @layer base {
@@ -126,62 +100,11 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', 'gg sans', sans-serif;
+    font-family: var(--font-sans);
     font-weight: 500;
   }
 
   html {
     font-size: var(--font-size);
-  }
-
-  h1 {
-    font-size: var(--text-2xl);
-    font-weight: 700;
-    line-height: 1.5;
-  }
-
-  h2 {
-    font-size: var(--text-xl);
-    font-weight: 700;
-    line-height: 1.5;
-  }
-
-  h3 {
-    font-size: var(--text-lg);
-    font-weight: 700;
-    line-height: 1.5;
-  }
-
-  h4 {
-    font-size: var(--text-base);
-    font-weight: 700;
-    line-height: 1.5;
-  }
-
-  label {
-    font-size: var(--text-base);
-    font-weight: 500;
-    line-height: 1.5;
-  }
-
-  button {
-    font-size: var(--text-base);
-    font-weight: 500;
-    line-height: 1.5;
-  }
-
-  input {
-    font-size: var(--text-base);
-    font-weight: 400;
-    line-height: 1.5;
-  }
-
-  /* Squircle avatar transition */
-  .squircle {
-    border-radius: 50%;
-    transition: border-radius 0.2s ease;
-  }
-  .squircle:hover {
-    border-radius: 16px;
   }
 }
