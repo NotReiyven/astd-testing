@@ -1,7 +1,3 @@
-// ================================================
-// FILE: src/app/App.tsx
-// ================================================
-
 import { useState, useEffect, Suspense, lazy, useCallback } from "react";
 import { Hash, Check, GraduationCap } from "lucide-react";
 import { FilterKey } from "../types";
@@ -11,6 +7,7 @@ import { TopBar } from "./components/layout/TopBar";
 import { SyncBanner } from "./components/layout/SyncBanner";
 import { WelcomeModal } from "./components/WelcomeModal";
 import { useTradeStore } from "../store/useTradeStore";
+import { useLayoutStore } from "../store/useLayoutStore";
 import { HistoryModal } from "./components/MainCanvas/HistoryModal";
 
 // Extracted Business Logic Hooks
@@ -46,26 +43,27 @@ export default function App() {
   const giveItems = useTradeStore((s) => s.giveItems);
   const getItems = useTradeStore((s) => s.getItems);
   const pinnedIds = useTradeStore((s) => s.pinnedIds);
-  
+
+  const { globalSearchQuery, setGlobalSearchQuery, helpMenuOpen } = useLayoutStore();
+
   const [activeChannel, setActiveChannel] = useStickyState("home", "astd_channel", isNonEmptyString);
   const [tutorialTab, setTutorialTab] = useState<"sandbox" | "simulator" | "theory" | "dictionary">("sandbox");
   const [activeTierFilter, setActiveTierFilter] = useStickyState<FilterKey>("S", "astd_tier");
   const [scrollToSection, setScrollToSection] = useState<{ tier: string; sectionId: string } | null>(null);
   const [isRosterOpen, setIsRosterOpen] = useStickyState(window.innerWidth >= 768, "astd_roster", isBoolean);
   const [isAnalyzerOpen, setIsAnalyzerOpen] = useStickyState(false, "astd_analyzer", isBoolean);
-  const [globalSearchQuery, setGlobalSearchQuery] = useState("");
 
   const { bootStage, isMobile } = useAppBoot();
-  
-  const { guideState, setGuideState, helpMenuOpen, setHelpMenuOpen, completedGuides, setCompletedGuides, startGuide, endGuide } = useGuideSystem({ 
+
+  const { guideState, setGuideState, completedGuides, setCompletedGuides, startGuide, endGuide } = useGuideSystem({ 
     setActiveChannel, setIsRosterOpen, setIsAnalyzerOpen, setTutorialTab, bootStage 
   });
-  
+
   const { toast, academyToast } = useGlobalEvents({ 
     giveItems, getItems, pinnedIds, completedGuides, setCompletedGuides, 
     setActiveChannel, setIsRosterOpen, setIsAnalyzerOpen, setTutorialTab, setGuideState 
   });
-  
+
   const { handleTouchStart, handleTouchEnd } = useMobileSwipe(isRosterOpen, setIsRosterOpen);
 
   const activeItemsCount = giveItems.reduce((acc, c) => acc + c.qty, 0) + getItems.reduce((acc, c) => acc + c.qty, 0);
@@ -98,7 +96,7 @@ export default function App() {
     if (window.innerWidth < 768) setIsRosterOpen(false);
     setScrollToSection({ tier, sectionId });
     setTimeout(() => setScrollToSection(null), 400);
-  }, [setActiveChannel, setActiveTierFilter, setIsRosterOpen]);
+  }, [setActiveChannel, setActiveTierFilter, setIsRosterOpen, setGlobalSearchQuery]);
 
   const handleToggleAnalyzer = useCallback(() => {
     setIsAnalyzerOpen(prev => !prev);
@@ -266,11 +264,7 @@ export default function App() {
                 isRosterOpen={isRosterOpen}
                 setIsRosterOpen={setIsRosterOpen}
                 currentChannelInfo={currentChannelInfo}
-                helpMenuOpen={helpMenuOpen}
-                setHelpMenuOpen={setHelpMenuOpen}
                 startGuide={(type) => startGuide(type, true)}
-                globalSearchQuery={globalSearchQuery}
-                setGlobalSearchQuery={setGlobalSearchQuery}
                 handleToggleAnalyzer={handleToggleAnalyzer}
                 isAnalyzerOpen={isAnalyzerOpen}
                 isMainStep3={isMainStep3}

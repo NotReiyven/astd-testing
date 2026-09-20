@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useStickyState } from './useStickyState';
 import { GuideType } from '../app/components/guides/AquaGuideOverlay';
+import { useLayoutStore } from '../store/useLayoutStore';
 
 export function useGuideSystem({ 
   setActiveChannel, 
@@ -10,8 +11,8 @@ export function useGuideSystem({
   bootStage 
 }: any) {
   const [guideState, setGuideState] = useState<{ type: GuideType; step: number }>({ type: null, step: 0 });
-  const [helpMenuOpen, setHelpMenuOpen] = useState(false);
-  
+  const setHelpMenuOpen = useLayoutStore(s => s.setHelpMenuOpen);
+
   const [completedGuides, setCompletedGuides] = useStickyState<Record<string, boolean>>(
     {}, 
     "astd_completed_guides", 
@@ -53,12 +54,12 @@ export function useGuideSystem({
       setTutorialTab("dictionary");
       setIsAnalyzerOpen(true);
     }
-  }, [completedGuides, setActiveChannel, setIsAnalyzerOpen, setIsRosterOpen, setTutorialTab]);
+  }, [completedGuides, setActiveChannel, setIsAnalyzerOpen, setIsRosterOpen, setTutorialTab, setHelpMenuOpen]);
 
   const endGuide = useCallback(() => {
     if (guideState.type) setCompletedGuides((prev: any) => ({ ...prev, [guideState.type as string]: true }));
     setGuideState({ type: null, step: 0 });
   }, [guideState.type, setCompletedGuides]);
 
-  return { guideState, setGuideState, helpMenuOpen, setHelpMenuOpen, completedGuides, setCompletedGuides, startGuide, endGuide };
+  return { guideState, setGuideState, completedGuides, setCompletedGuides, startGuide, endGuide };
 }

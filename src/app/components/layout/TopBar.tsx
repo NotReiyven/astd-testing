@@ -1,19 +1,16 @@
 import { useState, useRef, useEffect } from "react";
-import { PanelLeft, Hash, Search, X, GraduationCap, Map, User, Settings2, Calculator, HelpCircle, Book, LogIn, LogOut } from "lucide-react";
+import { PanelLeft, Hash, Search, X, Calculator, HelpCircle, Book, LogIn, LogOut, GraduationCap, Map, Settings2, User } from "lucide-react";
 import { GuideType } from "../guides/AquaGuideOverlay";
 import { LiveAvatars } from "./LiveAvatars";
 import { useAuthStore } from "../../../store/useAuthStore";
+import { useLayoutStore } from "../../../store/useLayoutStore";
 
 interface TopBarProps {
   calcHeaderZ: string;
   isRosterOpen: boolean;
   setIsRosterOpen: (val: boolean) => void;
   currentChannelInfo: { title: string; subtitle: string };
-  helpMenuOpen: boolean;
-  setHelpMenuOpen: (val: boolean) => void;
   startGuide: (type: GuideType) => void;
-  globalSearchQuery: string;
-  setGlobalSearchQuery: (val: string) => void;
   handleToggleAnalyzer: () => void;
   isAnalyzerOpen: boolean;
   isMainStep3: boolean;
@@ -26,25 +23,22 @@ export function TopBar({
   isRosterOpen,
   setIsRosterOpen,
   currentChannelInfo,
-  helpMenuOpen,
-  setHelpMenuOpen,
   startGuide,
-  globalSearchQuery,
-  setGlobalSearchQuery,
   handleToggleAnalyzer,
   isAnalyzerOpen,
   isMainStep3,
   activeItemsCount,
   isDictionaryActive
 }: TopBarProps) {
+  const { globalSearchQuery, setGlobalSearchQuery, helpMenuOpen, setHelpMenuOpen } = useLayoutStore();
+  
   const [helpClicks, setHelpClicks] = useState(0);
   const [lastClickTime, setLastClickTime] = useState(0);
 
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const mobileInputRef = useRef<HTMLInputElement>(null);
   const desktopSearchRef = useRef<HTMLInputElement>(null);
-  
-  // Bring in our new Auth Store
+
   const { profile, loginWithDiscord, logout, isLoading: isAuthLoading } = useAuthStore();
 
   useEffect(() => {
@@ -58,7 +52,7 @@ export function TopBar({
       if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
         return;
       }
-      
+
       if (((e.ctrlKey || e.metaKey) && e.key === 'k') || e.key === '/') {
         e.preventDefault();
         desktopSearchRef.current?.focus();
@@ -155,7 +149,6 @@ export function TopBar({
 
         <div className="w-px h-5 mx-0.5 md:mx-1 flex-shrink-0 hidden md:block" style={{ background: "rgba(255,255,255,0.08)" }} />
 
-        {/* Auth Module */}
         {!isAuthLoading && (
           profile ? (
             <button 

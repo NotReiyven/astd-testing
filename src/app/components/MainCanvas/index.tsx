@@ -12,6 +12,7 @@ import { CanvasSkeleton } from "./CanvasSkeleton";
 import { CanvasControls } from "./CanvasControls";
 import { GuideType } from "../guides/AquaGuideOverlay";
 import { useCanvasVirtualization } from "./useCanvasVirtualization";
+import { useCanvasScroll } from "../../../hooks/useCanvasScroll";
 
 const STICKY_HEADER_CLASS = "bg-[#313338] pt-2 md:pt-3 pb-3 -mx-2 px-2 md:-mx-8 md:px-8";
 const FIRE_ZIO_AVATAR = "/units/firezio.webp";
@@ -37,133 +38,34 @@ export const MainCanvas = memo(function MainCanvas({
   const [sortMode, setSortMode] = useState("value-desc");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const skipNextResetRef = useRef(false);
-
-  const headerRef = useRef<HTMLDivElement>(null);
-  const headerVisibleRef = useRef(true);
-
-  const scrollTopBtnRef = useRef<HTMLButtonElement>(null);
-  const scrollTopVisibleRef = useRef(false);
-
-  const lastScrollY = useRef(0);
-  const scrollDeltaRef = useRef(0);
-  const lastToggleTimeRef = useRef(0);
-
+  const { scrollRef, headerRef, scrollTopBtnRef, scrollToTop, headerVisibleRef, skipNextResetRef } = useCanvasScroll(isMobile);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const colsRef = useRef(4);
   const [cols, setCols] = useState(4);
-  
+
   useEffect(() => {
      if (!scrollRef.current) return;
      const observer = new ResizeObserver(entries => {
         const width = entries[0].contentRect.width;
         const isDesktop = window.innerWidth >= 768;
-        
         const baseCardWidth = isDesktop ? 200 : 155;
         const gap = isDesktop ? 20 : 12;
         const padding = isDesktop ? 64 : 16; 
-        
         const available = width - padding;
         const c = Math.max(1, Math.floor((available + gap) / (baseCardWidth + gap)));
-        
+
         if (c !== colsRef.current) {
            colsRef.current = c;
-           setCols(c);
+           // Defer state update to prevent flushSync warning
+           requestAnimationFrame(() => {
+             setCols(c);
+           });
         }
      });
      observer.observe(scrollRef.current);
      return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-
-    const handleNativeScroll = () => {
-      const currentScroll = el.scrollTop;
-
-      if (currentScroll > 400 && !scrollTopVisibleRef.current) {
-        scrollTopVisibleRef.current = true;
-        if (scrollTopBtnRef.current) {
-          scrollTopBtnRef.current.classList.remove("opacity-0", "translate-y-8", "pointer-events-none");
-          scrollTopBtnRef.current.classList.add("opacity-100", "translate-y-0");
-        }
-      } else if (currentScroll <= 400 && scrollTopVisibleRef.current) {
-        scrollTopVisibleRef.current = false;
-        if (scrollTopBtnRef.current) {
-          scrollTopBtnRef.current.classList.remove("opacity-100", "translate-y-0");
-          scrollTopBtnRef.current.classList.add("opacity-0", "translate-y-8", "pointer-events-none");
-        }
-      }
-
-      if (isMobile) {
-        const now = Date.now();
-        if (now - lastToggleTimeRef.current < 400) {
-          lastScrollY.current = currentScroll;
-          return;
-        }
-
-        const delta = currentScroll - lastScrollY.current;
-        lastScrollY.current = currentScroll;
-
-        if (currentScroll < 40) {
-          if (!headerVisibleRef.current) {
-            headerVisibleRef.current = true;
-            if (headerRef.current) {
-              headerRef.current.classList.remove("-translate-y-full");
-              headerRef.current.classList.add("translate-y-0");
-            }
-            lastToggleTimeRef.current = now;
-          }
-          scrollDeltaRef.current = 0;
-          return;
-        }
-
-        if ((delta > 0 && scrollDeltaRef.current < 0) || (delta < 0 && scrollDeltaRef.current > 0)) {
-          scrollDeltaRef.current = 0;
-        }
-        scrollDeltaRef.current += delta;
-
-        if (scrollDeltaRef.current > 40 && headerVisibleRef.current) {
-          headerVisibleRef.current = false;
-          if (headerRef.current) {
-            headerRef.current.classList.remove("translate-y-0");
-            headerRef.current.classList.add("-translate-y-full");
-          }
-          lastToggleTimeRef.current = now;
-          scrollDeltaRef.current = 0;
-        } else if (scrollDeltaRef.current < -40 && !headerVisibleRef.current) {
-          headerVisibleRef.current = true;
-          if (headerRef.current) {
-            headerRef.current.classList.remove("-translate-y-full");
-            headerRef.current.classList.add("translate-y-0");
-          }
-          lastToggleTimeRef.current = now;
-          scrollDeltaRef.current = 0;
-        }
-      }
-    };
-
-    el.addEventListener('scroll', handleNativeScroll, { passive: true });
-    
-    return () => {
-      el.removeEventListener('scroll', handleNativeScroll);
-    };
-  }, [isMobile]);
-
-  const scrollToTop = () => {
-    lastToggleTimeRef.current = Date.now();
-    headerVisibleRef.current = true;
-    if (headerRef.current) {
-      headerRef.current.classList.remove("-translate-y-full");
-      headerRef.current.classList.add("translate-y-0");
-    }
-    lastScrollY.current = 0;
-    scrollDeltaRef.current = 0;
-    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  }, [scrollRef]);
 
   const handleResetFilters = () => {
     setSearchQuery("");
@@ -174,7 +76,6 @@ export const MainCanvas = memo(function MainCanvas({
 
   const hasFiltersApplied = deferredSearchQuery !== "" || statusFilter !== "all" || sortMode !== "value-desc" || activeTierFilter !== "All";
 
-  // Data Memoization extracted to a custom hook
   const { flattenedItems } = useCanvasVirtualization({
     ALL_UNITS,
     showWelcome,
@@ -222,7 +123,7 @@ export const MainCanvas = memo(function MainCanvas({
     if (idx !== -1) {
       virtualizer.scrollToIndex(idx, { align: 'start' });
     }
-  }, [scrollToSection, flattenedItems.length]); 
+  }, [scrollToSection, flattenedItems.length, skipNextResetRef, virtualizer]); 
 
   useEffect(() => {
     if (scrollToSection) return;
@@ -236,9 +137,7 @@ export const MainCanvas = memo(function MainCanvas({
       headerRef.current.classList.remove("-translate-y-full");
       headerRef.current.classList.add("translate-y-0");
     }
-    lastScrollY.current = 0;
-    scrollDeltaRef.current = 0;
-  }, [deferredSearchQuery, statusFilter, sortMode, activeTierFilter]);
+  }, [deferredSearchQuery, statusFilter, sortMode, activeTierFilter, scrollToSection, skipNextResetRef, headerRef, scrollRef, headerVisibleRef]);
 
   const dismissWelcome = () => {
     setShowWelcome(false);
@@ -363,7 +262,7 @@ export const MainCanvas = memo(function MainCanvas({
                         <Search className="w-6 h-6 text-[#4e5058]" />
                       </div>
                       <p className="text-sm font-bold text-[#4e5058]">No units match your current filters.</p>
-                      
+
                       <button 
                         onClick={handleResetFilters}
                         className="mt-2 px-6 py-2.5 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-[6px] text-[13px] font-bold transition-all active:scale-95 shadow-md flex items-center gap-2"
@@ -409,7 +308,6 @@ export const MainCanvas = memo(function MainCanvas({
       >
         <ArrowUp className="w-5 h-5 md:w-6 md:h-6" />
       </button>
-
     </div>
   );
 });
