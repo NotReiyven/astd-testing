@@ -31,6 +31,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loginWithDiscord: async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'discord',
+      options: {
+        // This dynamically sends them back to whatever domain they clicked "Login" from
+        redirectTo: window.location.origin, 
+      }
     });
   },
 
