@@ -9,17 +9,25 @@ export const config = {
   runtime: 'edge'
 };
 
-async function sendDiscordAlert(message: string) {
+async function sendDiscordEmbed(embedData: { title: string; description: string; color: number; fields?: any[] }) {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
   if (!webhookUrl) return;
   try {
     await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: message })
+      body: JSON.stringify({
+        embeds: [{
+          title: embedData.title,
+          description: embedData.description,
+          color: embedData.color,
+          fields: embedData.fields || [],
+          timestamp: new Date().toISOString()
+        }]
+      })
     });
   } catch (err) {
-    console.error("FUCK - Failed to send Discord webhook alert:", err);
+    console.error("Failed to send Discord embed webhook:", err);
   }
 }
 
@@ -41,14 +49,12 @@ export async function GET(request: Request) {
     const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!API_KEY || !SHEET_ID || !SUPABASE_URL || !SUPABASE_KEY) {
-      const missing = [];
-      if (!API_KEY) missing.push("GOOGLE_SHEETS_API_KEY");
-      if (!SHEET_ID) missing.push("SPREADSHEET_ID");
-      if (!SUPABASE_URL) missing.push("VITE_SUPABASE_URL");
-      if (!SUPABASE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
-      
-      const msg = `FUUUCKKK **ASTD Value List Alert**\nMissing environment variables: ${missing.join(", ")}`;
-      await sendDiscordAlert(msg);
+      const msg = "Missing core environment variables for history sync.";
+      await sendDiscordEmbed({
+        title: "🚨 ASTD Value List Critical Error",
+        description: msg,
+        color: 15158332 // Red
+      });
       return new Response(JSON.stringify({ error: msg }), { status: 500, headers: { "Content-Type": "application/json" } });
     }
 
@@ -117,6 +123,7 @@ export async function GET(request: Request) {
     const timestamp = new Date().toISOString();
     const snapshotsToInsert: any[] = [];
     const statesToUpsert: any[] = [];
+    const valueShifts: string[] = [];
 
     units.forEach((u: any) => {
       const dbValue = typeof u.value === 'number' ? u.value : null;
@@ -139,11 +146,19 @@ export async function GET(request: Request) {
       const oldState = currentMap.get(u.id);
 
       let hasChanged = false;
+      let valueChanged = false;
       if (!oldState) {
         hasChanged = true;
       } else {
         const oldValSafe = String(oldState.value);
         const newValSafe = String(dbValue);
+
+        if (oldValSafe !== newValSafe) {
+          valueChanged = true;
+          if (valueShifts.length < 5) {
+            valueShifts.push(`**${u.name}**: \`${oldValSafe}\` ➔ \`${newValSafe}\``);
+          }
+        }
 
         if (
           oldValSafe !== newValSafe ||
@@ -174,14 +189,36 @@ export async function GET(request: Request) {
       if (upsertErr) throw upsertErr;
     }
 
-    // 🔥 THIS WILL PING DISCORD ON EVERY SUCCESSFUL RUN NOW
-    await sendDiscordAlert(`✅ **ASTD Value List Autonomous Sync**\nSuccessfully synced ${units.length} units and cleaned up expired ads.`);
+    // Build fields for the Discord embed
+    const embedFields = [
+      { name: "Total Tracked Units", value: `${units.length}`, inline: true },
+      { name: "Updates Detected", value: `${snapshotsToInsert.length}`, inline: true }
+    ];
+
+    if (valueShifts.length > 0) {
+      embedFields.push({
+        name: "Notable Value Shifts",
+        value: valueShifts.join("\n") + (valueShifts.length === 5 ? "\n_(and more...)_" : ""),
+        inline: false
+      });
+    }
+
+    await sendDiscordEmbed({
+      title: "✅ ASTD Value List Autonomous Sync",
+      description: "Successfully processed live spreadsheet state and purged expired database ads.",
+      color: 3066993, // Green
+      fields: embedFields
+    });
 
     return new Response(JSON.stringify({ message: "OK" }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (error: any) {
     const errorDetails = error.message || String(error);
     console.error("Cron crash error:", errorDetails);
-    await sendDiscordAlert(`🚨 **ASTD Value List CRASH**\n${errorDetails}`);
+    await sendDiscordEmbed({
+      title: "🚨 ASTD Value List Critical Crash",
+      description: `\`\`\`${errorDetails}\`\`\``,
+      color: 15158332 // Red
+    });
     return new Response(JSON.stringify({ error: errorDetails }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 }
