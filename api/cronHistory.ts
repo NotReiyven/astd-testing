@@ -16,7 +16,7 @@ async function sendDiscordAlert(message: string) {
     await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: `🚨 **ASTD Value List Alert**\n${message}` })
+      body: JSON.stringify({ content: `FUCK YOU ALL **ASTD Value List Alert**\n${message}` })
     });
   } catch (err) {
     console.error("Failed to send Discord webhook alert:", err);
