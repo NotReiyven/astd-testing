@@ -22,45 +22,47 @@ async function sendDiscordAlert(message: string) {
     console.error("Failed to send Discord webhook alert:", err);
   }
 }
-throw new Error("Hi hi hi hi hi fuck you goodbye gg fucking ez");
+
 export async function GET(request: Request) {
-  const authHeader = request.headers.get('authorization');
-  
-  if (!process.env.CRON_SECRET) {
-    console.warn("CRON_SECRET is not configured. Failing safely.");
-    return new Response(JSON.stringify({ error: "Unauthorized - Missing configuration" }), { status: 401, headers: { "Content-Type": "application/json" } });
-  }
-  
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
-  }
-
-  const API_KEY = process.env.GOOGLE_SHEETS_API_KEY;
-  const SHEET_ID = process.env.SPREADSHEET_ID;
-  const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!API_KEY || !SHEET_ID || !SUPABASE_URL || !SUPABASE_KEY) {
-    const errorMsg = "Missing environment variables for history sync.";
-    console.error(errorMsg);
-    await sendDiscordAlert(`Cron failed: ${errorMsg}`);
-    return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: { "Content-Type": "application/json" } });
-  }
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
   try {
+    const authHeader = request.headers.get('authorization');
+    
+    if (!process.env.CRON_SECRET) {
+      return new Response(JSON.stringify({ error: "Unauthorized - Missing CRON_SECRET configuration" }), { status: 401, headers: { "Content-Type": "application/json" } });
+    }
+    
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return new Response(JSON.stringify({ error: "Unauthorized - Invalid token" }), { status: 401, headers: { "Content-Type": "application/json" } });
+    }
+
+    const API_KEY = process.env.GOOGLE_SHEETS_API_KEY;
+    const SHEET_ID = process.env.SPREADSHEET_ID;
+    const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+    const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!API_KEY || !SHEET_ID || !SUPABASE_URL || !SUPABASE_KEY) {
+      const missing = [];
+      if (!API_KEY) missing.push("GOOGLE_SHEETS_API_KEY");
+      if (!SHEET_ID) missing.push("SPREADSHEET_ID");
+      if (!SUPABASE_URL) missing.push("VITE_SUPABASE_URL");
+      if (!SUPABASE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+      
+      const msg = `Missing environment variables: ${missing.join(", ")}`;
+      await sendDiscordAlert(msg);
+      return new Response(JSON.stringify({ error: msg }), { status: 500, headers: { "Content-Type": "application/json" } });
+    }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
     // --- AUTONOMOUS CLEANUP ROUTINE ---
     const nowIso = new Date().toISOString();
     
-    // 1. Purge expired trading ads
     const { error: adPurgeErr } = await supabase
       .from('trading_ads')
       .delete()
       .lt('expires_at', nowIso);
     if (adPurgeErr) console.error("Error purging expired ads:", adPurgeErr);
 
-    // 2. Purge content from banned users automatically
     const { data: bannedUsers, error: bannedErr } = await supabase
       .from('profiles')
       .select('id')
@@ -85,7 +87,7 @@ export async function GET(request: Request) {
 
     const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batchRanges}&includeGridData=true&key=${API_KEY}`);
     const data = (await response.json()) as SpreadsheetData;
-    if (!data.sheets) throw new Error("No grid data returned from Google Sheets");
+    if (!data.sheets) throw new Error("No grid data returned from Google Sheets API");
 
     const { units } = parseSpreadsheet(data);
     if (!units || units.length === 0) return new Response(JSON.stringify({ message: "No units parsed" }), { status: 200, headers: { "Content-Type": "application/json" } });
@@ -174,8 +176,9 @@ export async function GET(request: Request) {
 
     return new Response(JSON.stringify({ message: "OK" }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (error: any) {
-    console.error("Cron history sync error:", error);
-    await sendDiscordAlert(`Cron history sync crashed: ${error.message || error}`);
-    return new Response(JSON.stringify({ error: "Error syncing history" }), { status: 500, headers: { "Content-Type": "application/json" } });
+    const errorDetails = error.message || String(error);
+    console.error("Cron crash error:", errorDetails);
+    await sendDiscordAlert(`Cron crashed: ${errorDetails}`);
+    return new Response(JSON.stringify({ error: errorDetails }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 }
