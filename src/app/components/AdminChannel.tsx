@@ -130,17 +130,18 @@ export function AdminChannel() {
   };
 
   const updateUserRole = async (targetUserId: string, newRole: string) => {
-    if (!profile) return;
+    if (!profile) return false;
     
     if ((newRole === 'master' || newRole === 'admin') && !isMaster) {
       showToast("Only the Master account can assign Admin privileges.", "error");
-      return;
+      return false;
     }
 
     const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', targetUserId);
 
     if (error) {
-      showToast("Failed to update user role.", "error");
+      showToast(`Database Error: ${error.message}`, "error");
+      return false;
     } else {
       setUsers(users.map(u => u.id === targetUserId ? { ...u, role: newRole as any } : u));
       if (selectedUser?.id === targetUserId) {
@@ -148,6 +149,7 @@ export function AdminChannel() {
       }
       showToast(`Updated role to ${newRole.toUpperCase()}`);
       if (newRole === 'banned') loadMetrics();
+      return true;
     }
   };
 
@@ -199,10 +201,14 @@ export function AdminChannel() {
     if (!confirm(`Are you sure you want to BAN ${selectedUser.username} and PURGE their ads?`)) return;
     
     triggerHaptic('heavy');
-    await updateUserRole(selectedUser.id, 'banned');
+    
+    const banSuccess = await updateUserRole(selectedUser.id, 'banned');
+    if (!banSuccess) return;
+
     await supabase.from('trading_ads').delete().eq('user_id', selectedUser.id);
     setUserIntel(prev => ({ ...prev, adCount: 0 }));
-    showToast(`${selectedUser.username} has been banned and their ads purged.`);
+    
+    showToast(`${selectedUser.username} has been successfully banned and purged.`);
     loadMetrics();
   };
 
@@ -222,7 +228,7 @@ export function AdminChannel() {
       {/* Top Navigation & Metrics Bar */}
       <div className="flex-shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4 px-4 md:px-6 py-4 bg-[#2B2D31] border-b border-[rgba(0,0,0,0.22)] shadow-sm z-20">
         <h2 className="text-[16px] font-black text-[#F2F3F5] tracking-tight uppercase flex items-center gap-2">
-          <ShieldAlert className="w-5 h-5 text-[#ed4245]" /> Fire Zio's Eternal Center
+          <ShieldAlert className="w-5 h-5 text-[#ed4245]" /> Command Center
         </h2>
         <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar">
           <div className="flex items-center gap-2 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] px-3 py-1.5 rounded-[6px] shrink-0">

@@ -55,7 +55,7 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
         // "Taking Offers" special tile - Unified Color
         if (isOfferTile && i === 0) {
           return (
-            <div key="offer-tile" className={`${slotBase} bg-[#111214] border border-[#5865F2]/40 flex flex-col items-center justify-center gap-0.5`}>
+            <div key="offer-tile" className={`${slotBase} bg-[#111214] border border-[rgba(88,101,242,0.4)] flex flex-col items-center justify-center gap-0.5`}>
               <Search className="w-4 h-4 sm:w-5 sm:h-5 text-[#5865F2]" />
               <span className="text-[8px] sm:text-[9px] font-black text-[#5865F2] uppercase tracking-wider">Offer</span>
             </div>
@@ -70,7 +70,7 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
           return (
             <div key="extra-slot" className={`relative ${slotBase} bg-[#111214] border border-[rgba(255,255,255,0.06)] overflow-hidden flex items-center justify-center`}>
                {proxyUrl && <img src={proxyUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />}
-               <div className="absolute inset-0 bg-[#111214]/60 z-0" />
+               <div className="absolute inset-0 bg-[#111214]/70 z-0" />
                <span className="relative z-10 text-[13px] sm:text-[14px] font-black text-[#F2F3F5]">+{extraCount}</span>
             </div>
           );
@@ -149,8 +149,8 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
     return (
       <div className="bg-[#2B2D31] rounded-[12px] p-5 sm:p-6 flex flex-col h-full border border-transparent hover:border-[rgba(255,255,255,0.04)] transition-colors">
         
-        {/* Header - User Left, Badge Right */}
-        <div className="flex items-start justify-between mb-4">
+        {/* Header - Locked Height */}
+        <div className="flex items-start justify-between mb-3 h-[44px]">
           <div 
             className="flex items-center gap-3 cursor-pointer group"
             onClick={handleCopyId}
@@ -160,7 +160,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
             <div className="flex flex-col">
                <span className="text-[15px] sm:text-[16px] font-bold text-[#F2F3F5] tracking-tight leading-none mb-1.5 flex items-center gap-1.5 group-hover:underline">
                  {ad.profiles?.username || "Unknown"}
-                 {copiedId && <Check className="w-3.5 h-3.5 text-[#23a559]" />}
+                 {copiedId && <Check className="w-3.5 h-3.5 text-[#5865F2]" />}
                </span>
                <span className="text-[12px] text-[#80848E] font-medium leading-none">{getTimeAgo(ad.created_at)}</span>
             </div>
@@ -170,26 +170,28 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
           </span>
         </div>
 
-        {/* Note */}
-        {ad.note && (
-          <div className="text-[14px] text-[#DBDEE1] font-medium leading-relaxed w-full break-words mb-4 min-h-[20px]">
-            {ad.note}
-          </div>
-        )}
+        {/* Note - Locked Height ensures the dark boxes beneath it always start at the exact same Y position */}
+        <div 
+          className="text-[13.5px] text-[#DBDEE1] font-medium w-full break-words mb-4 overflow-hidden"
+          style={{ height: '40px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: '20px' }}
+        >
+          {ad.note ? ad.note : <span className="opacity-0 select-none">_</span>}
+        </div>
 
-        {/* Unified Trade Grids - Prevents awkward scaling by keeping them all inside identical boxes */}
+        {/* Unified Trade Grids - flex-1 forces them to match height across all cards in the grid row */}
         {isInventory ? (
-          <div className="flex flex-col items-center w-full mt-auto bg-[#1E1F22] rounded-[8px] p-4 sm:p-5">
+          <div className="flex flex-col items-center w-full flex-1 bg-[#1E1F22] rounded-[8px] p-4 sm:p-5">
             <h4 className="text-[12px] font-bold text-[#F2F3F5] mb-3">Showcase Assets</h4>
-            <FixedSlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} limit={16} />
+            {/* Added the 5th line (limit=20) to fill the empty void and match standard trade height perfectly */}
+            <FixedSlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} limit={20} />
           </div>
         ) : (
-          <div className="flex flex-col items-center w-full mt-auto bg-[#1E1F22] rounded-[8px] p-4 sm:p-5">
+          <div className="flex flex-col items-center w-full flex-1 bg-[#1E1F22] rounded-[8px] p-4 sm:p-5">
             <h4 className="text-[12px] font-bold text-[#F2F3F5] mb-3">Offering</h4>
-            <FixedSlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} />
+            <FixedSlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} limit={8} />
             
             <h4 className="text-[12px] font-bold text-[#F2F3F5] mt-5 mb-3">Requesting</h4>
-            <FixedSlotGrid items={ad.get_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} isOfferTile={isTakingOffers} />
+            <FixedSlotGrid items={ad.get_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} isOfferTile={isTakingOffers} limit={8} />
           </div>
         )}
 
@@ -204,7 +206,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
               onClick={handleCopyId}
               className="px-3 py-2 flex items-center gap-1.5 text-[12px] font-bold rounded-[6px] border border-[rgba(255,255,255,0.06)] bg-transparent hover:bg-[rgba(255,255,255,0.04)] text-[#949BA4] hover:text-[#DBDEE1] transition-colors focus-visible:outline-none"
             >
-              {copiedId ? <Check className="w-4 h-4 text-[#23a559]" /> : <Copy className="w-4 h-4" />}
+              {copiedId ? <Check className="w-4 h-4 text-[#5865F2]" /> : <Copy className="w-4 h-4" />}
               <span className="hidden sm:inline">ID</span>
             </button>
 
