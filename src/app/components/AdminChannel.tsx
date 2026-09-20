@@ -5,7 +5,7 @@ import {
   Search, ShieldAlert, Shield, Package, 
   Trash2, Ban, X, Copy, Check, Activity, 
   Users, Megaphone, ArrowRight, AlertTriangle, 
-  UserCircle2, ArrowUpRight, RefreshCw, Eraser
+  UserCircle2, ArrowUpRight, RefreshCw, Eraser, MessageSquareOff
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -199,6 +199,17 @@ export function AdminChannel() {
     }
   };
 
+  const handlePurgeComments = async () => {
+    if (!selectedUser) return;
+    if (!confirm(`Are you sure you want to delete ALL comments made by ${selectedUser.username}?`)) return;
+    
+    triggerHaptic('heavy');
+    const { error } = await supabase.from('ad_comments').delete().eq('user_id', selectedUser.id);
+    
+    if (error) showToast("Failed to purge comments.", "error");
+    else showToast("All comments purged successfully.");
+  };
+
   const handleWipeInventory = async () => {
     if (!selectedUser) return;
     if (!confirm(`WARNING: Are you sure you want to permanently WIPE the inventory of ${selectedUser.username}?`)) return;
@@ -226,7 +237,7 @@ export function AdminChannel() {
 
   const handleTotalAccountNuke = async () => {
     if (!selectedUser) return;
-    const confirmation = prompt(`Type "NUKE" to permanently ban ${selectedUser.username} and wipe all their data (Ads, Inventory, Wishlist).`);
+    const confirmation = prompt(`Type "NUKE" to permanently ban ${selectedUser.username} and wipe all their data (Ads, Inventory, Wishlist, Comments).`);
     if (confirmation !== "NUKE") {
       showToast("Account wipe cancelled.", "error");
       return;
@@ -240,7 +251,9 @@ export function AdminChannel() {
     await Promise.all([
       supabase.from('trading_ads').delete().eq('user_id', selectedUser.id),
       supabase.from('user_inventory').delete().eq('user_id', selectedUser.id),
-      supabase.from('user_wishlist').delete().eq('user_id', selectedUser.id)
+      supabase.from('user_wishlist').delete().eq('user_id', selectedUser.id),
+      supabase.from('ad_comments').delete().eq('user_id', selectedUser.id),
+      supabase.from('ad_likes').delete().eq('user_id', selectedUser.id)
     ]);
 
     setUserIntel({ netWorth: 0, adCount: 0, isLoading: false });
@@ -264,7 +277,7 @@ export function AdminChannel() {
       {/* Top Navigation & Metrics Bar */}
       <div className="flex-shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4 px-4 md:px-6 py-4 bg-[#2B2D31] border-b border-[rgba(0,0,0,0.22)] shadow-sm z-20">
         <h2 className="text-[16px] font-black text-[#F2F3F5] tracking-tight uppercase flex items-center gap-2">
-          <ShieldAlert className="w-5 h-5 text-[#ed4245]" /> Fire Zio's Hall
+          <ShieldAlert className="w-5 h-5 text-[#ed4245]" /> Command Center
         </h2>
         <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar">
           <div className="flex items-center gap-2 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] px-3 py-1.5 rounded-[6px] shrink-0">
@@ -389,7 +402,7 @@ export function AdminChannel() {
                 {/* Moderation Intel */}
                 <div className="bg-[#2B2D31] rounded-[8px] p-4 flex flex-col shadow-sm border border-[rgba(255,255,255,0.02)]">
                   <h3 className="text-[11px] font-bold text-[#80848E] uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <Activity className="w-3.5 h-3.5" /> Information
+                    <Activity className="w-3.5 h-3.5" /> Database Intel
                   </h3>
                   {userIntel.isLoading ? (
                     <div className="h-[60px] flex items-center gap-3 text-[#80848E] text-[13px] font-medium animate-pulse">
@@ -413,7 +426,7 @@ export function AdminChannel() {
                       onClick={handleInspectVault}
                       className="w-full flex items-center justify-between px-3 py-2 bg-[#1E1F22] hover:bg-[#35373C] border border-[rgba(255,255,255,0.04)] text-[#DBDEE1] hover:text-white text-[12px] font-bold rounded-[6px] transition-colors focus-visible:outline-none"
                     >
-                      <span className="flex items-center gap-2"><Package className="w-4 h-4 text-[#80848E]" /> Inspect Inv</span>
+                      <span className="flex items-center gap-2"><Package className="w-4 h-4 text-[#80848E]" /> Launch Live Vault Inspector</span>
                       <ArrowUpRight className="w-4 h-4 text-[#80848E]" />
                     </button>
                   </div>
@@ -450,7 +463,7 @@ export function AdminChannel() {
                 {selectedUser.id !== profile?.id && (
                   <div className="flex flex-col gap-4 mt-2">
                     <h3 className="text-[11px] font-bold text-[#ed4245] uppercase tracking-widest flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5" /> Chud Toolkit
+                      <AlertTriangle className="w-3.5 h-3.5" /> Moderation Toolkit
                     </h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -468,6 +481,12 @@ export function AdminChannel() {
                           className="flex items-center gap-2 w-full p-2.5 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] hover:border-[#FAA61A]/50 text-[#DBDEE1] hover:text-[#FAA61A] rounded-[6px] transition-colors focus-visible:outline-none"
                         >
                           <RefreshCw className="w-4 h-4" /> <span className="text-[12px] font-bold">Reset Profile Info</span>
+                        </button>
+                        <button 
+                          onClick={handlePurgeComments}
+                          className="flex items-center gap-2 w-full p-2.5 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] hover:border-[#ed4245]/50 text-[#DBDEE1] hover:text-[#ed4245] rounded-[6px] transition-colors focus-visible:outline-none"
+                        >
+                          <MessageSquareOff className="w-4 h-4" /> <span className="text-[12px] font-bold">Purge All Comments</span>
                         </button>
                       </div>
 
@@ -497,7 +516,7 @@ export function AdminChannel() {
                           className="w-full flex items-center justify-center gap-2 p-3.5 bg-transparent border-2 border-[#ed4245] hover:bg-[#ed4245] text-[#ed4245] hover:text-white rounded-[6px] transition-colors shadow-sm focus-visible:outline-none group"
                         >
                           <Ban className="w-4 h-4" />
-                          <span className="text-[13px] font-black uppercase tracking-widest">Nuke Account</span>
+                          <span className="text-[13px] font-black uppercase tracking-widest">Nuke & Ban Account</span>
                         </button>
                       ) : (
                         <button 
@@ -511,7 +530,7 @@ export function AdminChannel() {
                     </div>
                     <p className="text-[11px] text-[#80848E] text-center mt-1">
                       {selectedUser.role !== 'banned' 
-                        ? "Nuking will permanently delete all ads, inventory, and wishlists associated with this user." 
+                        ? "Nuking will permanently delete all ads, inventory, wishlists, and comments associated with this user." 
                         : "Restoring access will not recover wiped data."}
                     </p>
                   </div>

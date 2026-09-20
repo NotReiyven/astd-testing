@@ -1,3 +1,5 @@
+// FILE: src/store/useTradingAdsStore.ts
+
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { TradeCard } from '../types';
@@ -5,16 +7,17 @@ import { TradeCard } from '../types';
 export interface TradingAd {
   id: string;
   user_id: string;
+  ad_type: 'standard' | 'lf_offers' | 'inventory';
   give_items: TradeCard[];
   get_items: TradeCard[];
-  note?: string;
-  ad_type?: "standard" | "lf_offers" | "inventory";
-  expires_at: string;
+  note: string;
   created_at: string;
+  expires_at: string;
   profiles?: {
     username: string;
-    discord_id: string;
     avatar_url: string;
+    role: string;
+    discord_id: string;
   };
 }
 
@@ -23,15 +26,8 @@ interface TradingAdsState {
   isLoading: boolean;
   fetchAds: () => Promise<void>;
   subscribeToAds: () => () => void;
-  createAd: (params: {
-    userId: string;
-    giveItems: TradeCard[];
-    getItems: TradeCard[];
-    note: string;
-    ttlHours: number;
-    adType?: "standard" | "lf_offers" | "inventory";
-  }) => Promise<void>;
-  deleteAd: (adId: string) => Promise<void>;
+  deleteAd: (id: string) => Promise<void>;
+  createAd: (adData: any) => Promise<{ error: any | null }>;
 }
 
 export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
@@ -40,27 +36,67 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
 
   fetchAds: async () => {
     set({ isLoading: true });
+    const now = new Date().toISOString();
+    
     const { data, error } = await supabase
       .from('trading_ads')
-      .select('*, profiles(username, discord_id, avatar_url)')
-      .gt('expires_at', new Date().toISOString())
+      // FIX: We explicitly tell Supabase which foreign key to follow (!trading_ads_user_id_fkey)
+      .select(`
+        *,
+        profiles!trading_ads_user_id_fkey(username, avatar_url, role, discord_id)
+      `)
+      .gt('expires_at', now) // Restored your expiration filter
       .order('created_at', { ascending: false });
 
-    if (!error && data) {
-      set({ ads: data as TradingAd[], isLoading: false });
-    } else {
+    if (error) {
+      console.error("🚨 Error fetching ads:", error.message);
       set({ isLoading: false });
+      return;
+    }
+
+    if (data) {
+      set({ ads: data as TradingAd[], isLoading: false });
     }
   },
 
   subscribeToAds: () => {
-    const channel = supabase
-      .channel('trading_ads_live')
+    const channel = supabase.channel('public:trading_ads')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'trading_ads' },
-        () => {
-          get().fetchAds();
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'trading_ads' // CRITICAL: Isolates listener from comments
+        },
+        (payload) => {
+          const { eventType, new: newRecord, old: oldRecord } = payload;
+          
+          if (eventType === 'INSERT') {
+            supabase
+              .from('trading_ads')
+              // FIX: Apply the same strict foreign key definition here
+              .select(`*, profiles!trading_ads_user_id_fkey(username, avatar_url, role, discord_id)`)
+              .eq('id', newRecord.id)
+              .single()
+              .then(({ data, error }) => {
+                if (error) console.error("🚨 Realtime Fetch Error:", error);
+                if (data) {
+                  set((state) => ({
+                    ads: [data as TradingAd, ...state.ads]
+                  }));
+                }
+              });
+          } 
+          else if (eventType === 'DELETE') {
+            set((state) => ({
+              ads: state.ads.filter(ad => ad.id !== oldRecord.id)
+            }));
+          }
+          else if (eventType === 'UPDATE') {
+             set((state) => ({
+               ads: state.ads.map(ad => ad.id === newRecord.id ? { ...ad, ...newRecord } : ad)
+             }));
+          }
         }
       )
       .subscribe();
@@ -70,32 +106,24 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
     };
   },
 
-  createAd: async ({ userId, giveItems, getItems, note, ttlHours, adType = "standard" }) => {
-    const expiresAt = new Date(Date.now() + ttlHours * 3600000).toISOString();
-
-    const { error } = await supabase.from('trading_ads').insert({
-      user_id: userId,
-      give_items: giveItems,
-      get_items: adType === "lf_offers" ? [] : getItems,
-      note: note.trim() || null,
-      ad_type: adType,
-      expires_at: expiresAt,
-    });
-
+  createAd: async (adData: any) => {
+    const { error } = await supabase.from('trading_ads').insert(adData);
     if (error) {
-      console.error("Supabase insert error:", error);
-      throw error;
+      console.error("🚨 Error posting ad:", error.message);
+      return { error };
     }
-    await get().fetchAds();
+    return { error: null };
   },
 
-  deleteAd: async (adId: string) => {
-    const { error } = await supabase
-      .from('trading_ads')
-      .delete()
-      .eq('id', adId);
-
-    if (error) throw error;
-    set((state) => ({ ads: state.ads.filter((a) => a.id !== adId) }));
-  },
+  deleteAd: async (id: string) => {
+    const currentAds = get().ads;
+    set({ ads: currentAds.filter(ad => ad.id !== id) });
+    
+    const { error } = await supabase.from('trading_ads').delete().eq('id', id);
+    
+    if (error) {
+      console.error("🚨 Error deleting ad:", error.message);
+      set({ ads: currentAds });
+    }
+  }
 }));

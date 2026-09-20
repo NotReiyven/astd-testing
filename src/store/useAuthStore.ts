@@ -23,7 +23,6 @@ interface AuthState {
   initialize: () => void;
 }
 
-// Utility to aggressively nuke local storage auth tokens to prevent login loops
 const clearLocalAuthCache = () => {
   for (let key in localStorage) {
     if (key.startsWith('sb-')) {
@@ -65,7 +64,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     if (data) {
-      // 1. Initial login check
       if (data.role === 'banned') {
         await get().logout();
         alert("This account has been permanently banned from the platform.");
@@ -75,7 +73,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       set({ profile: data });
 
-      // 2. REAL-TIME BAN HAMMER
+      // FIX: Chain .on() BEFORE .subscribe() to avoid the "cannot add callbacks after subscribe" error
       supabase.channel(`user-profile-${userId}`)
         .on(
           'postgres_changes',

@@ -4,8 +4,9 @@ import { useState, useEffect, useMemo, memo } from "react";
 import { 
   Megaphone, Search, Plus, Trash2, Clock, 
   Check, Lock, Calculator, Package, 
-  Copy, Activity
+  Copy, Activity, MessageSquare, ArrowBigUp, ArrowBigDown 
 } from "lucide-react";
+import { supabase } from "../../lib/supabase";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useTradeStore } from "../../store/useTradeStore";
@@ -17,6 +18,8 @@ import { getProxyImage, handleImageError } from "../../data";
 import { getAvatarStyle, getInitials } from "./TradeAnalyzer/summaryUtils";
 import { triggerHaptic } from "../../data/helpers";
 import { CustomDropdown } from "./MainCanvas/CustomDropdown";
+import { useAdInteractionStore } from "../../store/useAdInteractionStore";
+import { AdInteractionModal } from "./AdInteractionModal";
 
 const SORT_OPTIONS = {
   "newest": "Recently Posted",
@@ -35,13 +38,30 @@ function getTimeAgo(dateStr: string) {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
-function getExpiryDate(dateStr: string) {
-  const d = new Date(dateStr);
-  d.setDate(d.getDate() + 1);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+// Live ticking countdown timer
+function CountdownTimer({ expiresAt }: { expiresAt: string }) {
+  const [timeLeft, setTimeLeft] = useState("");
+
+  useEffect(() => {
+    const updateTimer = () => {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      if (diff <= 0) {
+        setTimeLeft("Expired");
+        return;
+      }
+      const h = Math.floor(diff / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      setTimeLeft(h > 0 ? `${h}h ${m}m left` : `${m}m left`);
+    };
+    
+    updateTimer();
+    const interval = setInterval(updateTimer, 60000);
+    return () => clearInterval(interval);
+  }, [expiresAt]);
+
+  return <span className="text-[11px] font-bold tracking-wider uppercase">{timeLeft}</span>;
 }
 
-// Flat, solid grid with strict sizing to prevent squishing
 const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8 }: { items: TradeCard[]; ALL_UNITS: MasterUnit[]; onInspectUnit: (id: string) => void; isOfferTile?: boolean; limit?: number; }) => {
   const slots = Array.from({ length: limit });
   const displayItems = items.slice(0, limit);
@@ -52,7 +72,6 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
   return (
     <div className="grid grid-cols-4 gap-1.5 sm:gap-2 w-fit mx-auto">
       {slots.map((_, i) => {
-        // "Taking Offers" special tile - Unified Color
         if (isOfferTile && i === 0) {
           return (
             <div key="offer-tile" className={`${slotBase} bg-[#111214] border border-[rgba(88,101,242,0.4)] flex flex-col items-center justify-center gap-0.5`}>
@@ -62,7 +81,6 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
           );
         }
 
-        // Overlay "+X more" 
         if (extraCount > 0 && i === limit - 1) {
           const item = displayItems[i];
           const master = item ? ALL_UNITS.find(u => u.id === item.id) : null;
@@ -76,7 +94,6 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
           );
         }
 
-        // Actual Unit Tiles
         if (i < displayItems.length) {
           const item = displayItems[i];
           const master = ALL_UNITS.find(u => u.id === item.id);
@@ -103,7 +120,6 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
           );
         }
 
-        // Flat, subtle empty slot
         return (
           <div key={`empty-${i}`} className={`${slotBase} bg-[#111214] border border-dashed border-[rgba(255,255,255,0.04)] flex items-center justify-center`}>
             <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-[rgba(255,255,255,0.03)]" strokeWidth={3} />
@@ -114,18 +130,57 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
   );
 };
 
-// Clean, flat Vanguard-Style Ad Card
 const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL_UNITS, onInspectUnit, onSendToCalculator }: { ad: TradingAd; currentUserId?: string; currentUserRole?: string; onDelete: (id: string) => void; ALL_UNITS: MasterUnit[]; onInspectUnit: (unitId: string) => void; onSendToCalculator: (give: TradeCard[], get: TradeCard[]) => void; }) => {
     const [copiedId, setCopiedId] = useState(false);
+    const [votes, setVotes] = useState({ up: 0, down: 0, userVote: 0 });
 
     const isOwner = currentUserId === ad.user_id;
     const canModerate = currentUserRole === 'master' || currentUserRole === 'admin' || currentUserRole === 'mod';
     const canDelete = isOwner || canModerate;
-
     const isTakingOffers = ad.ad_type === "lf_offers" || (ad.ad_type === "standard" && ad.get_items.length === 0);
     const isInventory = ad.ad_type === "inventory";
 
     const setViewingUser = useInventoryStore(s => s.setViewingUser);
+    const openAdContext = useAdInteractionStore(s => s.openAdContext);
+
+    useEffect(() => {
+      const fetchVotes = async () => {
+        const { data } = await supabase.from('ad_votes').select('user_id, vote_value').eq('ad_id', ad.id);
+        if (data) {
+          let up = 0, down = 0, userVote = 0;
+          data.forEach(v => {
+             if (v.vote_value === 1) up++;
+             if (v.vote_value === -1) down++;
+             if (currentUserId && v.user_id === currentUserId) userVote = v.vote_value;
+          });
+          setVotes({ up, down, userVote });
+        }
+      };
+      fetchVotes();
+    }, [ad.id, currentUserId]);
+
+    const handleVote = async (val: number) => {
+      if (!currentUserId) return;
+      triggerHaptic('light');
+      
+      const isRemoving = votes.userVote === val;
+      const newVal = isRemoving ? 0 : val;
+      
+      setVotes(prev => {
+         let up = prev.up, down = prev.down;
+         if (prev.userVote === 1) up--;
+         if (prev.userVote === -1) down--;
+         if (newVal === 1) up++;
+         if (newVal === -1) down++;
+         return { up, down, userVote: newVal };
+      });
+
+      if (isRemoving) {
+        await supabase.from('ad_votes').delete().match({ ad_id: ad.id, user_id: currentUserId });
+      } else {
+        await supabase.from('ad_votes').upsert({ ad_id: ad.id, user_id: currentUserId, vote_value: newVal });
+      }
+    };
 
     const handleInspectVault = () => {
       triggerHaptic('medium');
@@ -141,7 +196,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
       setTimeout(() => setCopiedId(false), 2000);
     };
 
-    // Unified Solid Color for Badges
+    const score = votes.up - votes.down;
     let badgeTitle = "TRADE";
     if (isTakingOffers) badgeTitle = "LF OFFERS";
     else if (isInventory) badgeTitle = "SHOWCASE";
@@ -149,40 +204,32 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
     return (
       <div className="bg-[#2B2D31] rounded-[12px] p-5 sm:p-6 flex flex-col h-full border border-transparent hover:border-[rgba(255,255,255,0.04)] transition-colors">
         
-        {/* Header - Locked Height */}
         <div className="flex items-start justify-between mb-3 h-[44px]">
-          <div 
-            className="flex items-center gap-3 cursor-pointer group"
-            onClick={handleCopyId}
-            title="Click to copy Discord ID"
-          >
-            <img src={ad.profiles?.avatar_url || "/units/firezio.webp"} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#18191C] object-cover" alt=""/>
-            <div className="flex flex-col">
-               <span className="text-[15px] sm:text-[16px] font-bold text-[#F2F3F5] tracking-tight leading-none mb-1.5 flex items-center gap-1.5 group-hover:underline">
+          <div className="flex items-center gap-3 cursor-pointer group min-w-0" onClick={handleCopyId} title="Click to copy Discord ID">
+            <img src={ad.profiles?.avatar_url || "/units/firezio.webp"} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#18191C] object-cover shrink-0" alt=""/>
+            <div className="flex flex-col min-w-0">
+               <span className="text-[15px] sm:text-[16px] font-bold text-[#F2F3F5] tracking-tight leading-none mb-1.5 flex items-center gap-1.5 group-hover:underline truncate">
                  {ad.profiles?.username || "Unknown"}
-                 {copiedId && <Check className="w-3.5 h-3.5 text-[#5865F2]" />}
+                 {copiedId && <Check className="w-3.5 h-3.5 text-[#5865F2] shrink-0" />}
                </span>
                <span className="text-[12px] text-[#80848E] font-medium leading-none">{getTimeAgo(ad.created_at)}</span>
             </div>
           </div>
-          <span className="px-2.5 py-0.5 rounded-[4px] text-[10px] font-black uppercase tracking-wider border text-[#5865F2] border-[rgba(88,101,242,0.4)] bg-transparent">
+          <span className="px-2.5 py-0.5 rounded-[4px] text-[10px] font-black uppercase tracking-wider border text-[#5865F2] border-[rgba(88,101,242,0.4)] bg-transparent shrink-0 ml-2">
             {badgeTitle}
           </span>
         </div>
 
-        {/* Note - Locked Height ensures the dark boxes beneath it always start at the exact same Y position */}
         <div 
-          className="text-[13.5px] text-[#DBDEE1] font-medium w-full break-words mb-4 overflow-hidden"
+          className="text-[13.5px] text-[#DBDEE1] font-medium w-full break-all mb-4 overflow-hidden"
           style={{ height: '40px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: '20px' }}
         >
           {ad.note ? ad.note : <span className="opacity-0 select-none">_</span>}
         </div>
 
-        {/* Unified Trade Grids - flex-1 forces them to match height across all cards in the grid row */}
         {isInventory ? (
           <div className="flex flex-col items-center w-full flex-1 bg-[#1E1F22] rounded-[8px] p-4 sm:p-5">
             <h4 className="text-[12px] font-bold text-[#F2F3F5] mb-3">Showcase Assets</h4>
-            {/* Added the 5th line (limit=20) to fill the empty void and match standard trade height perfectly */}
             <FixedSlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} limit={20} />
           </div>
         ) : (
@@ -195,40 +242,68 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
           </div>
         )}
 
-        {/* Flat Footer Actions */}
-        <div className="mt-5 flex items-center justify-between">
-          <span className="text-[11px] font-medium text-[#4E5058]">
-            Exp. {getExpiryDate(ad.expires_at)}
-          </span>
+        {/* Revamped Stacked Footer */}
+        <div className="mt-5 pt-4 border-t border-[rgba(255,255,255,0.04)] flex flex-col gap-3.5">
           
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleCopyId}
-              className="px-3 py-2 flex items-center gap-1.5 text-[12px] font-bold rounded-[6px] border border-[rgba(255,255,255,0.06)] bg-transparent hover:bg-[rgba(255,255,255,0.04)] text-[#949BA4] hover:text-[#DBDEE1] transition-colors focus-visible:outline-none"
-            >
-              {copiedId ? <Check className="w-4 h-4 text-[#5865F2]" /> : <Copy className="w-4 h-4" />}
-              <span className="hidden sm:inline">ID</span>
-            </button>
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-0.5 bg-[#1E1F22] rounded-[6px] border border-[rgba(255,255,255,0.04)] p-0.5">
+               <button onClick={() => handleVote(1)} className={`p-1 rounded-[4px] hover:bg-[rgba(255,255,255,0.04)] transition-colors focus-visible:outline-none ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-[#80848E] hover:text-[#23a559]'}`}>
+                  <ArrowBigUp className={`w-4 h-4 ${votes.userVote === 1 ? 'fill-current' : ''}`} />
+               </button>
+               <span className={`text-[12px] font-bold min-w-[24px] text-center ${score > 0 ? 'text-[#23a559]' : score < 0 ? 'text-[#ed4245]' : 'text-[#DBDEE1]'}`}>
+                 {score}
+               </span>
+               <button onClick={() => handleVote(-1)} className={`p-1 rounded-[4px] hover:bg-[rgba(255,255,255,0.04)] transition-colors focus-visible:outline-none ${votes.userVote === -1 ? 'text-[#ed4245]' : 'text-[#80848E] hover:text-[#ed4245]'}`}>
+                  <ArrowBigDown className={`w-4 h-4 ${votes.userVote === -1 ? 'fill-current' : ''}`} />
+               </button>
+            </div>
 
-            {/* Unified Button Color */}
-            <button 
-              onClick={() => isInventory ? handleInspectVault() : onSendToCalculator(ad.give_items, ad.get_items)}
-              className="px-3 py-2 flex items-center gap-1.5 text-[12px] font-bold rounded-[6px] bg-[#5865F2] hover:bg-[#4752C4] text-white transition-colors focus-visible:outline-none"
-            >
-              {isInventory ? <Package className="w-4 h-4" /> : <Calculator className="w-4 h-4" />}
-              {isInventory ? "Inspect" : "Evaluate"}
-            </button>
-
-            {canDelete && (
-              <button
-                onClick={() => onDelete(ad.id)}
-                className="p-2 border border-[rgba(255,255,255,0.06)] text-[#80848E] hover:text-[#ed4245] hover:border-[rgba(237,66,69,0.3)] bg-transparent hover:bg-[rgba(237,66,69,0.1)] rounded-[6px] transition-colors focus-visible:outline-none ml-1"
-                title="Delete listing"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
+            <div className="flex items-center gap-1.5 text-[#80848E]">
+              <Clock className="w-3.5 h-3.5" />
+              <CountdownTimer expiresAt={ad.expires_at} />
+            </div>
           </div>
+
+          <div className="flex items-center justify-between w-full gap-2">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleCopyId}
+                className="px-3 py-2 flex items-center gap-1.5 text-[12px] font-bold rounded-[6px] border border-[rgba(255,255,255,0.06)] bg-transparent hover:bg-[rgba(255,255,255,0.04)] text-[#949BA4] hover:text-[#DBDEE1] transition-colors focus-visible:outline-none"
+              >
+                {copiedId ? <Check className="w-4 h-4 text-[#5865F2]" /> : <Copy className="w-4 h-4" />}
+                <span className="hidden xl:inline">ID</span>
+              </button>
+
+              <button
+                onClick={() => { triggerHaptic('light'); openAdContext(ad.id, currentUserId); }}
+                className="px-3 py-2 flex items-center gap-1.5 text-[12px] font-bold rounded-[6px] border border-[rgba(255,255,255,0.06)] bg-transparent hover:bg-[rgba(255,255,255,0.04)] text-[#949BA4] hover:text-[#DBDEE1] transition-colors focus-visible:outline-none"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span className="hidden sm:inline">Thread</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => isInventory ? handleInspectVault() : onSendToCalculator(ad.give_items, ad.get_items)}
+                className="px-3 py-2 flex items-center gap-1.5 text-[12px] font-bold rounded-[6px] bg-[#5865F2] hover:bg-[#4752C4] text-white transition-colors focus-visible:outline-none"
+              >
+                {isInventory ? <Package className="w-4 h-4" /> : <Calculator className="w-4 h-4" />}
+                <span className="hidden sm:inline">{isInventory ? "Inspect" : "Evaluate"}</span>
+              </button>
+
+              {canDelete && (
+                <button
+                  onClick={() => onDelete(ad.id)}
+                  className="p-2 border border-[rgba(255,255,255,0.06)] text-[#80848E] hover:text-[#ed4245] hover:border-[rgba(237,66,69,0.3)] bg-transparent hover:bg-[rgba(237,66,69,0.1)] rounded-[6px] transition-colors focus-visible:outline-none"
+                  title="Delete listing"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
         </div>
       </div>
     );
@@ -295,9 +370,7 @@ export function TradingAdsChannel() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#313338] h-full select-none font-sans relative">
       
-      {/* Top Navigation & Filters */}
       <div className="flex-shrink-0 flex flex-col px-4 md:px-6 py-4 bg-[#2B2D31] border-b border-[rgba(0,0,0,0.22)] shadow-sm z-20 gap-4">
-        
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div className="relative flex items-center justify-center">
@@ -329,7 +402,6 @@ export function TradingAdsChannel() {
         </div>
 
         <div className="flex flex-col xl:flex-row xl:items-center gap-4 w-full">
-          {/* Custom Filter Pills */}
           <div className="flex bg-[#1E1F22] rounded-[8px] p-1 border border-[rgba(255,255,255,0.04)] w-full md:w-fit overflow-x-auto hide-scrollbar shrink-0">
             {[{ id: "all", label: "All" }, { id: "standard", label: "Trades" }, { id: "lf_offers", label: "LF Offers" }, { id: "inventory", label: "Showcases" }].map(t => (
               <button
@@ -361,7 +433,6 @@ export function TradingAdsChannel() {
         </div>
       </div>
 
-      {/* Main Message Feed */}
       <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col bg-[#313338] relative z-10">
         <div className="w-full h-full max-w-[1400px] mx-auto p-4 md:p-6 lg:p-8 pb-24">
           {isLoading ? (
@@ -397,6 +468,8 @@ export function TradingAdsChannel() {
           )}
         </div>
       </div>
+
+      <AdInteractionModal />
     </div>
   );
 }
