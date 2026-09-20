@@ -186,7 +186,7 @@ export function SimulatorTab() {
 
           <div className="flex flex-col gap-4">
              <p className="text-[13px] md:text-[13.5px] text-[#ffffff] leading-relaxed">
-               Think you're a trading prodigy? Prove it. I've programmed a dynamic engine to pull <strong>real units from the live database</strong> and generate mathematically balanced market baits. 
+               Think you're a trading prodigy? Prove it. I've magically made a way to pull <strong>real units from the live value list</strong> and generate mathematically balanced market baits. 
              </p>
 
              <div className="bg-[#1e2124] border-l-4 border-l-[#ed4245] border-y border-y-[#424549] border-r border-r-[#424549] rounded-r-[8px] p-4 shadow-inner flex items-start gap-4">
@@ -194,7 +194,7 @@ export function SimulatorTab() {
                  <div className="flex flex-col gap-1">
                    <span className="text-[11px] font-black uppercase tracking-widest text-[#ed4245]">Fire Zio's Observation</span>
                    <p className="text-[#b9bbbe] text-[13px] italic font-medium leading-relaxed">
-                     "There's no timer anymore. The trade is automatically loaded into your Calculator on the right. Analyze the math, check the forecast, and tell me if it's a win. Do not fail."
+                     "The trade is automatically loaded into your Calculator on the right. Analyze the math, check the forecast, and tell me if it's a win. Do not fail."
                    </p>
                  </div>
              </div>

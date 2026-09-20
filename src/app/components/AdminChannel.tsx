@@ -46,22 +46,22 @@ export function AdminChannel() {
       
       <div className="flex-shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4 px-4 md:px-6 py-4 bg-[#2B2D31] border-b border-[rgba(0,0,0,0.22)] shadow-sm z-20">
         <h2 className="text-[16px] font-black text-[#F2F3F5] tracking-tight uppercase flex items-center gap-2">
-          <ShieldAlert className="w-5 h-5 text-[#ed4245]" /> Command Center
+          <ShieldAlert className="w-5 h-5 text-[#ed4245]" /> Tel Aviv Center
         </h2>
         <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar">
           <div className="flex items-center gap-2 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] px-3 py-1.5 rounded-[6px] shrink-0">
             <Users className="w-3.5 h-3.5 text-[#5865F2]" />
-            <span className="text-[11px] font-bold text-[#949BA4] uppercase">Total</span>
+            <span className="text-[11px] font-bold text-[#949BA4] uppercase">Total Chuds</span>
             <span className="text-[12px] font-mono font-black text-[#DBDEE1] ml-1">{metrics.totalUsers.toLocaleString()}</span>
           </div>
           <div className="flex items-center gap-2 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] px-3 py-1.5 rounded-[6px] shrink-0">
             <Megaphone className="w-3.5 h-3.5 text-[#23a559]" />
-            <span className="text-[11px] font-bold text-[#949BA4] uppercase">Active Ads</span>
+            <span className="text-[11px] font-bold text-[#949BA4] uppercase">Active Chud Ads</span>
             <span className="text-[12px] font-mono font-black text-[#DBDEE1] ml-1">{metrics.activeAds.toLocaleString()}</span>
           </div>
           <div className="flex items-center gap-2 bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] px-3 py-1.5 rounded-[6px] shrink-0">
             <Ban className="w-3.5 h-3.5 text-[#ed4245]" />
-            <span className="text-[11px] font-bold text-[#949BA4] uppercase">Banned</span>
+            <span className="text-[11px] font-bold text-[#949BA4] uppercase">Chuds Banned</span>
             <span className="text-[12px] font-mono font-black text-[#DBDEE1] ml-1">{metrics.bannedUsers.toLocaleString()}</span>
           </div>
         </div>
@@ -172,7 +172,7 @@ export function AdminChannel() {
                 
                 <div className="bg-[#2B2D31] rounded-[8px] p-4 flex flex-col shadow-sm border border-[rgba(255,255,255,0.02)]">
                   <h3 className="text-[11px] font-bold text-[#80848E] uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <Activity className="w-3.5 h-3.5" /> Database Intel
+                    <Activity className="w-3.5 h-3.5" /> Info
                   </h3>
                   {userIntel.isLoading ? (
                     <div className="h-[60px] flex items-center gap-3 text-[#80848E] text-[13px] font-medium animate-pulse">
@@ -196,7 +196,7 @@ export function AdminChannel() {
                       onClick={handleInspectVault}
                       className="w-full flex items-center justify-between px-3 py-2 bg-[#1E1F22] hover:bg-[#35373C] border border-[rgba(255,255,255,0.04)] text-[#DBDEE1] hover:text-white text-[12px] font-bold rounded-[6px] transition-colors focus-visible:outline-none"
                     >
-                      <span className="flex items-center gap-2"><Package className="w-4 h-4 text-[#80848E]" /> Launch Live Vault Inspector</span>
+                      <span className="flex items-center gap-2"><Package className="w-4 h-4 text-[#80848E]" /> Inspect Vault</span>
                       <ArrowUpRight className="w-4 h-4 text-[#80848E]" />
                     </button>
                   </div>

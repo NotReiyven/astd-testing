@@ -156,8 +156,8 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
           <div className="flex flex-col gap-5 animate-fade-in pb-4">
             
             {/* Fire Zio's General Info Note with proper borders */}
-            <div className="bg-[#282b30] border border-[rgba(255,255,255,0.06)] border-l-4 border-l-[#424549] rounded-[8px] p-4 flex items-start gap-4 shadow-sm">
-               <img src={FIRE_ZIO_AVATAR} className="w-10 h-10 rounded-full border border-[rgba(255,255,255,0.1)] object-cover shrink-0" alt="Fire Zio" />
+            <div className="bg-[#282b30] border border-[rgba(255,255,255,0.06)] border-l-4 border-l-[#7289da] rounded-[8px] p-4 flex items-start gap-4 shadow-sm">
+               <img src={FIRE_ZIO_AVATAR} className="w-10 h-10 rounded-full border border-[rgb(114,137,218)] object-cover shrink-0" alt="Fire Zio" />
                <div className="flex flex-col gap-1">
                  <span className="text-[11px] font-black uppercase tracking-widest text-[#B5BAC1]">Fire Zio's Briefing</span>
                  <p className="text-[#DBDEE1] text-[13px] font-medium leading-relaxed">
@@ -192,7 +192,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
               </div>
 
               <div className="flex flex-col gap-4">
-                <InfoPanel title="Value List Team's Note" iconUrl={teamNotesIcon} color="#424549">
+                <InfoPanel title="Value List Team's Note" iconUrl={teamNotesIcon} color="#7289da">
                   <p className="mb-4">
                     Recently, it has been common of traders on win/loss, in our discord server, associating one bad offer/trade, which can come from a multitude of reasons, with the specific unit dropping, creating a trend which other traders follow, causing the unit to be panic traded and dropped.
                   </p>

@@ -145,7 +145,7 @@ export function SandboxTab({
               </div>
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">Academy</span>
-                <h2 className="text-[17px] font-black text-[#F2F3F5] tracking-tight">Graduation Checklist</h2>
+                <h2 className="text-[17px] font-black text-[#F2F3F5] tracking-tight">Chud Trader Graduation Checklist</h2>
               </div>
             </div>
 
