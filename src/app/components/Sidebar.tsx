@@ -1,4 +1,6 @@
+// ================================================
 // FILE: src/app/components/Sidebar.tsx
+// ================================================
 
 import { useState, useMemo } from "react";
 import { 
@@ -171,7 +173,7 @@ export function Sidebar({
                             onClick={() => setActiveChannel(channel.id)}
                             className={`group w-full flex items-center justify-between px-2 py-2.5 md:py-1.5 mb-[2px] rounded-[4px] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                               isTarget 
-                                ? "bg-[#5865F2] text-white shadow-[0_0_20px_rgba(88,101,242,0.6)] ring-2 ring-[#5865F2] translate-x-1 z-50 relative animate-pulse"
+                                ? "bg-[#7289da] text-white shadow-[0_0_20px_rgba(114,137,218,0.6)] ring-2 ring-[#7289da] translate-x-1 z-50 relative animate-pulse"
                                 : isActive
                                   ? "bg-[rgba(78,80,88,0.6)] text-[#F2F3F5] translate-x-1"
                                   : "text-[#80848E] hover:bg-[rgba(78,80,88,0.3)] hover:text-[#DBDEE1] hover:translate-x-1"
@@ -181,7 +183,7 @@ export function Sidebar({
                               {channel.isLocked ? (
                                 <div className="relative flex items-center justify-center w-5 h-5 opacity-70 flex-shrink-0">
                                   <Icon className="w-5 h-5" />
-                                  <Lock className={`w-2.5 h-2.5 absolute bottom-0 right-0 rounded-full p-[1px] ${isTarget ? 'bg-[#5865F2]' : 'bg-[#2B2D31]'}`} />
+                                  <Lock className={`w-2.5 h-2.5 absolute bottom-0 right-0 rounded-full p-[1px] ${isTarget ? 'bg-[#7289da]' : 'bg-[#2B2D31]'}`} />
                                 </div>
                               ) : (
                                 <Icon className="w-5 h-5 opacity-70 flex-shrink-0" />

@@ -1,4 +1,6 @@
+// ================================================
 // FILE: src/store/useInventoryStore.ts
+// ================================================
 
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
@@ -27,7 +29,8 @@ interface InventoryState {
   isLoading: boolean;
   viewingUserId: string | null;
   viewingUsername: string | null;
-  setViewingUser: (userId: string | null, username?: string | null) => void;
+  returnChannel: string | null;
+  setViewingUser: (userId: string | null, username?: string | null, returnChannel?: string | null) => void;
   fetchInventory: (userId: string, isViewing?: boolean) => Promise<void>;
   fetchWishlist: (userId: string, isViewing?: boolean) => Promise<void>;
   addOrUpdateUnit: (userId: string, unitId: string, quantityDelta: number) => Promise<void>;
@@ -39,7 +42,6 @@ interface InventoryState {
   toggleWishlist: (userId: string, unitId: string) => Promise<void>;
 }
 
-// Request ID tracking to prevent stale network requests from overlapping
 let activeFetchId = 0;
 let activeViewFetchId = 0;
 
@@ -51,10 +53,10 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   isLoading: false,
   viewingUserId: null,
   viewingUsername: null,
+  returnChannel: null,
 
-  setViewingUser: (userId, username = null) => {
-    // Instantly wipe the viewing slate clean to prevent data fusion
-    set({ viewingUserId: userId, viewingUsername: username, viewedItems: [], viewedWishlist: [] });
+  setViewingUser: (userId, username = null, returnChannel = null) => {
+    set({ viewingUserId: userId, viewingUsername: username, returnChannel, viewedItems: [], viewedWishlist: [] });
     if (userId) {
       get().fetchInventory(userId, true);
       get().fetchWishlist(userId, true);
@@ -64,7 +66,6 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   fetchInventory: async (userId: string, isViewing = false) => {
     if (!userId) return;
     
-    // Assign a unique ID to this specific fetch request
     const currentRequestId = isViewing ? ++activeViewFetchId : ++activeFetchId;
     
     set({ isLoading: true });
@@ -74,7 +75,6 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
-    // Race Condition Guard: If another fetch was triggered while this one was pending, abort this one.
     if (isViewing && currentRequestId !== activeViewFetchId) return;
     if (!isViewing && currentRequestId !== activeFetchId) return;
 
@@ -113,7 +113,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   },
 
   addOrUpdateUnit: async (userId: string, unitId: string, quantityDelta: number) => {
-    if (get().viewingUserId) return; // Hard guard against modifying while viewing
+    if (get().viewingUserId) return; 
     const previousItems = get().items;
     const existingItem = previousItems.find(i => i.unit_id === unitId);
     
@@ -230,7 +230,6 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
         const optimisticItem: WishlistItem = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...newItem };
         set({ wishlistItems: [optimisticItem, ...previousItems] });
         
-        // FIXED: Replaced .insert() with .upsert() and added the onConflict constraint to prevent 409 errors
         const { error } = await supabase.from('user_wishlist').upsert(newItem, { onConflict: 'user_id, unit_id' });
         if (error) throw error;
       }

@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/layout/TopBar.tsx
+// ================================================
+
 import { useState, useRef, useEffect } from "react";
 import { PanelLeft, Hash, Search, X, Calculator, HelpCircle, Book, LogIn, LogOut, GraduationCap, Map, Settings2, User } from "lucide-react";
 import { GuideType } from "../guides/AquaGuideOverlay";
@@ -164,7 +168,7 @@ export function TopBar({
           ) : (
             <button 
               onClick={loginWithDiscord}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-[6px] text-[12px] font-bold transition-all shadow-sm"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#7289da] hover:bg-[#5b6eae] text-white rounded-[6px] text-[12px] font-bold transition-all shadow-sm"
             >
               <LogIn className="w-4 h-4" />
               <span className="hidden sm:inline">Login</span>
@@ -187,33 +191,33 @@ export function TopBar({
               <div className="absolute top-full right-0 mt-2 w-56 bg-[#2B2D31] border border-[rgba(255,255,255,0.08)] rounded-[8px] shadow-[0_8px_24px_rgba(0,0,0,0.5)] z-[99999] py-1.5 flex flex-col animate-fade-in max-h-[70vh] overflow-y-auto custom-scrollbar">
 
                 <span className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">Platform Basics</span>
-                <button onClick={() => startGuide("main")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("main")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#7289da] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
                   <GraduationCap className="w-4 h-4" /> Replay Tutorial
                 </button>
-                <button onClick={() => startGuide("channels")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("channels")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#7289da] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
                   <Map className="w-4 h-4" /> Channel Guide
                 </button>
-                <button onClick={() => startGuide("stats")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("stats")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#7289da] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
                   <Settings2 className="w-4 h-4" /> R / S / D Stats
                 </button>
 
                 <div className="w-full h-px bg-[rgba(255,255,255,0.04)] my-1" />
                 <span className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[#949BA4]">Pro Tools</span>
-                <button onClick={() => startGuide("advanced")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("advanced")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#7289da] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
                   <Settings2 className="w-4 h-4" /> Academy Checklist
                 </button>
-                <button onClick={() => startGuide("filters")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("filters")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#7289da] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
                   <Search className="w-4 h-4" /> Market Status Filters
                 </button>
-                <button onClick={() => startGuide("dictionary")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("dictionary")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#7289da] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
                   <Book className="w-4 h-4" /> Smart Dictionary
                 </button>
-                <button onClick={() => startGuide("management")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("management")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#7289da] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
                   <Calculator className="w-4 h-4" /> Pinning & Clearing
                 </button>
 
                 <div className="w-full h-px bg-[rgba(255,255,255,0.04)] my-1" />
-                <button onClick={() => startGuide("developer")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#5865F2] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
+                <button onClick={() => startGuide("developer")} className="flex items-center gap-3 px-4 py-3 md:py-2 text-[#DBDEE1] hover:bg-[#7289da] hover:text-white transition-colors text-left text-[12.5px] font-semibold">
                   <User className="w-4 h-4" /> About the Developer
                 </button>
               </div>
@@ -259,9 +263,9 @@ export function TopBar({
           onClick={handleToggleAnalyzer} 
           className={`hidden md:flex relative items-center gap-2 px-3 py-1.5 rounded-[6px] transition-all duration-300 shadow-sm font-bold text-[12px] active:scale-95 focus-visible:outline-none ${
             isAnalyzerOpen 
-              ? 'bg-[#4752C4] text-white shadow-[0_0_12px_rgba(88,101,242,0.4)]' 
-              : 'bg-[#5865F2] hover:bg-[#4752C4] text-white'
-          } ${isMainStep3 || showCalcPulse ? 'animate-pulse ring-4 ring-[#5865F2] shadow-[0_0_20px_rgba(88,101,242,0.8)]' : ''}`}
+              ? 'bg-[#5b6eae] text-white shadow-[0_0_12px_rgba(114,137,218,0.4)]' 
+              : 'bg-[#7289da] hover:bg-[#5b6eae] text-white'
+          } ${isMainStep3 || showCalcPulse ? 'animate-pulse ring-4 ring-[#7289da] shadow-[0_0_20px_rgba(114,137,218,0.8)]' : ''}`}
           title="Toggle Trade Analyzer"
         >
           <Calculator className="w-4 h-4 flex-shrink-0" />

@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/hooks/useInventoryManager.ts
+// ================================================
+
 import { useState, useMemo, useRef, useCallback } from "react";
 import { useInventoryStore, InventoryItem } from "../store/useInventoryStore";
 import { useAuthStore } from "../store/useAuthStore";
@@ -23,6 +27,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     toggleWishlist, 
     viewingUserId, 
     viewingUsername, 
+    returnChannel,
     setViewingUser 
   } = useInventoryStore();
   
@@ -57,6 +62,19 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     setToast({ id: Date.now(), message, isError, itemToRestore });
     toastTimerRef.current = setTimeout(() => setToast(null), 4000);
   }, []);
+
+  const handleCloseVault = useCallback(() => {
+    // Default fallback to trading-ads to be absolutely safe
+    const target = returnChannel || "trading-ads";
+    
+    // Dispatch navigation IMMEDIATELY before modifying local state
+    window.document.dispatchEvent(new CustomEvent('navigate', { detail: target }));
+    
+    // Delay state clearing so the component unmounts cleanly without flashing "My Vault"
+    setTimeout(() => {
+      setViewingUser(null, null, null);
+    }, 100);
+  }, [returnChannel, setViewingUser]);
 
   const handleTabSwitch = (view: "owned" | "wishlist") => {
     setVaultView(view);
@@ -265,7 +283,6 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     return parseSmartTrade(importText, ALL_UNITS).giveCards;
   }, [importText, ALL_UNITS]);
 
-  // Combined Interaction Actions
   const handleClearAction = useCallback(async () => {
     if (!profile || !confirmClear || isReadOnly) return;
     try {
@@ -387,10 +404,10 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     searchQuery, setSearchQuery, activeTierFilter, setActiveTierFilter, sortMode, setSortMode,
     collapsedTiers, setCollapsedTiers, isSelectMode, setIsSelectMode, selectedUnits, setSelectedUnits,
     inspectTarget, setInspectTarget, importText, setImportText, isImporting, confirmClear, setConfirmClear,
-    toast, setToast, isReadOnly, viewingUsername, setViewingUser, profile,
+    toast, setToast, isReadOnly, viewingUsername, returnChannel, setViewingUser, profile,
     metrics, vaultLiquidValue, tierGroupedUnits, unownedSearchResults, parsedImportItems,
     handleTabSwitch, handleUndo, handleQtyChange, handleTogglePin, handleRemove, handleClearAction,
     handleCopyVault, handleSendToAnalyzer, handlePostAsAd, handleQuickTransfer, toggleSelectUnit,
-    handleQuickAdd, executeMassImport
+    handleQuickAdd, executeMassImport, handleCloseVault
   };
 }
