@@ -1,14 +1,24 @@
 import React, { useState, useRef, useEffect, memo } from "react";
 import { createPortal } from "react-dom";
 import { ChevronsUp, ChevronsDown, Activity, TrendingUp, TrendingDown, ArrowUpCircle, Flame, Lock, EyeOff } from "lucide-react";
+import { triggerHaptic } from "../../../data/helpers";
 
 export function JargonWrap({ title, tip, children }: { title: string; tip: string; children: React.ReactNode }) {
   const btnRef = useRef<HTMLSpanElement>(null);
   const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    return () => setTipPos(null);
+    return () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+      setTipPos(null);
+    };
   }, []);
+
+  const openTip = () => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setTipPos({ x: r.left + r.width / 2, y: r.top - 8 });
+  };
 
   const toggleTip = (e?: React.MouseEvent | React.TouchEvent) => {
     if (e) {
@@ -18,8 +28,7 @@ export function JargonWrap({ title, tip, children }: { title: string; tip: strin
     if (tipPos) {
        setTipPos(null);
     } else {
-       const r = btnRef.current?.getBoundingClientRect();
-       if (r) setTipPos({ x: r.left + r.width / 2, y: r.top - 8 });
+       openTip();
     }
   };
 
@@ -28,18 +37,23 @@ export function JargonWrap({ title, tip, children }: { title: string; tip: strin
       ref={btnRef}
       className="cursor-help border-b border-dashed border-[rgba(255,255,255,0.4)] hover:border-[rgba(255,255,255,0.8)] transition-colors relative z-50"
       onMouseEnter={() => {
-        if (window.matchMedia('(hover: hover)').matches) toggleTip();
+        if (window.matchMedia('(hover: hover)').matches) {
+           hoverTimer.current = setTimeout(openTip, 200);
+        }
       }}
-      onMouseLeave={() => setTipPos(null)}
+      onMouseLeave={() => {
+        if (hoverTimer.current) clearTimeout(hoverTimer.current);
+        setTipPos(null);
+      }}
       onClick={toggleTip}
     >
       {children}
       {tipPos && createPortal(
         <>
           <div className="md:hidden fixed inset-0 z-[99998]" onClick={(e) => { e.stopPropagation(); setTipPos(null); }} onTouchStart={(e) => { e.stopPropagation(); setTipPos(null); }} />
-          <div className="rounded-[8px] px-3 py-2.5 pointer-events-none fixed z-[99999] -translate-x-1/2 -translate-y-full animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.6)]" style={{ top: tipPos.y, left: tipPos.x, minWidth: 200, maxWidth: 240, background: "#111214", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <p className="text-[12px] font-bold text-[#F2F3F5] mb-0.5">{title}</p>
-            <p className="text-[11px] font-medium leading-snug text-[#DBDEE1] whitespace-normal" style={{ fontFamily: "'Inter', sans-serif" }}>{tip}</p>
+          <div className="rounded-[8px] px-3 py-2.5 pointer-events-none fixed z-[99999] -translate-x-1/2 -translate-y-full animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.6)]" style={{ top: tipPos.y, left: tipPos.x, minWidth: 200, maxWidth: 240, background: "var(--popover)", border: "1px solid var(--border)" }}>
+            <p className="text-[12px] font-bold text-foreground mb-0.5">{title}</p>
+            <p className="text-[11px] font-medium leading-snug text-muted-foreground whitespace-normal" style={{ fontFamily: "var(--font-sans)" }}>{tip}</p>
           </div>
         </>,
         document.body
@@ -56,7 +70,7 @@ export const HighlightText = memo(({ text, query }: { text: string; query?: stri
     <>
       {parts.map((part, i) => 
         part.toLowerCase() === query.toLowerCase() 
-          ? <span key={i} className="bg-[rgba(250,166,26,0.35)] text-[#FAA61A] rounded-[2px]">{part}</span> 
+          ? <span key={i} className="bg-[#FAA61A]/30 text-[#FAA61A] rounded-[2px]">{part}</span> 
           : <span key={i}>{part}</span>
       )}
     </>
@@ -88,10 +102,19 @@ export function StatusIcon({ status }: { status?: string | null }) {
 export function NoticeTooltip({ notice }: { notice?: string }) {
   const btnRef = useRef<HTMLDivElement>(null);
   const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    return () => setTipPos(null);
+    return () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+      setTipPos(null);
+    };
   }, []);
+
+  const openTip = () => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setTipPos({ x: r.left + r.width / 2, y: r.top - 6 });
+  };
 
   const toggleTip = (e?: React.MouseEvent | React.TouchEvent) => {
     if (e) {
@@ -101,8 +124,7 @@ export function NoticeTooltip({ notice }: { notice?: string }) {
     if (tipPos) {
        setTipPos(null);
     } else {
-       const r = btnRef.current?.getBoundingClientRect();
-       if (r) setTipPos({ x: r.left + r.width / 2, y: r.top - 6 });
+       openTip();
     }
   };
 
@@ -111,27 +133,104 @@ export function NoticeTooltip({ notice }: { notice?: string }) {
   return (
     <div
       ref={btnRef}
-      className="relative flex items-center justify-center cursor-help p-2 -m-2 z-20"
+      className="relative flex items-center justify-center cursor-help p-2 md:p-1.5 -m-2 md:-m-1.5 z-20 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0"
       onMouseEnter={() => {
         if (!window.matchMedia('(hover: hover)').matches) return;
-        const r = btnRef.current?.getBoundingClientRect();
-        if (r) setTipPos({ x: r.left + r.width / 2, y: r.top - 6 });
+        hoverTimer.current = setTimeout(openTip, 200);
       }}
-      onMouseLeave={() => setTipPos(null)}
+      onMouseLeave={() => {
+        if (hoverTimer.current) clearTimeout(hoverTimer.current);
+        setTipPos(null);
+      }}
       onClick={toggleTip}
     >
-      <div className="flex items-center justify-center rounded-full transition-colors w-4 h-4 md:w-5 md:h-5" style={{ background: tipPos ? "rgba(255,255,255,0.1)" : "transparent" }}>
-        <span className="text-[9px] md:text-[12px] font-bold" style={{ color: tipPos ? "#DBDEE1" : "#80848E" }}>?</span>
+      <div className="flex items-center justify-center rounded-full transition-colors w-5 h-5 md:w-4 md:h-4" style={{ background: tipPos ? "rgba(255,255,255,0.1)" : "transparent" }}>
+        <span className="text-[11px] md:text-[10px] font-bold" style={{ color: tipPos ? "var(--foreground)" : "var(--muted-foreground)" }}>?</span>
       </div>
       {tipPos && createPortal(
         <>
           <div className="md:hidden fixed inset-0 z-[99998]" onClick={(e) => { e.stopPropagation(); setTipPos(null); }} onTouchStart={(e) => { e.stopPropagation(); setTipPos(null); }} />
-          <div className="px-3 py-2.5 rounded-[8px] pointer-events-none fixed z-[99999] -translate-x-1/2 -translate-y-full w-[220px] animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.5)]" style={{ top: tipPos.y, left: tipPos.x, background: "#111214", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <p className="text-[11px] font-medium leading-relaxed text-[#DBDEE1]">{notice}</p>
+          <div className="px-3 py-2.5 rounded-[8px] pointer-events-none fixed z-[99999] -translate-x-1/2 -translate-y-full w-[220px] animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.5)]" style={{ top: tipPos.y, left: tipPos.x, background: "var(--popover)", border: "1px solid var(--border)" }}>
+            <p className="text-[11px] font-medium leading-relaxed text-foreground">{notice}</p>
           </div>
         </>,
         document.body
       )}
     </div>
   );
+}
+
+export function HoldToConfirmButton({ onConfirm, children, className, holdTime = 800 }: { onConfirm: () => void, children: React.ReactNode, className: string, holdTime?: number }) {
+  const [progress, setProgress] = useState(0);
+  const [isHolding, setIsHolding] = useState(false);
+  const timerRef = useRef<any>(null);
+  const intervalRef = useRef<any>(null);
+
+  const start = (e: React.PointerEvent) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    setIsHolding(true);
+    setProgress(0);
+    const startTime = Date.now();
+    
+    intervalRef.current = setInterval(() => {
+      setProgress(Math.min(((Date.now() - startTime) / holdTime) * 100, 100));
+    }, 16);
+    
+    timerRef.current = setTimeout(() => {
+      clearInterval(intervalRef.current);
+      onConfirm();
+      setIsHolding(false);
+      setProgress(0);
+      triggerHaptic('heavy');
+    }, holdTime);
+  };
+
+  const stop = () => {
+    setIsHolding(false);
+    setProgress(0);
+    clearTimeout(timerRef.current);
+    clearInterval(intervalRef.current);
+  };
+
+  return (
+    <button
+      className={`relative overflow-hidden ${className}`}
+      onPointerDown={start}
+      onPointerUp={stop}
+      onPointerLeave={stop}
+      onPointerCancel={stop}
+      onContextMenu={e => e.preventDefault()}
+    >
+      <div className="absolute left-0 top-0 bottom-0 bg-black/30 pointer-events-none" style={{ width: `${progress}%`, transition: isHolding ? 'none' : 'width 0.2s' }} />
+      <div className="relative z-10 flex items-center justify-center gap-2">{children}</div>
+    </button>
+  );
+}
+
+export function RollingNumber({ value, className }: { value: number, className?: string }) {
+  const [displayValue, setDisplayValue] = useState(value);
+
+  useEffect(() => {
+    let start = displayValue;
+    let end = value;
+    if (start === end) return;
+    
+    let startTime = performance.now();
+    const duration = 300;
+    
+    const animate = (currTime: number) => {
+      const elapsed = currTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const ease = progress * (2 - progress);
+      
+      setDisplayValue(Math.floor(start + (end - start) * ease));
+      
+      if (progress < 1) requestAnimationFrame(animate);
+      else setDisplayValue(end);
+    };
+    
+    requestAnimationFrame(animate);
+  }, [value]);
+
+  return <span className={className}>{displayValue.toLocaleString()}</span>;
 }

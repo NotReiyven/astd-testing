@@ -1,9 +1,10 @@
-import { useState, useRef, useDeferredValue, useEffect, memo } from "react";
-import { Search, X, ArrowUp } from "lucide-react";
+import { useState, useRef, useDeferredValue, useEffect, memo, useCallback } from "react";
+import { Search, X, ArrowUp, ArrowUpCircle, ArrowDownCircle, CheckSquare } from "lucide-react";
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { FilterKey } from "../../../types";
+import { FilterKey, MasterUnit } from "../../../types";
 import { TIER_CONFIG } from "../../../data"; 
 import { useUnits } from "../../../context/UnitContext"; 
+import { useTradeStore } from "../../../store/useTradeStore";
 
 import { TierGridCard } from "./UnitGrid";
 import { UnitListRow, ListHeaderRow } from "./UnitListTable";
@@ -28,6 +29,7 @@ export const MainCanvas = memo(function MainCanvas({
   isMobile: boolean;
 }) {
   const { units: ALL_UNITS, isLoading } = useUnits(); 
+  const addCard = useTradeStore(s => s.addCard);
 
   const [showWelcome, setShowWelcome] = useState(() => {
     try { return localStorage.getItem("astd_welcome_dismissed") !== "true"; } 
@@ -38,11 +40,25 @@ export const MainCanvas = memo(function MainCanvas({
   const [sortMode, setSortMode] = useState("value-desc");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  // Bulk Selection State for Value List
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedUnitIds, setSelectedUnitIds] = useState<Set<string>>(new Set());
+
   const { scrollRef, headerRef, scrollTopBtnRef, scrollToTop, headerVisibleRef, skipNextResetRef } = useCanvasScroll(isMobile);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const colsRef = useRef(4);
   const [cols, setCols] = useState(4);
+  const [headerHeight, setHeaderHeight] = useState(80);
+
+  useEffect(() => {
+     if (!headerRef.current) return;
+     const observer = new ResizeObserver(entries => {
+        setHeaderHeight(entries[0].contentRect.height);
+     });
+     observer.observe(headerRef.current);
+     return () => observer.disconnect();
+  }, [headerRef]);
 
   useEffect(() => {
      if (!scrollRef.current) return;
@@ -71,6 +87,31 @@ export const MainCanvas = memo(function MainCanvas({
     setStatusFilter("all");
     setSortMode("value-desc");
     setActiveTierFilter("All");
+  };
+
+  const toggleSelectUnit = useCallback((unitId: string) => {
+    setSelectedUnitIds(prev => {
+      const next = new Set(prev);
+      if (next.has(unitId)) next.delete(unitId);
+      else next.add(unitId);
+      return next;
+    });
+  }, []);
+
+  const handleBulkAddToTrade = (type: "give" | "get") => {
+    if (selectedUnitIds.size === 0) return;
+    let count = 0;
+    selectedUnitIds.forEach(id => {
+      const master = ALL_UNITS.find(u => u.id === id);
+      if (master) {
+        const numericValue = typeof master.value === "number" ? master.value : master.valueMin || 0;
+        addCard(type, { id: master.id, name: master.name, subtitle: master.subtitle, value: numericValue, qty: 1 });
+        count++;
+      }
+    });
+    window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: `${count} units`, type } }));
+    setSelectedUnitIds(new Set());
+    setIsSelectMode(false);
   };
 
   const hasFiltersApplied = deferredSearchQuery !== "" || statusFilter !== "all" || sortMode !== "value-desc" || activeTierFilter !== "All";
@@ -145,7 +186,6 @@ export const MainCanvas = memo(function MainCanvas({
   };
 
   const isStatsTarget = guideState?.type === "stats";
-  const headerHeight = isMobile ? 110 : 60;
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background relative z-10">
@@ -179,6 +219,8 @@ export const MainCanvas = memo(function MainCanvas({
           setSortMode={setSortMode}
           viewMode={viewMode}
           setViewMode={setViewMode}
+          isSelectMode={isSelectMode}
+          setIsSelectMode={(v) => { setIsSelectMode(v); if (!v) setSelectedUnitIds(new Set()); }}
         />
 
         {(viewMode === "list" || viewMode === "compact") && !isLoading && (
@@ -188,12 +230,44 @@ export const MainCanvas = memo(function MainCanvas({
         )}
       </div>
 
+      {/* MULTI-SELECT FLOATING ACTION BAR FOR VALUE LIST (FIXED SPACING) */}
+      {isSelectMode && selectedUnitIds.size > 0 && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[99999] bg-card border border-primary shadow-[0_15px_50px_rgba(0,0,0,0.85)] px-5 py-3.5 rounded-[10px] flex items-center gap-4 animate-slide-up whitespace-nowrap">
+          <span className="text-[13px] font-bold text-foreground pr-1">
+            <span className="text-primary font-black text-[14px] mr-1">{selectedUnitIds.size}</span> Units Selected
+          </span>
+          <div className="w-px h-5 bg-border shrink-0" />
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => handleBulkAddToTrade("give")} 
+              className="flex items-center gap-1.5 text-[12px] font-bold bg-[#FAA61A] hover:bg-[#d98b14] text-white px-4 py-2 rounded-[6px] transition-all shadow-sm active:scale-95"
+            >
+              <ArrowUpCircle className="w-4 h-4" /> Add to Give
+            </button>
+            <button 
+              onClick={() => handleBulkAddToTrade("get")} 
+              className="flex items-center gap-1.5 text-[12px] font-bold bg-primary hover:bg-primary/80 text-primary-foreground px-4 py-2 rounded-[6px] transition-all shadow-sm active:scale-95"
+            >
+              <ArrowDownCircle className="w-4 h-4" /> Add to Get
+            </button>
+          </div>
+          <div className="w-px h-5 bg-border shrink-0 ml-1" />
+          <button 
+            onClick={() => setSelectedUnitIds(new Set())} 
+            className="text-muted-foreground hover:text-foreground p-1.5 rounded-[6px] hover:bg-white/5 transition-colors ml-0.5"
+            title="Clear Selection"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       <div 
         id="main-scroll-container"
         ref={scrollRef}
         className="flex-1 overflow-y-auto px-2 md:px-8 custom-scrollbar relative z-0 h-full" 
         style={{ 
-          paddingTop: headerHeight + ((viewMode === 'list' || viewMode === 'compact') && !isMobile ? 36 : 0),
+          paddingTop: headerHeight + 12,
           overflowAnchor: "none",
           touchAction: "pan-y"
         }}
@@ -283,7 +357,16 @@ export const MainCanvas = memo(function MainCanvas({
 
                   {item.type === 'grid-row' && (
                     <div className={`grid gap-3 sm:gap-5 w-full pb-3 sm:pb-5 ${isStatsTarget && virtualRow.index === 1 ? 'animate-pulse' : ''}`} style={{ gridTemplateColumns: `repeat(${item.cols}, minmax(0, 1fr))` }}>
-                      {item.units.map(u => <TierGridCard key={u.id} unit={u} searchQuery={item.searchQuery} />)}
+                      {item.units.map(u => (
+                        <TierGridCard 
+                          key={u.id} 
+                          unit={u} 
+                          searchQuery={item.searchQuery}
+                          isSelectMode={isSelectMode}
+                          isSelected={selectedUnitIds.has(u.id)}
+                          onToggleSelect={toggleSelectUnit}
+                        />
+                      ))}
                     </div>
                   )}
 

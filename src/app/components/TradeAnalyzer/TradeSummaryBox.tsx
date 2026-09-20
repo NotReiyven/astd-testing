@@ -2,6 +2,7 @@ import { useState } from "react";
 import { avgStat, getTradeForecast, getLiquidityScore } from "./summaryUtils";
 import { TradeCard, MasterUnit } from "../../../types";
 import { TrendingUp, Clock, AlertTriangle } from "lucide-react"; 
+import { RollingNumber } from "../shared/Formatters";
 
 interface TradeSummaryBoxProps {
   isMainStep4: boolean;
@@ -41,13 +42,13 @@ export function TradeSummaryBox({
         <div className="flex items-center justify-between mb-3 gap-4">
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Total Give</p>
-            <p className="text-[16px] sm:text-[18px] font-black text-foreground font-mono truncate" title={giveTotal.toLocaleString()}>{giveTotal.toLocaleString()}</p>
+            <p className="text-[16px] sm:text-[18px] font-black text-foreground font-mono truncate" title={giveTotal.toLocaleString()}><RollingNumber value={giveTotal} /></p>
           </div>
           
           {giveTotal > 0 && getTotal > 0 && (
              <div className="flex flex-col items-center flex-shrink-0 px-2">
-                <span className={`text-[13px] sm:text-[14px] font-black font-mono ${getTotal > giveTotal ? 'text-[#23a559]' : getTotal < giveTotal ? 'text-destructive' : 'text-foreground'}`}>
-                  {getTotal > giveTotal ? '+' : ''}{(getTotal - giveTotal).toLocaleString()}
+                <span className={`text-[13px] sm:text-[14px] font-black font-mono flex items-center ${getTotal > giveTotal ? 'text-[#23a559]' : getTotal < giveTotal ? 'text-destructive' : 'text-foreground'}`}>
+                  {getTotal > giveTotal ? '+' : ''}<RollingNumber value={getTotal - giveTotal} />
                 </span>
                 <span className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Raw Diff</span>
              </div>
@@ -55,7 +56,7 @@ export function TradeSummaryBox({
 
           <div className="min-w-0 flex-1 text-right">
             <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Total Get</p>
-            <p className="text-[16px] sm:text-[18px] font-black text-foreground font-mono truncate" title={getTotal.toLocaleString()}>{getTotal.toLocaleString()}</p>
+            <p className="text-[16px] sm:text-[18px] font-black text-foreground font-mono truncate" title={getTotal.toLocaleString()}><RollingNumber value={getTotal} /></p>
           </div>
         </div>
 

@@ -14,6 +14,7 @@ import { triggerHaptic } from "../../../data/helpers";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useTradeUndo } from "../../../hooks/useTradeUndo";
 import { useTradeGlobalInput } from "../../../hooks/useTradeGlobalInput";
+import { RollingNumber } from "../shared/Formatters";
 
 export function TradeAnalyzerPanel({
   isOpen = true,
@@ -56,7 +57,9 @@ export function TradeAnalyzerPanel({
 
   const sheetRef = useRef<HTMLDivElement>(null);
   const touchStartYRef = useRef<number | null>(null);
-  const currentYRef = useRef(0);
+  const lastYRef = useRef<number>(0);
+  const lastTimeRef = useRef<number>(0);
+  const velocityRef = useRef<number>(0);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -64,6 +67,23 @@ export function TradeAnalyzerPanel({
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Global Escape Key to close Analyzer (if no search/dropdown is focused)
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape" || e.key === "Esc") {
+        if (smartMenuOpen) {
+          setSmartMenuOpen(false);
+          return;
+        }
+        if (isOpen && onClose && document.activeElement?.tagName !== 'INPUT') {
+          closeSheet();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose, smartMenuOpen]);
 
   const { giveTotal, getTotal, givePercent, getPercent, forecastData } = useMemo(() => {
     const gTotal = giveItems.reduce((s, c) => s + c.value * c.qty, 0);
@@ -120,6 +140,10 @@ export function TradeAnalyzerPanel({
     if ((e.target as HTMLElement).closest('.custom-scrollbar, button, input, textarea, a, select')) return;
     
     touchStartYRef.current = e.touches[0].clientY;
+    lastYRef.current = e.touches[0].clientY;
+    lastTimeRef.current = Date.now();
+    velocityRef.current = 0;
+    
     if (sheetRef.current) {
       sheetRef.current.style.transition = 'none';
     }
@@ -127,10 +151,19 @@ export function TradeAnalyzerPanel({
 
   const onTouchMove = (e: React.TouchEvent) => {
     if (!isMobile || !isOpen || touchStartYRef.current === null) return;
-    const dy = e.touches[0].clientY - touchStartYRef.current;
+    
+    const currentY = e.touches[0].clientY;
+    const dy = currentY - touchStartYRef.current;
+    
+    const currentTime = Date.now();
+    const dt = currentTime - lastTimeRef.current;
+    if (dt > 0) {
+      velocityRef.current = (currentY - lastYRef.current) / dt;
+    }
+    lastYRef.current = currentY;
+    lastTimeRef.current = currentTime;
     
     if (dy > 0) {
-      currentYRef.current = dy;
       if (sheetRef.current) {
         sheetRef.current.style.transform = `translateY(${dy}px)`;
       }
@@ -140,9 +173,13 @@ export function TradeAnalyzerPanel({
   const onTouchEnd = () => {
     if (!isMobile || !isOpen || touchStartYRef.current === null) return;
     
+    const dy = lastYRef.current - touchStartYRef.current;
+    
     if (sheetRef.current) {
       sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
-      if (currentYRef.current > 120) {
+      
+      // If dragged halfway down OR flicked downwards fast enough (velocity > 0.5 px/ms)
+      if (dy > window.innerHeight * 0.3 || velocityRef.current > 0.5) {
         closeSheet();
         sheetRef.current.style.transform = 'translateY(100%)';
       } else {
@@ -151,7 +188,6 @@ export function TradeAnalyzerPanel({
     }
     
     touchStartYRef.current = null;
-    currentYRef.current = 0;
   };
 
   const isMainStep3 = guideState?.type === "main" && guideState?.step === 3;
@@ -178,7 +214,7 @@ export function TradeAnalyzerPanel({
         {isComposerOpen ? (
           <button 
             onClick={() => setComposerOpen(false)}
-            className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-popover hover:bg-muted text-foreground text-[12px] font-bold rounded-[4px] border border-border transition-colors focus-visible:outline-none"
+            className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-popover hover:bg-muted text-foreground text-[12px] font-bold rounded-[4px] border border-border transition-colors focus-visible:outline-none min-h-[44px] md:min-h-0"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back
           </button>
@@ -187,7 +223,7 @@ export function TradeAnalyzerPanel({
             {undoCache && (
                <button 
                  onClick={handleUndo} 
-                 className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-destructive-foreground bg-destructive hover:bg-destructive/80 focus-visible:outline-none relative z-35 pointer-events-auto animate-fade-in shadow-sm mr-1"
+                 className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-destructive-foreground bg-destructive hover:bg-destructive/80 focus-visible:outline-none relative z-35 pointer-events-auto animate-fade-in shadow-sm mr-1 min-h-[44px] md:min-h-0"
                  title="Undo Clear"
                >
                  <RotateCcw className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Undo Clear</span>
@@ -196,7 +232,7 @@ export function TradeAnalyzerPanel({
 
             <button 
               onClick={() => { setSmartMenuOpen(!smartMenuOpen); startGuide("dictionary"); }} 
-              className={`flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto ${
+              className={`flex-shrink-0 w-11 h-11 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto ${
                 isWandTarget 
                   ? "bg-primary text-primary-foreground shadow-[0_0_20px_var(--primary)] ring-2 ring-primary z-[100005] animate-pulse" 
                   : smartMenuOpen 
@@ -205,11 +241,11 @@ export function TradeAnalyzerPanel({
               }`} 
               title="Context Recognition"
             >
-              <Wand2 className="w-4 h-4 md:w-4 md:h-4" />
+              <Wand2 className="w-5 h-5 md:w-4 md:h-4" />
             </button>
             <button 
               onClick={handleSafeClear} 
-              className={`flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto ${
+              className={`flex-shrink-0 w-11 h-11 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto ${
                 isClearTarget 
                   ? "bg-destructive text-destructive-foreground shadow-[0_0_20px_var(--destructive)] ring-2 ring-destructive z-[100005] animate-pulse" 
                   : confirmClear
@@ -218,23 +254,23 @@ export function TradeAnalyzerPanel({
               }`} 
               title={confirmClear ? "Click again to confirm" : "Clear trade"}
             >
-              {confirmClear ? <Check className="w-4 h-4 md:w-4 md:h-4" /> : <X className="w-4 h-4 md:w-4 md:h-4" />}
+              {confirmClear ? <Check className="w-5 h-5 md:w-4 md:h-4" /> : <X className="w-5 h-5 md:w-4 md:h-4" />}
             </button>
             <button 
               onClick={handleShare} 
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-2.5 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto" 
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-2.5 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto min-h-[44px] md:min-h-0" 
               style={{ background: copied ? "#23a559" : "var(--popover)", border: "1px solid var(--border)", fontFamily: "var(--font-sans)" }}
               title="Share formatted trade string"
             >
-              {copied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5 text-muted-foreground" />}
+              {copied ? <Check className="w-4 h-4 md:w-3.5 md:h-3.5" /> : <Share2 className="w-4 h-4 md:w-3.5 md:h-3.5 text-muted-foreground" />}
               <span className="hidden sm:inline">{copied ? "Copied!" : "Share"}</span>
             </button>
             <button 
               onClick={handleAdvertise} 
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-3 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-primary-foreground bg-primary hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto shadow-sm" 
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-3 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-primary-foreground bg-primary hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto shadow-sm min-h-[44px] md:min-h-0" 
               title="Post this trade as an advertisement"
             >
-              <Megaphone className="w-3.5 h-3.5" />
+              <Megaphone className="w-4 h-4 md:w-3.5 md:h-3.5" />
               <span>Advertise</span>
             </button>
           </>
@@ -302,8 +338,8 @@ export function TradeAnalyzerPanel({
 
             <div className="relative mx-3 md:mx-4 flex items-center justify-center my-1">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-              <button onClick={swap} className="relative flex items-center justify-center w-10 h-10 md:w-7 md:h-7 rounded-full transition-all duration-300 ease-out hover:scale-110 z-10 bg-popover border border-border text-muted-foreground hover:text-foreground hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" title="Swap Give and Get">
-                <ArrowUpDown className="w-4 h-4 md:w-3.5 md:h-3.5" />
+              <button onClick={swap} className="relative flex items-center justify-center w-11 h-11 md:w-8 md:h-8 rounded-full transition-all duration-300 ease-out hover:scale-110 z-10 bg-popover border border-border text-muted-foreground hover:text-foreground hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm" title="Swap Give and Get">
+                <ArrowUpDown className="w-5 h-5 md:w-4 md:h-4" />
               </button>
             </div>
 
@@ -353,15 +389,15 @@ export function TradeAnalyzerPanel({
           ${isMainStep3 && !isOpen ? '!z-[100005] ring-4 ring-primary shadow-lg animate-pulse' : 'z-[80]'}`}
           onClick={openSheet}
         >
-          <div className="flex items-center justify-between px-3 md:px-4 py-2.5 pb-safe">
-            <div className="flex flex-col min-w-0 flex-1 border-r border-border pr-2 md:pr-3">
-              <span className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#FAA61A]" /> Give</span>
-              <span className="text-[13px] md:text-[14px] font-black text-foreground font-mono truncate">{giveTotal.toLocaleString()}</span>
+          <div className="flex items-center justify-between px-4 py-3 pb-safe">
+            <div className="flex flex-col min-w-0 flex-1 border-r border-border pr-3">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#FAA61A]" /> Give</span>
+              <span className="text-[14px] font-black text-foreground font-mono truncate"><RollingNumber value={giveTotal} /></span>
             </div>
 
-            <div className="flex flex-col min-w-0 flex-1 pl-2 md:pl-3">
-              <span className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-primary" /> Get</span>
-              <span className="text-[13px] md:text-[14px] font-black text-foreground font-mono truncate">{getTotal.toLocaleString()}</span>
+            <div className="flex flex-col min-w-0 flex-1 pl-3">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-primary" /> Get</span>
+              <span className="text-[14px] font-black text-foreground font-mono truncate"><RollingNumber value={getTotal} /></span>
             </div>
           </div>
         </div>

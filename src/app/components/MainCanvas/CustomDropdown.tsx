@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Check } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 
 export function useClickOutside<T extends HTMLElement>(ref: React.RefObject<T | null>, handler: () => void) {
   const handlerRef = useRef(handler);
@@ -27,29 +27,32 @@ export function CustomDropdown({ icon: Icon, value, options, onChange, defaultLa
   useClickOutside(ref, () => setIsOpen(false));
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative min-w-[170px] sm:min-w-[190px]">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center bg-[#1E1F22] hover:bg-[rgba(255,255,255,0.04)] rounded-[4px] border border-[rgba(255,255,255,0.04)] px-3 h-[36px] md:h-[30px] transition-colors shadow-inner"
+        className="w-full flex items-center justify-between bg-popover hover:bg-muted rounded-[4px] border border-border px-3 h-[36px] md:h-[32px] transition-colors shadow-inner whitespace-nowrap"
       >
-        <Icon className="w-3.5 h-3.5 text-[#949BA4] mr-2" />
-        <span className="text-[11px] font-bold text-[#DBDEE1] uppercase tracking-wider">
-          {value === "all" ? defaultLabel : options[value]}
-        </span>
+        <div className="flex items-center min-w-0">
+          <Icon className="w-3.5 h-3.5 text-muted-foreground mr-2 shrink-0" />
+          <span className="text-[11px] font-bold text-foreground uppercase tracking-wider truncate">
+            {value === "all" ? defaultLabel : options[value]}
+          </span>
+        </div>
+        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground ml-2 shrink-0 opacity-70" />
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-max min-w-[200px] bg-[#2B2D31] border border-[rgba(255,255,255,0.08)] rounded-[6px] shadow-xl z-[9999] py-1.5 flex flex-col">
+        <div className="absolute top-full left-0 mt-1 w-full min-w-[200px] bg-popover border border-border rounded-[6px] shadow-xl z-[9999] py-1.5 flex flex-col">
           {Object.entries(options).map(([k, v]) => (
             <button
               key={k}
               onClick={() => { onChange(k); setIsOpen(false); }}
-              className={`flex items-center justify-between text-left px-4 py-3 md:px-3 md:py-2 text-[12px] md:text-[11px] font-bold uppercase tracking-wider transition-colors ${
-                value === k ? "bg-[#5865F2] text-white" : "text-[#949BA4] hover:bg-[rgba(255,255,255,0.04)] hover:text-[#DBDEE1]"
+              className={`flex items-center justify-between text-left px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${
+                value === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
               }`}
             >
-              <span>{v as string}</span>
-              {value === k && <Check className="w-4 h-4" />}
+              <span className="truncate pr-4">{v as string}</span>
+              {value === k && <Check className="w-4 h-4 shrink-0" />}
             </button>
           ))}
         </div>

@@ -1,24 +1,177 @@
-import React, { useState, memo } from "react";
+import React, { useState, memo, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { ArrowUpCircle, ArrowDownCircle, History, Package, X } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, History, Package, X, Loader2, Check } from "lucide-react";
 import { PopupUnit, GridUnit, MasterUnit } from "../../../../types";
-import { getTier, TIER_CONFIG, getProxyImage, getObtainability, handleImageError } from "../../../../data";
+import { getTier, TIER_CONFIG, getProxyImage, getObtainability, handleImageError, GRID_STATUS_CFG } from "../../../../data";
 import { getAvatarStyle, getInitials } from "../../TradeAnalyzer/summaryUtils"; 
 import { useTradeStore } from "../../../../store/useTradeStore";
 import { useHistoryModalStore } from "../../../../store/useHistoryModalStore";
 import { triggerHaptic } from "../../../../data/helpers";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useInventoryStore } from "../../../../store/useInventoryStore";
-import { HighlightText, NoticeTooltip, JargonWrap } from "../../shared/Formatters";
-import { GridStatusBadge } from "./GridStatusBadge";
-import { GridStatBox } from "./GridStatBox";
+import { HighlightText, NoticeTooltip, JargonWrap, StatusIcon } from "../../shared/Formatters";
 import { GridValueDisplay } from "./GridValueDisplay";
-import { StatusIcon } from "../../shared/Formatters";
 
-export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { unit: GridUnit, searchQuery?: string }) {
+export function GridStatusBadge({ status }: { status: string }) {
+  const c = GRID_STATUS_CFG[status as keyof typeof GRID_STATUS_CFG];
+  if (!c) return null;
+  const badgeRef = useRef<HTMLDivElement>(null);
+  const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+      setTipPos(null);
+    };
+  }, []);
+
+  const openTip = () => {
+    const r = badgeRef.current?.getBoundingClientRect();
+    if (r) setTipPos({ x: r.left + r.width / 2, y: r.top - 8 });
+  };
+
+  const toggleTip = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (tipPos) setTipPos(null);
+    else openTip();
+  };
+
+  return (
+    <div
+      ref={badgeRef}
+      className="relative inline-flex cursor-help"
+      onMouseEnter={() => {
+        if (!window.matchMedia('(hover: hover)').matches) return;
+        hoverTimer.current = setTimeout(openTip, 200);
+      }}
+      onMouseLeave={() => {
+        if (hoverTimer.current) clearTimeout(hoverTimer.current);
+        setTipPos(null);
+      }}
+      onClick={toggleTip}
+    >
+      <div 
+        className="inline-flex items-center px-2.5 py-1 rounded-[6px] gap-1.5 backdrop-blur-md shadow-sm" 
+        style={{ background: c.bg, border: `1px solid ${c.border}`, color: c.color }}
+      >
+        <StatusIcon status={status} />
+        <span className="text-[10px] font-bold tracking-wide uppercase transition-colors leading-none">{c.label}</span>
+      </div>
+      {tipPos && createPortal(
+        <>
+          <div className="md:hidden fixed inset-0 z-[99998]" onClick={(e) => { e.stopPropagation(); setTipPos(null); }} onTouchStart={(e) => { e.stopPropagation(); setTipPos(null); }} />
+          <div className="rounded-xl px-3 py-2 pointer-events-none fixed z-[99999] animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.6)]" style={{ top: tipPos.y, left: tipPos.x, minWidth: 210, maxWidth: 240, background: "var(--popover)", border: `1px solid ${c.border}` }}>
+            <p className="text-[11px] font-bold leading-snug text-foreground">{c.tip}</p>
+          </div>
+        </>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+export function GridStatBox({ label, value, type }: { label: string; value: number | string; type: "rarity" | "liquidity" }) {
+  const btnRef = useRef<HTMLDivElement>(null);
+  const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+      setTipPos(null);
+    };
+  }, []);
+
+  let tipTitle = ""; let tipBody = ""; 
+  let textColor = "#DBDEE1";
+  let displayValue = String(value);
+
+  if (type === "rarity") {
+    const numVal = Number(value) || 0;
+    displayValue = numVal % 1 === 0 ? String(numVal) : numVal.toFixed(1);
+    tipTitle = `Rarity ${displayValue} / 20`; 
+    tipBody = "Higher is better. Determines absolute scarcity.";
+    if (numVal >= 19) textColor = "#4DB6AC"; else if (numVal >= 9) textColor = "#81C784"; else if (numVal >= 6) textColor = "#FFB74D"; else textColor = "var(--destructive)";
+  } else {
+    const stringVal = String(value);
+    const liqKey = stringVal.charAt(0).toUpperCase() + stringVal.slice(1).toLowerCase();
+    displayValue = stringVal.toLowerCase() === "black marketed" ? "BM" : stringVal.toUpperCase();
+    tipTitle = `Liquidity: ${liqKey}`; 
+    tipBody = "How fast you can find a buyer. Dictates short-term viability.";
+
+    if (liqKey === "High") textColor = "#4DB6AC"; 
+    else if (liqKey === "Average") textColor = "var(--muted-foreground)"; 
+    else textColor = "var(--destructive)";
+  }
+
+  const openTip = () => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setTipPos({ x: r.left + r.width / 2, y: r.top - 8 });
+  };
+
+  const toggleTip = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (tipPos) setTipPos(null);
+    else openTip();
+  };
+
+  return (
+    <div
+      ref={btnRef}
+      className="flex flex-col justify-center bg-popover border border-border rounded-[6px] p-2 hover:bg-white/5 transition-colors cursor-help shadow-inner relative z-20 min-h-[44px]"
+      onMouseEnter={() => {
+        if (!window.matchMedia('(hover: hover)').matches) return;
+        hoverTimer.current = setTimeout(openTip, 200);
+      }}
+      onMouseLeave={() => {
+        if (hoverTimer.current) clearTimeout(hoverTimer.current);
+        setTipPos(null);
+      }}
+      onClick={toggleTip}
+    >
+      <span className="text-[8px] md:text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">{label}</span>
+      <span className="text-[10px] md:text-[14px] font-black tracking-wide truncate" style={{ color: textColor }}>
+        {displayValue === "BM" ? (
+          <JargonWrap title="Black Marketed (BM)" tip="This unit's value is heavily manipulated by outside-game currency trades. Highly risky.">
+            BM
+          </JargonWrap>
+        ) : displayValue}
+      </span>
+
+      {tipPos && createPortal(
+        <>
+          <div className="md:hidden fixed inset-0 z-[99998]" onClick={(e) => { e.stopPropagation(); setTipPos(null); }} onTouchStart={(e) => { e.stopPropagation(); setTipPos(null); }} />
+          <div className="rounded-[8px] px-3 py-2.5 pointer-events-none fixed z-[99999] -translate-x-1/2 -translate-y-full animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.6)]" style={{ top: tipPos.y, left: tipPos.x, minWidth: 200, maxWidth: 240, background: "var(--popover)", border: "1px solid var(--border)" }}>
+            <p className="text-[12px] font-bold mb-0.5" style={{ color: textColor }}>{tipTitle}</p>
+            <p className="text-[11px] font-medium leading-snug text-foreground whitespace-normal">{tipBody}</p>
+          </div>
+        </>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+export const TierGridCard = memo(function TierGridCard({ 
+  unit, searchQuery, isSelectMode, isSelected, onToggleSelect 
+}: { 
+  unit: GridUnit, 
+  searchQuery?: string,
+  isSelectMode?: boolean,
+  isSelected?: boolean,
+  onToggleSelect?: (id: string) => void
+}) {
   const [hovered, setHovered] = useState(false);
   const [isAdded, setIsAdded] = useState(false); 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const addCard = useTradeStore(state => state.addCard);
   const openModal = useHistoryModalStore(state => state.openModal);
@@ -26,13 +179,18 @@ export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { 
   const profile = useAuthStore(state => state.profile);
   const addOrUpdateUnit = useInventoryStore(state => state.addOrUpdateUnit);
 
-  const handleSaveToInventory = () => {
+  const handleSaveToInventory = async () => {
     if (!profile) {
       alert("Please log in with Discord first to save items to your inventory.");
       return;
     }
-    addOrUpdateUnit(profile.id, unit.id, 1);
-    setMenuOpen(false);
+    setIsSaving(true);
+    try {
+      await addOrUpdateUnit(profile.id, unit.id, 1);
+    } finally {
+      setIsSaving(false);
+      setMenuOpen(false);
+    }
   };
 
   const numericValue = typeof unit.value === "number" 
@@ -49,7 +207,6 @@ export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { 
   };
 
   const obtainability = getObtainability(unit as MasterUnit);
-  const dropCfg = unit.status ? import("../../../../data").then(m => m.GRID_STATUS_CFG[unit.status as keyof typeof m.GRID_STATUS_CFG]) : null;
 
   const triggerAddedGlow = () => {
     setIsAdded(true);
@@ -70,6 +227,10 @@ export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { 
 
   const handleCardClick = () => {
     triggerHaptic('light');
+    if (isSelectMode && onToggleSelect) {
+      onToggleSelect(unit.id);
+      return;
+    }
     if (window.innerWidth < 768) {
       setMenuOpen(true);
     }
@@ -83,14 +244,18 @@ export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { 
     <>
       <div className="relative w-full overflow-hidden rounded-[8px] active:scale-[0.98] transition-transform duration-150 touch-manipulation">
         <div
-          draggable
+          draggable={!isSelectMode}
           onDragStart={handleDragStart}
           onClick={handleCardClick}
           onContextMenu={(e) => e.preventDefault()}
-          className="flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10 will-change-transform bg-card border border-border"
+          className={`flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10 will-change-transform bg-card border ${
+            isSelected 
+              ? "border-primary ring-2 ring-primary scale-[0.98]" 
+              : "border-border"
+          }`}
           style={{
             transition: "all 0.15s cubic-bezier(0.16, 1, 0.3, 1)",
-            borderColor: isAdded ? tierColor : hovered ? tierColor : "var(--border)",
+            borderColor: isSelected ? "var(--primary)" : isAdded ? tierColor : hovered ? tierColor : "var(--border)",
             transform: isAdded ? "scale(0.95)" : hovered ? "translateY(-4px)" : "translateY(0)"
           }}
           onMouseEnter={() => {
@@ -123,32 +288,40 @@ export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { 
               </div>
             )}
 
-            {/* TRANSLUCENT GHOST BUTTON GRID OVERLAY */}
-            <div className={`hidden md:flex absolute inset-0 bg-black/60 backdrop-blur-[4px] transition-opacity duration-200 z-40 flex-col justify-center gap-2 p-4 pt-8 ${hovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-              <div className="grid grid-cols-2 gap-2 w-full">
-                <button onClick={(e) => { e.stopPropagation(); handleAdd("give"); }} className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-[6px] bg-[#FAA61A]/10 text-[#FAA61A] border border-[#FAA61A]/40 hover:bg-[#FAA61A] hover:text-white transition-all active:scale-95 shadow-sm focus-visible:outline-none">
-                  <ArrowUpCircle className="w-5 h-5" />
-                  <span className="text-[11px] font-bold uppercase tracking-wider">Give</span>
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); handleAdd("get"); }} className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-[6px] bg-primary/10 text-primary border border-primary/40 hover:bg-primary hover:text-white transition-all active:scale-95 shadow-sm focus-visible:outline-none">
-                  <ArrowDownCircle className="w-5 h-5" />
-                  <span className="text-[11px] font-bold uppercase tracking-wider">Get</span>
-                </button>
+            {isSelected && (
+              <div className="absolute top-2 right-2 z-50 bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center shadow-md">
+                <Check className="w-4 h-4 stroke-[3]" />
               </div>
-              <div className="grid grid-cols-2 gap-2 w-full mt-1">
-                <button onClick={(e) => { e.stopPropagation(); handleSaveToInventory(); }} className="flex items-center justify-center gap-1.5 py-2 rounded-[6px] bg-[#23a559]/10 text-[#23a559] border border-[#23a559]/40 hover:bg-[#23a559] hover:text-white transition-all active:scale-95 shadow-sm focus-visible:outline-none">
-                  <Package className="w-3.5 h-3.5" />
-                  <span className="text-[11px] font-bold">Save</span>
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); openModal(unit.id); }} className="flex items-center justify-center gap-1.5 py-2 rounded-[6px] bg-card/60 text-foreground border border-border hover:bg-muted hover:text-foreground transition-all active:scale-95 shadow-sm focus-visible:outline-none">
-                  <History className="w-3.5 h-3.5" />
-                  <span className="text-[11px] font-bold">History</span>
-                </button>
+            )}
+
+            {/* TRANSLUCENT GHOST BUTTON GRID OVERLAY (HIDDEN IN SELECT MODE) */}
+            {!isSelectMode && (
+              <div className={`hidden md:flex absolute inset-0 bg-black/60 backdrop-blur-[4px] transition-opacity duration-200 z-40 flex-col justify-center gap-2 p-4 pt-8 ${hovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                <div className="grid grid-cols-2 gap-2 w-full">
+                  <button onClick={(e) => { e.stopPropagation(); handleAdd("give"); }} className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-[6px] bg-[#FAA61A]/10 text-[#FAA61A] border border-[#FAA61A]/40 hover:bg-[#FAA61A] hover:text-white transition-all active:scale-95 shadow-sm focus-visible:outline-none min-h-[44px]">
+                    <ArrowUpCircle className="w-5 h-5" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider">Give</span>
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); handleAdd("get"); }} className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-[6px] bg-primary/10 text-primary border border-primary/40 hover:bg-primary hover:text-white transition-all active:scale-95 shadow-sm focus-visible:outline-none min-h-[44px]">
+                    <ArrowDownCircle className="w-5 h-5" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider">Get</span>
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2 w-full mt-1">
+                  <button onClick={(e) => { e.stopPropagation(); handleSaveToInventory(); }} disabled={isSaving} className="flex items-center justify-center gap-1.5 py-2 rounded-[6px] bg-[#23a559]/10 text-[#23a559] border border-[#23a559]/40 hover:bg-[#23a559] hover:text-white disabled:opacity-50 disabled:hover:bg-[#23a559]/10 disabled:hover:text-[#23a559] transition-all active:scale-95 shadow-sm focus-visible:outline-none min-h-[44px]">
+                    {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
+                    <span className="text-[11px] font-bold">{isSaving ? "Saving..." : "Save"}</span>
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); openModal(unit.id); }} className="flex items-center justify-center gap-1.5 py-2 rounded-[6px] bg-card/60 text-foreground border border-border hover:bg-muted hover:text-foreground transition-all active:scale-95 shadow-sm focus-visible:outline-none min-h-[44px]">
+                    <History className="w-3.5 h-3.5" />
+                    <span className="text-[11px] font-bold">History</span>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
-          <div className="flex flex-col flex-1 px-3 md:px-4 pt-3 md:pt-4 pb-3 md:pb-4 relative z-10 bg-card -mt-[1px]" onClick={() => { if (window.innerWidth >= 768) setMenuOpen(true); }}>
+          <div className="flex flex-col flex-1 px-3 md:px-4 pt-3 md:pt-4 pb-3 md:pb-4 relative z-10 bg-card -mt-[1px]" onClick={() => { if (!isSelectMode && window.innerWidth >= 768) setMenuOpen(true); }}>
             <div className="flex flex-col">
               <div className="flex items-start gap-2">
                 <h3 className="text-[13px] md:text-[17px] font-extrabold tracking-tight leading-snug flex-1 min-w-0 line-clamp-2 text-foreground">
@@ -196,7 +369,7 @@ export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { 
         </div>
       </div>
 
-      {menuOpen && createPortal(
+      {menuOpen && !isSelectMode && createPortal(
         <div className="fixed inset-0 z-[1000000] flex flex-col justify-end md:justify-center md:items-center">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setMenuOpen(false)} />
           <div className="relative w-full md:max-w-sm bg-popover rounded-t-[24px] md:rounded-[20px] p-5 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] md:shadow-[0_20px_60px_rgba(0,0,0,0.8)] animate-slide-up md:animate-fade-in border-t md:border border-border">
@@ -216,23 +389,24 @@ export const TierGridCard = memo(function TierGridCard({ unit, searchQuery }: { 
                   <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground truncate">{unit.subtitle}</span>
                 </div>
               </div>
-              <button onClick={() => setMenuOpen(false)} className="w-10 h-10 md:w-8 md:h-8 rounded-full bg-white/5 flex items-center justify-center text-muted-foreground shrink-0 active:scale-90 hover:bg-white/10 transition-colors focus-visible:outline-none">
-                <X className="w-5 h-5 md:w-4 md:h-4" />
+              <button onClick={() => setMenuOpen(false)} className="w-11 h-11 md:w-8 md:h-8 rounded-full bg-white/5 flex items-center justify-center text-muted-foreground shrink-0 active:scale-90 hover:bg-white/10 transition-colors focus-visible:outline-none">
+                <X className="w-6 h-6 md:w-4 md:h-4" />
               </button>
             </div>
 
             <div className="flex flex-col gap-2.5">
-              <button onClick={() => handleAdd("give")} className="w-full flex items-center justify-center gap-2 bg-[#FAA61A] hover:bg-[#d98b14] transition-colors text-white text-[14px] font-bold h-[48px] md:h-[44px] rounded-[10px] active:scale-[0.98] shadow-md focus-visible:outline-none">
-                <ArrowUpCircle className="w-4 h-4" /> Add to 'You Give'
+              <button onClick={() => handleAdd("give")} className="w-full flex items-center justify-center gap-2 bg-[#FAA61A] hover:bg-[#d98b14] transition-colors text-white text-[14px] font-bold min-h-[50px] md:h-[44px] rounded-[10px] active:scale-[0.98] shadow-md focus-visible:outline-none">
+                <ArrowUpCircle className="w-5 h-5 md:w-4 md:h-4" /> Add to 'You Give'
               </button>
-              <button onClick={() => handleAdd("get")} className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/80 transition-colors text-white text-[14px] font-bold h-[48px] md:h-[44px] rounded-[10px] active:scale-[0.98] shadow-md focus-visible:outline-none">
-                <ArrowDownCircle className="w-4 h-4" /> Add to 'You Get'
+              <button onClick={() => handleAdd("get")} className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/80 transition-colors text-white text-[14px] font-bold min-h-[50px] md:h-[44px] rounded-[10px] active:scale-[0.98] shadow-md focus-visible:outline-none">
+                <ArrowDownCircle className="w-5 h-5 md:w-4 md:h-4" /> Add to 'You Get'
               </button>
-              <button onClick={handleSaveToInventory} className="w-full flex items-center justify-center gap-2 bg-[#23a559] hover:bg-[#1f914e] transition-colors text-white text-[14px] font-bold h-[48px] md:h-[44px] rounded-[10px] active:scale-[0.98] shadow-md focus-visible:outline-none">
-                <Package className="w-4 h-4" /> Save to My Inventory
+              <button onClick={handleSaveToInventory} disabled={isSaving} className="w-full flex items-center justify-center gap-2 bg-[#23a559] hover:bg-[#1f914e] disabled:opacity-50 transition-colors text-white text-[14px] font-bold min-h-[50px] md:h-[44px] rounded-[10px] active:scale-[0.98] shadow-md focus-visible:outline-none">
+                {isSaving ? <Loader2 className="w-5 h-5 md:w-4 md:h-4 animate-spin" /> : <Package className="w-5 h-5 md:w-4 md:h-4" />} 
+                {isSaving ? "Saving..." : "Save to My Inventory"}
               </button>
-              <button onClick={() => { setMenuOpen(false); openModal(unit.id); }} className="w-full flex items-center justify-center gap-2 bg-card hover:bg-muted transition-colors text-foreground border border-border text-[13px] font-bold h-[48px] md:h-[44px] rounded-[10px] active:scale-[0.98] mt-0.5 focus-visible:outline-none">
-                <History className="w-4 h-4" /> View Market History
+              <button onClick={() => { setMenuOpen(false); openModal(unit.id); }} className="w-full flex items-center justify-center gap-2 bg-card hover:bg-muted transition-colors text-foreground border border-border text-[13px] font-bold min-h-[50px] md:h-[44px] rounded-[10px] active:scale-[0.98] mt-0.5 focus-visible:outline-none">
+                <History className="w-5 h-5 md:w-4 md:h-4" /> View Market History
               </button>
             </div>
 

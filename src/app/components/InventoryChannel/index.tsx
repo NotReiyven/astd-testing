@@ -6,7 +6,7 @@ import { useMemo } from "react";
 import { 
   Package, Search, X, Lock, 
   ArrowLeft, Archive, Trash2, ArrowUpRight, Check,
-  Download, ArrowDownCircle, ArrowUpCircle, BookOpen, Plus
+  Download, ArrowDownCircle, ArrowUpCircle, BookOpen, Plus, CheckSquare
 } from "lucide-react";
 import { useUnits } from "../../../context/UnitContext";
 import { useInventoryManager } from "../../../hooks/useInventoryManager";
@@ -15,6 +15,7 @@ import { TradingCardSlot } from "./TradingCardSlot";
 import { Sparkline } from "./Sparkline";
 import { FilterKey } from "../../../types";
 import { getUnitConservativeValue } from "./inventoryUtils";
+import { HoldToConfirmButton } from "../shared/Formatters";
 
 export function InventoryChannel() {
   const { units: ALL_UNITS } = useUnits();
@@ -31,7 +32,7 @@ export function InventoryChannel() {
     handleQuickAdd, executeMassImport, handleCloseVault
   } = useInventoryManager(ALL_UNITS);
 
-  const TIER_FILTERS = ["All", "Pinned", "S", "A", "B", "C", "Pure", "Oddities"];
+  const TIER_FILTERS = ["All", "Locked", "S", "A", "B", "C", "Pure", "Oddities", "Untiered"];
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background h-full font-sans relative">
@@ -71,17 +72,6 @@ export function InventoryChannel() {
           </div>
 
           <div className="flex items-center gap-3">
-            {!isReadOnly && vaultView === "owned" && displayInventory.length > 0 && (
-              <button
-                onClick={() => setIsSelectMode(!isSelectMode)}
-                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-colors border focus-visible:outline-none ${
-                  isSelectMode ? "bg-primary/10 text-primary border-primary/30" : "bg-popover text-muted-foreground border-border hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                {isSelectMode ? "Cancel Selection" : "Bulk Select"}
-              </button>
-            )}
-
             {!isReadOnly && vaultView === "owned" && profile && (
               <button
                 onClick={() => setConfirmClear("unpinned")}
@@ -118,50 +108,81 @@ export function InventoryChannel() {
           </div>
         )}
 
-        {/* CONTROLS BAR */}
-        <div className="px-4 md:px-6 py-3 border-t border-border flex flex-col md:flex-row md:items-center gap-3">
-          <div className="relative w-full md:w-64 shrink-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search units..."
-              className="w-full bg-popover border border-border rounded-[4px] pl-9 pr-3 py-1.5 text-[13px] text-foreground outline-none placeholder-muted-foreground focus:border-primary transition-colors shadow-inner"
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar w-full">
+        {/* CONTROLS BAR (STABLE TWO-ROW LAYOUT WITH WRAPPING) */}
+        <div className="px-4 md:px-6 py-3 border-t border-border flex flex-col gap-3">
+          
+          {/* ROW 1: Dedicated Tier Filter Pills (Wrapped cleanly so every pill is fully visible) */}
+          <div 
+            className="flex flex-wrap items-center gap-2 w-full"
+            onTouchStart={e => e.stopPropagation()}
+            onTouchMove={e => e.stopPropagation()}
+          >
             {TIER_FILTERS.map(f => (
               <button
                 key={f}
                 onClick={() => setActiveTierFilter(f as FilterKey | "Pinned")}
-                className={`px-3 py-1 rounded-[4px] text-[11px] font-bold uppercase tracking-wider shrink-0 transition-colors border focus-visible:outline-none ${
-                  activeTierFilter === f 
-                    ? "bg-primary text-primary-foreground border-primary" 
-                    : "bg-popover text-muted-foreground border-border hover:text-foreground hover:bg-muted"
-                }`}
+                className="px-4 py-1.5 rounded-full text-[12px] font-bold tracking-wide transition-all duration-200 ease-out active:scale-95 border shrink-0"
+                style={
+                  activeTierFilter === f
+                    ? { background: "var(--primary)", color: "var(--primary-foreground)", borderColor: "var(--primary)", boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }
+                    : { background: "transparent", color: "var(--muted-foreground)", borderColor: "var(--border)" }
+                }
               >
                 {f}
               </button>
             ))}
           </div>
 
-          <select
-            value={sortMode}
-            onChange={(e) => setSortMode(e.target.value)}
-            className="bg-popover text-muted-foreground text-[11px] font-bold uppercase tracking-wider px-2 py-1.5 rounded-[4px] outline-none border border-border focus:border-primary shrink-0 cursor-pointer"
+          {/* ROW 2: Utility Controls, Bulk Select, Search Bar, and Sort Dropdown */}
+          <div 
+            className="flex flex-wrap items-center justify-between gap-2.5 w-full pt-2.5 border-t border-border/60"
+            onTouchStart={e => e.stopPropagation()}
+            onTouchMove={e => e.stopPropagation()}
           >
-            <option value="value-desc">Highest Value</option>
-            <option value="value-asc">Lowest Value</option>
-            <option value="alpha-asc">A to Z</option>
-            <option value="recent-desc">Recently Added</option>
-          </select>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {!isReadOnly && vaultView === "owned" && displayInventory.length > 0 && (
+                <button
+                  onClick={() => setIsSelectMode(!isSelectMode)}
+                  className={`flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors border focus-visible:outline-none shrink-0 ${
+                    isSelectMode ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-popover text-muted-foreground border-border hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <CheckSquare className="w-3.5 h-3.5" />
+                  <span>{isSelectMode ? "Cancel Select" : "Bulk Select"}</span>
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2.5 flex-wrap justify-end flex-1 min-w-0 max-w-xl ml-auto">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search units..."
+                  className="w-full bg-popover border border-border rounded-[4px] pl-9 pr-3 py-1.5 text-[13px] text-foreground outline-none placeholder-muted-foreground focus:border-primary transition-colors shadow-inner h-[32px]"
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              <select
+                value={sortMode}
+                onChange={(e) => setSortMode(e.target.value)}
+                className="bg-popover text-muted-foreground text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-[4px] outline-none border border-border focus:border-primary cursor-pointer h-[32px] shrink-0"
+              >
+                <option value="value-desc">Highest Value</option>
+                <option value="value-asc">Lowest Value</option>
+                <option value="alpha-asc">A to Z</option>
+                <option value="recent-desc">Recently Added</option>
+              </select>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -365,7 +386,13 @@ export function InventoryChannel() {
             </p>
             <div className="flex gap-3">
               <button onClick={() => setConfirmClear(null)} className="flex-1 py-2.5 rounded-[4px] bg-popover hover:bg-muted border border-border text-foreground text-[13px] font-bold transition-colors">Cancel</button>
-              <button onClick={handleClearAction} className="flex-1 py-2.5 rounded-[4px] bg-destructive hover:bg-destructive/80 text-destructive-foreground text-[13px] font-bold transition-colors shadow-md">Wipe It</button>
+              <HoldToConfirmButton 
+                onConfirm={handleClearAction} 
+                className="flex-1 py-2.5 rounded-[4px] bg-destructive text-destructive-foreground text-[13px] font-bold transition-colors shadow-md"
+                holdTime={800}
+              >
+                Hold to Wipe
+              </HoldToConfirmButton>
             </div>
           </div>
         </div>

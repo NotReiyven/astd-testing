@@ -11,6 +11,10 @@ export function useGlobalEvents({
   const prevCompletedCount = useRef(0);
   const [isMounted, setIsMounted] = useState(false);
 
+  // Used to prevent rapid flashing by keeping the same ID if a new toast arrives quickly
+  const lastToastIdRef = useRef<number>(Date.now());
+  const lastToastTimeRef = useRef<number>(0);
+
   useEffect(() => setIsMounted(true), []);
 
   // Academy Progression Observer
@@ -55,11 +59,22 @@ export function useGlobalEvents({
       if (!customEvent.detail) return;
       triggerHaptic('medium'); 
       
+      const now = Date.now();
       setToast(prev => {
-        const count = (prev && prev.type === customEvent.detail.type) ? prev.count + 1 : 1;
-        const nameToKeep = (prev && prev.type === customEvent.detail.type) ? prev.unitName : customEvent.detail.name;
-        return { id: Date.now(), unitName: nameToKeep, count, type: customEvent.detail.type };
+        const isSameType = prev && prev.type === customEvent.detail.type;
+        const count = isSameType ? prev.count + 1 : 1;
+        const nameToKeep = isSameType ? prev.unitName : customEvent.detail.name;
+        
+        // Group toasts if within 1000ms to stop flashing
+        if (now - lastToastTimeRef.current < 1000 && isSameType) {
+           return { id: lastToastIdRef.current, unitName: nameToKeep, count, type: customEvent.detail.type };
+        } else {
+           lastToastIdRef.current = now;
+           return { id: now, unitName: nameToKeep, count, type: customEvent.detail.type };
+        }
       });
+      
+      lastToastTimeRef.current = now;
 
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
       toastTimerRef.current = setTimeout(() => setToast(null), 2500);

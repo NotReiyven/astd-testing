@@ -1,9 +1,5 @@
-// ================================================
-// FILE: src/app/components/TradeAnalyzer/AdComposer.tsx
-// ================================================
-
 import { useState } from "react";
-import { Check, X, Megaphone, AlertCircle, BookOpen, Package } from "lucide-react";
+import { Check, X, Megaphone, AlertCircle, BookOpen, Package, Loader2 } from "lucide-react";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { useTradingAdsStore } from "../../../store/useTradingAdsStore";
 import { useAuthStore } from "../../../store/useAuthStore";
@@ -48,7 +44,6 @@ export function AdComposer() {
     if (adType === "inventory") {
       const ObjectCards: TradeCard[] = [];
       
-      // Sort inventory by value to ensure high-tier items are prioritized before the cap
       const sortedInv = [...inventoryItems].sort((a, b) => {
         const m1 = ALL_UNITS.find(u => u.id === a.unit_id);
         const m2 = ALL_UNITS.find(u => u.id === b.unit_id);
@@ -59,7 +54,6 @@ export function AdComposer() {
 
       sortedInv.forEach((inv) => {
         const master = ALL_UNITS.find((unit) => unit.id === inv.unit_id);
-        // Payload Security Cap: Max 25 items to prevent websocket choking
         if (master && !inv.is_pinned && ObjectCards.length < 25) {
           const numericVal = typeof master.value === "number" ? master.value : master.valueMin || 0;
           ObjectCards.push({ id: master.id, name: master.name, subtitle: master.subtitle, value: numericVal, qty: inv.quantity });
@@ -125,19 +119,19 @@ export function AdComposer() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 bg-popover p-1.5 rounded-[6px] border border-border shadow-inner">
             <button 
               onClick={() => setAdType("standard")} 
-              className={`py-2.5 px-2 text-[11px] md:text-[12px] font-bold tracking-wide rounded-[4px] transition-all focus-visible:outline-none text-center ${adType === "standard" ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground border border-transparent"}`}
+              className={`py-2.5 px-2 text-[11px] md:text-[12px] font-bold tracking-wide rounded-[4px] transition-all focus-visible:outline-none text-center min-h-[44px] ${adType === "standard" ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground border border-transparent"}`}
             >
               Specific Trade
             </button>
             <button 
               onClick={() => setAdType("lf_offers")} 
-              className={`py-2.5 px-2 text-[11px] md:text-[12px] font-bold tracking-wide rounded-[4px] transition-all focus-visible:outline-none text-center ${adType === "lf_offers" ? "bg-[#FAA61A]/10 border border-[#FAA61A]/20 text-[#FAA61A] shadow-sm" : "text-muted-foreground hover:text-foreground border border-transparent"}`}
+              className={`py-2.5 px-2 text-[11px] md:text-[12px] font-bold tracking-wide rounded-[4px] transition-all focus-visible:outline-none text-center min-h-[44px] ${adType === "lf_offers" ? "bg-[#FAA61A]/10 border border-[#FAA61A]/20 text-[#FAA61A] shadow-sm" : "text-muted-foreground hover:text-foreground border border-transparent"}`}
             >
               Taking Offers
             </button>
             <button 
               onClick={() => setAdType("inventory")} 
-              className={`py-2.5 px-2 text-[11px] md:text-[12px] font-bold tracking-wide rounded-[4px] transition-all focus-visible:outline-none text-center ${adType === "inventory" ? "bg-[#23a559]/10 border border-[#23a559]/20 text-[#23a559] shadow-sm" : "text-muted-foreground hover:text-foreground border border-transparent"}`}
+              className={`py-2.5 px-2 text-[11px] md:text-[12px] font-bold tracking-wide rounded-[4px] transition-all focus-visible:outline-none text-center min-h-[44px] ${adType === "inventory" ? "bg-[#23a559]/10 border border-[#23a559]/20 text-[#23a559] shadow-sm" : "text-muted-foreground hover:text-foreground border border-transparent"}`}
             >
               Vault Showcase
             </button>
@@ -156,7 +150,7 @@ export function AdComposer() {
               <button
                 key={preset}
                 onClick={() => setNote(preset)}
-                className="text-[10.5px] font-semibold bg-popover hover:bg-muted text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-[4px] border border-border transition-colors focus-visible:outline-none shadow-sm"
+                className="text-[10.5px] font-semibold bg-popover hover:bg-muted text-muted-foreground hover:text-foreground px-2.5 py-2 min-h-[36px] md:py-1.5 rounded-[4px] border border-border transition-colors focus-visible:outline-none shadow-sm"
               >
                 {preset}
               </button>
@@ -176,7 +170,7 @@ export function AdComposer() {
           <select
             value={ttl}
             onChange={(e) => setTtl(Number(e.target.value))}
-            className="bg-input text-foreground text-[13px] px-3.5 py-3 rounded-[6px] outline-none border border-border focus:border-primary shadow-inner w-full cursor-pointer"
+            className="bg-input text-foreground text-[13px] px-3.5 py-3 rounded-[6px] outline-none border border-border focus:border-primary shadow-inner w-full cursor-pointer min-h-[44px]"
           >
             {TTL_OPTIONS.map((o) => (
               <option key={o.hours} value={o.hours}>{o.label}</option>
@@ -188,16 +182,17 @@ export function AdComposer() {
       <div className="p-4 bg-popover border-t border-border flex items-center justify-end gap-3 shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))] md:pb-4">
         <button
           onClick={() => setComposerOpen(false)}
-          className="px-5 py-2.5 text-[12px] font-bold text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border rounded-[4px] focus-visible:outline-none transition-colors"
+          className="px-5 py-2.5 min-h-[44px] text-[12px] font-bold text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border rounded-[4px] focus-visible:outline-none transition-colors"
         >
           Cancel
         </button>
         <button
           onClick={handlePublish}
           disabled={isPublishing || (adType !== 'inventory' && giveItems.length === 0)}
-          className="px-6 py-2.5 bg-primary hover:bg-primary/80 disabled:bg-popover disabled:text-muted-foreground text-primary-foreground text-[12px] font-bold uppercase tracking-wider rounded-[4px] transition-colors shadow-md flex items-center gap-2 focus-visible:outline-none active:scale-[0.98]"
+          className="px-6 py-2.5 min-h-[44px] bg-primary hover:bg-primary/80 disabled:bg-popover disabled:opacity-50 text-primary-foreground text-[12px] font-bold uppercase tracking-wider rounded-[4px] transition-colors shadow-md flex items-center gap-2 focus-visible:outline-none active:scale-[0.98]"
         >
-          {isPublishing ? "Publishing..." : <><Check className="w-4 h-4" /> Publish Ad</>}
+          {isPublishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+          {isPublishing ? "Publishing..." : "Publish Ad"}
         </button>
       </div>
     </div>

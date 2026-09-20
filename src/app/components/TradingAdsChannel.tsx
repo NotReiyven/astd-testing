@@ -22,6 +22,7 @@ import { triggerHaptic } from "../../data/helpers";
 import { CustomDropdown } from "./MainCanvas/CustomDropdown";
 import { useAdInteractionStore } from "../../store/useAdInteractionStore";
 import { AdInteractionModal } from "./AdInteractionModal";
+import { HoldToConfirmButton } from "./shared/Formatters";
 
 const SORT_OPTIONS = {
   "newest": "Recently Posted",
@@ -243,7 +244,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
         <div className="mb-4 sm:mb-5 bg-popover border border-border rounded-[6px] p-3 sm:p-3.5 shadow-inner">
           {ad.note ? (
             <div 
-              className="text-[12px] sm:text-[13px] text-foreground font-medium leading-relaxed break-words overflow-hidden"
+              className="text-[12px] sm:text-[13px] text-foreground font-medium leading-relaxed break-all overflow-hidden"
               style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
             >
               {ad.note}
@@ -282,19 +283,19 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
           
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-0.5 bg-popover rounded-[4px] border border-border p-0.5">
-               <button onClick={() => handleVote(1)} className={`p-1 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground hover:text-[#23a559]'}`}>
-                  <ArrowBigUp className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${votes.userVote === 1 ? 'fill-current' : ''}`} />
+               <button onClick={() => handleVote(1)} className={`p-1.5 sm:p-1 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground hover:text-[#23a559]'}`}>
+                  <ArrowBigUp className={`w-4 h-4 sm:w-4 sm:h-4 ${votes.userVote === 1 ? 'fill-current' : ''}`} />
                </button>
-               <span className={`text-[11px] sm:text-[12px] font-bold min-w-[20px] sm:min-w-[24px] text-center ${score > 0 ? 'text-[#23a559]' : score < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+               <span className={`text-[12px] font-bold min-w-[24px] text-center ${score > 0 ? 'text-[#23a559]' : score < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
                  {score}
                </span>
-               <button onClick={() => handleVote(-1)} className={`p-1 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none ${votes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}>
-                  <ArrowBigDown className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${votes.userVote === -1 ? 'fill-current' : ''}`} />
+               <button onClick={() => handleVote(-1)} className={`p-1.5 sm:p-1 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${votes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}>
+                  <ArrowBigDown className={`w-4 h-4 sm:w-4 sm:h-4 ${votes.userVote === -1 ? 'fill-current' : ''}`} />
                </button>
             </div>
 
             <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <Clock className="w-3.5 h-3.5" />
               <CountdownTimer expiresAt={ad.expires_at} />
             </div>
           </div>
@@ -303,7 +304,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
             <div className="flex items-center gap-2">
               <button
                 onClick={handleCopyId}
-                className="px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none shadow-sm"
+                className="px-3 py-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none shadow-sm min-h-[44px] md:min-h-0"
               >
                 {copiedId ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#23a559]" /> : <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                 <span className="hidden xl:inline">ID</span>
@@ -311,7 +312,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
 
               <button
                 onClick={() => { triggerHaptic('light'); openAdContext(ad.id, currentUserId); }}
-                className="px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none shadow-sm"
+                className="px-3 py-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none shadow-sm min-h-[44px] md:min-h-0"
               >
                 <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Thread</span>
@@ -321,20 +322,19 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
             <div className="flex items-center gap-2">
               <button 
                 onClick={() => isInventory ? handleInspectVault() : onSendToCalculator(ad.give_items, ad.get_items)}
-                className="px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] text-primary-foreground bg-primary hover:bg-primary/80 transition-colors focus-visible:outline-none shadow-sm active:scale-95"
+                className="px-4 py-2 sm:px-4 sm:py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] text-primary-foreground bg-primary hover:bg-primary/80 transition-colors focus-visible:outline-none shadow-sm active:scale-95 min-h-[44px] md:min-h-0"
               >
                 {isInventory ? <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Calculator className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                 <span className="hidden sm:inline">{isInventory ? "Inspect" : "Evaluate"}</span>
               </button>
 
               {canDelete && (
-                <button
-                  onClick={() => onDelete(ad.id)}
-                  className="p-1.5 sm:p-2 border border-border text-muted-foreground hover:text-foreground hover:border-destructive bg-popover hover:bg-destructive rounded-[4px] transition-colors focus-visible:outline-none shadow-sm"
-                  title="Delete listing"
+                <HoldToConfirmButton
+                  onConfirm={() => onDelete(ad.id)}
+                  className="p-2.5 sm:p-2 border border-border text-muted-foreground hover:text-foreground hover:border-destructive bg-popover hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none shadow-sm min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
                 >
-                  <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                </button>
+                  <Trash2 className="w-4 h-4" />
+                </HoldToConfirmButton>
               )}
             </div>
           </div>
@@ -461,7 +461,7 @@ export function TradingAdsChannel() {
               />
             </div>
             
-            <div className="w-full sm:w-[150px] shrink-0">
+            <div className="w-full sm:w-[190px] shrink-0">
               <CustomDropdown icon={Clock} value={sortMode} options={SORT_OPTIONS} onChange={setSortMode} defaultLabel="Sort By" />
             </div>
           </div>
@@ -490,7 +490,7 @@ export function TradingAdsChannel() {
               {filteredAndSortedAds.map((ad) => (
                 <VanguardAdCard
                   key={ad.id}
-                  ad={ad}
+                  ad= {ad}
                   currentUserId={profile?.id}
                   currentUserRole={profile?.role}
                   onDelete={deleteAd}
