@@ -16,10 +16,10 @@ async function sendDiscordAlert(message: string) {
     await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: `FUCK YOU ALL **ASTD Value List Alert**\n${message}` })
+      body: JSON.stringify({ content: message })
     });
   } catch (err) {
-    console.error("Failed to send Discord webhook alert:", err);
+    console.error("FUCK - Failed to send Discord webhook alert:", err);
   }
 }
 
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
       if (!SUPABASE_URL) missing.push("VITE_SUPABASE_URL");
       if (!SUPABASE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
       
-      const msg = `Missing environment variables: ${missing.join(", ")}`;
+      const msg = `FUUUCKKK **ASTD Value List Alert**\nMissing environment variables: ${missing.join(", ")}`;
       await sendDiscordAlert(msg);
       return new Response(JSON.stringify({ error: msg }), { status: 500, headers: { "Content-Type": "application/json" } });
     }
@@ -174,11 +174,14 @@ export async function GET(request: Request) {
       if (upsertErr) throw upsertErr;
     }
 
+    // 🔥 THIS WILL PING DISCORD ON EVERY SUCCESSFUL RUN NOW
+    await sendDiscordAlert(`✅ **ASTD Value List Autonomous Sync**\nSuccessfully synced ${units.length} units and cleaned up expired ads.`);
+
     return new Response(JSON.stringify({ message: "OK" }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (error: any) {
     const errorDetails = error.message || String(error);
     console.error("Cron crash error:", errorDetails);
-    await sendDiscordAlert(`Cron crashed: ${errorDetails}`);
+    await sendDiscordAlert(`🚨 **ASTD Value List CRASH**\n${errorDetails}`);
     return new Response(JSON.stringify({ error: errorDetails }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 }
