@@ -22,7 +22,7 @@ async function sendDiscordAlert(message: string) {
     console.error("Failed to send Discord webhook alert:", err);
   }
 }
-throw new Error("Manual webhook connection test");
+throw new Error("Hi hi hi hi hi fuck you goodbye gg fucking ez");
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization');
   
