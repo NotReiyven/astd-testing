@@ -85,7 +85,7 @@ export async function GET(request: Request) {
 
     const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batchRanges}&includeGridData=true&key=${API_KEY}`);
     const data = (await response.json()) as SpreadsheetData;
-    if (!data.sheets) throw new Error("No grid data returned from Google Sheets");
+    if (!data.sheets) throw new Error("Hi this is a test");
 
     const { units } = parseSpreadsheet(data);
     if (!units || units.length === 0) return new Response(JSON.stringify({ message: "No units parsed" }), { status: 200, headers: { "Content-Type": "application/json" } });
