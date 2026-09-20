@@ -1,10 +1,11 @@
 // FILE: src/app/components/AdInteractionModal.tsx
 
 import { useState, useEffect, useRef } from "react";
-import { X, MessageSquare, ArrowBigUp, ArrowBigDown, Send, Trash2, ShieldAlert, Clock, Reply } from "lucide-react";
+import { X, MessageSquare, ArrowBigUp, ArrowBigDown, Send, Trash2, ShieldAlert, Clock, Reply, Calculator } from "lucide-react";
 import { useAdInteractionStore, AdComment } from "../../store/useAdInteractionStore";
 import { useTradingAdsStore } from "../../store/useTradingAdsStore";
 import { useAuthStore } from "../../store/useAuthStore";
+import { useTradeStore } from "../../store/useTradeStore";
 import { useUnits } from "../../context/UnitContext";
 import { getProxyImage, handleImageError } from "../../data";
 import { triggerHaptic } from "../../data/helpers";
@@ -19,6 +20,8 @@ function getTimeAgoShort(dateStr: string) {
   return `${Math.floor(hours / 24)}d`;
 }
 
+const MAX_INDENT_LEVEL = 3;
+
 export function AdInteractionModal() {
   const { 
     activeAdId, comments, adVotes, commentVotes,
@@ -28,6 +31,7 @@ export function AdInteractionModal() {
   
   const { ads } = useTradingAdsStore();
   const { profile } = useAuthStore();
+  const { overwrite } = useTradeStore();
   const { units: ALL_UNITS } = useUnits();
   
   const activeAd = ads.find(a => a.id === activeAdId);
@@ -54,81 +58,93 @@ export function AdInteractionModal() {
     }
   };
 
+  const handleLoadIntoCalculator = () => {
+    triggerHaptic('medium');
+    overwrite(activeAd.get_items, activeAd.give_items);
+    window.dispatchEvent(new Event("open-analyzer"));
+    // Removed closeAdContext() so the modal stays open while items load
+  };
+
   const canModerate = (commentUserId: string) => {
     if (!profile) return false;
     return profile.id === commentUserId || ['mod', 'admin', 'master'].includes(profile.role);
   };
 
-  // Group comments into threads
   const rootComments = comments.filter(c => !c.parent_id);
   const getReplies = (parentId: string) => comments.filter(c => c.parent_id === parentId);
 
-  const CommentThread = ({ comment, isReply = false }: { comment: AdComment, isReply?: boolean }) => {
+  const CommentThread = ({ comment, depth = 0 }: { comment: AdComment, depth?: number }) => {
     const votes = commentVotes[comment.id] || { upvotes: 0, downvotes: 0, userVote: 0 };
     const score = votes.upvotes - votes.downvotes;
     const replies = getReplies(comment.id);
 
+    const effectiveDepth = Math.min(depth, MAX_INDENT_LEVEL);
+    const isNested = depth > 0;
+
     return (
-      <div className={`flex flex-col ${isReply ? 'ml-8 mt-3 pl-3 border-l-2 border-[rgba(255,255,255,0.06)]' : 'mt-4'}`}>
-        <div className="flex gap-3 group">
+      <div className={`flex flex-col ${isNested ? `ml-${effectiveDepth * 4} mt-2.5 pl-2.5 border-l-2 border-[rgba(255,255,255,0.06)]` : 'mt-3'}`}>
+        <div className="flex items-start justify-between gap-3 group bg-[#2B2D31]/40 hover:bg-[#2B2D31]/80 p-3.5 rounded-[8px] transition-colors border border-transparent hover:border-[rgba(255,255,255,0.04)]">
           
-          {/* Comment Voting Column */}
-          <div className="flex flex-col items-center gap-1 shrink-0 mt-1">
-            <button 
-              onClick={() => profile && voteComment(comment.id, profile.id, 1)}
-              className={`focus-visible:outline-none transition-colors hover:text-[#23a559] ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-[#80848E]'}`}
-            >
-              <ArrowBigUp className={`w-5 h-5 ${votes.userVote === 1 ? 'fill-current' : ''}`} />
-            </button>
-            <span className={`text-[12px] font-bold ${score > 0 ? 'text-[#23a559]' : score < 0 ? 'text-[#ed4245]' : 'text-[#80848E]'}`}>
-              {score}
-            </span>
-            <button 
-              onClick={() => profile && voteComment(comment.id, profile.id, -1)}
-              className={`focus-visible:outline-none transition-colors hover:text-[#ed4245] ${votes.userVote === -1 ? 'text-[#ed4245]' : 'text-[#80848E]'}`}
-            >
-              <ArrowBigDown className={`w-5 h-5 ${votes.userVote === -1 ? 'fill-current' : ''}`} />
-            </button>
-          </div>
-
-          {/* Comment Content */}
-          <div className="flex flex-col flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <img src={comment.profiles.avatar_url || "/units/firezio.webp"} className="w-5 h-5 rounded-full bg-[#111214] object-cover" alt="" />
-              <span className="text-[13px] font-bold text-[#F2F3F5] flex items-center gap-1">
-                {comment.profiles.username}
-                {['mod', 'admin', 'master'].includes(comment.profiles.role) && <ShieldAlert className="w-3 h-3 text-[#5865F2]" />}
-              </span>
-              <span className="text-[10px] font-medium text-[#80848E]">{getTimeAgoShort(comment.created_at)}</span>
-            </div>
-            
-            <p className="text-[13.5px] text-[#DBDEE1] mt-1 leading-relaxed break-words whitespace-pre-wrap">
-              {comment.content}
-            </p>
-
-            <div className="flex items-center gap-4 mt-2">
+          <div className="flex gap-3 min-w-0 flex-1">
+            {/* Comment Voting Column */}
+            <div className="flex flex-col items-center gap-0.5 shrink-0 pt-0.5">
               <button 
-                onClick={() => setReplyingTo({ id: comment.id, username: comment.profiles.username })}
-                className="flex items-center gap-1.5 text-[11px] font-bold text-[#80848E] hover:text-[#DBDEE1] transition-colors focus-visible:outline-none"
+                onClick={() => profile && voteComment(comment.id, profile.id, 1)}
+                className={`focus-visible:outline-none transition-colors hover:text-[#23a559] ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-[#80848E]'}`}
               >
-                <Reply className="w-3.5 h-3.5" /> Reply
+                <ArrowBigUp className={`w-4 h-4 ${votes.userVote === 1 ? 'fill-current' : ''}`} />
               </button>
-              {canModerate(comment.user_id) && (
+              <span className={`text-[11px] font-bold ${score > 0 ? 'text-[#23a559]' : score < 0 ? 'text-[#ed4245]' : 'text-[#80848E]'}`}>
+                {score}
+              </span>
+              <button 
+                onClick={() => profile && voteComment(comment.id, profile.id, -1)}
+                className={`focus-visible:outline-none transition-colors hover:text-[#ed4245] ${votes.userVote === -1 ? 'text-[#ed4245]' : 'text-[#80848E]'}`}
+              >
+                <ArrowBigDown className={`w-4 h-4 ${votes.userVote === -1 ? 'fill-current' : ''}`} />
+              </button>
+            </div>
+
+            {/* Comment Content */}
+            <div className="flex flex-col flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <img src={comment.profiles.avatar_url || "/units/firezio.webp"} className="w-5 h-5 rounded-full bg-[#111214] object-cover" alt="" />
+                <span className="text-[13px] font-bold text-[#F2F3F5] flex items-center gap-1">
+                  {comment.profiles.username}
+                  {['mod', 'admin', 'master'].includes(comment.profiles.role) && <ShieldAlert className="w-3 h-3 text-[#7289da]" />}
+                </span>
+                <span className="text-[10px] font-medium text-[#80848E]">{getTimeAgoShort(comment.created_at)}</span>
+              </div>
+              
+              <p className="text-[13px] text-[#DBDEE1] mt-1.5 leading-relaxed break-words whitespace-pre-wrap">
+                {comment.content}
+              </p>
+
+              <div className="flex items-center gap-4 mt-2.5">
                 <button 
-                  onClick={() => deleteComment(comment.id)}
-                  className="flex items-center gap-1.5 text-[11px] font-bold text-[#80848E] hover:text-[#ed4245] transition-colors focus-visible:outline-none"
+                  onClick={() => setReplyingTo({ id: comment.id, username: comment.profiles.username })}
+                  className="flex items-center gap-1 text-[11px] font-bold text-[#80848E] hover:text-[#DBDEE1] transition-colors focus-visible:outline-none"
                 >
-                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                  <Reply className="w-3 h-3 text-[#7289da]" /> Reply
                 </button>
-              )}
+                {canModerate(comment.user_id) && (
+                  <button 
+                    onClick={() => deleteComment(comment.id)}
+                    className="flex items-center gap-1 text-[11px] font-bold text-[#80848E] hover:text-[#ed4245] transition-colors focus-visible:outline-none"
+                  >
+                    <Trash2 className="w-3 h-3" /> Delete
+                  </button>
+                )}
+              </div>
             </div>
           </div>
+
         </div>
 
         {/* Render Replies Recursively */}
         {replies.length > 0 && (
           <div className="flex flex-col">
-            {replies.map(reply => <CommentThread key={reply.id} comment={reply} isReply={true} />)}
+            {replies.map(reply => <CommentThread key={reply.id} comment={reply} depth={depth + 1} />)}
           </div>
         )}
       </div>
@@ -141,7 +157,7 @@ export function AdInteractionModal() {
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
       <div className="bg-[#313338] w-full max-w-6xl rounded-[12px] shadow-2xl border border-[rgba(255,255,255,0.06)] flex flex-col md:flex-row h-[90vh] max-h-[900px] overflow-hidden">
         
-        {/* LEFT PANE: Ad Context */}
+        {/* LEFT PANE: Ad Context & Load Button */}
         <div className="w-full md:w-[320px] bg-[#2B2D31] border-b md:border-b-0 md:border-r border-[rgba(0,0,0,0.2)] flex flex-col shrink-0">
           <div className="flex items-center justify-between p-4 border-b border-[rgba(255,255,255,0.04)]">
             <h3 className="text-[13px] font-black text-[#F2F3F5] uppercase tracking-wider">Original Listing</h3>
@@ -224,6 +240,16 @@ export function AdInteractionModal() {
               )}
             </div>
 
+            {/* Load into Calculator Action */}
+            <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.04)]">
+              <button
+                onClick={handleLoadIntoCalculator}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-[#7289da] hover:bg-[#5b6eae] text-white text-[13px] font-bold rounded-[6px] transition-colors shadow-sm focus-visible:outline-none"
+              >
+                <Calculator className="w-4 h-4" /> Load into Calculator
+              </button>
+            </div>
+
           </div>
         </div>
 
@@ -231,7 +257,7 @@ export function AdInteractionModal() {
         <div className="flex-1 flex flex-col min-w-0 bg-[#313338]">
           <div className="hidden md:flex items-center justify-between px-6 py-4 bg-[#2B2D31] border-b border-[rgba(0,0,0,0.2)] shrink-0">
             <h2 className="text-[15px] font-black text-[#F2F3F5] tracking-tight uppercase flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-[#5865F2]" /> Disqus
+              <MessageSquare className="w-5 h-5 text-[#7289da]" /> Disqus
             </h2>
             <button onClick={closeAdContext} className="text-[#80848E] hover:text-[#F2F3F5] transition-colors focus-visible:outline-none p-1 bg-transparent hover:bg-[rgba(255,255,255,0.04)] rounded-[4px]">
               <X className="w-5 h-5" />
@@ -261,9 +287,9 @@ export function AdInteractionModal() {
           {/* Input Area */}
           <div className="p-4 bg-[#2B2D31] border-t border-[rgba(0,0,0,0.2)] shrink-0 flex flex-col gap-2">
             {replyingTo && (
-              <div className="flex items-center justify-between bg-[#1E1F22] px-3 py-1.5 rounded-[6px] border border-[#5865F2]/30">
+              <div className="flex items-center justify-between bg-[#1E1F22] px-3 py-1.5 rounded-[6px] border border-[#7289da]/30">
                 <span className="text-[12px] font-bold text-[#F2F3F5] flex items-center gap-1.5">
-                  <Reply className="w-3.5 h-3.5 text-[#5865F2]" /> Replying to {replyingTo.username}
+                  <Reply className="w-3.5 h-3.5 text-[#7289da]" /> Replying to {replyingTo.username}
                 </span>
                 <button onClick={() => setReplyingTo(null)} className="text-[#80848E] hover:text-[#ed4245] focus-visible:outline-none">
                   <X className="w-3.5 h-3.5" />
@@ -280,12 +306,12 @@ export function AdInteractionModal() {
                   placeholder={replyingTo ? `Write a reply...` : `Add a comment...`}
                   maxLength={500}
                   disabled={isActionPending}
-                  className="w-full bg-[#383A40] text-[#F2F3F5] text-[14px] pl-4 pr-12 py-3 rounded-[8px] outline-none border border-transparent focus:border-[#5865F2] transition-colors font-medium placeholder:text-[#80848E]"
+                  className="w-full bg-[#383A40] text-[#F2F3F5] text-[14px] pl-4 pr-12 py-3 rounded-[8px] outline-none border border-transparent focus:border-[#7289da] transition-colors font-medium placeholder:text-[#80848E]"
                 />
                 <button 
                   type="submit"
                   disabled={!newComment.trim() || isActionPending}
-                  className="absolute right-2 w-8 h-8 flex items-center justify-center rounded-[6px] bg-[#5865F2] hover:bg-[#4752C4] text-white disabled:opacity-50 disabled:hover:bg-[#5865F2] transition-colors focus-visible:outline-none"
+                  className="absolute right-2 w-8 h-8 flex items-center justify-center rounded-[6px] bg-[#7289da] hover:bg-[#5b6eae] text-white disabled:opacity-50 disabled:hover:bg-[#7289da] transition-colors focus-visible:outline-none"
                 >
                   <Send className="w-4 h-4 -ml-0.5" />
                 </button>
