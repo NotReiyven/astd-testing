@@ -1,4 +1,6 @@
+// ================================================
 // FILE: src/store/useAdInteractionStore.ts
+// ================================================
 
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
@@ -43,10 +45,12 @@ interface AdInteractionState {
 
 // Anti-Phishing & Scam Link Filter
 const containsPhishingOrLink = (text: string) => {
-  const lower = text.toLowerCase();
-  // Catches URLs, domains, discord invites, Telegram links, shorteners, etc.
+  // Normalize to catch Cyrillic homoglyphs and weird unicode spacings, then strip zero-width chars
+  const normalized = text.normalize('NFKD').toLowerCase();
+  const stripped = normalized.replace(/[\u200B-\u200D\uFEFF]/g, '');
+  
   const urlPattern = /(https?:\/\/|www\.|[a-zA-Z0-9-]+\.(com|net|org|gg|ru|io|me|co|xyz|to|link|tk)|discord\.gg|t\.me|bit\.ly)/i;
-  return urlPattern.test(lower);
+  return urlPattern.test(stripped);
 };
 
 export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
@@ -140,7 +144,6 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
   },
 
   postComment: async (adId, userId, content, parentId = null) => {
-    // Block Phishing and Scam Links
     if (containsPhishingOrLink(content)) {
       alert("ACTION BLOCKED: External links, domains, and invite URLs are strictly prohibited to prevent phishing and scams.");
       return false;

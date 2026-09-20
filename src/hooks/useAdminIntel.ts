@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/hooks/useAdminIntel.ts
+// ================================================
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/useAuthStore';
@@ -130,7 +134,8 @@ export function useAdminIntel() {
       return false;
     }
 
-    const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', targetUserId);
+    const { error } = await supabase.rpc('admin_update_role', { target_user_id: targetUserId, new_role: newRole });
+    
     if (error) {
       showToast(`Database Error: ${error.message}`, "error");
       return false;
@@ -196,26 +201,23 @@ export function useAdminIntel() {
 
   const handleTotalAccountNuke = async () => {
     if (!selectedUser) return;
-    const confirmation = prompt(`Type "NUKE" to permanently ban ${selectedUser.username} and wipe all their data (Ads, Inventory, Wishlist, Comments).`);
+    const confirmation = prompt(`Type "NUKE" to permanently ban ${selectedUser.username} and wipe all their data.`);
     if (confirmation !== "NUKE") {
       showToast("Account wipe cancelled.", "error");
       return;
     }
     
     triggerHaptic('heavy');
-    const banSuccess = await updateUserRole(selectedUser.id, 'banned');
-    if (!banSuccess) return;
+    const { error } = await supabase.rpc('admin_nuke_account', { target_user_id: selectedUser.id });
 
-    await Promise.all([
-      supabase.from('trading_ads').delete().eq('user_id', selectedUser.id),
-      supabase.from('user_inventory').delete().eq('user_id', selectedUser.id),
-      supabase.from('user_wishlist').delete().eq('user_id', selectedUser.id),
-      supabase.from('ad_comments').delete().eq('user_id', selectedUser.id),
-      supabase.from('ad_likes').delete().eq('user_id', selectedUser.id)
-    ]);
+    if (error) {
+      showToast(`Nuke Failed: ${error.message}`, "error");
+      return;
+    }
 
     setUserIntel({ netWorth: 0, adCount: 0, isLoading: false });
     showToast(`ACCOUNT NUKED: ${selectedUser.username} has been eradicated.`);
+    fetchUsers(searchQuery);
     loadMetrics();
   };
 
