@@ -1,9 +1,14 @@
+// ================================================
+// FILE: src/app/App.tsx
+// ================================================
+
 import { useState, useEffect, Suspense, lazy, useCallback } from "react";
 import { Hash, Check, GraduationCap } from "lucide-react";
 import { FilterKey } from "../types";
 import { useStickyState, isBoolean, isNonEmptyString } from "../hooks/useStickyState";
 import { AquaGuideOverlay } from "./components/guides/AquaGuideOverlay";
 import { TopBar } from "./components/layout/TopBar";
+import { SyncBanner } from "./components/layout/SyncBanner";
 import { WelcomeModal } from "./components/WelcomeModal";
 import { useTradeStore } from "../store/useTradeStore";
 import { HistoryModal } from "./components/MainCanvas/HistoryModal";
@@ -66,7 +71,6 @@ export default function App() {
   const activeItemsCount = giveItems.reduce((acc, c) => acc + c.qty, 0) + getItems.reduce((acc, c) => acc + c.qty, 0);
   const isDictionaryActive = activeChannel === "tutorial" && tutorialTab === "dictionary";
 
-  // Search logic routing
   useEffect(() => {
     if (globalSearchQuery.trim().length > 0) {
       if (activeChannel !== "value-list") setActiveChannel("value-list");
@@ -256,6 +260,7 @@ export default function App() {
 
           <div className={`flex-1 flex flex-col min-w-0 bg-[#313338] md:pb-0 pb-[80px] ${mainContentZ}`}>
             <div className={`relative ${helpMenuOpen || isMainStep3 ? '!z-[100002] shadow-[0_20px_50px_rgba(0,0,0,0.8)]' : 'z-40'}`}>
+              <SyncBanner />
               <TopBar 
                 calcHeaderZ={calcHeaderZ}
                 isRosterOpen={isRosterOpen}

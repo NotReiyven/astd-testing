@@ -1,3 +1,7 @@
+// ================================================
+// FILE: api/syncSheet.ts
+// ================================================
+
 import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
 import { parseSpreadsheet, SpreadsheetData } from "./lib/parseSheet";
@@ -17,6 +21,20 @@ if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) 
     redis: redis,
     limiter: Ratelimit.slidingWindow(15, "1 m"),
   });
+}
+
+async function sendDiscordAlert(message: string) {
+  const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+  if (!webhookUrl) return;
+  try {
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: `🚨 **ASTD Value List Alert**\n${message}` })
+    });
+  } catch (err) {
+    console.error("Failed to send Discord webhook alert:", err);
+  }
 }
 
 function jsonResponse(statusCode: number, body: unknown, extraHeaders: Record<string, string> = {}) {
@@ -79,8 +97,9 @@ export async function GET(request: Request) {
       { ...parsed, lastUpdated },
       { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("syncSheet error:", error);
+    await sendDiscordAlert(`Sheet sync endpoint failed: ${error.message || error}`);
     return jsonResponse(500, { error: "Failed to sync sheet data." });
   }
 }

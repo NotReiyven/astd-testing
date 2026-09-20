@@ -1,3 +1,7 @@
+// ================================================
+// FILE: api/cronHistory.ts
+// ================================================
+
 import { createClient } from "@supabase/supabase-js";
 import { parseSpreadsheet, SpreadsheetData } from "./lib/parseSheet";
 
@@ -5,11 +9,25 @@ export const config = {
   runtime: 'edge'
 };
 
+async function sendDiscordAlert(message: string) {
+  const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+  if (!webhookUrl) return;
+  try {
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: `🚨 **ASTD Value List Alert**\n${message}` })
+    });
+  } catch (err) {
+    console.error("Failed to send Discord webhook alert:", err);
+  }
+}
+
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization');
   
   if (!process.env.CRON_SECRET) {
-    console.warn("CRON_SECRET is not configured. Failing safely to prevent unauthorized execution.");
+    console.warn("CRON_SECRET is not configured. Failing safely.");
     return new Response(JSON.stringify({ error: "Unauthorized - Missing configuration" }), { status: 401, headers: { "Content-Type": "application/json" } });
   }
   
@@ -23,11 +41,42 @@ export async function GET(request: Request) {
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!API_KEY || !SHEET_ID || !SUPABASE_URL || !SUPABASE_KEY) {
-    console.error("Missing environment variables for history sync.");
+    const errorMsg = "Missing environment variables for history sync.";
+    console.error(errorMsg);
+    await sendDiscordAlert(`Cron failed: ${errorMsg}`);
     return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
   try {
+    // --- AUTONOMOUS CLEANUP ROUTINE ---
+    const nowIso = new Date().toISOString();
+    
+    // 1. Purge expired trading ads
+    const { error: adPurgeErr } = await supabase
+      .from('trading_ads')
+      .delete()
+      .lt('expires_at', nowIso);
+    if (adPurgeErr) console.error("Error purging expired ads:", adPurgeErr);
+
+    // 2. Purge content from banned users automatically
+    const { data: bannedUsers, error: bannedErr } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('role', 'banned');
+
+    if (!bannedErr && bannedUsers && bannedUsers.length > 0) {
+      const bannedIds = bannedUsers.map(b => b.id);
+      await Promise.all([
+        supabase.from('trading_ads').delete().in('user_id', bannedIds),
+        supabase.from('ad_comments').delete().in('user_id', bannedIds),
+        supabase.from('user_inventory').delete().in('user_id', bannedIds),
+        supabase.from('user_wishlist').delete().in('user_id', bannedIds)
+      ]);
+    }
+    // ---------------------------------
+
     const ranges = [
       "S Tier!A:I", "A Tier!A:I", "B Tier!A:I", "C Tier!A:I", 
       "Pure Tier!A:I", "Oddities!A:I", "Untiered!A:I"
@@ -40,8 +89,6 @@ export async function GET(request: Request) {
 
     const { units } = parseSpreadsheet(data);
     if (!units || units.length === 0) return new Response(JSON.stringify({ message: "No units parsed" }), { status: 200, headers: { "Content-Type": "application/json" } });
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let allRows: any[] = [];
     let from = 0;
@@ -126,8 +173,9 @@ export async function GET(request: Request) {
     }
 
     return new Response(JSON.stringify({ message: "OK" }), { status: 200, headers: { "Content-Type": "application/json" } });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Cron history sync error:", error);
+    await sendDiscordAlert(`Cron history sync crashed: ${error.message || error}`);
     return new Response(JSON.stringify({ error: "Error syncing history" }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 }
