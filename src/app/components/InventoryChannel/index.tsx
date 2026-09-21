@@ -1,7 +1,6 @@
 // ================================================
 // FILE: src/app/components/InventoryChannel/index.tsx
 // ================================================
-
 import { useMemo } from "react";
 import { 
   Package, Search, X, Lock, 

@@ -2,8 +2,12 @@
 // FILE: src/app/components/AdInteractionModal.tsx
 // ================================================
 
-import { useState, useEffect, useRef } from "react";
-import { X, MessageSquare, ArrowBigUp, ArrowBigDown, Send, Trash2, ShieldAlert, Clock, Reply, Calculator } from "lucide-react";
+import { useState, useEffect, useRef, memo } from "react";
+import { 
+  X, MessageSquare, ArrowBigUp, ArrowBigDown, Send, Trash2, 
+  ShieldAlert, Clock, Reply, Calculator, Share2, Copy, Check, 
+  ArrowRightLeft, Sparkles, AlertCircle, ChevronDown, ChevronUp, Package, Search
+} from "lucide-react";
 import { useAdInteractionStore, AdComment } from "../../store/useAdInteractionStore";
 import { useTradingAdsStore } from "../../store/useTradingAdsStore";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -12,18 +16,64 @@ import { useProfileStore } from "../../store/useProfileStore";
 import { useUnits } from "../../context/UnitContext";
 import { getProxyImage, handleImageError } from "../../data";
 import { triggerHaptic } from "../../data/helpers";
+import { getUnitConservativeValue } from "./InventoryChannel/inventoryUtils";
+import { getAvatarStyle, getInitials } from "./TradeAnalyzer/summaryUtils";
+import { TradeCard, MasterUnit } from "../../types";
 
 function getTimeAgoShort(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "Now";
-  if (mins < 60) return `${mins}m`;
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h`;
-  return `${Math.floor(hours / 24)}d`;
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
 }
 
-const MAX_INDENT_LEVEL = 3;
+const ItemTile = memo(({ item, ALL_UNITS }: { item: TradeCard, ALL_UNITS: MasterUnit[] }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const master = ALL_UNITS.find(u => u.id === item.id);
+  const proxyUrl = master ? getProxyImage(master.id, master.imageUrl) : null;
+  const conservativeVal = master ? getUnitConservativeValue(master) * item.qty : item.value * item.qty;
+  const rarity = master?.rarity ?? "N/A";
+
+  return (
+    <div 
+      className="flex flex-col items-center gap-1 group relative cursor-pointer"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      <div className="relative w-16 h-16 rounded-[8px] bg-background border border-border flex items-center justify-center overflow-hidden shadow-sm group-hover:border-primary transition-all">
+        <div className="absolute inset-0 flex items-center justify-center text-white font-black text-[12px] z-0" style={getAvatarStyle(item.name)}>
+          {getInitials(item.name)}
+        </div>
+        {proxyUrl && (
+          <img src={proxyUrl} alt={item.name} className="absolute inset-0 w-full h-full object-cover z-10 bg-background transition-transform group-hover:scale-110" onError={(e) => handleImageError(e, item.id)} />
+        )}
+        {item.qty > 1 && (
+          <div className="absolute bottom-0 right-0 bg-popover/95 text-foreground text-[10px] font-black px-1.5 py-0.5 rounded-tl-[4px] z-20 border-t border-l border-border leading-none">
+            x{item.qty}
+          </div>
+        )}
+      </div>
+      <span className="text-[11px] font-bold text-muted-foreground group-hover:text-foreground truncate w-full text-center" title={item.name}>
+        {item.name}
+      </span>
+
+      {/* Tooltip */}
+      {showTooltip && master && (
+        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#111214] border border-border text-foreground text-[11px] p-3 rounded-[8px] shadow-2xl pointer-events-none z-50 w-48 animate-fade-in flex flex-col gap-1">
+          <div className="font-extrabold text-foreground truncate">{master.name}</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{master.subtitle || "Official Unit"}</div>
+          <div className="flex justify-between items-center mt-1 pt-1 border-t border-border font-mono">
+            <span className="text-[#4DB6AC]">R: {rarity}</span>
+            <span className="text-primary font-bold">{conservativeVal.toLocaleString()}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
 
 export function AdInteractionModal() {
   const { 
@@ -42,16 +92,31 @@ export function AdInteractionModal() {
   
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<{ id: string, username: string } | null>(null);
+  const [collapsedThreads, setCollapsedThreads] = useState<Record<string, boolean>>({});
+  const [mobileTab, setMobileTab] = useState<"listing" | "comments">("listing");
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedDiscord, setCopiedDiscord] = useState(false);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [comments.length]);
 
+  // Handle ESC key closing modal & focus trap
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeAdContext();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [closeAdContext]);
+
   if (!activeAdId || !activeAd) return null;
 
-  const handlePost = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePost = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!newComment.trim() || !profile) return;
     
     triggerHaptic('light');
@@ -59,6 +124,14 @@ export function AdInteractionModal() {
     if (success) {
       setNewComment("");
       setReplyingTo(null);
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
+    }
+  };
+
+  const handleKeyDownTextarea = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handlePost();
     }
   };
 
@@ -66,6 +139,21 @@ export function AdInteractionModal() {
     triggerHaptic('medium');
     overwrite(activeAd.get_items, activeAd.give_items);
     window.dispatchEvent(new Event("open-analyzer"));
+  };
+
+  const handleShareLink = () => {
+    triggerHaptic('light');
+    navigator.clipboard.writeText(window.location.href);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const handleCopyDiscord = () => {
+    if (!activeAd.profiles?.discord_id) return;
+    triggerHaptic('light');
+    navigator.clipboard.writeText(activeAd.profiles.discord_id);
+    setCopiedDiscord(true);
+    setTimeout(() => setCopiedDiscord(false), 2000);
   };
 
   const canModerate = (commentUserId: string) => {
@@ -76,66 +164,125 @@ export function AdInteractionModal() {
   const rootComments = comments.filter(c => !c.parent_id);
   const getReplies = (parentId: string) => comments.filter(c => c.parent_id === parentId);
 
+  const toggleCollapse = (id: string) => {
+    setCollapsedThreads(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleContact = async () => {
+    if (!activeAd.profiles?.discord_id) return;
+    triggerHaptic('medium');
+    
+    const giveNames = activeAd.give_items.map(i => `${i.qty > 1 ? `${i.qty}x ` : ''}${i.name}`).join(', ');
+    const getNames = activeAd.get_items.length > 0 ? activeAd.get_items.map(i => `${i.qty > 1 ? `${i.qty}x ` : ''}${i.name}`).join(', ') : 'Offers';
+    
+    const messageStr = `Hey! Saw your ad on ASTD Value List.\nYou're giving: ${giveNames}\nYou're looking for: ${getNames}\nIs this still available?`;
+
+    try {
+      await navigator.clipboard.writeText(messageStr);
+      window.open(`https://discord.com/users/${activeAd.profiles.discord_id}`, '_blank');
+    } catch (err) {
+      console.error("Clipboard failed", err);
+    }
+  };
+
   const CommentThread = ({ comment, depth = 0 }: { comment: AdComment, depth?: number }) => {
     const votes = commentVotes[comment.id] || { upvotes: 0, downvotes: 0, userVote: 0 };
     const score = votes.upvotes - votes.downvotes;
     const replies = getReplies(comment.id);
-
-    const effectiveDepth = Math.min(depth, MAX_INDENT_LEVEL);
-    const isNested = depth > 0;
+    const isCollapsed = collapsedThreads[comment.id];
+    const isOp = comment.user_id === activeAd.user_id;
 
     return (
-      <div className={`flex flex-col ${isNested ? `ml-${effectiveDepth * 3} mt-2.5 pl-2 border-l-2 border-border` : 'mt-3'}`}>
-        <div className="flex items-start justify-between gap-3 group bg-popover/40 hover:bg-popover/80 p-3 rounded-[8px] transition-colors border border-transparent hover:border-border">
+      <div className={`flex flex-col ${depth > 0 ? 'ml-4 sm:ml-6 mt-3 pl-3 border-l-2 border-border/60' : 'mt-4'}`}>
+        <div className="flex items-start gap-3 group">
           
-          <div className="flex gap-3 min-w-0 flex-1">
-            {/* Comment Voting Column */}
-            <div className="flex flex-col items-center gap-0.5 shrink-0 pt-0.5">
-              <button 
-                onClick={() => profile && voteComment(comment.id, profile.id, 1)}
-                className={`focus-visible:outline-none transition-colors hover:text-[#23a559] cursor-pointer ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground'}`}
-              >
-                <ArrowBigUp className={`w-4 h-4 ${votes.userVote === 1 ? 'fill-current' : ''}`} />
-              </button>
-              <span className={`text-[11px] font-bold ${score > 0 ? 'text-[#23a559]' : score < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                {score}
-              </span>
-              <button 
-                onClick={() => profile && voteComment(comment.id, profile.id, -1)}
-                className={`focus-visible:outline-none transition-colors hover:text-destructive cursor-pointer ${votes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground'}`}
-              >
-                <ArrowBigDown className={`w-4 h-4 ${votes.userVote === -1 ? 'fill-current' : ''}`} />
-              </button>
+          {/* Avatar */}
+          <img 
+            src={comment.profiles.avatar_url || "/units/firezio.webp"} 
+            className="w-8 h-8 rounded-full bg-background object-cover shrink-0 cursor-pointer hover:opacity-80 transition-opacity mt-0.5" 
+            alt=""
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              openPopout(comment.user_id, rect.left, rect.bottom);
+            }}
+          />
+
+          {/* Body */}
+          <div className="flex flex-col flex-1 min-w-0 bg-popover/40 hover:bg-popover/80 p-3 rounded-[8px] border border-border/40 transition-colors">
+            
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <div className="flex items-center gap-2 min-w-0">
+                <span 
+                  className="text-[13px] font-bold text-foreground truncate cursor-pointer hover:underline"
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    openPopout(comment.user_id, rect.left, rect.bottom);
+                  }}
+                >
+                  {comment.profiles.username}
+                </span>
+
+                {isOp && (
+                  <span className="bg-primary/20 text-primary border border-primary/30 text-[9px] font-black px-1.5 py-0.5 rounded-[4px] uppercase tracking-wider">
+                    OP
+                  </span>
+                )}
+
+                {['mod', 'admin', 'master'].includes(comment.profiles.role) && (
+                  <span className="bg-[#5865F2]/25 text-[#5865F2] border border-[#5865F2]/30 text-[9px] font-black px-1.5 py-0.5 rounded-[4px] uppercase tracking-wider flex items-center gap-1">
+                    <ShieldAlert className="w-2.5 h-2.5" /> Staff
+                  </span>
+                )}
+              </div>
+
+              <span className="text-[11px] font-medium text-muted-foreground shrink-0">{getTimeAgoShort(comment.created_at)}</span>
             </div>
 
-            {/* Comment Content */}
-            <div className="flex flex-col flex-1 min-w-0">
-              <div 
-                className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity w-fit"
-                onClick={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  openPopout(comment.user_id, rect.left, rect.bottom);
-                }}
-              >
-                <img src={comment.profiles.avatar_url || "/units/firezio.webp"} className="w-5 h-5 rounded-full bg-background object-cover shrink-0" alt="" />
-                <span className="text-[13px] font-bold text-foreground flex items-center gap-1 truncate hover:underline">
-                  {comment.profiles.username}
-                  {['mod', 'admin', 'master'].includes(comment.profiles.role) && <ShieldAlert className="w-3 h-3 text-primary shrink-0" />}
-                </span>
-                <span className="text-[10px] font-medium text-muted-foreground shrink-0 ml-1">{getTimeAgoShort(comment.created_at)}</span>
-              </div>
-              
-              <p className="text-[13px] text-card-foreground mt-1.5 leading-relaxed break-all whitespace-pre-wrap">
-                {comment.content}
-              </p>
+            <p className="text-[14px] text-card-foreground leading-relaxed break-all whitespace-pre-wrap">
+              {comment.content}
+            </p>
 
-              <div className="flex items-center gap-4 mt-2.5">
+            {/* Comment Footer Action Row */}
+            <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border/40">
+              <div className="flex items-center gap-3">
+                {/* Compact Horizontal Vote Pill */}
+                <div className="flex items-center gap-1 bg-background rounded-[4px] border border-border px-1.5 py-0.5">
+                  <button 
+                    onClick={() => profile && voteComment(comment.id, profile.id, 1)}
+                    className={`focus-visible:outline-none transition-colors hover:text-[#23a559] cursor-pointer ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground'}`}
+                  >
+                    <ArrowBigUp className={`w-3.5 h-3.5 ${votes.userVote === 1 ? 'fill-current' : ''}`} />
+                  </button>
+                  <span className={`text-[11px] font-bold font-mono ${score > 0 ? 'text-[#23a559]' : score < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                    {score}
+                  </span>
+                  <button 
+                    onClick={() => profile && voteComment(comment.id, profile.id, -1)}
+                    className={`focus-visible:outline-none transition-colors hover:text-destructive cursor-pointer ${votes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground'}`}
+                  >
+                    <ArrowBigDown className={`w-3.5 h-3.5 ${votes.userVote === -1 ? 'fill-current' : ''}`} />
+                  </button>
+                </div>
+
                 <button 
                   onClick={() => setReplyingTo({ id: comment.id, username: comment.profiles.username })}
                   className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
                 >
                   <Reply className="w-3 h-3 text-primary" /> Reply
                 </button>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {replies.length > 0 && (
+                  <button 
+                    onClick={() => toggleCollapse(comment.id)}
+                    className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
+                  >
+                    {isCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+                    {isCollapsed ? `Show replies (${replies.length})` : "Hide replies"}
+                  </button>
+                )}
+
                 {canModerate(comment.user_id) && (
                   <button 
                     onClick={() => deleteComment(comment.id)}
@@ -146,12 +293,13 @@ export function AdInteractionModal() {
                 )}
               </div>
             </div>
+
           </div>
 
         </div>
 
         {/* Render Replies Recursively */}
-        {replies.length > 0 && (
+        {!isCollapsed && replies.length > 0 && (
           <div className="flex flex-col">
             {replies.map(reply => <CommentThread key={reply.id} comment={reply} depth={depth + 1} />)}
           </div>
@@ -161,182 +309,350 @@ export function AdInteractionModal() {
   };
 
   const adScore = adVotes.upvotes - adVotes.downvotes;
+  const isTakingOffers = activeAd.ad_type === "lf_offers" || (activeAd.ad_type === "standard" && activeAd.get_items.length === 0);
+  const isInventory = activeAd.ad_type === "inventory";
+
+  let statusLabel = "Specific Trade";
+  let statusColor = "bg-[#FAA61A]/10 border-[#FAA61A]/30 text-[#FAA61A]";
+  if (isInventory) {
+    statusLabel = "Showcase";
+    statusColor = "bg-popover border-border text-foreground";
+  } else if (isTakingOffers) {
+    statusLabel = "Taking Offers";
+    statusColor = "bg-primary/10 border-primary/30 text-primary";
+  }
+
+  const totalGiveVal = activeAd.give_items.reduce((acc, i) => {
+    const m = ALL_UNITS.find(u => u.id === i.id);
+    const liveVal = m ? getUnitConservativeValue(m) : i.value;
+    return acc + (liveVal * i.qty);
+  }, 0);
+
+  const totalGetVal = activeAd.get_items.reduce((acc, i) => {
+    const m = ALL_UNITS.find(u => u.id === i.id);
+    const liveVal = m ? getUnitConservativeValue(m) : i.value;
+    return acc + (liveVal * i.qty);
+  }, 0);
+
+  const valDiff = totalGiveVal - totalGetVal;
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-0 md:p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-      <div className="bg-card w-full h-full md:h-[90vh] md:max-w-6xl md:rounded-[12px] shadow-2xl border-0 md:border border-border flex flex-col md:flex-row overflow-hidden">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-0 md:p-6 bg-black/75 backdrop-blur-sm animate-fade-in" role="dialog" aria-modal="true">
+      <div className="bg-card w-full h-full md:h-[85vh] md:max-w-6xl md:rounded-[14px] shadow-2xl border-0 md:border border-border flex flex-col overflow-hidden">
         
-        {/* LEFT PANE: Ad Context & Load Button */}
-        <div className="w-full md:w-[320px] bg-popover border-b md:border-b-0 md:border-r border-border flex flex-col shrink-0 flex-1 md:flex-auto min-h-0">
-          <div className="flex items-center justify-between p-3.5 md:p-4 border-b border-border shrink-0 bg-popover z-20">
-            <h3 className="text-[13px] font-black text-foreground uppercase tracking-wider">Original Listing</h3>
-            <button onClick={closeAdContext} className="text-muted-foreground hover:text-white focus-visible:outline-none cursor-pointer p-1">
+        {/* 1. SHARED HEADER (Single bar across the whole modal) */}
+        <div className="flex items-center justify-between px-4 md:px-6 py-3.5 bg-popover border-b border-border shrink-0 z-20">
+          <div className="flex items-center gap-3">
+            <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-[6px] border ${statusColor}`}>
+              {statusLabel}
+            </span>
+            <span className="text-[12px] font-mono font-medium text-muted-foreground flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" /> Posted {getTimeAgoShort(activeAd.created_at)}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleShareLink}
+              className="px-3 py-1.5 bg-card hover:bg-muted border border-border rounded-[6px] text-[12px] font-bold text-foreground flex items-center gap-1.5 transition-colors focus-visible:outline-none"
+              aria-label="Share listing"
+            >
+              {copiedLink ? <Check className="w-3.5 h-3.5 text-[#23a559]" /> : <Share2 className="w-3.5 h-3.5 text-muted-foreground" />}
+              <span className="hidden sm:inline">Share</span>
+            </button>
+            <button 
+              onClick={closeAdContext} 
+              className="text-muted-foreground hover:text-foreground focus-visible:outline-none cursor-pointer p-1.5 hover:bg-card rounded-[6px] transition-colors"
+              aria-label="Close modal"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
+        </div>
+
+        {/* Mobile Tab Control */}
+        <div className="flex md:hidden bg-popover border-b border-border p-1 shrink-0">
+          <button 
+            onClick={() => setMobileTab("listing")}
+            className={`flex-1 py-2 text-[12px] font-bold uppercase tracking-wider rounded-[6px] transition-colors ${mobileTab === 'listing' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+          >
+            Listing
+          </button>
+          <button 
+            onClick={() => setMobileTab("comments")}
+            className={`flex-1 py-2 text-[12px] font-bold uppercase tracking-wider rounded-[6px] transition-colors flex items-center justify-center gap-1.5 ${mobileTab === 'comments' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+          >
+            Discussion <span className="bg-black/20 px-1.5 rounded text-[10px]">{comments.length}</span>
+          </button>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
           
-          <div className="p-3.5 md:p-5 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3.5">
+          {/* 2. LEFT PANEL: THE LISTING */}
+          <div className={`w-full md:w-[480px] lg:w-[540px] bg-popover/50 border-r border-border flex flex-col shrink-0 min-h-0 ${mobileTab === 'comments' ? 'hidden md:flex' : 'flex'}`}>
             
-            {/* Ad Voting & User */}
-            <div className="flex items-start gap-3">
-              <div className="flex flex-col items-center gap-1 shrink-0 bg-background p-1.5 rounded-[8px] border border-border">
+            <div className="p-4 md:p-6 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-5">
+              
+              {/* Poster Row */}
+              <div className="flex items-center justify-between bg-card p-3.5 rounded-[10px] border border-border shadow-sm">
+                <div className="flex items-center gap-3 min-w-0">
+                  <img 
+                    src={activeAd.profiles?.avatar_url || "/units/firezio.webp"} 
+                    className="w-11 h-11 rounded-full bg-background object-cover cursor-pointer hover:opacity-80 transition-opacity shrink-0" 
+                    alt=""
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      openPopout(activeAd.user_id, rect.left, rect.bottom);
+                    }}
+                  />
+                  <div className="flex flex-col min-w-0">
+                    <span 
+                      className="text-[15px] font-black text-foreground truncate cursor-pointer hover:underline"
+                      onClick={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        openPopout(activeAd.user_id, rect.left, rect.bottom);
+                      }}
+                    >
+                      {activeAd.profiles?.username || "Trader"}
+                    </span>
+                    <span className="text-[11px] font-mono text-muted-foreground">
+                      {activeAd.profiles?.discord_id ? `@${activeAd.profiles.discord_id}` : 'Verified User'}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleCopyDiscord}
+                  className="px-3 py-2 bg-popover hover:bg-muted border border-border rounded-[6px] text-[12px] font-bold text-foreground flex items-center gap-1.5 transition-colors shadow-sm focus-visible:outline-none shrink-0"
+                >
+                  {copiedDiscord ? <Check className="w-3.5 h-3.5 text-[#23a559]" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}
+                  <span>{copiedDiscord ? "Copied" : "Copy Discord"}</span>
+                </button>
+              </div>
+
+              {/* Note Quote Block (Hidden entirely if no note exists) */}
+              {activeAd.note && (
+                <blockquote className="border-l-4 border-primary pl-4 py-2 italic text-[14px] text-foreground/90 bg-card rounded-r-[8px] border border-border shadow-sm">
+                  "{activeAd.note}"
+                </blockquote>
+              )}
+
+              {/* Trade Summary & Grids */}
+              <div className="flex flex-col gap-4 bg-card rounded-[12px] p-4 border border-border shadow-sm">
+                
+                {isInventory ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
+                      <span>Showcase Assets</span>
+                      <span className="font-mono text-primary font-black">Value: {totalGiveVal.toLocaleString()}</span>
+                    </div>
+                    <div className="grid gap-3 pt-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))' }}>
+                      {activeAd.give_items.map((item, i) => (
+                        <ItemTile key={i} item={item} ALL_UNITS={ALL_UNITS} />
+                      ))}
+                    </div>
+                  </div>
+                ) : isTakingOffers ? (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-wider text-[#FAA61A] border-b border-border pb-2">
+                        <span>Offering</span>
+                        <span className="font-mono font-black">{totalGiveVal.toLocaleString()}</span>
+                      </div>
+                      <div className="grid gap-3 pt-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))' }}>
+                        {activeAd.give_items.map((item, i) => (
+                          <ItemTile key={i} item={item} ALL_UNITS={ALL_UNITS} />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 pt-2 border-t border-border">
+                      <span className="text-[12px] font-bold uppercase tracking-wider text-primary">Requesting</span>
+                      <div className="bg-popover border-2 border-dashed border-border rounded-[8px] p-6 flex flex-col items-center justify-center text-center gap-2">
+                        <Search className="w-8 h-8 text-primary opacity-60" />
+                        <span className="text-[13px] font-black text-foreground uppercase tracking-wider">Open to offers</span>
+                        <span className="text-[11px] text-muted-foreground">The trader is looking for general offers for their items.</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-5">
+                    {/* Offering Side */}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-wider text-[#FAA61A] border-b border-border pb-2">
+                        <span>Offering</span>
+                        <span className="font-mono font-black">{totalGiveVal.toLocaleString()}</span>
+                      </div>
+                      <div className="grid gap-3 pt-1" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))' }}>
+                        {activeAd.give_items.map((item, i) => (
+                          <ItemTile key={i} item={item} ALL_UNITS={ALL_UNITS} />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-center text-muted-foreground bg-popover py-1.5 rounded-[6px] border border-border">
+                      <ArrowRightLeft className="w-4 h-4" />
+                    </div>
+
+                    {/* Requesting Side */}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-wider text-primary border-b border-border pb-2">
+                        <span>Requesting</span>
+                        <span className="font-mono font-black">{totalGetVal > 0 ? totalGetVal.toLocaleString() : 'Negotiable'}</span>
+                      </div>
+                      <div className="grid gap-3 pt-1" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))' }}>
+                        {activeAd.get_items.map((item, i) => (
+                          <ItemTile key={i} item={item} ALL_UNITS={ALL_UNITS} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Value Difference Indicator */}
+                {!isTakingOffers && !isInventory && totalGetVal > 0 && (
+                  <div className="mt-2 pt-3 border-t border-border flex items-center justify-between text-[12px] font-mono">
+                    <span className="text-muted-foreground font-bold uppercase">Value Balance</span>
+                    <span className={`font-black ${valDiff > 0 ? 'text-[#23a559]' : valDiff < 0 ? 'text-destructive' : 'text-foreground'}`}>
+                      {valDiff > 0 ? `+${valDiff.toLocaleString()} (Advantage)` : valDiff < 0 ? `${valDiff.toLocaleString()} (Deficit)` : 'Even Trade'}
+                    </span>
+                  </div>
+                )}
+
+              </div>
+
+            </div>
+            
+            {/* Sticky Footer Action Bar */}
+            <div className="p-4 bg-card border-t border-border shrink-0 flex flex-col sm:flex-row items-center gap-3">
+              <button
+                onClick={handleLoadIntoCalculator}
+                className="w-full sm:flex-1 py-3 bg-primary hover:bg-primary/90 text-primary-foreground text-[13px] font-black uppercase tracking-wider rounded-[8px] transition-colors shadow-md focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Calculator className="w-4 h-4" /> Load into Calculator
+              </button>
+              
+              <button
+                onClick={handleContact}
+                className="w-full sm:w-auto px-5 py-3 bg-[#5865F2] hover:bg-[#4752C4] text-white text-[13px] font-bold rounded-[8px] transition-colors shadow-md focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2"
+              >
+                <MessageSquare className="w-4 h-4" /> Message on Discord
+              </button>
+            </div>
+
+          </div>
+
+          {/* 3. RIGHT PANEL: DISCUSSION */}
+          <div className={`flex-1 flex flex-col min-w-0 bg-background min-h-0 ${mobileTab === 'listing' ? 'hidden md:flex' : 'flex'}`}>
+            
+            {/* Discussion Header */}
+            <div className="hidden md:flex items-center justify-between px-6 py-4 bg-popover border-b border-border shrink-0">
+              <h2 className="text-[15px] font-black text-foreground tracking-tight uppercase flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-primary" /> Discussion <span className="bg-primary/20 text-primary text-[11px] px-2 py-0.5 rounded-[4px] font-mono">{comments.length}</span>
+              </h2>
+
+              {/* Listing Vote Control in Header Action Row */}
+              <div className="flex items-center gap-1.5 bg-card rounded-[6px] border border-border px-2.5 py-1">
                 <button 
                   onClick={() => profile && voteAd(activeAd.id, profile.id, 1)}
                   className={`focus-visible:outline-none transition-colors hover:text-[#23a559] cursor-pointer ${adVotes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground'}`}
+                  aria-label="Upvote listing"
                 >
-                  <ArrowBigUp className={`w-5 h-5 ${adVotes.userVote === 1 ? 'fill-current' : ''}`} />
+                  <ArrowBigUp className={`w-4 h-4 ${adVotes.userVote === 1 ? 'fill-current' : ''}`} />
                 </button>
-                <span className={`text-[13px] font-bold ${adScore > 0 ? 'text-[#23a559]' : adScore < 0 ? 'text-destructive' : 'text-foreground'}`}>
+                <span className={`text-[12px] font-bold font-mono min-w-[20px] text-center ${adScore > 0 ? 'text-[#23a559]' : adScore < 0 ? 'text-destructive' : 'text-foreground'}`}>
                   {adScore}
                 </span>
                 <button 
                   onClick={() => profile && voteAd(activeAd.id, profile.id, -1)}
                   className={`focus-visible:outline-none transition-colors hover:text-destructive cursor-pointer ${adVotes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground'}`}
+                  aria-label="Downvote listing"
                 >
-                  <ArrowBigDown className={`w-5 h-5 ${adVotes.userVote === -1 ? 'fill-current' : ''}`} />
+                  <ArrowBigDown className={`w-4 h-4 ${adVotes.userVote === -1 ? 'fill-current' : ''}`} />
                 </button>
-              </div>
-
-              <div className="flex flex-col min-w-0 flex-1">
-                <div 
-                  className="flex items-center gap-2 mb-1 cursor-pointer hover:opacity-80 transition-opacity w-fit"
-                  onClick={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    openPopout(activeAd.user_id, rect.left, rect.bottom);
-                  }}
-                >
-                  <img src={activeAd.profiles?.avatar_url || "/units/firezio.webp"} className="w-6 h-6 rounded-full bg-background object-cover shrink-0" alt="" />
-                  <span className="text-[14px] font-bold text-foreground truncate hover:underline">{activeAd.profiles?.username}</span>
-                </div>
-                <span className="text-[12px] md:text-[13px] text-card-foreground break-all leading-relaxed">
-                  {activeAd.note || "No additional notes provided."}
-                </span>
               </div>
             </div>
 
-            {/* Ad Content Renders */}
-            <div className="flex flex-col gap-2.5">
-              <div className="bg-background rounded-[8px] p-2.5 md:p-3 border border-border">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">
-                  {activeAd.ad_type === 'inventory' ? 'Showcase' : 'Offering'}
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {activeAd.give_items.map((item, i) => {
-                    const master = ALL_UNITS.find(u => u.id === item.id);
-                    const proxyUrl = master ? getProxyImage(item.id, master.imageUrl) : null;
-                    return (
-                      <div key={i} className="relative w-12 h-12 md:w-14 md:h-14 bg-background rounded-[4px] border border-border overflow-hidden shrink-0" title={item.name}>
-                        {proxyUrl && <img src={proxyUrl} className="absolute inset-0 w-full h-full object-cover" alt="" onError={(e) => handleImageError(e, item.id)} />}
-                        {item.qty > 1 && <div className="absolute bottom-0 right-0 bg-popover text-card-foreground text-[10px] font-black px-1.5 rounded-tl-[4px] z-10">x{item.qty}</div>}
-                      </div>
-                    );
-                  })}
-                  {activeAd.give_items.length === 0 && <span className="text-[13px] text-muted-foreground font-medium">Nothing</span>}
+            {/* Scrollable Comment List */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 flex flex-col pb-8">
+              {isLoading ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-3">
+                  <Clock className="w-6 h-6 animate-spin text-primary" /> 
+                  <span className="text-[12px] font-bold uppercase tracking-widest">Loading discussion...</span>
                 </div>
-              </div>
+              ) : rootComments.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center opacity-70 py-12">
+                  <MessageSquare className="w-12 h-12 text-muted-foreground mb-3" />
+                  <span className="text-[16px] font-black text-foreground">Start the conversation</span>
+                  <span className="text-[13px] text-muted-foreground mt-1 max-w-xs">Be the first to share your thoughts or make an offer on this listing.</span>
+                </div>
+              ) : (
+                rootComments.map((comment) => (
+                  <CommentThread key={comment.id} comment={comment} />
+                ))
+              )}
+              <div ref={messagesEndRef} />
+            </div>
 
-              {activeAd.ad_type !== 'inventory' && (
-                <div className="bg-background rounded-[8px] p-2.5 md:p-3 border border-border">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">Requesting</span>
-                  <div className="flex flex-wrap gap-2">
-                    {activeAd.get_items.map((item, i) => {
-                      const master = ALL_UNITS.find(u => u.id === item.id);
-                      const proxyUrl = master ? getProxyImage(item.id, master.imageUrl) : null;
-                      return (
-                        <div key={i} className="relative w-12 h-12 md:w-14 md:h-14 bg-background rounded-[4px] border border-border overflow-hidden shrink-0" title={item.name}>
-                          {proxyUrl && <img src={proxyUrl} className="absolute inset-0 w-full h-full object-cover" alt="" onError={(e) => handleImageError(e, item.id)} />}
-                          {item.qty > 1 && <div className="absolute bottom-0 right-0 bg-popover text-card-foreground text-[10px] font-black px-1.5 rounded-tl-[4px] z-10">x{item.qty}</div>}
-                        </div>
-                      );
-                    })}
-                    {activeAd.get_items.length === 0 && <span className="text-[13px] text-muted-foreground font-medium">Taking Offers</span>}
+            {/* Sticky Composer */}
+            <div className="p-4 bg-popover border-t border-border shrink-0 flex flex-col gap-2">
+              {replyingTo && (
+                <div className="flex items-center justify-between bg-card px-3 py-1.5 rounded-[6px] border border-primary/40 animate-fade-in">
+                  <span className="text-[12px] font-bold text-foreground flex items-center gap-1.5">
+                    <Reply className="w-3.5 h-3.5 text-primary" /> Replying to @{replyingTo.username}
+                  </span>
+                  <button onClick={() => setReplyingTo(null)} className="text-muted-foreground hover:text-destructive focus-visible:outline-none cursor-pointer">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+              
+              {profile ? (
+                <form onSubmit={handlePost} className="relative flex items-end gap-2">
+                  <div className="flex items-center gap-2 mb-1 shrink-0">
+                    <img src={profile.avatar_url || "/units/firezio.webp"} className="w-8 h-8 rounded-full bg-card object-cover border border-border" alt="" />
                   </div>
+
+                  <div className="relative flex-1">
+                    <textarea
+                      ref={textareaRef}
+                      value={newComment}
+                      onChange={(e) => {
+                        setNewComment(e.target.value);
+                        e.target.style.height = "auto";
+                        e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+                      }}
+                      onKeyDown={handleKeyDownTextarea}
+                      placeholder={replyingTo ? `Write a reply...` : `Type a message...`}
+                      maxLength={500}
+                      rows={1}
+                      disabled={isActionPending}
+                      className="w-full bg-card text-foreground text-[14px] px-3.5 py-2.5 rounded-[8px] outline-none border border-border focus:border-primary transition-colors font-medium placeholder:text-muted-foreground resize-none max-h-[120px] custom-scrollbar"
+                    />
+                    <div className="absolute right-2 bottom-2.5 text-[10px] font-mono text-muted-foreground pointer-events-none">
+                      {newComment.length}/500
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit"
+                    disabled={!newComment.trim() || isActionPending}
+                    className="h-10 px-4 flex items-center justify-center rounded-[8px] bg-primary hover:bg-primary/85 text-primary-foreground disabled:opacity-40 transition-colors focus-visible:outline-none cursor-pointer shrink-0"
+                    aria-label="Send message"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </form>
+              ) : (
+                <div className="w-full bg-card text-muted-foreground text-[13px] font-bold text-center py-3 rounded-[8px] border border-border">
+                  You must be logged in to participate in the discussion.
                 </div>
               )}
             </div>
 
           </div>
-          
-          {/* Fixed Footer for Calculator Action */}
-          <div className="p-3.5 md:p-4 border-t border-border shrink-0 bg-popover z-20">
-            <button
-              onClick={handleLoadIntoCalculator}
-              className="w-full flex items-center justify-center gap-2 py-2.5 md:py-3 bg-primary hover:bg-primary/80 text-primary-foreground text-[13px] font-bold rounded-[6px] transition-colors shadow-sm focus-visible:outline-none cursor-pointer min-h-[44px]"
-            >
-              <Calculator className="w-4 h-4" /> Load into Calculator
-            </button>
-          </div>
-        </div>
 
-        {/* RIGHT PANE: Discussion Thread */}
-        <div className="flex-1 flex flex-col min-w-0 bg-background min-h-0">
-          <div className="hidden md:flex items-center justify-between px-6 py-4 bg-popover border-b border-border shrink-0">
-            <h2 className="text-[15px] font-black text-foreground tracking-tight uppercase flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-primary" /> Disqus
-            </h2>
-            <button onClick={closeAdContext} className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer p-1 bg-transparent hover:bg-white/5 rounded-[4px]">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Comments Feed */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-6 flex flex-col pb-8">
-            {isLoading ? (
-              <div className="flex-1 flex items-center justify-center text-muted-foreground gap-2">
-                <Clock className="w-4 h-4 animate-spin" /> <span className="text-[12px] font-bold uppercase tracking-widest">Loading...</span>
-              </div>
-            ) : rootComments.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center opacity-50 py-10">
-                <MessageSquare className="w-12 h-12 text-muted-foreground mb-3" />
-                <span className="text-[15px] font-bold text-foreground">No messages yet</span>
-                <span className="text-[13px] text-muted-foreground mt-1">Be the first to start the negotiation.</span>
-              </div>
-            ) : (
-              rootComments.map((comment) => (
-                <CommentThread key={comment.id} comment={comment} />
-              ))
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input Area */}
-          <div className="p-3 sm:p-4 bg-popover border-t border-border shrink-0 flex flex-col gap-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:pb-4">
-            {replyingTo && (
-              <div className="flex items-center justify-between bg-background px-3 py-1.5 rounded-[6px] border border-primary/30">
-                <span className="text-[12px] font-bold text-foreground flex items-center gap-1.5">
-                  <Reply className="w-3.5 h-3.5 text-primary" /> Replying to {replyingTo.username}
-                </span>
-                <button onClick={() => setReplyingTo(null)} className="text-muted-foreground hover:text-destructive focus-visible:outline-none cursor-pointer">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-            
-            {profile ? (
-              <form onSubmit={handlePost} className="relative flex items-center">
-                <input
-                  type="text"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder={replyingTo ? `Write a reply...` : `Add a comment...`}
-                  maxLength={500}
-                  disabled={isActionPending}
-                  className="w-full bg-input text-foreground text-[14px] pl-4 pr-12 py-3 rounded-[8px] outline-none border border-transparent focus:border-primary transition-colors font-medium placeholder:text-muted-foreground min-h-[44px]"
-                />
-                <button 
-                  type="submit"
-                  disabled={!newComment.trim() || isActionPending}
-                  className="absolute right-2 w-9 h-9 flex items-center justify-center rounded-[6px] bg-primary hover:bg-primary/85 text-primary-foreground disabled:opacity-50 transition-colors focus-visible:outline-none cursor-pointer"
-                >
-                  <Send className="w-4 h-4 -ml-0.5" />
-                </button>
-              </form>
-            ) : (
-              <div className="w-full bg-input text-muted-foreground text-[13px] font-bold text-center py-3 rounded-[8px]">
-                You must be logged in to participate.
-              </div>
-            )}
-          </div>
         </div>
 
       </div>
