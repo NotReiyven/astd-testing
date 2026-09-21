@@ -1,4 +1,6 @@
+// ================================================
 // FILE: src/app/components/AdInteractionModal.tsx
+// ================================================
 
 import { useState, useEffect, useRef } from "react";
 import { X, MessageSquare, ArrowBigUp, ArrowBigDown, Send, Trash2, ShieldAlert, Clock, Reply, Calculator } from "lucide-react";
@@ -6,6 +8,7 @@ import { useAdInteractionStore, AdComment } from "../../store/useAdInteractionSt
 import { useTradingAdsStore } from "../../store/useTradingAdsStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useTradeStore } from "../../store/useTradeStore";
+import { useProfileStore } from "../../store/useProfileStore";
 import { useUnits } from "../../context/UnitContext";
 import { getProxyImage, handleImageError } from "../../data";
 import { triggerHaptic } from "../../data/helpers";
@@ -33,6 +36,7 @@ export function AdInteractionModal() {
   const { profile } = useAuthStore();
   const { overwrite } = useTradeStore();
   const { units: ALL_UNITS } = useUnits();
+  const openPopout = useProfileStore(s => s.openPopout);
   
   const activeAd = ads.find(a => a.id === activeAdId);
   
@@ -106,13 +110,19 @@ export function AdInteractionModal() {
 
             {/* Comment Content */}
             <div className="flex flex-col flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+              <div 
+                className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity w-fit"
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  openPopout(comment.user_id, rect.left, rect.bottom);
+                }}
+              >
                 <img src={comment.profiles.avatar_url || "/units/firezio.webp"} className="w-5 h-5 rounded-full bg-background object-cover shrink-0" alt="" />
-                <span className="text-[13px] font-bold text-foreground flex items-center gap-1 truncate">
+                <span className="text-[13px] font-bold text-foreground flex items-center gap-1 truncate hover:underline">
                   {comment.profiles.username}
                   {['mod', 'admin', 'master'].includes(comment.profiles.role) && <ShieldAlert className="w-3 h-3 text-primary shrink-0" />}
                 </span>
-                <span className="text-[10px] font-medium text-muted-foreground shrink-0">{getTimeAgoShort(comment.created_at)}</span>
+                <span className="text-[10px] font-medium text-muted-foreground shrink-0 ml-1">{getTimeAgoShort(comment.created_at)}</span>
               </div>
               
               <p className="text-[13px] text-card-foreground mt-1.5 leading-relaxed break-all whitespace-pre-wrap">
@@ -188,9 +198,15 @@ export function AdInteractionModal() {
               </div>
 
               <div className="flex flex-col min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-1">
+                <div 
+                  className="flex items-center gap-2 mb-1 cursor-pointer hover:opacity-80 transition-opacity w-fit"
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    openPopout(activeAd.user_id, rect.left, rect.bottom);
+                  }}
+                >
                   <img src={activeAd.profiles?.avatar_url || "/units/firezio.webp"} className="w-6 h-6 rounded-full bg-background object-cover shrink-0" alt="" />
-                  <span className="text-[14px] font-bold text-foreground truncate">{activeAd.profiles?.username}</span>
+                  <span className="text-[14px] font-bold text-foreground truncate hover:underline">{activeAd.profiles?.username}</span>
                 </div>
                 <span className="text-[12px] md:text-[13px] text-card-foreground break-all leading-relaxed">
                   {activeAd.note || "No additional notes provided."}

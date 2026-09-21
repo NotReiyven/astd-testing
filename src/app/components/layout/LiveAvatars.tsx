@@ -1,5 +1,10 @@
+// ================================================
+// FILE: src/app/components/layout/LiveAvatars.tsx
+// ================================================
+
 import { usePresence, PresenceState } from "../../../hooks/usePresence";
 import { handleImageError } from "../../../data";
+import { useProfileStore } from "../../../store/useProfileStore";
 
 const getInitials = (name: string) => {
   const parts = name.split(" ");
@@ -8,6 +13,7 @@ const getInitials = (name: string) => {
 
 export function LiveAvatars() {
   const users = usePresence();
+  const openPopout = useProfileStore(s => s.openPopout);
   
   if (users.length === 0) return null;
 
@@ -26,7 +32,11 @@ export function LiveAvatars() {
         {visibleUsers.map((user: PresenceState, i: number) => (
           <div
             key={user.id}
-            className="w-8 h-8 rounded-full flex items-center justify-center border-[2px] border-background text-white shadow-sm relative group cursor-default transition-transform hover:-translate-y-1 hover:z-50 overflow-visible"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              openPopout(user.id, rect.left, rect.bottom);
+            }}
+            className="w-8 h-8 rounded-full flex items-center justify-center border-[2px] border-background text-white shadow-sm relative group cursor-pointer transition-transform hover:-translate-y-1 hover:z-50 overflow-visible"
             style={{ 
               backgroundColor: user.color,
               marginLeft: i > 0 ? "-10px" : "0",

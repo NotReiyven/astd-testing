@@ -3,7 +3,11 @@
 // ================================================
 
 import { useState, useRef, useEffect } from "react";
-import { PanelLeft, Hash, Search, X, Calculator, HelpCircle, Book, LogIn, LogOut, GraduationCap, Map, Settings2, User } from "lucide-react";
+import { 
+  PanelLeft, Hash, Search, X, Calculator, HelpCircle, 
+  Book, LogIn, LogOut, GraduationCap, Map, Settings2, 
+  User, ChevronRight, Check 
+} from "lucide-react";
 import { GuideType } from "../guides/AquaGuideOverlay";
 import { LiveAvatars } from "./LiveAvatars";
 import { useAuthStore } from "../../../store/useAuthStore";
@@ -21,6 +25,13 @@ interface TopBarProps {
   activeItemsCount: number;
   isDictionaryActive: boolean;
 }
+
+const STATUS_COLORS = {
+  online: "#23a559",
+  dnd: "#f23f43",
+  invisible: "#80848e",
+  offline: "#80848e"
+};
 
 export function TopBar({
   calcHeaderZ,
@@ -40,10 +51,13 @@ export function TopBar({
   const [lastClickTime, setLastClickTime] = useState(0);
 
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  
   const mobileInputRef = useRef<HTMLInputElement>(null);
   const desktopSearchRef = useRef<HTMLInputElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
 
-  const { profile, loginWithDiscord, logout, isLoading: isAuthLoading } = useAuthStore();
+  const { profile, loginWithDiscord, logout, updateStatus, isLoading: isAuthLoading } = useAuthStore();
 
   useEffect(() => {
     if (mobileSearchOpen && mobileInputRef.current) {
@@ -72,6 +86,7 @@ export function TopBar({
       if (e.key === "Escape" || e.key === "Esc") {
         setGlobalSearchQuery("");
         setMobileSearchOpen(false);
+        setIsProfileMenuOpen(false);
         if (document.activeElement instanceof HTMLElement) {
           document.activeElement.blur();
         }
@@ -80,6 +95,22 @@ export function TopBar({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [setGlobalSearchQuery]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+    if (isProfileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [isProfileMenuOpen]);
 
   const handleHelpClick = () => {
     const now = Date.now();
@@ -168,16 +199,66 @@ export function TopBar({
 
         {!isAuthLoading && (
           profile ? (
-            <button 
-              onClick={logout}
-              className="flex items-center gap-2 pl-1 pr-3 py-1 bg-popover hover:bg-destructive/20 border border-border hover:border-destructive/50 rounded-full transition-all group shrink-0 cursor-pointer"
-              title="Click to Logout"
-            >
-              <img src={profile.avatar_url} alt="Avatar" className="w-5 h-5 md:w-6 md:h-6 rounded-full" />
-              <span className="text-[12px] font-bold text-card-foreground group-hover:hidden hidden sm:block max-w-[80px] truncate">{profile.username}</span>
-              <span className="text-[12px] font-bold text-destructive hidden group-hover:block hidden sm:block">Logout</span>
-              <LogOut className="w-3.5 h-3.5 text-destructive sm:hidden hidden group-hover:block" />
-            </button>
+            <div className="relative" ref={profileMenuRef}>
+              <button 
+                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                className="flex items-center gap-2 p-1 md:pr-3 md:py-1 bg-popover hover:bg-muted border border-border rounded-full md:rounded-[20px] transition-all shrink-0 cursor-pointer focus-visible:outline-none"
+                title="Account Settings"
+              >
+                <div className="relative">
+                  <img src={profile.avatar_url} alt="Avatar" className="w-6 h-6 md:w-6 md:h-6 rounded-full object-cover bg-background" />
+                  <div 
+                    className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-popover"
+                    style={{ backgroundColor: STATUS_COLORS[profile.status] || STATUS_COLORS.offline }}
+                  />
+                </div>
+                <span className="text-[12px] font-bold text-foreground hidden sm:block max-w-[80px] truncate">{profile.username}</span>
+              </button>
+
+              {isProfileMenuOpen && (
+                <div className="absolute top-full right-0 mt-2 w-48 bg-card border border-border rounded-[8px] shadow-[0_8px_24px_rgba(0,0,0,0.5)] z-[99999] p-1.5 flex flex-col animate-fade-in">
+                  <div className="px-2 py-1.5 mb-1 border-b border-border">
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest block">Status</span>
+                  </div>
+                  
+                  <button onClick={() => { updateStatus('online'); setIsProfileMenuOpen(false); }} className="flex items-center justify-between w-full px-2 py-2 rounded-[4px] hover:bg-primary hover:text-primary-foreground transition-colors group cursor-pointer">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#23a559]" />
+                      <span className="text-[13px] font-semibold text-foreground group-hover:text-primary-foreground">Online</span>
+                    </div>
+                    {profile.status === 'online' && <Check className="w-4 h-4 text-foreground group-hover:text-primary-foreground" />}
+                  </button>
+
+                  <button onClick={() => { updateStatus('dnd'); setIsProfileMenuOpen(false); }} className="flex items-center justify-between w-full px-2 py-2 rounded-[4px] hover:bg-primary hover:text-primary-foreground transition-colors group cursor-pointer">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#f23f43]" />
+                      <span className="text-[13px] font-semibold text-foreground group-hover:text-primary-foreground">Do Not Disturb</span>
+                    </div>
+                    {profile.status === 'dnd' && <Check className="w-4 h-4 text-foreground group-hover:text-primary-foreground" />}
+                  </button>
+
+                  <button onClick={() => { updateStatus('invisible'); setIsProfileMenuOpen(false); }} className="flex items-center justify-between w-full px-2 py-2 rounded-[4px] hover:bg-primary hover:text-primary-foreground transition-colors group cursor-pointer">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-transparent border-2 border-[#80848e] group-hover:border-primary-foreground" />
+                      <span className="text-[13px] font-semibold text-foreground group-hover:text-primary-foreground">Invisible</span>
+                    </div>
+                    {profile.status === 'invisible' && <Check className="w-4 h-4 text-foreground group-hover:text-primary-foreground" />}
+                  </button>
+
+                  <div className="w-full h-px bg-border my-1" />
+
+                  <button onClick={() => { setIsProfileMenuOpen(false); window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'profile' })); }} className="flex items-center gap-2 w-full px-2 py-2 rounded-[4px] hover:bg-primary hover:text-primary-foreground transition-colors group cursor-pointer">
+                    <User className="w-4 h-4 text-muted-foreground group-hover:text-primary-foreground" />
+                    <span className="text-[13px] font-semibold text-foreground group-hover:text-primary-foreground">Profile Settings</span>
+                  </button>
+
+                  <button onClick={() => { logout(); setIsProfileMenuOpen(false); }} className="flex items-center gap-2 w-full px-2 py-2 rounded-[4px] hover:bg-destructive hover:text-destructive-foreground transition-colors group cursor-pointer mt-0.5">
+                    <LogOut className="w-4 h-4 text-destructive group-hover:text-destructive-foreground" />
+                    <span className="text-[13px] font-semibold text-destructive group-hover:text-destructive-foreground">Log Out</span>
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <button 
               onClick={loginWithDiscord}

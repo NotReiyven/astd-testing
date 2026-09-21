@@ -1,4 +1,6 @@
+// ================================================
 // FILE: src/store/useAuthStore.ts
+// ================================================
 
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
@@ -11,6 +13,7 @@ export interface UserProfile {
   avatar_url: string;
   role: 'user' | 'mod' | 'admin' | 'master' | 'banned';
   created_at: string;
+  status: 'online' | 'dnd' | 'invisible' | 'offline';
 }
 
 interface AuthState {
@@ -21,6 +24,7 @@ interface AuthState {
   logout: () => Promise<void>;
   fetchProfile: (userId: string) => Promise<void>;
   initialize: () => void;
+  updateStatus: (status: UserProfile['status']) => Promise<void>;
 }
 
 const clearLocalAuthCache = () => {
@@ -31,8 +35,11 @@ const clearLocalAuthCache = () => {
   }
 };
 
-// Module-scoped channel tracker to prevent duplicate subscription races
 let activeProfileChannel: RealtimeChannel | null = null;
+
+// Extracted for the beforeunload beacon
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
@@ -57,9 +64,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       supabase.removeChannel(activeProfileChannel);
       activeProfileChannel = null;
     }
+    
+    // Ensure we mark them offline before destroying the session
+    const { profile } = get();
+    if (profile) {
+      await supabase.from('profiles').update({ status: 'offline' }).eq('id', profile.id);
+    }
+
     await supabase.auth.signOut();
     clearLocalAuthCache();
     set({ session: null, profile: null });
+  },
+
+  updateStatus: async (status) => {
+    const { profile } = get();
+    if (!profile || profile.status === status) return;
+
+    // Save intent to local storage so auto-online respects their override
+    if (status === 'dnd' || status === 'invisible') {
+      localStorage.setItem('astd_manual_status', status);
+    } else if (status === 'online') {
+      localStorage.removeItem('astd_manual_status');
+    }
+
+    // Optimistic UI update
+    set({ profile: { ...profile, status } });
+    
+    await supabase.from('profiles').update({ status }).eq('id', profile.id);
   },
 
   fetchProfile: async (userId: string) => {
@@ -78,9 +109,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return;
       }
 
-      set({ profile: data });
+      // Auto-Presence Injection
+      const savedManualStatus = localStorage.getItem('astd_manual_status');
+      let targetStatus = data.status;
 
-      // Cleanly destroy any existing profile channel before creating a new one
+      if (savedManualStatus === 'dnd' || savedManualStatus === 'invisible') {
+        targetStatus = savedManualStatus;
+      } else {
+        targetStatus = 'online';
+      }
+
+      if (data.status !== targetStatus) {
+        await supabase.from('profiles').update({ status: targetStatus }).eq('id', userId);
+        data.status = targetStatus;
+      }
+
+      set({ profile: data as UserProfile });
+
       if (activeProfileChannel) {
         supabase.removeChannel(activeProfileChannel);
         activeProfileChannel = null;
@@ -124,6 +169,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           activeProfileChannel = null;
         }
         set({ profile: null });
+      }
+    });
+
+    // The Auto-Offline killswitch
+    window.addEventListener('beforeunload', () => {
+      const { profile, session } = get();
+      if (profile && session && profile.status !== 'invisible') {
+        const url = `${supabaseUrl}/rest/v1/profiles?id=eq.${profile.id}`;
+        fetch(url, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': supabaseAnonKey
+          },
+          body: JSON.stringify({ status: 'offline' }),
+          keepalive: true // Crucial: allows the request to finish after the tab closes
+        });
       }
     });
   }

@@ -1,4 +1,6 @@
+// ================================================
 // FILE: src/store/useTradingAdsStore.ts
+// ================================================
 
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
@@ -18,6 +20,7 @@ export interface TradingAd {
     avatar_url: string;
     role: string;
     discord_id: string;
+    status: 'online' | 'dnd' | 'invisible' | 'offline';
   };
 }
 
@@ -38,11 +41,12 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
     set({ isLoading: true });
     const now = new Date().toISOString();
     
+    // FIXED: Re-added explicit foreign key to prevent 400 multiple relationship errors
     const { data, error } = await supabase
       .from('trading_ads')
       .select(`
         *,
-        profiles!trading_ads_user_id_fkey(username, avatar_url, role, discord_id)
+        profiles!trading_ads_user_id_fkey(username, avatar_url, role, discord_id, status)
       `)
       .gt('expires_at', now)
       .order('created_at', { ascending: false });
@@ -73,7 +77,8 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
           if (eventType === 'INSERT') {
             supabase
               .from('trading_ads')
-              .select(`*, profiles!trading_ads_user_id_fkey(username, avatar_url, role, discord_id)`)
+              // FIXED: Re-added explicit foreign key for realtime inserts
+              .select(`*, profiles!trading_ads_user_id_fkey(username, avatar_url, role, discord_id, status)`)
               .eq('id', newRecord.id)
               .single()
               .then(({ data, error }) => {
@@ -105,10 +110,8 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
   },
 
   createAd: async (adData: any) => {
-    // Build a strict, clean payload containing ONLY valid database snake_case columns
     const payload: any = {};
 
-    // 1. Map User ID (handles userId or user_id)
     payload.user_id = adData.user_id || adData.userId;
     if (!payload.user_id) {
       const { data: { session } } = await supabase.auth.getSession();
@@ -117,17 +120,11 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
       }
     }
 
-    // 2. Map Ad Type (handles adType or ad_type)
     payload.ad_type = adData.ad_type || adData.adType || 'standard';
-
-    // 3. Map Items (handles camelCase vs snake_case)
     payload.give_items = adData.give_items || adData.giveItems || [];
     payload.get_items = adData.get_items || adData.getItems || [];
-
-    // 4. Map Note
     payload.note = adData.note || '';
 
-    // 5. Calculate Expiration Timestamp using ttlHours/ttl if present, fallback to 24h
     const rawExpires = adData.expires_at || adData.expiresAt;
     if (rawExpires) {
       payload.expires_at = rawExpires;
@@ -141,7 +138,6 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
     const { error } = await supabase.from('trading_ads').insert(payload);
     if (error) {
       console.error("🚨 Error posting ad:", error.message);
-      alert(`POST FAILED: ${error.message}`);
       return { error };
     }
     return { error: null };

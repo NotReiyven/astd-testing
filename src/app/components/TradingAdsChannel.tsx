@@ -13,6 +13,7 @@ import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useTradeStore } from "../../store/useTradeStore";
 import { useInventoryStore } from "../../store/useInventoryStore";
+import { useProfileStore } from "../../store/useProfileStore";
 import { useUnits } from "../../context/UnitContext";
 import { useHistoryModalStore } from "../../store/useHistoryModalStore";
 import { TradeCard, MasterUnit } from "../../types";
@@ -29,6 +30,13 @@ const SORT_OPTIONS = {
   "oldest": "Oldest First",
   "value-desc": "Highest Value",
   "value-asc": "Lowest Value"
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  online: "#23a559",
+  dnd: "#f23f43",
+  invisible: "#80848e",
+  offline: "#80848e"
 };
 
 function getTimeAgo(dateStr: string) {
@@ -130,8 +138,6 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
 const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL_UNITS, onInspectUnit, onSendToCalculator }: { ad: TradingAd; currentUserId?: string; currentUserRole?: string; onDelete: (id: string) => void; ALL_UNITS: MasterUnit[]; onInspectUnit: (unitId: string) => void; onSendToCalculator: (give: TradeCard[], get: TradeCard[]) => void; }) => {
     const [isContacting, setIsContacting] = useState(false);
     const [votes, setVotes] = useState({ up: 0, down: 0, userVote: 0 });
-
-    // Highlight new ads directly from realtime for a few seconds
     const [isNewAd, setIsNewAd] = useState(() => Date.now() - new Date(ad.created_at).getTime() < 5000);
 
     const isOwner = currentUserId === ad.user_id;
@@ -142,6 +148,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
 
     const setViewingUser = useInventoryStore(s => s.setViewingUser);
     const openAdContext = useAdInteractionStore(s => s.openAdContext);
+    const openPopout = useProfileStore(s => s.openPopout);
 
     useEffect(() => {
       if (isNewAd) {
@@ -220,6 +227,11 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
       setTimeout(() => setIsContacting(false), 2500);
     };
 
+    const handleAvatarClick = (e: React.MouseEvent) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      openPopout(ad.user_id, rect.left, rect.bottom);
+    };
+
     const score = votes.up - votes.down;
     
     let badgeTitle = "TRADE";
@@ -246,16 +258,30 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
 
         <div className="flex items-start justify-between mb-4 h-[44px] relative z-10">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="relative shrink-0">
+            <div 
+              className="relative shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={handleAvatarClick}
+              title="View Profile"
+            >
               <img 
                 src={ad.profiles?.avatar_url || "/units/firezio.webp"} 
                 className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-popover object-cover ring-2 ring-offset-2 ring-offset-card" 
                 style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
                 alt=""
               />
+              <div 
+                className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-2 border-card z-10"
+                style={{ backgroundColor: STATUS_COLORS[ad.profiles?.status || 'offline'] }}
+              />
             </div>
             <div className="flex flex-col min-w-0 pt-0.5">
-               <span className="text-[14px] sm:text-[16px] font-bold text-foreground tracking-tight leading-none mb-1.5 truncate">
+               <span 
+                 className="text-[14px] sm:text-[16px] font-bold text-foreground tracking-tight leading-none mb-1.5 truncate cursor-pointer hover:underline"
+                 onClick={(e) => {
+                   const rect = e.currentTarget.getBoundingClientRect();
+                   openPopout(ad.user_id, rect.left, rect.bottom);
+                 }}
+               >
                  {ad.profiles?.username || "Unknown"}
                </span>
                <span className="text-[11px] sm:text-[12px] text-muted-foreground font-medium leading-none flex items-center gap-1.5">

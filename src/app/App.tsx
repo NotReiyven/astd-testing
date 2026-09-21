@@ -10,6 +10,7 @@ import { AquaGuideOverlay } from "./components/guides/AquaGuideOverlay";
 import { TopBar } from "./components/layout/TopBar";
 import { SyncBanner } from "./components/layout/SyncBanner";
 import { WelcomeModal } from "./components/WelcomeModal";
+import { MiniProfilePopout } from "./components/layout/MiniProfilePopout";
 import { useTradeStore } from "../store/useTradeStore";
 import { useLayoutStore } from "../store/useLayoutStore";
 import { HistoryModal } from "./components/MainCanvas/HistoryModal";
@@ -30,6 +31,7 @@ const TradingAdsChannel = lazy(() => import("./components/TradingAdsChannel").th
 const ExtraNoticesChannel = lazy(() => import("./components/ExtraNoticesChannel").then(module => ({ default: module.ExtraNoticesChannel })));
 const LegalChannel = lazy(() => import("./components/LegalChannel").then(module => ({ default: module.LegalChannel })));
 const AdminChannel = lazy(() => import("./components/AdminChannel").then(module => ({ default: module.AdminChannel }))); 
+const ProfileChannel = lazy(() => import("./components/ProfileChannel").then(module => ({ default: module.ProfileChannel }))); 
 
 const CHANNEL_INFO: Record<string, { title: string; subtitle: string }> = {
   "home": { title: "home", subtitle: "Welcome to the ASTD Value List! Important information and update logs are posted here." },
@@ -37,6 +39,7 @@ const CHANNEL_INFO: Record<string, { title: string; subtitle: string }> = {
   "trading-ads": { title: "trading-ads", subtitle: "Live community trade listings • Direct Discord messaging" },
   "tutorial": { title: "tutorial", subtitle: "Learn how to use the ASTD trading calculator and value list." },
   "inventory": { title: "my-inventory", subtitle: "Manage your personal unit collection and vault." },
+  "profile": { title: "user-profile", subtitle: "Trader Identity & Public Records" },
   "extra-notices": { title: "extra-notices", subtitle: "Additional rules, exceptions, and community notes." },
   "terms-of-service": { title: "terms-of-service", subtitle: "Rules and guidelines for using the ASTD Value List." },
   "privacy-policy": { title: "privacy-policy", subtitle: "How we handle and protect your data." },
@@ -215,6 +218,7 @@ export default function App() {
           <WelcomeModal />
           <HistoryModal />
           <AquaGuideOverlay guideState={guideState} onEndGuide={endGuide} />
+          <MiniProfilePopout />
 
           {isRosterOpen && <div className="md:hidden fixed inset-0 bg-black/60 z-40 animate-fade-in" onClick={() => setIsRosterOpen(false)} />}
 
@@ -295,6 +299,7 @@ export default function App() {
                   isMobile={isMobile}
                 />
               ) : activeChannel === "inventory" ? ( <InventoryChannel />
+              ) : activeChannel === "profile" ? ( <ProfileChannel />
               ) : activeChannel === "trading-ads" ? ( <TradingAdsChannel />
               ) : activeChannel === "extra-notices" ? ( <ExtraNoticesChannel />
               ) : activeChannel === "terms-of-service" ? ( <LegalChannel type="tos" />

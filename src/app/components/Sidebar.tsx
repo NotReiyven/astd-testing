@@ -13,12 +13,14 @@ import {
   Shield,
   FileText,
   Package,
-  ShieldAlert
+  ShieldAlert,
+  User
 } from "lucide-react";
 import { FilterKey } from "../../types";
 import { useUnits } from "../../context/UnitContext";
 import { getTier } from "../../data";
 import { useAuthStore } from "../../store/useAuthStore";
+import { useProfileStore } from "../../store/useProfileStore";
 
 type ChannelConfig = { id: string; label: string; isLocked: boolean; hasThreads?: boolean; icon?: LucideIcon; };
 type CategoryConfig = { id: string; label: string; channels: ChannelConfig[]; };
@@ -35,6 +37,7 @@ const BASE_CATEGORIES: CategoryConfig[] = [
   {
     id: "trading", label: "trading",
     channels: [
+      { id: "profile", label: "my-profile", isLocked: true, icon: User },
       { id: "inventory", label: "my-inventory", isLocked: true, icon: Package },
       { id: "trading-ads", label: "trading-ads", isLocked: false, icon: Megaphone },
       { id: "value-list", label: "value-list", isLocked: false, hasThreads: true },
@@ -63,6 +66,7 @@ export function Sidebar({
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const { units } = useUnits();
   const { profile } = useAuthStore();
+  const setViewingProfile = useProfileStore(s => s.setViewingProfile);
 
   const role = profile?.role;
   const canModerate = role === 'master' || role === 'admin' || role === 'mod';
@@ -123,10 +127,15 @@ export function Sidebar({
     setCollapsedCategories(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const handleChannelClick = (channelId: string) => {
+    if (channelId === "profile") {
+      setViewingProfile(null); 
+    }
+    setActiveChannel(channelId);
+  };
+
   return (
-    <div
-      className="flex flex-col h-screen select-none border-r border-border md:border-r-0 bg-card w-full"
-    >
+    <div className="flex flex-col h-screen select-none border-r border-border md:border-r-0 bg-card w-full">
       <div className="h-[48px] flex-shrink-0 px-4 flex items-center justify-between shadow-sm hover:bg-white/5 cursor-pointer transition-colors border-b border-border">
         <span className="font-black text-foreground text-[15px] truncate">
           ASTD Value List
@@ -165,7 +174,7 @@ export function Sidebar({
                       return (
                         <div key={channel.id} className="flex flex-col relative">
                           <button
-                            onClick={() => setActiveChannel(channel.id)}
+                            onClick={() => handleChannelClick(channel.id)}
                             className={`group w-full flex items-center justify-between px-2 py-2.5 md:py-1.5 mb-[2px] rounded-[4px] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                               isTarget 
                                 ? "bg-primary text-primary-foreground shadow-[0_0_20px_var(--primary)] ring-2 ring-primary translate-x-1 z-50 relative animate-pulse"
