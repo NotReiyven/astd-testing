@@ -51,7 +51,7 @@ export function AdminChannel() {
       
       <div className="flex-shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4 px-4 md:px-6 py-4 bg-card border-b border-border shadow-sm z-20">
         <h2 className="text-[16px] font-black text-foreground tracking-tight uppercase flex items-center gap-2">
-          <ShieldAlert className="w-5 h-5 text-destructive" /> Moderation Center
+          <ShieldAlert className="w-5 h-5 text-destructive" /> Tel Aviv Center
         </h2>
         <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar">
           <div className="flex items-center gap-2 bg-popover border border-border px-3 py-1.5 rounded-[4px] shrink-0">
