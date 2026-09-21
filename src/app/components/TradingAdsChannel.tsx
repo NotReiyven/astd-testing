@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo, memo } from "react";
 import { 
   Megaphone, Search, Plus, Trash2, Clock, 
   Check, Lock, Calculator, Package, 
-  Copy, Activity, MessageSquare, ArrowBigUp, ArrowBigDown 
+  Copy, Activity, MessageSquare, ArrowBigUp, ArrowBigDown, Send
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
@@ -128,8 +128,11 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
 };
 
 const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL_UNITS, onInspectUnit, onSendToCalculator }: { ad: TradingAd; currentUserId?: string; currentUserRole?: string; onDelete: (id: string) => void; ALL_UNITS: MasterUnit[]; onInspectUnit: (unitId: string) => void; onSendToCalculator: (give: TradeCard[], get: TradeCard[]) => void; }) => {
-    const [copiedId, setCopiedId] = useState(false);
+    const [isContacting, setIsContacting] = useState(false);
     const [votes, setVotes] = useState({ up: 0, down: 0, userVote: 0 });
+
+    // Highlight new ads directly from realtime for a few seconds
+    const [isNewAd, setIsNewAd] = useState(() => Date.now() - new Date(ad.created_at).getTime() < 5000);
 
     const isOwner = currentUserId === ad.user_id;
     const canModerate = currentUserRole === 'master' || currentUserRole === 'admin' || currentUserRole === 'mod';
@@ -139,6 +142,13 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
 
     const setViewingUser = useInventoryStore(s => s.setViewingUser);
     const openAdContext = useAdInteractionStore(s => s.openAdContext);
+
+    useEffect(() => {
+      if (isNewAd) {
+        const timer = setTimeout(() => setIsNewAd(false), 4500);
+        return () => clearTimeout(timer);
+      }
+    }, [isNewAd]);
 
     useEffect(() => {
       const fetchVotes = async () => {
@@ -185,12 +195,29 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
       window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'inventory' }));
     };
 
-    const handleCopyId = () => {
+    const handleDiscordContact = async () => {
       if (!ad.profiles?.discord_id) return;
-      navigator.clipboard.writeText(ad.profiles.discord_id);
-      setCopiedId(true);
-      triggerHaptic('light');
-      setTimeout(() => setCopiedId(false), 2000);
+      triggerHaptic('medium');
+      setIsContacting(true);
+
+      const giveNames = ad.give_items.map(i => `${i.qty > 1 ? `${i.qty}x ` : ''}${i.name}`).join(', ');
+      const getNames = ad.get_items.length > 0 ? ad.get_items.map(i => `${i.qty > 1 ? `${i.qty}x ` : ''}${i.name}`).join(', ') : 'Offers';
+      
+      let messageStr = "";
+      if (isInventory) {
+        messageStr = `Hey! Saw your inventory showcase on ASTD Value List.\nI'm interested in offering for some of your units. Are you around to trade?`;
+      } else {
+        messageStr = `Hey! Saw your ad on ASTD Value List.\nYou're giving: ${giveNames}\nYou're looking for: ${getNames}\nIs this still available?`;
+      }
+
+      try {
+        await navigator.clipboard.writeText(messageStr);
+        window.open(`https://discord.com/users/${ad.profiles.discord_id}`, '_blank');
+      } catch (err) {
+        console.error("Clipboard failed", err);
+      }
+
+      setTimeout(() => setIsContacting(false), 2500);
     };
 
     const score = votes.up - votes.down;
@@ -210,12 +237,15 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
     }
 
     return (
-      <div className="relative bg-card rounded-[8px] p-4 sm:p-6 flex flex-col h-full overflow-hidden border border-border shadow-md hover:border-primary/50 transition-colors">
-        
+      <div 
+        className={`relative bg-card rounded-[8px] p-4 sm:p-6 flex flex-col h-full overflow-hidden border shadow-md transition-all duration-500 will-change-transform ${
+          isNewAd ? 'animate-[newAdGlow_3s_ease-out_forwards] border-primary scale-[1.02]' : 'hover:border-primary/50 border-border scale-100'
+        }`}
+      >
         <div className="absolute top-0 left-0 right-0 h-[4px]" style={{ backgroundColor: themeColor }} />
 
         <div className="flex items-start justify-between mb-4 h-[44px] relative z-10">
-          <div className="flex items-center gap-3 cursor-pointer group/user min-w-0" onClick={handleCopyId} title="Click to copy Discord ID">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="relative shrink-0">
               <img 
                 src={ad.profiles?.avatar_url || "/units/firezio.webp"} 
@@ -225,9 +255,8 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
               />
             </div>
             <div className="flex flex-col min-w-0 pt-0.5">
-               <span className="text-[14px] sm:text-[16px] font-bold text-foreground tracking-tight leading-none mb-1.5 flex items-center gap-1.5 group-hover/user:underline truncate">
+               <span className="text-[14px] sm:text-[16px] font-bold text-foreground tracking-tight leading-none mb-1.5 truncate">
                  {ad.profiles?.username || "Unknown"}
-                 {copiedId && <Check className="w-3.5 h-3.5 text-[#23a559] shrink-0" />}
                </span>
                <span className="text-[11px] sm:text-[12px] text-muted-foreground font-medium leading-none flex items-center gap-1.5">
                  {getTimeAgo(ad.created_at)}
@@ -300,40 +329,46 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
             </div>
           </div>
 
-          <div className="flex items-center justify-between w-full gap-2">
+          <div className="flex flex-col gap-2 w-full mt-1">
             <button
-              onClick={handleCopyId}
-              className="flex-1 sm:flex-none px-3 py-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer shadow-sm min-h-[44px] md:min-h-0"
+              onClick={handleDiscordContact}
+              className={`w-full px-4 py-3 flex items-center justify-center gap-2 text-[13px] font-bold rounded-[6px] transition-all shadow-sm focus-visible:outline-none cursor-pointer ${
+                isContacting 
+                  ? "bg-[#23a559] text-white active:scale-95" 
+                  : "bg-[#5865F2] hover:bg-[#4752C4] text-white active:scale-95"
+              }`}
             >
-              {copiedId ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#23a559]" /> : <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-              <span className="hidden xl:inline">ID</span>
+              {isContacting ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+              {isContacting ? "Copied! Paste in Discord" : "Contact on Discord"}
             </button>
 
-            <button
-              onClick={() => { triggerHaptic('light'); openAdContext(ad.id, currentUserId); }}
-              className="flex-1 sm:flex-none px-3 py-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer shadow-sm min-h-[44px] md:min-h-0"
-            >
-              <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Thread</span>
-            </button>
-
-            <button 
-              onClick={() => isInventory ? handleInspectVault() : onSendToCalculator(ad.give_items, ad.get_items)}
-              className="flex-1 sm:flex-none px-4 py-2 sm:px-4 sm:py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] text-primary-foreground bg-primary hover:bg-primary/80 transition-colors focus-visible:outline-none cursor-pointer shadow-sm active:scale-95 min-h-[44px] md:min-h-0"
-            >
-              {isInventory ? <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Calculator className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-              <span className="hidden sm:inline">{isInventory ? "Inspect" : "Evaluate"}</span>
-            </button>
-
-            {canDelete && (
-              <HoldToConfirmButton
-                onConfirm={() => onDelete(ad.id)}
-                title="Hold to delete"
-                className="flex-1 sm:flex-none p-2.5 sm:p-2 border border-border text-muted-foreground hover:text-foreground hover:border-destructive bg-popover hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none shadow-sm min-h-[44px] md:min-h-0"
+            <div className="flex items-center gap-2 w-full">
+              <button 
+                onClick={() => isInventory ? handleInspectVault() : onSendToCalculator(ad.give_items, ad.get_items)}
+                className="flex-1 px-3 py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer shadow-sm"
               >
-                <Trash2 className="w-4 h-4" />
-              </HoldToConfirmButton>
-            )}
+                {isInventory ? <Package className="w-4 h-4" /> : <Calculator className="w-4 h-4" />}
+                <span className="hidden sm:inline">{isInventory ? "Inspect Vault" : "Analyze Trade"}</span>
+              </button>
+
+              <button
+                onClick={() => { triggerHaptic('light'); openAdContext(ad.id, currentUserId); }}
+                className="flex-1 px-3 py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer shadow-sm"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span className="hidden sm:inline">Thread</span>
+              </button>
+
+              {canDelete && (
+                <HoldToConfirmButton
+                  onConfirm={() => onDelete(ad.id)}
+                  title="Hold to delete"
+                  className="flex-none p-2 border border-border text-muted-foreground hover:text-foreground hover:border-destructive bg-popover hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none shadow-sm"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </HoldToConfirmButton>
+              )}
+            </div>
           </div>
 
         </div>
@@ -401,6 +436,13 @@ export function TradingAdsChannel() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background h-full select-none font-sans relative">
+      <style>{`
+        @keyframes newAdGlow {
+          0% { box-shadow: 0 0 0 0 rgba(88,101,242,0.4); border-color: var(--primary); }
+          50% { box-shadow: 0 0 20px 0 rgba(88,101,242,0.6); border-color: var(--primary); }
+          100% { box-shadow: 0 0 0 0 rgba(88,101,242,0); border-color: var(--border); }
+        }
+      `}</style>
       
       <div className="flex-shrink-0 flex flex-col px-3 md:px-6 py-3 md:py-4 bg-card border-b border-border shadow-sm z-20 gap-3 md:gap-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">

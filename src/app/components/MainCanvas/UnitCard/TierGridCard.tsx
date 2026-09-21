@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/MainCanvas/UnitCard/TierGridCard.tsx
+// ================================================
+
 import React, { useState, memo, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { ArrowUpCircle, ArrowDownCircle, History, Package, X, Loader2, Check } from "lucide-react";
@@ -160,13 +164,14 @@ export function GridStatBox({ label, value, type }: { label: string; value: numb
 }
 
 export const TierGridCard = memo(function TierGridCard({ 
-  unit, searchQuery, isSelectMode, isSelected, onToggleSelect 
+  unit, searchQuery, isSelectMode, isSelected, onToggleSelect, index
 }: { 
   unit: GridUnit, 
   searchQuery?: string,
   isSelectMode?: boolean,
   isSelected?: boolean,
-  onToggleSelect?: (id: string) => void
+  onToggleSelect?: (id: string) => void,
+  index?: number
 }) {
   const [hovered, setHovered] = useState(false);
   const [isAdded, setIsAdded] = useState(false); 
@@ -240,132 +245,140 @@ export const TierGridCard = memo(function TierGridCard({
   const tierColor = TIER_CONFIG[tierKey]?.badgeColor || "var(--primary)";
   const proxyUrl = getProxyImage(unit.id, unit.imageUrl);
 
+  // Staggered load animation delay based on grid position
+  const staggerDelay = `${(index || 0) * 40}ms`;
+
   return (
     <>
-      <div className="relative w-full overflow-hidden rounded-[8px] active:scale-[0.98] transition-transform duration-150 touch-manipulation">
-        <div
-          draggable={!isSelectMode}
-          onDragStart={handleDragStart}
-          onClick={handleCardClick}
-          onContextMenu={(e) => e.preventDefault()}
-          className={`flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10 will-change-transform bg-card border ${
-            isSelected 
-              ? "border-primary ring-2 ring-primary scale-[0.98]" 
-              : "border-border"
-          }`}
-          style={{
-            transition: "all 0.15s cubic-bezier(0.16, 1, 0.3, 1)",
-            borderColor: isSelected ? "var(--primary)" : isAdded ? tierColor : hovered ? tierColor : "var(--border)",
-            transform: isAdded ? "scale(0.95)" : hovered ? "translateY(-4px)" : "translateY(0)"
-          }}
-          onMouseEnter={() => {
-            if (window.matchMedia('(hover: hover)').matches) setHovered(true);
-          }}
-          onMouseLeave={() => setHovered(false)}
-        >
-          <div className="relative w-full overflow-hidden flex-shrink-0 border-b border-border" style={{ aspectRatio: "1/1", transform: "translateZ(0)" }}>
-            <div className="absolute inset-0 z-0 bg-popover" />
+      <div 
+        className="opacity-0 animate-[staggerFadeIn_0.4s_ease-out_forwards] h-full"
+        style={{ animationDelay: staggerDelay }}
+      >
+        <div className="relative w-full overflow-hidden rounded-[8px] active:scale-[0.98] transition-transform duration-150 touch-manipulation h-full">
+          <div
+            draggable={!isSelectMode}
+            onDragStart={handleDragStart}
+            onClick={handleCardClick}
+            onContextMenu={(e) => e.preventDefault()}
+            className={`flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10 will-change-transform bg-card border ${
+              isSelected 
+                ? "border-primary ring-2 ring-primary scale-[0.98]" 
+                : "border-border"
+            }`}
+            style={{
+              transition: "border-color 0.15s cubic-bezier(0.16, 1, 0.3, 1), transform 0.15s cubic-bezier(0.16, 1, 0.3, 1)",
+              borderColor: isSelected ? "var(--primary)" : isAdded ? tierColor : hovered ? tierColor : "var(--border)",
+              transform: isAdded ? "scale(0.95)" : hovered ? "translateY(-4px)" : "translateY(0)"
+            }}
+            onMouseEnter={() => {
+              if (window.matchMedia('(hover: hover)').matches) setHovered(true);
+            }}
+            onMouseLeave={() => setHovered(false)}
+          >
+            <div className="relative w-full overflow-hidden flex-shrink-0 border-b border-border" style={{ aspectRatio: "1/1", transform: "translateZ(0)" }}>
+              <div className="absolute inset-0 z-0 bg-popover" />
 
-            <div className="absolute inset-0 flex items-center justify-center text-white font-black text-5xl md:text-7xl tracking-tight z-0" style={{ ...getAvatarStyle(unit.name), transform: hovered ? "scale(1.05)" : "scale(1)", transition: "transform 0.7s ease-out" }}>
-              {getInitials(unit.name)}
-            </div>
-
-            <img 
-              src={proxyUrl || undefined} 
-              alt={unit.name} 
-              loading="lazy" 
-              decoding="async"
-              onError={(e) => handleImageError(e, unit.id)}
-              className="absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-out z-10 bg-popover" 
-              style={{ objectPosition: "center 15%", transform: hovered ? "scale(1.05)" : "scale(1)", willChange: "transform" }} 
-            />
-
-            <div className="absolute -bottom-[2px] left-0 right-0 h-[calc(40%+2px)] md:h-[calc(45%+2px)] z-20" style={{ background: "linear-gradient(to bottom, transparent 0%, rgba(30,33,36,0.8) 60%, rgba(30,33,36,1) 100%)" }} />
-            
-            {unit.status && (
-              <div className="absolute top-2 left-2 md:top-3 md:left-3 z-50">
-                <GridStatusBadge status={unit.status} />
+              <div className="absolute inset-0 flex items-center justify-center text-white font-black text-5xl md:text-7xl tracking-tight z-0" style={{ ...getAvatarStyle(unit.name), transform: hovered ? "scale(1.05)" : "scale(1)", transition: "transform 0.7s ease-out" }}>
+                {getInitials(unit.name)}
               </div>
-            )}
 
-            {isSelected && (
-              <div className="absolute top-2 right-2 z-50 bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center shadow-md">
-                <Check className="w-4 h-4 stroke-[3]" />
-              </div>
-            )}
+              <img 
+                src={proxyUrl || undefined} 
+                alt={unit.name} 
+                loading="lazy" 
+                decoding="async"
+                onError={(e) => handleImageError(e, unit.id)}
+                className="absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-out z-10 bg-popover" 
+                style={{ objectPosition: "center 15%", transform: hovered ? "scale(1.05)" : "scale(1)", willChange: "transform" }} 
+              />
 
-            {/* TRANSLUCENT GHOST BUTTON GRID OVERLAY (HIDDEN IN SELECT MODE) */}
-            {!isSelectMode && (
-              <div className={`hidden md:flex absolute inset-0 bg-black/60 backdrop-blur-[4px] transition-opacity duration-200 z-40 flex-col justify-center gap-2 p-4 pt-8 ${hovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-                <div className="grid grid-cols-2 gap-2 w-full">
-                  <button onClick={(e) => { e.stopPropagation(); handleAdd("give"); }} className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-[6px] bg-[#FAA61A]/10 text-[#FAA61A] border border-[#FAA61A]/40 hover:bg-[#FAA61A] hover:text-white transition-all active:scale-95 shadow-sm focus-visible:outline-none min-h-[44px]">
-                    <ArrowUpCircle className="w-5 h-5" />
-                    <span className="text-[11px] font-bold uppercase tracking-wider">Give</span>
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); handleAdd("get"); }} className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-[6px] bg-primary/10 text-primary border border-primary/40 hover:bg-primary hover:text-white transition-all active:scale-95 shadow-sm focus-visible:outline-none min-h-[44px]">
-                    <ArrowDownCircle className="w-5 h-5" />
-                    <span className="text-[11px] font-bold uppercase tracking-wider">Get</span>
-                  </button>
+              <div className="absolute -bottom-[2px] left-0 right-0 h-[calc(40%+2px)] md:h-[calc(45%+2px)] z-20" style={{ background: "linear-gradient(to bottom, transparent 0%, rgba(30,33,36,0.8) 60%, rgba(30,33,36,1) 100%)" }} />
+              
+              {unit.status && (
+                <div className="absolute top-2 left-2 md:top-3 md:left-3 z-50">
+                  <GridStatusBadge status={unit.status} />
                 </div>
-                <div className="grid grid-cols-2 gap-2 w-full mt-1">
-                  <button onClick={(e) => { e.stopPropagation(); handleSaveToInventory(); }} disabled={isSaving} className="flex items-center justify-center gap-1.5 py-2 rounded-[6px] bg-[#23a559]/10 text-[#23a559] border border-[#23a559]/40 hover:bg-[#23a559] hover:text-white disabled:opacity-50 disabled:hover:bg-[#23a559]/10 disabled:hover:text-[#23a559] transition-all active:scale-95 shadow-sm focus-visible:outline-none min-h-[44px]">
-                    {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
-                    <span className="text-[11px] font-bold">{isSaving ? "Saving..." : "Save"}</span>
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); openModal(unit.id); }} className="flex items-center justify-center gap-1.5 py-2 rounded-[6px] bg-card/60 text-foreground border border-border hover:bg-muted hover:text-foreground transition-all active:scale-95 shadow-sm focus-visible:outline-none min-h-[44px]">
-                    <History className="w-3.5 h-3.5" />
-                    <span className="text-[11px] font-bold">History</span>
-                  </button>
+              )}
+
+              {isSelected && (
+                <div className="absolute top-2 right-2 z-50 bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center shadow-md">
+                  <Check className="w-4 h-4 stroke-[3]" />
+                </div>
+              )}
+
+              {/* TRANSLUCENT GHOST BUTTON GRID OVERLAY (HIDDEN IN SELECT MODE) */}
+              {!isSelectMode && (
+                <div className={`hidden md:flex absolute inset-0 bg-black/60 backdrop-blur-[4px] transition-opacity duration-200 z-40 flex-col justify-center gap-2 p-4 pt-8 ${hovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                  <div className="grid grid-cols-2 gap-2 w-full">
+                    <button onClick={(e) => { e.stopPropagation(); handleAdd("give"); }} className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-[6px] bg-[#FAA61A]/10 text-[#FAA61A] border border-[#FAA61A]/40 hover:bg-[#FAA61A] hover:text-white transition-all active:scale-95 shadow-sm focus-visible:outline-none min-h-[44px]">
+                      <ArrowUpCircle className="w-5 h-5" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider">Give</span>
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); handleAdd("get"); }} className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-[6px] bg-primary/10 text-primary border border-primary/40 hover:bg-primary hover:text-white transition-all active:scale-95 shadow-sm focus-visible:outline-none min-h-[44px]">
+                      <ArrowDownCircle className="w-5 h-5" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider">Get</span>
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 w-full mt-1">
+                    <button onClick={(e) => { e.stopPropagation(); handleSaveToInventory(); }} disabled={isSaving} className="flex items-center justify-center gap-1.5 py-2 rounded-[6px] bg-[#23a559]/10 text-[#23a559] border border-[#23a559]/40 hover:bg-[#23a559] hover:text-white disabled:opacity-50 disabled:hover:bg-[#23a559]/10 disabled:hover:text-[#23a559] transition-all active:scale-95 shadow-sm focus-visible:outline-none min-h-[44px]">
+                      {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
+                      <span className="text-[11px] font-bold">{isSaving ? "Saving..." : "Save"}</span>
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); openModal(unit.id); }} className="flex items-center justify-center gap-1.5 py-2 rounded-[6px] bg-card/60 text-foreground border border-border hover:bg-muted hover:text-foreground transition-all active:scale-95 shadow-sm focus-visible:outline-none min-h-[44px]">
+                      <History className="w-3.5 h-3.5" />
+                      <span className="text-[11px] font-bold">History</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col flex-1 px-3 md:px-4 pt-3 md:pt-4 pb-3 md:pb-4 relative z-10 bg-card -mt-[1px]" onClick={() => { if (!isSelectMode && window.innerWidth >= 768) setMenuOpen(true); }}>
+              <div className="flex flex-col">
+                <div className="flex items-start gap-2">
+                  <h3 className="text-[13px] md:text-[17px] font-extrabold tracking-tight leading-snug flex-1 min-w-0 line-clamp-2 text-foreground">
+                    <HighlightText text={unit.name} query={searchQuery} />
+                  </h3>
+                  {unit.notice && <div className="mt-0.5 md:mt-1"><NoticeTooltip notice={unit.notice} /></div>}
+                </div>
+                <p className="text-[10px] md:text-[12px] font-bold uppercase tracking-wider leading-none mt-1 md:mt-1.5 truncate text-muted-foreground">
+                  <HighlightText text={unit.subtitle || ""} query={searchQuery} />
+                </p>
+                <div className="flex mt-1.5 md:mt-2.5">
+                  {obtainability === "UNOB" ? (
+                    <span className="text-[10px] md:text-[11px] font-bold uppercase text-muted-foreground bg-popover px-1.5 md:px-2 py-0.5 md:py-1 rounded-[3px] border border-border tracking-widest leading-none">
+                      <JargonWrap title="Unobtainable (UNOB)" tip="This unit can no longer be acquired through normal gameplay. Trading is the only way to get it.">
+                        UNOB
+                      </JargonWrap>
+                    </span>
+                  ) : (
+                    <span className="text-[10px] md:text-[11px] font-bold uppercase text-foreground bg-white/5 px-1.5 md:px-2 py-0.5 md:py-1 rounded-[3px] border border-border tracking-widest leading-none">
+                      <JargonWrap title="Obtainable (OBN)" tip="This unit can still be acquired in-game through summons, capsules, or evolution.">
+                        OBN
+                      </JargonWrap>
+                    </span>
+                  )}
                 </div>
               </div>
-            )}
-          </div>
 
-          <div className="flex flex-col flex-1 px-3 md:px-4 pt-3 md:pt-4 pb-3 md:pb-4 relative z-10 bg-card -mt-[1px]" onClick={() => { if (!isSelectMode && window.innerWidth >= 768) setMenuOpen(true); }}>
-            <div className="flex flex-col">
-              <div className="flex items-start gap-2">
-                <h3 className="text-[13px] md:text-[17px] font-extrabold tracking-tight leading-snug flex-1 min-w-0 line-clamp-2 text-foreground">
-                  <HighlightText text={unit.name} query={searchQuery} />
-                </h3>
-                {unit.notice && <div className="mt-0.5 md:mt-1"><NoticeTooltip notice={unit.notice} /></div>}
-              </div>
-              <p className="text-[10px] md:text-[12px] font-bold uppercase tracking-wider leading-none mt-1 md:mt-1.5 truncate text-muted-foreground">
-                <HighlightText text={unit.subtitle || ""} query={searchQuery} />
-              </p>
-              <div className="flex mt-1.5 md:mt-2.5">
-                {obtainability === "UNOB" ? (
-                  <span className="text-[10px] md:text-[11px] font-bold uppercase text-muted-foreground bg-popover px-1.5 md:px-2 py-0.5 md:py-1 rounded-[3px] border border-border tracking-widest leading-none">
-                    <JargonWrap title="Unobtainable (UNOB)" tip="This unit can no longer be acquired through normal gameplay. Trading is the only way to get it.">
-                      UNOB
-                    </JargonWrap>
-                  </span>
-                ) : (
-                  <span className="text-[10px] md:text-[11px] font-bold uppercase text-foreground bg-white/5 px-1.5 md:px-2 py-0.5 md:py-1 rounded-[3px] border border-border tracking-widest leading-none">
-                    <JargonWrap title="Obtainable (OBN)" tip="This unit can still be acquired in-game through summons, capsules, or evolution.">
-                      OBN
-                    </JargonWrap>
-                  </span>
-                )}
+              <div className="flex flex-col mt-auto pt-3 md:pt-5 w-full">
+                <div className="pl-2 md:pl-3 border-l-[3px] transition-colors duration-300 w-full min-w-0 mb-3 md:mb-4" style={{ borderColor: hovered ? tierColor : "var(--primary)" }}>
+                  <GridValueDisplay unit={unit} />
+                </div>
+
+                <div className="hidden md:grid grid-cols-2 gap-2 md:gap-3 w-full">
+                  <GridStatBox label="RARITY" value={unit.rarity} type="rarity" />
+                  <GridStatBox label="LIQUIDITY" value={unit.liquidity || "Average"} type="liquidity" />
+                </div>
               </div>
             </div>
 
-            <div className="flex flex-col mt-auto pt-3 md:pt-5 w-full">
-              <div className="pl-2 md:pl-3 border-l-[3px] transition-colors duration-300 w-full min-w-0 mb-3 md:mb-4" style={{ borderColor: hovered ? tierColor : "var(--primary)" }}>
-                <GridValueDisplay unit={unit} />
-              </div>
-
-              <div className="hidden md:grid grid-cols-2 gap-2 md:gap-3 w-full">
-                <GridStatBox label="RARITY" value={unit.rarity} type="rarity" />
-                <GridStatBox label="LIQUIDITY" value={unit.liquidity || "Average"} type="liquidity" />
-              </div>
+            <div className="grid md:hidden grid-cols-2 gap-2 w-full px-3 pb-3 relative min-h-[28px] bg-card">
+               <GridStatBox label="RARITY" value={unit.rarity} type="rarity" />
+               <GridStatBox label="LIQUIDITY" value={unit.liquidity || "Average"} type="liquidity" />
             </div>
-          </div>
 
-          <div className="grid md:hidden grid-cols-2 gap-2 w-full px-3 pb-3 relative min-h-[28px] bg-card">
-             <GridStatBox label="RARITY" value={unit.rarity} type="rarity" />
-             <GridStatBox label="LIQUIDITY" value={unit.liquidity || "Average"} type="liquidity" />
           </div>
-
         </div>
       </div>
 

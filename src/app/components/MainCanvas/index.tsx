@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/MainCanvas/index.tsx
+// ================================================
+
 import { useState, useRef, useDeferredValue, useEffect, memo, useCallback } from "react";
 import { Search, X, ArrowUp, ArrowUpCircle, ArrowDownCircle, CheckSquare } from "lucide-react";
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -201,8 +205,14 @@ export const MainCanvas = memo(function MainCanvas({
 
         @keyframes slideUpFade { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
         .animate-slide-up { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        
+        @keyframes staggerFadeIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
 
       <div 
@@ -359,7 +369,7 @@ export const MainCanvas = memo(function MainCanvas({
 
                   {item.type === 'grid-row' && (
                     <div className={`grid gap-3 sm:gap-5 w-full pb-3 sm:pb-5 ${isStatsTarget && virtualRow.index === 1 ? 'animate-pulse' : ''}`} style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, 155px), 1fr))` }}>
-                      {item.units.map(u => (
+                      {item.units.map((u, i) => (
                         <TierGridCard 
                           key={u.id} 
                           unit={u} 
@@ -367,6 +377,7 @@ export const MainCanvas = memo(function MainCanvas({
                           isSelectMode={isSelectMode}
                           isSelected={selectedUnitIds.has(u.id)}
                           onToggleSelect={toggleSelectUnit}
+                          index={i} // Use row-level mapping index for horizontal stagger effect
                         />
                       ))}
                     </div>
