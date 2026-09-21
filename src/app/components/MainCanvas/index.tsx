@@ -127,6 +127,7 @@ export const MainCanvas = memo(function MainCanvas({
     cols
   });
 
+  // VIRTUALIZER OPTIMIZED FOR FAST SCROLLING
   const virtualizer = useVirtualizer({
     count: flattenedItems.length,
     getScrollElement: () => scrollRef.current,
@@ -146,7 +147,8 @@ export const MainCanvas = memo(function MainCanvas({
           default: return 50;
        }
     },
-    overscan: 14,
+    // Dramatically increased from 14 to 35 to pre-render rows and kill scrolling lag
+    overscan: 35,
   });
 
   useEffect(() => {
@@ -240,13 +242,13 @@ export const MainCanvas = memo(function MainCanvas({
           <div className="flex items-center gap-2">
             <button 
               onClick={() => handleBulkAddToTrade("give")} 
-              className="flex items-center gap-1.5 text-[12px] font-bold bg-[#FAA61A] hover:bg-[#d98b14] text-white px-4 py-2 rounded-[6px] transition-all shadow-sm active:scale-95"
+              className="flex items-center gap-1.5 text-[12px] font-bold bg-[#FAA61A] hover:bg-[#d98b14] text-white px-4 py-2 rounded-[6px] transition-all shadow-sm active:scale-95 cursor-pointer focus-visible:outline-none"
             >
               <ArrowUpCircle className="w-4 h-4" /> Add to Give
             </button>
             <button 
               onClick={() => handleBulkAddToTrade("get")} 
-              className="flex items-center gap-1.5 text-[12px] font-bold bg-primary hover:bg-primary/80 text-primary-foreground px-4 py-2 rounded-[6px] transition-all shadow-sm active:scale-95"
+              className="flex items-center gap-1.5 text-[12px] font-bold bg-primary hover:bg-primary/80 text-primary-foreground px-4 py-2 rounded-[6px] transition-all shadow-sm active:scale-95 cursor-pointer focus-visible:outline-none"
             >
               <ArrowDownCircle className="w-4 h-4" /> Add to Get
             </button>
@@ -254,7 +256,7 @@ export const MainCanvas = memo(function MainCanvas({
           <div className="w-px h-5 bg-border shrink-0 ml-1" />
           <button 
             onClick={() => setSelectedUnitIds(new Set())} 
-            className="text-muted-foreground hover:text-foreground p-1.5 rounded-[6px] hover:bg-white/5 transition-colors ml-0.5"
+            className="text-muted-foreground hover:text-foreground p-1.5 rounded-[6px] hover:bg-white/5 transition-colors ml-0.5 cursor-pointer focus-visible:outline-none"
             title="Clear Selection"
           >
             <X className="w-4 h-4" />
@@ -302,7 +304,7 @@ export const MainCanvas = memo(function MainCanvas({
                           <img src={FIRE_ZIO_AVATAR} className="w-8 h-8 rounded-full border border-destructive object-cover shrink-0 bg-popover" alt="Fire Zio" />
                           <h2 className="text-[16px] font-bold text-foreground tracking-tight">Listen up.</h2>
                         </div>
-                        <button onClick={dismissWelcome} className="text-muted-foreground hover:text-foreground p-1"><X className="w-4 h-4" /></button>
+                        <button onClick={dismissWelcome} className="text-muted-foreground hover:text-foreground p-1 cursor-pointer focus-visible:outline-none"><X className="w-4 h-4" /></button>
                       </div>
 
                       <img src={FIRE_ZIO_AVATAR} className="hidden md:block w-14 h-14 rounded-full border-2 border-destructive object-cover shrink-0 bg-popover shadow-sm" alt="Fire Zio" />
@@ -318,7 +320,7 @@ export const MainCanvas = memo(function MainCanvas({
                           <span className="bg-popover px-2 py-1 rounded border border-border">D = Demand (/5)</span>
                         </div>
                       </div>
-                      <button onClick={dismissWelcome} className="hidden md:block ml-auto self-start text-muted-foreground hover:text-foreground p-2"><X className="w-5 h-5" /></button>
+                      <button onClick={dismissWelcome} className="hidden md:block ml-auto self-start text-muted-foreground hover:text-foreground p-2 cursor-pointer focus-visible:outline-none"><X className="w-5 h-5" /></button>
                     </div>
                   )}
 
@@ -338,7 +340,7 @@ export const MainCanvas = memo(function MainCanvas({
 
                       <button 
                         onClick={handleResetFilters}
-                        className="mt-2 px-6 py-2.5 bg-primary hover:bg-primary/80 text-primary-foreground rounded-[6px] text-[13px] font-bold transition-all active:scale-95 shadow-sm flex items-center gap-2 border border-border"
+                        className="mt-2 px-6 py-2.5 bg-primary hover:bg-primary/80 text-primary-foreground rounded-[6px] text-[13px] font-bold transition-all active:scale-95 shadow-sm flex items-center gap-2 border border-border cursor-pointer focus-visible:outline-none"
                       >
                         <X className="w-4 h-4" /> Clear Search & Filters
                       </button>
@@ -356,7 +358,7 @@ export const MainCanvas = memo(function MainCanvas({
                   )}
 
                   {item.type === 'grid-row' && (
-                    <div className={`grid gap-3 sm:gap-5 w-full pb-3 sm:pb-5 ${isStatsTarget && virtualRow.index === 1 ? 'animate-pulse' : ''}`} style={{ gridTemplateColumns: `repeat(${item.cols}, minmax(0, 1fr))` }}>
+                    <div className={`grid gap-3 sm:gap-5 w-full pb-3 sm:pb-5 ${isStatsTarget && virtualRow.index === 1 ? 'animate-pulse' : ''}`} style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, 155px), 1fr))` }}>
                       {item.units.map(u => (
                         <TierGridCard 
                           key={u.id} 
@@ -385,7 +387,7 @@ export const MainCanvas = memo(function MainCanvas({
       <button
         ref={scrollTopBtnRef}
         onClick={scrollToTop}
-        className="absolute bottom-[90px] right-6 md:bottom-8 md:right-8 w-[46px] h-[46px] md:w-[52px] md:h-[52px] bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ease-out hover:bg-primary/80 hover:-translate-y-1 z-50 opacity-0 translate-y-8 pointer-events-none"
+        className="absolute bottom-[90px] right-6 md:bottom-8 md:right-8 w-[46px] h-[46px] md:w-[52px] md:h-[52px] bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ease-out hover:bg-primary/80 hover:-translate-y-1 z-50 opacity-0 translate-y-8 pointer-events-none cursor-pointer focus-visible:outline-none"
         title="Scroll to Top"
       >
         <ArrowUp className="w-5 h-5 md:w-6 md:h-6" />

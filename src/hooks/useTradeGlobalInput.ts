@@ -40,6 +40,28 @@ export function useTradeGlobalInput() {
     return () => window.removeEventListener("paste", handlePaste);
   }, []);
 
+  // Global Hotkey Listener for Quick Search
+  useEffect(() => {
+    const handleGlobalKeys = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) return;
+
+      if (e.key === '/') {
+        e.preventDefault();
+        window.dispatchEvent(new Event("open-analyzer"));
+        // Slight delay to ensure the panel mounts before focusing
+        setTimeout(() => window.dispatchEvent(new CustomEvent("focus-trade-search", { detail: "give" })), 50);
+      } else if (e.key === '\\') {
+        e.preventDefault();
+        window.dispatchEvent(new Event("open-analyzer"));
+        setTimeout(() => window.dispatchEvent(new CustomEvent("focus-trade-search", { detail: "get" })), 50);
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalKeys);
+    return () => window.removeEventListener("keydown", handleGlobalKeys);
+  }, []);
+
   return { 
     isGlobalDragging, 
     smartMenuOpen, 

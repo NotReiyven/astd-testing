@@ -198,10 +198,11 @@ const extractQuantityAndClean = (rawToken: string): { qty: number; cleanText: st
         }
     }
 
+    // Replace the hyper-aggressive regex with a safer alternative
     text = text
-        .replace(/\b(?:m|p)\s*\/\s*(?:m|p)\b/gi, "")
-        .replace(/\b\d*[pm]\b/gi, "")
-        .replace(/^\s*(?:m|p)\s+/i, "")
+        // Strip standalone values like "15m", "500k", "10b" at the end of strings separated by spaces
+        .replace(/\s+\d+[kmb]\b/gi, "")
+        // Strip everything inside parentheses as it usually contains stats or unneeded modifiers
         .replace(/\s*\([^)]*\)/g, "")
         .trim();
 

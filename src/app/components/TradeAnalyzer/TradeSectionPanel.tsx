@@ -54,16 +54,18 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
     setSelectedIndex(-1);
   }, [query, open]);
 
+  // Listen for the global hotkey custom event
   useEffect(() => {
-    if (type !== "give") return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
-        e.preventDefault(); 
-        searchInputRef.current?.focus();
+    const handleFocusSearch = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (customEvent.detail === type) {
+        setOpen(true);
+        // Small timeout ensures the panel is fully expanded before forcing focus
+        setTimeout(() => searchInputRef.current?.focus(), 50);
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("focus-trade-search", handleFocusSearch);
+    return () => window.removeEventListener("focus-trade-search", handleFocusSearch);
   }, [type]);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -148,17 +150,15 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
           >
             {label}
           </p>
-          {type === "give" && (
-            <span className="hidden md:inline-flex px-1.5 py-[2px] bg-white/5 rounded-[4px] text-[9px] font-semibold text-muted-foreground ml-1 border border-border">
-              Press /
-            </span>
-          )}
+          <span className="hidden md:inline-flex px-1.5 py-[2px] bg-white/5 rounded-[4px] text-[9px] font-semibold text-muted-foreground ml-1 border border-border">
+            Press {isGive ? '/' : '\\'}
+          </span>
         </div>
         
         <div className="flex items-center gap-3">
           {items.length > 0 && (
             <button
-              className="text-[11px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[4px] px-3 py-2 md:px-2 md:py-1 bg-white/5 border border-transparent hover:border-destructive/30 hover:bg-destructive/10 text-muted-foreground hover:text-destructive active:scale-95"
+              className="text-[11px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[4px] px-3 py-2 md:px-2 md:py-1 bg-white/5 border border-transparent hover:border-destructive/30 hover:bg-destructive/10 text-muted-foreground hover:text-destructive active:scale-95 cursor-pointer"
               onClick={onClear}
             >
               Clear {isGive ? "Give" : "Get"}
@@ -215,7 +215,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
           />
           {query.length > 0 && (
             <button
-              className="flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[3px] p-2 -m-2 md:p-0.5 md:-m-0 hover:bg-white/10 transition-colors text-muted-foreground"
+              className="flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[3px] p-2 -m-2 md:p-0.5 md:-m-0 hover:bg-white/10 transition-colors text-muted-foreground cursor-pointer"
               onMouseDown={(e) => { e.preventDefault(); setQuery(""); }}
             >
               <X className="w-3.5 h-3.5" />
@@ -238,7 +238,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
                   key={u.id}
                   onClick={() => handleAdd(u)}
                   onMouseEnter={() => setSelectedIndex(i)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors text-left focus-visible:outline-none ${isSelected ? 'bg-white/5' : 'bg-transparent hover:bg-white/5'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors text-left focus-visible:outline-none cursor-pointer ${isSelected ? 'bg-white/5' : 'bg-transparent hover:bg-white/5'}`}
                   style={{ borderTop: i === 0 ? "none" : "1px solid var(--border)" }}
                 >
                   <div className="flex-1 min-w-0 flex flex-col justify-center">

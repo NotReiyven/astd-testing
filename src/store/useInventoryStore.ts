@@ -42,6 +42,12 @@ interface InventoryState {
   toggleWishlist: (userId: string, unitId: string) => Promise<void>;
 }
 
+const safeGenerateId = () => {
+  return typeof crypto !== 'undefined' && crypto.randomUUID 
+    ? crypto.randomUUID() 
+    : Date.now().toString(36) + Math.random().toString(36).substring(2);
+};
+
 let activeFetchId = 0;
 let activeViewFetchId = 0;
 
@@ -136,7 +142,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
         if (error) throw error;
       } else {
         const newItemForDb = { user_id: userId, unit_id: unitId, quantity: newQuantity, is_pinned: false };
-        const optimisticItem: InventoryItem = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...newItemForDb };
+        const optimisticItem: InventoryItem = { id: safeGenerateId(), created_at: new Date().toISOString(), ...newItemForDb };
         set({ items: [optimisticItem, ...previousItems] });
         const { error } = await supabase.from('user_inventory').insert(newItemForDb);
         if (error) throw error;
@@ -227,7 +233,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
         if (error) throw error;
       } else {
         const newItem = { user_id: userId, unit_id: unitId };
-        const optimisticItem: WishlistItem = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...newItem };
+        const optimisticItem: WishlistItem = { id: safeGenerateId(), created_at: new Date().toISOString(), ...newItem };
         set({ wishlistItems: [optimisticItem, ...previousItems] });
         
         const { error } = await supabase.from('user_wishlist').upsert(newItem, { onConflict: 'user_id, unit_id' });

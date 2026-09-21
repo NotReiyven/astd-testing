@@ -4,6 +4,7 @@
 
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface AdComment {
   id: string;
@@ -43,15 +44,14 @@ interface AdInteractionState {
   voteComment: (commentId: string, userId: string, value: number) => Promise<void>;
 }
 
-// Anti-Phishing & Scam Link Filter
 const containsPhishingOrLink = (text: string) => {
-  // Normalize to catch Cyrillic homoglyphs and weird unicode spacings, then strip zero-width chars
   const normalized = text.normalize('NFKD').toLowerCase();
   const stripped = normalized.replace(/[\u200B-\u200D\uFEFF]/g, '');
-  
   const urlPattern = /(https?:\/\/|www\.|[a-zA-Z0-9-]+\.(com|net|org|gg|ru|io|me|co|xyz|to|link|tk)|discord\.gg|t\.me|bit\.ly)/i;
   return urlPattern.test(stripped);
 };
+
+let activeInteractionChannel: RealtimeChannel | null = null;
 
 export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
   activeAdId: null,
@@ -69,6 +69,11 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
       adVotes: { upvotes: 0, downvotes: 0, userVote: 0 },
       commentVotes: {} 
     });
+
+    if (activeInteractionChannel) {
+      supabase.removeChannel(activeInteractionChannel);
+      activeInteractionChannel = null;
+    }
 
     const fetchInteractions = async () => {
       const { data: commentsData, error: commentsError } = await supabase
@@ -128,7 +133,8 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
 
     await fetchInteractions();
 
-    supabase.channel(`ad-${adId}-interactions`)
+    activeInteractionChannel = supabase.channel(`ad-${adId}-interactions`);
+    activeInteractionChannel
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ad_comments', filter: `ad_id=eq.${adId}` }, fetchInteractions)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ad_votes', filter: `ad_id=eq.${adId}` }, fetchInteractions)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'comment_votes' }, fetchInteractions)
@@ -136,9 +142,9 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
   },
 
   closeAdContext: () => {
-    const { activeAdId } = get();
-    if (activeAdId) {
-      supabase.removeChannel(supabase.channel(`ad-${activeAdId}-interactions`));
+    if (activeInteractionChannel) {
+      supabase.removeChannel(activeInteractionChannel);
+      activeInteractionChannel = null;
     }
     set({ activeAdId: null, comments: [], commentVotes: {}, adVotes: { upvotes: 0, downvotes: 0, userVote: 0 } });
   },
@@ -169,9 +175,21 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
 
   deleteComment: async (commentId) => {
     set({ isActionPending: true });
+    
+    const currentComments = get().comments;
+    set({ comments: currentComments.filter(c => c.id !== commentId) });
+
     const { error } = await supabase.from('ad_comments').delete().eq('id', commentId);
+    
+    if (error) {
+      console.error("🚨 Delete failed", error);
+      set({ comments: currentComments });
+      set({ isActionPending: false });
+      return false;
+    }
+    
     set({ isActionPending: false });
-    return !error;
+    return true;
   },
 
   voteAd: async (adId, userId, value) => {

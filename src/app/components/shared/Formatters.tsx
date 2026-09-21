@@ -150,8 +150,8 @@ export function NoticeTooltip({ notice }: { notice?: string }) {
       {tipPos && createPortal(
         <>
           <div className="md:hidden fixed inset-0 z-[99998]" onClick={(e) => { e.stopPropagation(); setTipPos(null); }} onTouchStart={(e) => { e.stopPropagation(); setTipPos(null); }} />
-          <div className="px-3 py-2.5 rounded-[8px] pointer-events-none fixed z-[99999] -translate-x-1/2 -translate-y-full w-[220px] animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.5)]" style={{ top: tipPos.y, left: tipPos.x, background: "var(--popover)", border: "1px solid var(--border)" }}>
-            <p className="text-[11px] font-medium leading-relaxed text-foreground">{notice}</p>
+          <div className="px-3 py-2.5 rounded-[8px] pointer-events-none fixed z-[99999] -translate-x-1/2 -translate-y-full w-[220px] animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.5)]" style={{ top: tipPos.y, left: tipPos.x, background: "#111214", border: "1px solid var(--border)" }}>
+            <p className="text-[11px] font-medium leading-relaxed text-[#DBDEE1]">{notice}</p>
           </div>
         </>,
         document.body
@@ -160,7 +160,7 @@ export function NoticeTooltip({ notice }: { notice?: string }) {
   );
 }
 
-export function HoldToConfirmButton({ onConfirm, children, className, holdTime = 800 }: { onConfirm: () => void, children: React.ReactNode, className: string, holdTime?: number }) {
+export function HoldToConfirmButton({ onConfirm, children, className, holdTime = 800, title }: { onConfirm: () => void, children: React.ReactNode, className: string, holdTime?: number, title?: string }) {
   const [progress, setProgress] = useState(0);
   const [isHolding, setIsHolding] = useState(false);
   const timerRef = useRef<any>(null);
@@ -194,7 +194,8 @@ export function HoldToConfirmButton({ onConfirm, children, className, holdTime =
 
   return (
     <button
-      className={`relative overflow-hidden ${className}`}
+      title={title}
+      className={`relative overflow-hidden cursor-pointer ${className}`}
       onPointerDown={start}
       onPointerUp={stop}
       onPointerLeave={stop}

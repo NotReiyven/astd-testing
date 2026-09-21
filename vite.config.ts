@@ -15,9 +15,24 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
-        navigateFallbackDenylist: [/^\/api/], // Force Service Worker to ignore /api routes
-        // Added webp to strictly cache the local authoritative images
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
+        navigateFallbackDenylist: [/^\/api/],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^\/units\/.*\.webp$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'unit-images-cache',
+              expiration: {
+                maxEntries: 500,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
       },
       manifest: {
         name: 'ASTD Trading Server',

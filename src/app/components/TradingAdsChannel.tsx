@@ -69,10 +69,10 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
   const displayItems = items.slice(0, limit);
   const extraCount = items.length > limit ? items.length - limit + 1 : 0; 
 
-  const slotBase = "w-10 h-10 sm:w-[48px] sm:h-[48px] rounded-[6px] shrink-0";
+  const slotBase = "w-full aspect-square rounded-[6px] shrink-0";
 
   return (
-    <div className="grid grid-cols-4 gap-2 sm:gap-2.5 w-fit">
+    <div className="grid grid-cols-4 gap-2 sm:gap-2.5 w-full">
       {slots.map((_, i) => {
         if (isOfferTile && i === 0) {
           return (
@@ -283,13 +283,13 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
           
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-0.5 bg-popover rounded-[4px] border border-border p-0.5">
-               <button onClick={() => handleVote(1)} className={`p-1.5 sm:p-1 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground hover:text-[#23a559]'}`}>
+               <button onClick={() => handleVote(1)} className={`p-1.5 sm:p-1 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none cursor-pointer min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground hover:text-[#23a559]'}`}>
                   <ArrowBigUp className={`w-4 h-4 sm:w-4 sm:h-4 ${votes.userVote === 1 ? 'fill-current' : ''}`} />
                </button>
                <span className={`text-[12px] font-bold min-w-[24px] text-center ${score > 0 ? 'text-[#23a559]' : score < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
                  {score}
                </span>
-               <button onClick={() => handleVote(-1)} className={`p-1.5 sm:p-1 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${votes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}>
+               <button onClick={() => handleVote(-1)} className={`p-1.5 sm:p-1 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none cursor-pointer min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${votes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}>
                   <ArrowBigDown className={`w-4 h-4 sm:w-4 sm:h-4 ${votes.userVote === -1 ? 'fill-current' : ''}`} />
                </button>
             </div>
@@ -301,42 +301,39 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
           </div>
 
           <div className="flex items-center justify-between w-full gap-2">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleCopyId}
-                className="px-3 py-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none shadow-sm min-h-[44px] md:min-h-0"
-              >
-                {copiedId ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#23a559]" /> : <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                <span className="hidden xl:inline">ID</span>
-              </button>
+            <button
+              onClick={handleCopyId}
+              className="flex-1 sm:flex-none px-3 py-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer shadow-sm min-h-[44px] md:min-h-0"
+            >
+              {copiedId ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#23a559]" /> : <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+              <span className="hidden xl:inline">ID</span>
+            </button>
 
-              <button
-                onClick={() => { triggerHaptic('light'); openAdContext(ad.id, currentUserId); }}
-                className="px-3 py-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none shadow-sm min-h-[44px] md:min-h-0"
-              >
-                <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Thread</span>
-              </button>
-            </div>
+            <button
+              onClick={() => { triggerHaptic('light'); openAdContext(ad.id, currentUserId); }}
+              className="flex-1 sm:flex-none px-3 py-2 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer shadow-sm min-h-[44px] md:min-h-0"
+            >
+              <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Thread</span>
+            </button>
 
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => isInventory ? handleInspectVault() : onSendToCalculator(ad.give_items, ad.get_items)}
-                className="px-4 py-2 sm:px-4 sm:py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] text-primary-foreground bg-primary hover:bg-primary/80 transition-colors focus-visible:outline-none shadow-sm active:scale-95 min-h-[44px] md:min-h-0"
-              >
-                {isInventory ? <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Calculator className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                <span className="hidden sm:inline">{isInventory ? "Inspect" : "Evaluate"}</span>
-              </button>
+            <button 
+              onClick={() => isInventory ? handleInspectVault() : onSendToCalculator(ad.give_items, ad.get_items)}
+              className="flex-1 sm:flex-none px-4 py-2 sm:px-4 sm:py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] text-primary-foreground bg-primary hover:bg-primary/80 transition-colors focus-visible:outline-none cursor-pointer shadow-sm active:scale-95 min-h-[44px] md:min-h-0"
+            >
+              {isInventory ? <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Calculator className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+              <span className="hidden sm:inline">{isInventory ? "Inspect" : "Evaluate"}</span>
+            </button>
 
-              {canDelete && (
-                <HoldToConfirmButton
-                  onConfirm={() => onDelete(ad.id)}
-                  className="p-2.5 sm:p-2 border border-border text-muted-foreground hover:text-foreground hover:border-destructive bg-popover hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none shadow-sm min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </HoldToConfirmButton>
-              )}
-            </div>
+            {canDelete && (
+              <HoldToConfirmButton
+                onConfirm={() => onDelete(ad.id)}
+                title="Hold to delete"
+                className="flex-1 sm:flex-none p-2.5 sm:p-2 border border-border text-muted-foreground hover:text-foreground hover:border-destructive bg-popover hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none shadow-sm min-h-[44px] md:min-h-0"
+              >
+                <Trash2 className="w-4 h-4" />
+              </HoldToConfirmButton>
+            )}
           </div>
 
         </div>
@@ -419,7 +416,7 @@ export function TradingAdsChannel() {
             <button
               type="button"
               onClick={handleCreateAdClick}
-              className="flex items-center justify-center gap-1.5 px-4 md:px-5 py-2 md:py-2.5 rounded-[4px] bg-primary hover:bg-primary/80 text-primary-foreground text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none shrink-0 shadow-sm w-full md:w-auto"
+              className="flex items-center justify-center gap-1.5 px-4 md:px-5 py-2 md:py-2.5 rounded-[4px] bg-primary hover:bg-primary/80 text-primary-foreground text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none shrink-0 shadow-sm w-full md:w-auto cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Create Ad</span>
@@ -428,7 +425,7 @@ export function TradingAdsChannel() {
             <button
               type="button"
               onClick={loginWithDiscord}
-              className="flex items-center justify-center gap-1.5 px-4 md:px-5 py-2 md:py-2.5 rounded-[4px] bg-popover border border-border text-muted-foreground text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-colors hover:bg-muted focus-visible:outline-none shrink-0 w-full md:w-auto"
+              className="flex items-center justify-center gap-1.5 px-4 md:px-5 py-2 md:py-2.5 rounded-[4px] bg-popover border border-border text-muted-foreground text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-colors hover:bg-muted focus-visible:outline-none shrink-0 w-full md:w-auto cursor-pointer"
             >
               <Lock className="w-4 h-4 text-primary" />
               <span>Login to Post</span>
@@ -442,7 +439,7 @@ export function TradingAdsChannel() {
               <button
                 key={t.id}
                 onClick={() => setTypeFilter(t.id)}
-                className={`flex-1 md:flex-none px-4 py-1.5 rounded-[4px] text-[11px] md:text-[12px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none whitespace-nowrap ${typeFilter === t.id ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`flex-1 md:flex-none px-4 py-1.5 rounded-[4px] text-[11px] md:text-[12px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none cursor-pointer whitespace-nowrap ${typeFilter === t.id ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 {t.label}
               </button>

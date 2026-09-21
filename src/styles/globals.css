@@ -19,3 +19,23 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #111214; 
 }
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    font-weight: 500;
+  }
+
+  html {
+    font-size: var(--font-size);
+  }
+
+  button, a {
+    @apply cursor-pointer;
+  }
+}

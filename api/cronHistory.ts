@@ -181,12 +181,21 @@ export async function GET(request: Request) {
       }
     });
 
+    // CHUNKED DATABASE WRITES TO PREVENT PAYLOAD CRASHES
     if (snapshotsToInsert.length > 0) {
-      const { error: snapErr } = await supabase.from('unit_value_snapshots').insert(snapshotsToInsert);
-      if (snapErr) throw snapErr;
+      const CHUNK_SIZE = 500;
+      
+      for (let i = 0; i < snapshotsToInsert.length; i += CHUNK_SIZE) {
+        const snapChunk = snapshotsToInsert.slice(i, i + CHUNK_SIZE);
+        const { error: snapErr } = await supabase.from('unit_value_snapshots').insert(snapChunk);
+        if (snapErr) throw snapErr;
+      }
 
-      const { error: upsertErr } = await supabase.from('unit_current_state').upsert(statesToUpsert, { onConflict: 'unit_id' });
-      if (upsertErr) throw upsertErr;
+      for (let i = 0; i < statesToUpsert.length; i += CHUNK_SIZE) {
+        const stateChunk = statesToUpsert.slice(i, i + CHUNK_SIZE);
+        const { error: upsertErr } = await supabase.from('unit_current_state').upsert(stateChunk, { onConflict: 'unit_id' });
+        if (upsertErr) throw upsertErr;
+      }
     }
 
     // Build fields for the Discord embed

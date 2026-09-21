@@ -89,7 +89,7 @@ export function AdInteractionModal() {
             <div className="flex flex-col items-center gap-0.5 shrink-0 pt-0.5">
               <button 
                 onClick={() => profile && voteComment(comment.id, profile.id, 1)}
-                className={`focus-visible:outline-none transition-colors hover:text-[#23a559] ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground'}`}
+                className={`focus-visible:outline-none transition-colors hover:text-[#23a559] cursor-pointer ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground'}`}
               >
                 <ArrowBigUp className={`w-4 h-4 ${votes.userVote === 1 ? 'fill-current' : ''}`} />
               </button>
@@ -98,7 +98,7 @@ export function AdInteractionModal() {
               </span>
               <button 
                 onClick={() => profile && voteComment(comment.id, profile.id, -1)}
-                className={`focus-visible:outline-none transition-colors hover:text-destructive ${votes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground'}`}
+                className={`focus-visible:outline-none transition-colors hover:text-destructive cursor-pointer ${votes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground'}`}
               >
                 <ArrowBigDown className={`w-4 h-4 ${votes.userVote === -1 ? 'fill-current' : ''}`} />
               </button>
@@ -122,14 +122,14 @@ export function AdInteractionModal() {
               <div className="flex items-center gap-4 mt-2.5">
                 <button 
                   onClick={() => setReplyingTo({ id: comment.id, username: comment.profiles.username })}
-                  className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none"
+                  className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
                 >
                   <Reply className="w-3 h-3 text-primary" /> Reply
                 </button>
                 {canModerate(comment.user_id) && (
                   <button 
                     onClick={() => deleteComment(comment.id)}
-                    className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none"
+                    className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none cursor-pointer"
                   >
                     <Trash2 className="w-3 h-3" /> Delete
                   </button>
@@ -157,22 +157,22 @@ export function AdInteractionModal() {
       <div className="bg-card w-full h-full md:h-[90vh] md:max-w-6xl md:rounded-[12px] shadow-2xl border-0 md:border border-border flex flex-col md:flex-row overflow-hidden">
         
         {/* LEFT PANE: Ad Context & Load Button */}
-        <div className="w-full md:w-[320px] bg-popover border-b md:border-b-0 md:border-r border-border flex flex-col shrink-0 max-h-[35vh] md:max-h-none overflow-y-auto custom-scrollbar">
-          <div className="flex items-center justify-between p-3.5 md:p-4 border-b border-border sticky top-0 bg-popover z-20">
+        <div className="w-full md:w-[320px] bg-popover border-b md:border-b-0 md:border-r border-border flex flex-col shrink-0 flex-1 md:flex-auto min-h-0">
+          <div className="flex items-center justify-between p-3.5 md:p-4 border-b border-border shrink-0 bg-popover z-20">
             <h3 className="text-[13px] font-black text-foreground uppercase tracking-wider">Original Listing</h3>
-            <button onClick={closeAdContext} className="text-muted-foreground hover:text-white focus-visible:outline-none p-1">
+            <button onClick={closeAdContext} className="text-muted-foreground hover:text-white focus-visible:outline-none cursor-pointer p-1">
               <X className="w-5 h-5" />
             </button>
           </div>
           
-          <div className="p-3.5 md:p-5 flex-1 flex flex-col gap-3.5">
+          <div className="p-3.5 md:p-5 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3.5">
             
             {/* Ad Voting & User */}
             <div className="flex items-start gap-3">
               <div className="flex flex-col items-center gap-1 shrink-0 bg-background p-1.5 rounded-[8px] border border-border">
                 <button 
                   onClick={() => profile && voteAd(activeAd.id, profile.id, 1)}
-                  className={`focus-visible:outline-none transition-colors hover:text-[#23a559] ${adVotes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground'}`}
+                  className={`focus-visible:outline-none transition-colors hover:text-[#23a559] cursor-pointer ${adVotes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground'}`}
                 >
                   <ArrowBigUp className={`w-5 h-5 ${adVotes.userVote === 1 ? 'fill-current' : ''}`} />
                 </button>
@@ -181,7 +181,7 @@ export function AdInteractionModal() {
                 </span>
                 <button 
                   onClick={() => profile && voteAd(activeAd.id, profile.id, -1)}
-                  className={`focus-visible:outline-none transition-colors hover:text-destructive ${adVotes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground'}`}
+                  className={`focus-visible:outline-none transition-colors hover:text-destructive cursor-pointer ${adVotes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground'}`}
                 >
                   <ArrowBigDown className={`w-5 h-5 ${adVotes.userVote === -1 ? 'fill-current' : ''}`} />
                 </button>
@@ -204,51 +204,51 @@ export function AdInteractionModal() {
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">
                   {activeAd.ad_type === 'inventory' ? 'Showcase' : 'Offering'}
                 </span>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {activeAd.give_items.map((item, i) => {
                     const master = ALL_UNITS.find(u => u.id === item.id);
                     const proxyUrl = master ? getProxyImage(item.id, master.imageUrl) : null;
                     return (
-                      <div key={i} className="relative w-9 h-9 md:w-10 md:h-10 bg-background rounded-[4px] border border-border overflow-hidden shrink-0" title={item.name}>
+                      <div key={i} className="relative w-12 h-12 md:w-14 md:h-14 bg-background rounded-[4px] border border-border overflow-hidden shrink-0" title={item.name}>
                         {proxyUrl && <img src={proxyUrl} className="absolute inset-0 w-full h-full object-cover" alt="" onError={(e) => handleImageError(e, item.id)} />}
-                        {item.qty > 1 && <div className="absolute bottom-0 right-0 bg-popover text-card-foreground text-[9px] font-black px-1 rounded-tl-[4px] z-10">x{item.qty}</div>}
+                        {item.qty > 1 && <div className="absolute bottom-0 right-0 bg-popover text-card-foreground text-[10px] font-black px-1.5 rounded-tl-[4px] z-10">x{item.qty}</div>}
                       </div>
                     );
                   })}
-                  {activeAd.give_items.length === 0 && <span className="text-[12px] text-muted-foreground">Nothing</span>}
+                  {activeAd.give_items.length === 0 && <span className="text-[13px] text-muted-foreground font-medium">Nothing</span>}
                 </div>
               </div>
 
               {activeAd.ad_type !== 'inventory' && (
                 <div className="bg-background rounded-[8px] p-2.5 md:p-3 border border-border">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">Requesting</span>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-2">
                     {activeAd.get_items.map((item, i) => {
                       const master = ALL_UNITS.find(u => u.id === item.id);
                       const proxyUrl = master ? getProxyImage(item.id, master.imageUrl) : null;
                       return (
-                        <div key={i} className="relative w-9 h-9 md:w-10 md:h-10 bg-background rounded-[4px] border border-border overflow-hidden shrink-0" title={item.name}>
+                        <div key={i} className="relative w-12 h-12 md:w-14 md:h-14 bg-background rounded-[4px] border border-border overflow-hidden shrink-0" title={item.name}>
                           {proxyUrl && <img src={proxyUrl} className="absolute inset-0 w-full h-full object-cover" alt="" onError={(e) => handleImageError(e, item.id)} />}
-                          {item.qty > 1 && <div className="absolute bottom-0 right-0 bg-popover text-card-foreground text-[9px] font-black px-1 rounded-tl-[4px] z-10">x{item.qty}</div>}
+                          {item.qty > 1 && <div className="absolute bottom-0 right-0 bg-popover text-card-foreground text-[10px] font-black px-1.5 rounded-tl-[4px] z-10">x{item.qty}</div>}
                         </div>
                       );
                     })}
-                    {activeAd.get_items.length === 0 && <span className="text-[12px] text-muted-foreground">Taking Offers</span>}
+                    {activeAd.get_items.length === 0 && <span className="text-[13px] text-muted-foreground font-medium">Taking Offers</span>}
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Load into Calculator Action */}
-            <div className="mt-auto pt-2">
-              <button
-                onClick={handleLoadIntoCalculator}
-                className="w-full flex items-center justify-center gap-2 py-2.5 md:py-3 bg-primary hover:bg-primary/80 text-primary-foreground text-[13px] font-bold rounded-[6px] transition-colors shadow-sm focus-visible:outline-none min-h-[44px]"
-              >
-                <Calculator className="w-4 h-4" /> Load into Calculator
-              </button>
-            </div>
-
+          </div>
+          
+          {/* Fixed Footer for Calculator Action */}
+          <div className="p-3.5 md:p-4 border-t border-border shrink-0 bg-popover z-20">
+            <button
+              onClick={handleLoadIntoCalculator}
+              className="w-full flex items-center justify-center gap-2 py-2.5 md:py-3 bg-primary hover:bg-primary/80 text-primary-foreground text-[13px] font-bold rounded-[6px] transition-colors shadow-sm focus-visible:outline-none cursor-pointer min-h-[44px]"
+            >
+              <Calculator className="w-4 h-4" /> Load into Calculator
+            </button>
           </div>
         </div>
 
@@ -258,7 +258,7 @@ export function AdInteractionModal() {
             <h2 className="text-[15px] font-black text-foreground tracking-tight uppercase flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-primary" /> Disqus
             </h2>
-            <button onClick={closeAdContext} className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none p-1 bg-transparent hover:bg-white/5 rounded-[4px]">
+            <button onClick={closeAdContext} className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer p-1 bg-transparent hover:bg-white/5 rounded-[4px]">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -290,7 +290,7 @@ export function AdInteractionModal() {
                 <span className="text-[12px] font-bold text-foreground flex items-center gap-1.5">
                   <Reply className="w-3.5 h-3.5 text-primary" /> Replying to {replyingTo.username}
                 </span>
-                <button onClick={() => setReplyingTo(null)} className="text-muted-foreground hover:text-destructive focus-visible:outline-none">
+                <button onClick={() => setReplyingTo(null)} className="text-muted-foreground hover:text-destructive focus-visible:outline-none cursor-pointer">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -310,7 +310,7 @@ export function AdInteractionModal() {
                 <button 
                   type="submit"
                   disabled={!newComment.trim() || isActionPending}
-                  className="absolute right-2 w-9 h-9 flex items-center justify-center rounded-[6px] bg-primary hover:bg-primary/85 text-primary-foreground disabled:opacity-50 transition-colors focus-visible:outline-none"
+                  className="absolute right-2 w-9 h-9 flex items-center justify-center rounded-[6px] bg-primary hover:bg-primary/85 text-primary-foreground disabled:opacity-50 transition-colors focus-visible:outline-none cursor-pointer"
                 >
                   <Send className="w-4 h-4 -ml-0.5" />
                 </button>
