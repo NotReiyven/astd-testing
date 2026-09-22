@@ -43,15 +43,15 @@ const ItemTile = memo(({ item, ALL_UNITS }: { item: TradeCard, ALL_UNITS: Master
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
-      <div className="relative w-16 h-16 rounded-[8px] bg-background border border-border flex items-center justify-center overflow-hidden shadow-sm group-hover:border-primary transition-all">
+      <div className="relative w-16 h-16 rounded-[4px] bg-muted border border-border flex items-center justify-center overflow-hidden shadow-sm group-hover:border-foreground transition-colors">
         <div className="absolute inset-0 flex items-center justify-center text-white font-black text-[12px] z-0" style={getAvatarStyle(item.name)}>
           {getInitials(item.name)}
         </div>
         {proxyUrl && (
-          <img src={proxyUrl} alt={item.name} className="absolute inset-0 w-full h-full object-cover z-10 bg-background transition-transform group-hover:scale-110" onError={(e) => handleImageError(e, item.id)} />
+          <img src={proxyUrl} alt={item.name} className="absolute inset-0 w-full h-full object-cover z-10 bg-muted transition-transform group-hover:scale-105" onError={(e) => handleImageError(e, item.id)} />
         )}
         {item.qty > 1 && (
-          <div className="absolute bottom-0 right-0 bg-popover/95 text-foreground text-[10px] font-black px-1.5 py-0.5 rounded-tl-[4px] z-20 border-t border-l border-border leading-none">
+          <div className="absolute bottom-0 right-0 bg-popover text-foreground text-[10px] font-black px-1.5 py-0.5 rounded-tl-[4px] z-20 border-t border-l border-border leading-none font-mono">
             x{item.qty}
           </div>
         )}
@@ -61,12 +61,12 @@ const ItemTile = memo(({ item, ALL_UNITS }: { item: TradeCard, ALL_UNITS: Master
       </span>
 
       {showTooltip && master && (
-        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#111214] border border-border text-foreground text-[11px] p-3 rounded-[8px] shadow-2xl pointer-events-none z-50 w-48 animate-fade-in flex flex-col gap-1">
+        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-popover border border-border text-foreground text-[11px] p-3 rounded-[4px] shadow-2xl pointer-events-none z-50 w-48 animate-fade-in flex flex-col gap-1">
           <div className="font-extrabold text-foreground truncate">{master.name}</div>
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{master.subtitle || "Official Unit"}</div>
           <div className="flex justify-between items-center mt-1 pt-1 border-t border-border font-mono">
             <span className="text-[#4DB6AC]">R: {rarity}</span>
-            <span className="text-primary font-bold">{conservativeVal.toLocaleString()}</span>
+            <span className="text-foreground font-bold">{conservativeVal.toLocaleString()}</span>
           </div>
         </div>
       )}
@@ -80,22 +80,22 @@ export function AdInteractionModal() {
     isLoading, isActionPending, closeAdContext, 
     postComment, deleteComment, voteAd, voteComment 
   } = useAdInteractionStore();
-  
+
   const { ads } = useTradingAdsStore();
   const { profile } = useAuthStore();
   const { overwrite } = useTradeStore();
   const { units: ALL_UNITS } = useUnits();
   const openPopout = useProfileStore(s => s.openPopout);
-  
+
   const activeAd = ads.find(a => a.id === activeAdId);
-  
+
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<{ id: string, username: string } | null>(null);
   const [collapsedThreads, setCollapsedThreads] = useState<Record<string, boolean>>({});
   const [mobileTab, setMobileTab] = useState<"listing" | "comments">("listing");
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedDiscord, setCopiedDiscord] = useState(false);
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -119,7 +119,7 @@ export function AdInteractionModal() {
   const handlePost = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!newComment.trim() || !profile) return;
-    
+
     triggerHaptic('light');
     const success = await postComment(activeAdId, profile, newComment, replyingTo?.id || null);
     if (success) {
@@ -173,10 +173,10 @@ export function AdInteractionModal() {
   const handleContact = async () => {
     if (!activeAd.profiles?.discord_id) return;
     triggerHaptic('medium');
-    
+
     const giveNames = activeAd.give_items.map(i => `${i.qty > 1 ? `${i.qty}x ` : ''}${i.name}`).join(', ');
     const getNames = activeAd.get_items.length > 0 ? activeAd.get_items.map(i => `${i.qty > 1 ? `${i.qty}x ` : ''}${i.name}`).join(', ') : 'Offers';
-    
+
     const messageStr = `Hey! Saw your ad on ASTD Value List.\nYou're giving: ${giveNames}\nYou're looking for: ${getNames}\nIs this still available?`;
 
     try {
@@ -197,10 +197,10 @@ export function AdInteractionModal() {
     return (
       <div className={`flex flex-col ${depth > 0 ? 'ml-4 sm:ml-6 mt-3 pl-3 border-l border-border' : 'mt-4'}`}>
         <div className="flex items-start gap-3 group">
-          
+
           <img 
             src={comment.profiles.avatar_url || "/units/firezio.webp"} 
-            className="w-8 h-8 rounded-full bg-background object-cover shrink-0 cursor-pointer hover:opacity-80 transition-opacity mt-0.5" 
+            className="w-8 h-8 rounded-full bg-muted object-cover shrink-0 cursor-pointer hover:opacity-80 transition-opacity mt-0.5 border border-border" 
             alt=""
             onClick={(e) => {
               triggerHaptic('light');
@@ -209,8 +209,8 @@ export function AdInteractionModal() {
             }}
           />
 
-          <div className="flex flex-col flex-1 min-w-0 bg-black/20 hover:bg-black/30 p-3 rounded-[8px] border border-border/60 transition-colors">
-            
+          <div className="flex flex-col flex-1 min-w-0 bg-muted hover:bg-muted/80 p-3 rounded-[6px] border border-border transition-colors">
+
             <div className="flex items-center justify-between gap-2 mb-1">
               <div className="flex items-center gap-2 min-w-0">
                 <span 
@@ -225,28 +225,28 @@ export function AdInteractionModal() {
                 </span>
 
                 {isOp && (
-                  <span className="bg-primary/20 text-primary border border-primary/30 text-[9px] font-black px-1.5 py-0.5 rounded-[4px] uppercase tracking-wider">
+                  <span className="bg-primary/20 text-primary border border-primary/30 text-[9px] font-black px-1.5 py-0.5 rounded-[2px] uppercase tracking-wider">
                     OP
                   </span>
                 )}
 
                 {['mod', 'admin', 'master'].includes(comment.profiles.role) && (
-                  <span className="bg-[#5865F2]/25 text-[#5865F2] border border-[#5865F2]/30 text-[9px] font-black px-1.5 py-0.5 rounded-[4px] uppercase tracking-wider flex items-center gap-1">
-                    <ShieldAlert className="w-2.5 h-2.5" /> Staff
+                  <span className="bg-muted text-foreground border border-border text-[9px] font-black px-1.5 py-0.5 rounded-[2px] uppercase tracking-wider flex items-center gap-1">
+                    <ShieldAlert className="w-2.5 h-2.5 text-primary" /> Staff
                   </span>
                 )}
               </div>
 
-              <span className="text-[11px] font-medium text-muted-foreground shrink-0">{getTimeAgoShort(comment.created_at)}</span>
+              <span className="text-[11px] font-mono font-medium text-muted-foreground shrink-0">{getTimeAgoShort(comment.created_at)}</span>
             </div>
 
-            <p className="text-[14px] text-card-foreground leading-relaxed break-all whitespace-pre-wrap">
+            <p className="text-[13px] text-foreground leading-relaxed break-all whitespace-pre-wrap font-medium">
               {comment.content}
             </p>
 
-            <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border/40">
+            <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border">
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1 bg-background rounded-[4px] border border-border px-1.5 py-0.5">
+                <div className="flex items-center gap-1 bg-card rounded-[4px] border border-border px-1.5 py-0.5">
                   <button 
                     onClick={() => { if (profile) { triggerHaptic('light'); voteComment(comment.id, profile.id, 1); } }}
                     className={`focus-visible:outline-none transition-colors hover:text-[#23a559] cursor-pointer ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground'}`}
@@ -312,7 +312,7 @@ export function AdInteractionModal() {
   const isInventory = activeAd.ad_type === "inventory";
 
   let statusLabel = "Specific Trade";
-  let statusColor = "bg-[#FAA61A]/10 border-[#FAA61A]/30 text-[#FAA61A]";
+  let statusColor = "bg-popover border-border text-foreground";
   if (isInventory) {
     statusLabel = "Showcase";
     statusColor = "bg-popover border-border text-foreground";
@@ -337,7 +337,7 @@ export function AdInteractionModal() {
 
   return (
     <div 
-      className="fixed inset-0 z-[99999] flex items-center justify-center p-0 md:p-6 bg-black/75 backdrop-blur-sm animate-fade-in" 
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-0 md:p-6 bg-black/80 animate-fade-in" 
       role="dialog" 
       aria-modal="true"
       onClick={(e) => {
@@ -347,11 +347,11 @@ export function AdInteractionModal() {
         }
       }}
     >
-      <div className="bg-card w-full h-full md:h-[85vh] md:max-w-6xl md:rounded-[12px] shadow-2xl border-0 md:border border-border flex flex-col overflow-hidden">
-        
-        <div className="flex items-center justify-between px-4 md:px-6 py-3.5 bg-popover border-b border-border shrink-0 z-20">
+      <div className="bg-card w-full h-full md:h-[85vh] md:max-w-6xl md:rounded-[6px] shadow-2xl border-0 md:border border-border flex flex-col overflow-hidden">
+
+        <div className="flex items-center justify-between px-4 md:px-6 py-3 bg-popover border-b border-border shrink-0 z-20">
           <div className="flex items-center gap-3">
-            <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-[6px] border ${statusColor}`}>
+            <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${statusColor}`}>
               {statusLabel}
             </span>
             <span className="text-[12px] font-mono font-medium text-muted-foreground flex items-center gap-1.5">
@@ -362,7 +362,7 @@ export function AdInteractionModal() {
           <div className="flex items-center gap-2">
             <button 
               onClick={handleShareLink}
-              className="px-3 py-1.5 bg-card hover:bg-muted border border-border rounded-[6px] text-[12px] font-bold text-foreground flex items-center gap-1.5 transition-colors focus-visible:outline-none cursor-pointer"
+              className="px-3 py-1.5 bg-card hover:bg-muted border border-border rounded-[4px] text-[12px] font-bold text-foreground flex items-center gap-1.5 transition-colors focus-visible:outline-none cursor-pointer"
               aria-label="Share listing"
             >
               {copiedLink ? <Check className="w-3.5 h-3.5 text-[#23a559]" /> : <Share2 className="w-3.5 h-3.5 text-muted-foreground" />}
@@ -370,7 +370,7 @@ export function AdInteractionModal() {
             </button>
             <button 
               onClick={() => { triggerHaptic('light'); closeAdContext(); }} 
-              className="text-muted-foreground hover:text-foreground focus-visible:outline-none cursor-pointer p-1.5 hover:bg-card rounded-[6px] transition-colors"
+              className="text-muted-foreground hover:text-foreground focus-visible:outline-none cursor-pointer p-1.5 hover:bg-card rounded-[4px] transition-colors"
               aria-label="Close modal"
             >
               <X className="w-5 h-5" />
@@ -381,29 +381,29 @@ export function AdInteractionModal() {
         <div className="flex md:hidden bg-popover border-b border-border p-1 shrink-0">
           <button 
             onClick={() => { triggerHaptic('light'); setMobileTab("listing"); }}
-            className={`flex-1 py-2 text-[12px] font-bold uppercase tracking-wider rounded-[6px] transition-colors ${mobileTab === 'listing' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+            className={`flex-1 py-2 text-[12px] font-bold uppercase tracking-wider rounded-[4px] transition-colors ${mobileTab === 'listing' ? 'bg-foreground text-background shadow-sm' : 'text-muted-foreground'}`}
           >
             Listing
           </button>
           <button 
             onClick={() => { triggerHaptic('light'); setMobileTab("comments"); }}
-            className={`flex-1 py-2 text-[12px] font-bold uppercase tracking-wider rounded-[6px] transition-colors flex items-center justify-center gap-1.5 ${mobileTab === 'comments' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+            className={`flex-1 py-2 text-[12px] font-bold uppercase tracking-wider rounded-[4px] transition-colors flex items-center justify-center gap-1.5 ${mobileTab === 'comments' ? 'bg-foreground text-background shadow-sm' : 'text-muted-foreground'}`}
           >
-            Discussion <span className="bg-black/20 px-1.5 rounded text-[10px]">{comments.length}</span>
+            Discussion <span className="bg-muted px-1.5 rounded text-[10px] font-mono">{comments.length}</span>
           </button>
         </div>
 
         <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
-          
-          <div className={`w-full md:w-[480px] lg:w-[540px] bg-card/50 border-r border-border flex flex-col shrink-0 min-h-0 ${mobileTab === 'comments' ? 'hidden md:flex' : 'flex'}`}>
-            
+
+          <div className={`w-full md:w-[480px] lg:w-[540px] bg-card border-r border-border flex flex-col shrink-0 min-h-0 ${mobileTab === 'comments' ? 'hidden md:flex' : 'flex'}`}>
+
             <div className="p-4 md:p-6 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-5">
-              
-              <div className="flex items-center justify-between bg-card p-3.5 rounded-[10px] border border-border shadow-sm">
+
+              <div className="flex items-center justify-between bg-muted p-3.5 rounded-[6px] border border-border shadow-sm">
                 <div className="flex items-center gap-3 min-w-0">
                   <img 
                     src={activeAd.profiles?.avatar_url || "/units/firezio.webp"} 
-                    className="w-11 h-11 rounded-full bg-background object-cover cursor-pointer hover:opacity-80 transition-opacity shrink-0" 
+                    className="w-11 h-11 rounded-full bg-background object-cover cursor-pointer hover:opacity-80 transition-opacity shrink-0 border border-border" 
                     alt=""
                     onClick={(e) => {
                       triggerHaptic('light');
@@ -430,7 +430,7 @@ export function AdInteractionModal() {
 
                 <button
                   onClick={handleCopyDiscord}
-                  className="px-3 py-2 bg-popover hover:bg-muted border border-border rounded-[6px] text-[12px] font-bold text-foreground flex items-center gap-1.5 transition-colors shadow-sm focus-visible:outline-none shrink-0 cursor-pointer"
+                  className="px-3 py-2 bg-card hover:bg-muted border border-border rounded-[4px] text-[12px] font-bold text-foreground flex items-center gap-1.5 transition-colors shadow-sm focus-visible:outline-none shrink-0 cursor-pointer"
                 >
                   {copiedDiscord ? <Check className="w-3.5 h-3.5 text-[#23a559]" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}
                   <span>{copiedDiscord ? "Copied" : "Copy Discord"}</span>
@@ -438,20 +438,20 @@ export function AdInteractionModal() {
               </div>
 
               {activeAd.note && (
-                <blockquote className="border-l-4 border-primary pl-4 py-2 italic text-[14px] text-foreground/90 bg-card rounded-r-[8px] border border-border shadow-sm">
+                <blockquote className="border-l-2 border-primary pl-4 py-2 italic text-[14px] text-foreground/90 bg-muted rounded-r-[6px] border border-border shadow-inner">
                   "{activeAd.note}"
                 </blockquote>
               )}
 
-              <div className="flex flex-col gap-4 bg-card rounded-[10px] p-4 border border-border shadow-sm">
-                
+              <div className="flex flex-col gap-4 bg-muted rounded-[6px] p-4 border border-border shadow-inner">
+
                 {isInventory ? (
                   <div className="flex flex-col gap-2">
                     <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
                       <span>Showcase Assets</span>
-                      <span className="font-mono text-primary font-black">Value: {totalGiveVal.toLocaleString()}</span>
+                      <span className="font-mono text-foreground font-black">Value: {totalGiveVal.toLocaleString()}</span>
                     </div>
-                    <div className="grid gap-3 pt-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))' }}>
+                    <div className="grid gap-2 pt-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))' }}>
                       {activeAd.give_items.map((item, i) => (
                         <ItemTile key={i} item={item} ALL_UNITS={ALL_UNITS} />
                       ))}
@@ -460,11 +460,11 @@ export function AdInteractionModal() {
                 ) : isTakingOffers ? (
                   <div className="flex flex-col gap-4">
                     <div className="flex flex-col gap-2">
-                      <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-wider text-[#FAA61A] border-b border-border pb-2">
+                      <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
                         <span>Offering</span>
-                        <span className="font-mono font-black">{totalGiveVal.toLocaleString()}</span>
+                        <span className="font-mono font-black text-foreground">{totalGiveVal.toLocaleString()}</span>
                       </div>
-                      <div className="grid gap-3 pt-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))' }}>
+                      <div className="grid gap-2 pt-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))' }}>
                         {activeAd.give_items.map((item, i) => (
                           <ItemTile key={i} item={item} ALL_UNITS={ALL_UNITS} />
                         ))}
@@ -472,9 +472,9 @@ export function AdInteractionModal() {
                     </div>
 
                     <div className="flex flex-col gap-2 pt-2 border-t border-border">
-                      <span className="text-[12px] font-bold uppercase tracking-wider text-primary">Requesting</span>
-                      <div className="bg-black/20 border-2 border-dashed border-border rounded-[8px] p-6 flex flex-col items-center justify-center text-center gap-2">
-                        <Search className="w-8 h-8 text-primary opacity-60" />
+                      <span className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">Requesting</span>
+                      <div className="bg-card border border-dashed border-border rounded-[4px] p-6 flex flex-col items-center justify-center text-center gap-2">
+                        <Search className="w-8 h-8 text-muted-foreground" />
                         <span className="text-[13px] font-black text-foreground uppercase tracking-wider">Open to offers</span>
                         <span className="text-[11px] text-muted-foreground">The trader is looking for general offers for their items.</span>
                       </div>
@@ -483,27 +483,27 @@ export function AdInteractionModal() {
                 ) : (
                   <div className="flex flex-col gap-5">
                     <div className="flex flex-col gap-2">
-                      <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-wider text-[#FAA61A] border-b border-border pb-2">
+                      <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
                         <span>Offering</span>
-                        <span className="font-mono font-black">{totalGiveVal.toLocaleString()}</span>
+                        <span className="font-mono font-black text-foreground">{totalGiveVal.toLocaleString()}</span>
                       </div>
-                      <div className="grid gap-3 pt-1" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))' }}>
+                      <div className="grid gap-2 pt-1" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))' }}>
                         {activeAd.give_items.map((item, i) => (
                           <ItemTile key={i} item={item} ALL_UNITS={ALL_UNITS} />
                         ))}
                       </div>
                     </div>
 
-                    <div className="flex justify-center text-muted-foreground bg-popover py-1.5 rounded-[6px] border border-border">
+                    <div className="flex justify-center text-muted-foreground bg-card py-1.5 rounded-[4px] border border-border">
                       <ArrowRightLeft className="w-4 h-4" />
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-wider text-primary border-b border-border pb-2">
+                      <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
                         <span>Requesting</span>
-                        <span className="font-mono font-black">{totalGetVal > 0 ? totalGetVal.toLocaleString() : 'Negotiable'}</span>
+                        <span className="font-mono font-black text-foreground">{totalGetVal > 0 ? totalGetVal.toLocaleString() : 'Negotiable'}</span>
                       </div>
-                      <div className="grid gap-3 pt-1" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))' }}>
+                      <div className="grid gap-2 pt-1" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))' }}>
                         {activeAd.get_items.map((item, i) => (
                           <ItemTile key={i} item={item} ALL_UNITS={ALL_UNITS} />
                         ))}
@@ -524,18 +524,18 @@ export function AdInteractionModal() {
               </div>
 
             </div>
-            
-            <div className="p-4 bg-card border-t border-border shrink-0 flex flex-col sm:flex-row items-center gap-3">
+
+            <div className="p-4 bg-popover border-t border-border shrink-0 flex flex-col sm:flex-row items-center gap-3">
               <button
                 onClick={handleLoadIntoCalculator}
-                className="w-full sm:flex-1 py-3 bg-primary hover:bg-primary/90 text-primary-foreground text-[13px] font-black uppercase tracking-wider rounded-[6px] transition-colors shadow-md focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2"
+                className="w-full sm:flex-1 py-3 bg-primary hover:bg-primary/90 text-primary-foreground text-[13px] font-black uppercase tracking-wider rounded-[4px] transition-colors shadow-sm focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2 border border-primary"
               >
                 <Calculator className="w-4 h-4" /> Load into Calculator
               </button>
-              
+
               <button
                 onClick={handleContact}
-                className="w-full sm:w-auto px-5 py-3 bg-[#5865F2] hover:bg-[#4752C4] text-white text-[13px] font-bold rounded-[6px] transition-colors shadow-md focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-5 py-3 bg-[#5865F2] hover:bg-[#4752C4] text-white text-[13px] font-bold rounded-[4px] transition-colors shadow-sm focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2"
               >
                 <MessageSquare className="w-4 h-4" /> Message on Discord
               </button>
@@ -544,13 +544,13 @@ export function AdInteractionModal() {
           </div>
 
           <div className={`flex-1 flex flex-col min-w-0 bg-transparent min-h-0 ${mobileTab === 'listing' ? 'hidden md:flex' : 'flex'}`}>
-            
+
             <div className="hidden md:flex items-center justify-between px-6 py-4 bg-popover border-b border-border shrink-0">
               <h2 className="text-[15px] font-black text-foreground tracking-tight uppercase flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-primary" /> Discussion <span className="bg-primary/20 text-primary text-[11px] px-2 py-0.5 rounded-[4px] font-mono">{comments.length}</span>
+                <MessageSquare className="w-5 h-5 text-primary" /> Discussion <span className="bg-muted text-foreground text-[11px] px-2 py-0.5 rounded-[4px] font-mono border border-border">{comments.length}</span>
               </h2>
 
-              <div className="flex items-center gap-1.5 bg-card rounded-[6px] border border-border px-2.5 py-1">
+              <div className="flex items-center gap-1.5 bg-card rounded-[4px] border border-border px-2.5 py-1">
                 <button 
                   onClick={() => { if (profile) { triggerHaptic('light'); voteAd(activeAd.id, profile.id, 1); } }}
                   className={`focus-visible:outline-none transition-colors hover:text-[#23a559] cursor-pointer ${adVotes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground'}`}
@@ -593,7 +593,7 @@ export function AdInteractionModal() {
 
             <div className="p-4 bg-popover border-t border-border shrink-0 flex flex-col gap-2">
               {replyingTo && (
-                <div className="flex items-center justify-between bg-card px-3 py-1.5 rounded-[6px] border border-primary/40 animate-fade-in">
+                <div className="flex items-center justify-between bg-card px-3 py-1.5 rounded-[4px] border border-primary/40 animate-fade-in">
                   <span className="text-[12px] font-bold text-foreground flex items-center gap-1.5">
                     <Reply className="w-3.5 h-3.5 text-primary" /> Replying to @{replyingTo.username}
                   </span>
@@ -602,7 +602,7 @@ export function AdInteractionModal() {
                   </button>
                 </div>
               )}
-              
+
               {profile ? (
                 <form onSubmit={handlePost} className="relative flex items-end gap-2">
                   <div className="flex items-center gap-2 mb-1 shrink-0">
@@ -623,7 +623,7 @@ export function AdInteractionModal() {
                       maxLength={500}
                       rows={1}
                       disabled={isActionPending}
-                      className="w-full bg-card text-foreground text-[14px] px-3.5 py-2.5 rounded-[6px] outline-none border border-border focus:border-primary transition-colors font-medium placeholder:text-muted-foreground resize-none max-h-[120px] custom-scrollbar shadow-inner"
+                      className="w-full bg-input text-foreground text-[14px] px-3.5 py-2.5 rounded-[4px] outline-none border border-border focus:border-foreground transition-colors font-medium placeholder:text-muted-foreground resize-none max-h-[120px] custom-scrollbar shadow-inner"
                     />
                     <div className="absolute right-2 bottom-2.5 text-[10px] font-mono text-muted-foreground pointer-events-none">
                       {newComment.length}/500
@@ -633,14 +633,14 @@ export function AdInteractionModal() {
                   <button 
                     type="submit"
                     disabled={!newComment.trim() || isActionPending}
-                    className="h-10 px-4 flex items-center justify-center rounded-[6px] bg-primary hover:bg-primary/85 text-primary-foreground disabled:opacity-40 transition-colors focus-visible:outline-none cursor-pointer shrink-0"
+                    className="h-10 px-4 flex items-center justify-center rounded-[4px] bg-primary hover:bg-primary/85 text-primary-foreground disabled:opacity-40 transition-colors focus-visible:outline-none cursor-pointer shrink-0 border border-primary"
                     aria-label="Send message"
                   >
                     <Send className="w-4 h-4" />
                   </button>
                 </form>
               ) : (
-                <div className="w-full bg-card text-muted-foreground text-[13px] font-bold text-center py-3 rounded-[6px] border border-border">
+                <div className="w-full bg-card text-muted-foreground text-[13px] font-bold text-center py-3 rounded-[4px] border border-border">
                   You must be logged in to participate in the discussion.
                 </div>
               )}
