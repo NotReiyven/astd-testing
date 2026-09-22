@@ -10,11 +10,13 @@ import {
   UserCircle2, ArrowUpRight, RefreshCw, Eraser, MessageSquareOff, Plus, Settings2, UsersRound, History
 } from "lucide-react";
 import { useInventoryStore } from "../../store/useInventoryStore";
+import { useProfileStore } from "../../store/useProfileStore";
 import { useAdminIntel } from "../../hooks/useAdminIntel";
 import { triggerHaptic } from "../../data/helpers";
 
 export function AdminChannel() {
   const { setViewingUser } = useInventoryStore();
+  const setViewingProfile = useProfileStore(s => s.setViewingProfile);
 
   const {
     users, selectedUser, setSelectedUser, userIntel, metrics, availableRoles, modLogs,
@@ -30,8 +32,7 @@ export function AdminChannel() {
   const [newRoleColor, setNewRoleColor] = useState("#10B981");
   const [newRoleRank, setNewRoleRank] = useState(10);
 
-  // Moderation Modal State
-  const [modActionData, setModActionData] = useState<{ type: string, label: string, isDestructive: boolean } | null>(null);
+  const [modActionData, setModActionData] = useState<{ type: string, label: string, isDestructive: boolean, payload?: string } | null>(null);
   const [modReason, setModReason] = useState("");
 
   const handleCopyId = (id: string) => {
@@ -44,6 +45,13 @@ export function AdminChannel() {
     triggerHaptic('medium');
     setViewingUser(selectedUser.id, selectedUser.username, "admin-panel");
     window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'inventory' }));
+  };
+
+  const handleInspectProfile = () => {
+    if (!selectedUser) return;
+    triggerHaptic('medium');
+    setViewingProfile(selectedUser.id);
+    window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'profile' }));
   };
 
   const handleCreateRole = (e: React.FormEvent) => {
@@ -74,6 +82,9 @@ export function AdminChannel() {
       case "wipe_wishlist": handleWipeWishlist(modReason); break;
       case "nuke": handleTotalAccountNuke(modReason); break;
       case "ban": updateUserRole(selectedUser.id, "banned", modReason); break;
+      case "role": 
+        if (modActionData.payload) updateUserRole(selectedUser.id, modActionData.payload, modReason); 
+        break;
     }
     
     setModActionData(null);
@@ -83,7 +94,6 @@ export function AdminChannel() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background h-full select-none font-sans relative">
       
-      {/* TOP HEADER */}
       <div className="flex-shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4 px-4 md:px-6 py-4 bg-[#111214] border-b border-border shadow-sm z-20">
         <h2 className="text-[16px] font-black text-foreground tracking-tight uppercase flex items-center gap-2">
           <ShieldAlert className="w-5 h-5 text-destructive" /> Tel Aviv Center
@@ -222,7 +232,6 @@ export function AdminChannel() {
         </div>
       ) : (
         <div className="flex-1 flex overflow-hidden animate-fade-in">
-          {/* Left Column: Sorted User List */}
           <div className={`flex flex-col w-full ${selectedUser ? 'hidden md:flex md:w-[350px]' : 'flex'} shrink-0 border-r border-border bg-[#1E1F22]`}>
             <div className="p-3 border-b border-border bg-[#111214] flex flex-col gap-2">
               <form onSubmit={handleSearch} className="relative w-full">
@@ -304,7 +313,6 @@ export function AdminChannel() {
             </div>
           </div>
 
-          {/* Right Column: Profile Sheet */}
           <div className={`flex-1 flex flex-col bg-background relative overflow-hidden ${!selectedUser ? 'hidden md:flex' : 'flex'}`}>
             {!selectedUser ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-background">
@@ -359,7 +367,6 @@ export function AdminChannel() {
 
                 <div className="mt-8 px-6 max-w-4xl mx-auto w-full flex flex-col xl:flex-row gap-6 items-start">
                   
-                  {/* Info Column */}
                   <div className="flex flex-col gap-6 w-full xl:w-[320px] shrink-0">
                     <div className="bg-[#1E1F22] rounded-[8px] p-4 flex flex-col border border-border">
                       <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -382,7 +389,14 @@ export function AdminChannel() {
                         </div>
                       )}
                       
-                      <div className="mt-3 pt-3 border-t border-border">
+                      <div className="mt-3 pt-3 border-t border-border flex flex-col gap-2">
+                        <button 
+                          onClick={handleInspectProfile}
+                          className="w-full flex items-center justify-between px-3 py-2 bg-[#111214] hover:bg-[#2B2D31] border border-border text-muted-foreground hover:text-foreground text-[12px] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
+                        >
+                          <span className="flex items-center gap-2"><UserCircle2 className="w-4 h-4 text-muted-foreground" /> Inspect Profile</span>
+                          <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
+                        </button>
                         <button 
                           onClick={handleInspectVault}
                           className="w-full flex items-center justify-between px-3 py-2 bg-[#111214] hover:bg-[#2B2D31] border border-border text-muted-foreground hover:text-foreground text-[12px] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
@@ -397,14 +411,17 @@ export function AdminChannel() {
                       <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Toggle Access Roles</h3>
                       <div className="flex flex-wrap gap-2">
                         {availableRoles?.filter(role => role.name !== 'banned' && role.name !== 'master').map((r) => {
-                          const disabled = selectedUser.id === profile?.id || (!isMaster && (r.name === 'admin' || r.name === 'mod' || selectedUser.assigned_roles?.includes('master') || selectedUser.assigned_roles?.includes('admin')));
+                          const disabled = selectedUser.id === profile?.id || 
+                            (profile?.role !== 'master' && (r.name === 'master' || r.name === 'admin')) || 
+                            (profile?.role !== 'master' && selectedUser.assigned_roles?.includes('master'));
+                          
                           const isAssigned = selectedUser.assigned_roles?.includes(r.name);
 
                           return (
                             <button
                               key={r.name}
                               disabled={disabled}
-                              onClick={() => setModActionData({ type: "role", label: `Toggle ${r.name.toUpperCase()} role`, isDestructive: false })}
+                              onClick={() => setModActionData({ type: "role", payload: r.name, label: `${isAssigned ? 'Revoke' : 'Assign'} ${r.name.toUpperCase()} role`, isDestructive: isAssigned })}
                               className={`flex items-center gap-1.5 px-4 py-2 rounded-[4px] border text-[11px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none ${disabled ? 'opacity-30 cursor-not-allowed' : 'hover:bg-[#111214] cursor-pointer'}`}
                               style={{
                                 backgroundColor: isAssigned ? `${r.color}20` : 'transparent',
@@ -420,7 +437,6 @@ export function AdminChannel() {
                     </div>
                   </div>
 
-                  {/* Moderation Toolkit & Logs Column */}
                   {selectedUser.id !== profile?.id && (
                     <div className="flex flex-col gap-6 w-full">
                       <div className="flex flex-col gap-4">
@@ -479,7 +495,7 @@ export function AdminChannel() {
                             </button>
                           ) : (
                             <button 
-                              onClick={() => setModActionData({ type: "ban", label: "Revoke Ban & Restore Access", isDestructive: false })}
+                              onClick={() => setModActionData({ type: "ban", payload: "user", label: "Revoke Ban & Restore Access", isDestructive: false })}
                               className="w-full flex items-center justify-center gap-2 p-3.5 bg-transparent border-2 border-[#23a559] hover:bg-[#23a559] text-[#23a559] hover:text-white rounded-[4px] transition-colors focus-visible:outline-none group cursor-pointer"
                             >
                               <Shield className="w-4 h-4" />
@@ -489,7 +505,6 @@ export function AdminChannel() {
                         </div>
                       </div>
 
-                      {/* Moderation History Log */}
                       <div className="flex flex-col gap-3 mt-4 border-t border-border pt-6">
                         <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
                           <History className="w-3.5 h-3.5" /> Moderation History
@@ -501,13 +516,13 @@ export function AdminChannel() {
                         ) : (
                           <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
                             {modLogs.map(log => (
-                              <div key={log.id} className="bg-[#1E1F22] p-3 rounded-[6px] border border-border flex flex-col gap-1.5">
+                              <div key={log.id} className="bg-[#1E1F22] p-3 rounded-[6px] border border-border flex flex-col gap-1.5 animate-fade-in">
                                 <div className="flex items-center justify-between">
                                   <span className="text-[11px] font-bold uppercase tracking-wider text-destructive">{log.action_type}</span>
                                   <span className="text-[10px] font-mono text-muted-foreground">{new Date(log.created_at).toLocaleString()}</span>
                                 </div>
                                 <p className="text-[12px] text-foreground leading-snug">"{log.reason}"</p>
-                                <span className="text-[10px] text-muted-foreground mt-1 text-right italic">- by {log.profiles.username}</span>
+                                <span className="text-[10px] text-muted-foreground mt-1 text-right italic">- by {log.profiles?.username || "Unknown"}</span>
                               </div>
                             ))}
                           </div>
@@ -523,7 +538,6 @@ export function AdminChannel() {
         </div>
       )}
 
-      {/* REASON MODAL WITH SOLID COLORS NO GLASSMORPHISM */}
       {modActionData && (
         <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-[#111214]/95 animate-fade-in">
           <div className="bg-[#1E1F22] border border-border rounded-[8px] p-6 max-w-md w-full shadow-2xl flex flex-col animate-slide-up">

@@ -56,7 +56,7 @@ export function useAdminIntel() {
 
   const showToast = useCallback((text: string, type: 'success' | 'error' = 'success') => {
     setToast({ text, type });
-    setTimeout(() => setToast(null), 3500);
+    setTimeout(() => setToast(null), 4000);
   }, []);
 
   const loadMetrics = useCallback(async () => {
@@ -164,20 +164,38 @@ export function useAdminIntel() {
 
   const logModAction = async (targetUserId: string, actionType: string, reason: string) => {
     if (!profile) return;
-    await supabase.from('moderation_logs').insert({
+    
+    // Create an optimistic local log so the UI updates instantly
+    const optimisticLog: ModLog = {
+      id: Math.random().toString(),
+      action_type: actionType,
+      reason: reason,
+      created_at: new Date().toISOString(),
+      moderator_id: profile.id,
+      profiles: { username: profile.username }
+    };
+    
+    setModLogs(prev => [optimisticLog, ...prev]);
+
+    // Strip the .select() chain to guarantee the insert processes without failing on foreign key relation hints
+    const { error } = await supabase.from('moderation_logs').insert({
       target_user_id: targetUserId,
       moderator_id: profile.id,
       action_type: actionType,
       reason: reason
     });
+
+    if (error) {
+      console.error("🚨 DB Insert Error for Moderation Log:", error.message);
+      showToast(`Audit log failed to save: ${error.message}`, "error");
+      
+      // Rollback the optimistic UI update if the DB rejects it
+      setModLogs(prev => prev.filter(log => log.id !== optimisticLog.id));
+    }
   };
 
   const updateUserRole = async (targetUserId: string, newRole: string, reason?: string) => {
     if (!profile) return false;
-    if ((newRole === 'master' || newRole === 'admin') && !isMaster) {
-      showToast("Only the Master account can assign Admin privileges.", "error");
-      return false;
-    }
 
     const { error } = await supabase.rpc('admin_assign_role', { target_user_id: targetUserId, role_name: newRole });
     
@@ -185,7 +203,7 @@ export function useAdminIntel() {
       showToast(`Database Error: ${error.message}`, "error");
       return false;
     } else {
-      if (reason) await logModAction(targetUserId, `Role Changed to ${newRole.toUpperCase()}`, reason);
+      if (reason) await logModAction(targetUserId, `ROLE TOGGLE: ${newRole.toUpperCase()}`, reason);
       
       if (selectedUser?.id === targetUserId) {
         const currentRoles = selectedUser.assigned_roles || [];
@@ -193,7 +211,7 @@ export function useAdminIntel() {
         const nextRoles = hasRole ? currentRoles.filter(r => r !== newRole) : [...currentRoles, newRole];
         setSelectedUser({ ...selectedUser, assigned_roles: nextRoles, role: nextRoles[0] || 'user' });
       }
-      fetchUsers(searchQuery);
+      fetchUsers(searchQuery, showBannedOnly);
       showToast(`Toggled role: ${newRole.toUpperCase()}`);
       if (newRole === 'banned') loadMetrics();
       return true;
@@ -233,16 +251,17 @@ export function useAdminIntel() {
     } else {
       showToast(`Role '${name}' deleted.`);
       loadMetrics();
-      fetchUsers(searchQuery);
+      fetchUsers(searchQuery, showBannedOnly);
     }
   };
 
   const executeModAction = async (targetUserId: string, actionType: string, reason: string, actionPromise: PromiseLike<any>, onSuccess?: () => void) => {
+    await logModAction(targetUserId, actionType, reason);
+    
     const { error } = await actionPromise;
     if (error) {
       showToast(`Failed to ${actionType.toLowerCase()}.`, "error");
     } else {
-      await logModAction(targetUserId, actionType, reason);
       showToast(`${actionType} successful.`);
       if (onSuccess) onSuccess();
     }
@@ -253,7 +272,7 @@ export function useAdminIntel() {
     triggerHaptic('heavy');
     executeModAction(selectedUser.id, "Reset Profile Info", reason, 
       supabase.from('profiles').update({ username: 'Moderated User', avatar_url: '', bio: '' }).eq('id', selectedUser.id), 
-      () => fetchUsers(searchQuery)
+      () => fetchUsers(searchQuery, showBannedOnly)
     );
   };
 
@@ -298,7 +317,8 @@ export function useAdminIntel() {
     if (!selectedUser) return;
     triggerHaptic('heavy');
     
-    // Perform nuke via RPC
+    await logModAction(selectedUser.id, "ACCOUNT NUKED & BANNED", reason);
+
     const { error } = await supabase.rpc('admin_nuke_account', { target_user_id: selectedUser.id });
 
     if (error) {
@@ -306,11 +326,12 @@ export function useAdminIntel() {
       return;
     }
 
-    await logModAction(selectedUser.id, "ACCOUNT NUKED & BANNED", reason);
-
     setUserIntel({ netWorth: 0, adCount: 0, isLoading: false });
     showToast(`ACCOUNT NUKED: ${selectedUser.username} has been eradicated.`);
-    fetchUsers(searchQuery);
+    
+    setSelectedUser(prev => prev ? { ...prev, assigned_roles: ['banned'], role: 'banned' } : null);
+    
+    fetchUsers(searchQuery, showBannedOnly);
     loadMetrics();
   };
 
@@ -318,7 +339,7 @@ export function useAdminIntel() {
     users, selectedUser, setSelectedUser, userIntel, metrics, availableRoles, modLogs,
     searchQuery, setSearchQuery, isLoading, toast, showToast, setToast,
     showBannedOnly, setShowBannedOnly,
-    handleSearch: (e: React.FormEvent) => { e.preventDefault(); fetchUsers(searchQuery); },
+    handleSearch: (e: React.FormEvent) => { e.preventDefault(); fetchUsers(searchQuery, showBannedOnly); },
     updateUserRole, createNewRole, deleteRole, handleResetProfile, handlePurgeAds, handlePurgeComments,
     handleWipeInventory, handleWipeWishlist, handleTotalAccountNuke,
     profile, isMaster
