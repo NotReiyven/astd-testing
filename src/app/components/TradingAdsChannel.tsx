@@ -24,6 +24,7 @@ import { CustomDropdown } from "./MainCanvas/CustomDropdown";
 import { useAdInteractionStore } from "../../store/useAdInteractionStore";
 import { AdInteractionModal } from "./AdInteractionModal";
 import { HoldToConfirmButton } from "./shared/Formatters";
+import { safeOpenExternal } from "../../store/useExternalLinkStore";
 
 const SORT_OPTIONS = {
   "newest": "Recently Posted",
@@ -246,7 +247,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
 
       try {
         await navigator.clipboard.writeText(messageStr);
-        window.open(`https://discord.com/users/${ad.profiles.discord_id}`, '_blank');
+        safeOpenExternal(`https://discord.com/users/${ad.profiles.discord_id}`);
       } catch (err) {
         console.error("Clipboard failed", err);
       }
@@ -465,7 +466,6 @@ export function TradingAdsChannel() {
 
       <div className="flex-shrink-0 flex flex-col px-4 py-3 border-b border-border z-20 gap-3 bg-card">
         <div className="flex items-center justify-between gap-2.5">
-          {/* Hidden on mobile viewports */}
           <div className="hidden sm:flex items-center gap-2.5 min-w-0">
             <div className="relative flex items-center justify-center shrink-0">
               <div className="w-2.5 h-2.5 bg-primary rounded-full z-10" />

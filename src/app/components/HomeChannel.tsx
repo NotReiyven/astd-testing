@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { ExternalLink, Users, Wrench, ChevronRight, Code2, Check, Terminal, MessageSquarePlus, BookOpen, FileSpreadsheet, Info, Award, FileClock, Home } from "lucide-react";
 import { useUnits } from "../../context/UnitContext";
+import { safeOpenExternal } from "../../store/useExternalLinkStore";
 
 const FIRE_ZIO_AVATAR = "/units/firezio.webp";
 
@@ -36,7 +37,6 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
   const [activeSection, setActiveSection] = useState<string>("info");
   const { changelog } = useUnits();
 
-  // Scrollspy Effect
   useEffect(() => {
     const handleScroll = () => {
       const sections = ["info", "updates", "credits"];
@@ -69,7 +69,6 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
     }
   }, [guideState]);
 
-  // Terminal Easter Egg State
   const [secretClicks, setSecretClicks] = useState(0);
   const [secretUnlocked, setSecretUnlocked] = useState(false);
   const [secretQuoteIndex, setSecretQuoteIndex] = useState(0);
@@ -121,7 +120,6 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
     <div className="flex-1 w-full h-full font-sans relative overflow-hidden flex flex-col bg-background">
       <div className="flex flex-col md:flex-row gap-8 max-w-6xl mx-auto w-full h-full p-6 md:p-8 overflow-hidden">
 
-        {/* Sidebar Navigation */}
         <nav className="hidden md:flex flex-col w-56 shrink-0 sticky top-0 self-start pt-2 z-10">
           <div className="flex items-center justify-between mb-6 text-foreground">
             <div className="flex items-center gap-2.5">
@@ -162,10 +160,8 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
           )}
         </nav>
 
-        {/* Main Content */}
         <div id="home-content" className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-16 flex flex-col gap-12 z-10">
 
-          {/* Intro */}
           <div className="flex flex-col gap-3">
             <h1 className="text-[28px] md:text-[32px] font-black text-foreground tracking-tight">ASTD Value List</h1>
             <p className="text-[15px] text-muted-foreground leading-relaxed max-w-3xl font-medium">
@@ -173,7 +169,6 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
             </p>
           </div>
 
-          {/* Section: General Info */}
           <section id="section-info" className="flex flex-col gap-6 pt-2">
             <div className="flex items-center gap-2 border-b border-border pb-3">
               <Info className="w-5 h-5 text-primary" />
@@ -198,9 +193,9 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
                 <p className="text-[13px] leading-relaxed text-muted-foreground flex-1 font-medium">
                   This is a live, high-performance interface for the official ASTD spreadsheet. It operates dynamically—when the value list updates, this site updates instantly.
                 </p>
-                <a href="https://docs.google.com/spreadsheets/d/1Z20NUscF9Id2Sss-osT-Xq06gz9ooikt6Kjtianeg0I/edit?gid=163005933#gid=163005933" target="_blank" rel="noopener noreferrer" className="mt-4 bg-muted hover:bg-white/10 text-foreground px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 border border-border cursor-pointer">
+                <button onClick={() => safeOpenExternal("https://docs.google.com/spreadsheets/d/1Z20NUscF9Id2Sss-osT-Xq06gz9ooikt6Kjtianeg0I/edit?gid=163005933#gid=163005933")} className="mt-4 bg-muted hover:bg-white/10 text-foreground px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 border border-border cursor-pointer">
                   Open Official Spreadsheet <ExternalLink className="w-4 h-4" />
-                </a>
+                </button>
               </div>
 
               <div className="bg-card border border-border rounded-[8px] p-5 flex flex-col h-full shadow-sm">
@@ -211,18 +206,17 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
                   Spotted a bad value? Want to complain about a scam? Join the Discord and talk to the team directly, or submit a report.
                 </p>
                 <div className="flex flex-col gap-2 mt-4">
-                  <a href="https://discord.gg/Q7JTvPUEM" target="_blank" rel="noopener noreferrer" className="bg-muted hover:bg-white/10 text-foreground border border-border px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                  <button onClick={() => safeOpenExternal("https://discord.gg/Q7JTvPUEM")} className="bg-muted hover:bg-white/10 text-foreground border border-border px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer">
                     Join Discord Server <ExternalLink className="w-4 h-4" />
-                  </a>
-                  <a href="https://docs.google.com/forms/d/e/1FAIpQLSeUAAvBHod23it13WYD8XK61K2C-BFCWJ8tGwJxA7c0sCCVvA/viewform" target="_blank" rel="noopener noreferrer" className="bg-muted hover:bg-white/10 text-foreground border border-border px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                  </button>
+                  <button onClick={() => safeOpenExternal("https://docs.google.com/forms/d/e/1FAIpQLSeUAAvBHod23it13WYD8XK61K2C-BFCWJ8tGwJxA7c0sCCVvA/viewform")} className="bg-muted hover:bg-white/10 text-foreground border border-border px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer">
                     Submit Feedback Form <ExternalLink className="w-4 h-4" />
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Section: Patch Notes */}
           <section id="section-updates" className="flex flex-col gap-6 pt-2">
             <div className="flex items-center gap-2 border-b border-border pb-3">
               <FileClock className="w-5 h-5 text-primary" />
@@ -260,7 +254,6 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
             )}
           </section>
 
-          {/* Section: Credits */}
           <section id="section-credits" className="flex flex-col gap-6 pt-2">
             <div className="flex items-center gap-2 border-b border-border pb-3">
               <Award className="w-5 h-5 text-primary" />

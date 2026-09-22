@@ -140,16 +140,15 @@ export function TopBar({
             />
             <button 
               onClick={() => { setMobileSearchOpen(false); setGlobalSearchQuery(""); }} 
-              className="p-3 text-muted-foreground hover:text-foreground focus-visible:outline-none"
+              className="p-3 text-muted-foreground hover:text-foreground focus-visible:outline-none min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         )}
 
-        {/* LEFT SECTION: Roster Toggle & Dynamic Title/Subtitle */}
         <div className="flex items-center gap-3 pr-2 flex-1 min-w-0">
-          <button onClick={() => setIsRosterOpen(!isRosterOpen)} className={`p-1.5 transition-colors flex-shrink-0 focus-visible:outline-none rounded-[4px] border border-transparent hover:bg-muted ${isRosterOpen ? 'text-foreground border-border' : 'text-muted-foreground hover:text-foreground'}`}>
+          <button onClick={() => setIsRosterOpen(!isRosterOpen)} className={`p-2 transition-colors flex-shrink-0 focus-visible:outline-none rounded-[4px] border border-transparent hover:bg-muted min-h-[44px] min-w-[44px] flex items-center justify-center ${isRosterOpen ? 'text-foreground border-border' : 'text-muted-foreground hover:text-foreground'}`}>
             <PanelLeft className="w-5 h-5 md:w-[18px] md:h-[18px]" />
           </button>
 
@@ -170,7 +169,6 @@ export function TopBar({
           </div>
         </div>
 
-        {/* RIGHT SECTION: Controls */}
         <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
           <LiveAvatars />
 
@@ -179,11 +177,11 @@ export function TopBar({
               <div className="relative" ref={profileMenuRef}>
                 <button 
                   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                  className="flex items-center justify-center p-1 bg-popover hover:bg-muted border border-border rounded-[4px] transition-colors shrink-0 cursor-pointer focus-visible:outline-none"
+                  className="flex items-center justify-center p-1 bg-popover hover:bg-muted border border-border rounded-[4px] transition-colors shrink-0 cursor-pointer focus-visible:outline-none min-h-[44px] min-w-[44px]"
                   title="Account Settings"
                 >
                   <div className="relative">
-                    <img src={profile.avatar_url} alt="Avatar" className="w-6 h-6 rounded-[2px] object-cover bg-background" />
+                    <img src={profile.avatar_url} alt="Avatar" className="w-7 h-7 rounded-[2px] object-cover bg-background" />
                     <div 
                       className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-popover"
                       style={{ backgroundColor: STATUS_COLORS[profile.status] || STATUS_COLORS.offline }}
@@ -238,7 +236,7 @@ export function TopBar({
             ) : (
               <button 
                 onClick={loginWithDiscord}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/80 text-primary-foreground rounded-[4px] text-[12px] font-bold transition-colors border border-transparent shrink-0 cursor-pointer"
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:bg-primary/80 text-primary-foreground rounded-[4px] text-[12px] font-bold transition-colors border border-transparent shrink-0 cursor-pointer min-h-[44px]"
               >
                 <LogIn className="w-4 h-4" />
                 <span className="hidden sm:inline">Login</span>
@@ -248,7 +246,7 @@ export function TopBar({
 
           <button 
             onClick={() => setCommandPaletteOpen(true)}
-            className="flex items-center justify-center gap-2 px-2 py-1.5 md:px-2.5 rounded-[4px] bg-input border border-border hover:border-muted-foreground text-muted-foreground transition-colors text-[12px] font-bold focus-visible:outline-none shrink-0 cursor-pointer"
+            className="flex items-center justify-center gap-2 px-3 py-2 md:px-2.5 rounded-[4px] bg-input border border-border hover:border-muted-foreground text-muted-foreground transition-colors text-[12px] font-bold focus-visible:outline-none shrink-0 cursor-pointer min-h-[44px]"
             title="Open Command Palette"
           >
             <Terminal className="w-4 h-4 sm:hidden flex-shrink-0" />
@@ -259,7 +257,7 @@ export function TopBar({
 
           <button 
             onClick={() => setMobileSearchOpen(true)}
-            className="md:hidden flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] border border-border bg-input text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
+            className="md:hidden flex-shrink-0 w-11 h-11 flex items-center justify-center rounded-[4px] border border-border bg-input text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
           >
             <Search className="w-4 h-4" />
           </button>

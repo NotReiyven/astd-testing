@@ -19,6 +19,7 @@ import { triggerHaptic } from "../../data/helpers";
 import { getUnitConservativeValue } from "./InventoryChannel/inventoryUtils";
 import { getAvatarStyle, getInitials } from "./TradeAnalyzer/summaryUtils";
 import { TradeCard, MasterUnit } from "../../types";
+import { safeOpenExternal } from "../../store/useExternalLinkStore";
 
 function getTimeAgoShort(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -181,7 +182,7 @@ export function AdInteractionModal() {
 
     try {
       await navigator.clipboard.writeText(messageStr);
-      window.open(`https://discord.com/users/${activeAd.profiles.discord_id}`, '_blank');
+      safeOpenExternal(`https://discord.com/users/${activeAd.profiles.discord_id}`);
     } catch (err) {
       console.error("Clipboard failed", err);
     }

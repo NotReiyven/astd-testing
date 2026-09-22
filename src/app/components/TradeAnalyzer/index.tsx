@@ -56,7 +56,6 @@ export function TradeAnalyzerPanel({
 
   const { panelWidth, startResize, panelRef } = usePanelResize(480, 420, 800);
 
-  // Custom Hook Injections
   const { undoCache, confirmClear, saveUndoState, handleSafeClear, handleUndo } = useTradeUndo();
   const { isGlobalDragging, smartMenuOpen, setSmartMenuOpen, initialParserText, setInitialParserText } = useTradeGlobalInput();
 
@@ -73,7 +72,6 @@ export function TradeAnalyzerPanel({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Global Escape Key to close Analyzer (if no search/dropdown is focused)
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape" || e.key === "Esc") {
@@ -90,19 +88,17 @@ export function TradeAnalyzerPanel({
     return () => window.removeEventListener('keydown', handleEsc);
   }, [isOpen, onClose, smartMenuOpen]);
 
-  const { giveTotal, getTotal, givePercent, getPercent, forecastData } = useMemo(() => {
+  const { giveTotal, getTotal, givePercent, getPercent } = useMemo(() => {
     const gTotal = giveItems.reduce((s, c) => s + c.value * c.qty, 0);
     const tTotal  = getItems.reduce((s, c) => s + c.value * c.qty, 0);
     const totalTradeValue = gTotal + tTotal;
-    const forecast = getTradeForecast(giveItems, getItems, ALL_UNITS);
     return {
       giveTotal: gTotal,
       getTotal: tTotal,
       givePercent: totalTradeValue === 0 ? 50 : (gTotal / totalTradeValue) * 100,
-      getPercent: totalTradeValue === 0 ? 50 : (tTotal / totalTradeValue) * 100,
-      forecastData: forecast
+      getPercent: totalTradeValue === 0 ? 50 : (tTotal / totalTradeValue) * 100
     };
-  }, [giveItems, getItems, ALL_UNITS]);
+  }, [giveItems, getItems]);
 
   const handleShare = useCallback(() => {
     triggerHaptic('success');
@@ -144,8 +140,6 @@ export function TradeAnalyzerPanel({
 
   const onTouchStart = (e: React.TouchEvent) => {
     if (!isMobile || !isOpen) return;
-    if ((e.target as HTMLElement).closest('.custom-scrollbar, button, input, textarea, a, select')) return;
-
     touchStartYRef.current = e.touches[0].clientY;
     lastYRef.current = e.touches[0].clientY;
     lastTimeRef.current = Date.now();
@@ -185,7 +179,6 @@ export function TradeAnalyzerPanel({
     if (sheetRef.current) {
       sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
 
-      // Momentum dismiss
       if (dy > window.innerHeight * 0.25 || velocityRef.current > 0.4) {
         closeSheet();
         sheetRef.current.style.transform = 'translateY(100%)';
@@ -205,17 +198,11 @@ export function TradeAnalyzerPanel({
 
   const renderCalculatorContent = () => (
     <>
-      <div 
-        className="flex-shrink-0 flex items-center gap-2 px-3 md:px-4 py-3 md:py-4 border-b border-border relative z-20 bg-popover"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-      >
+      <div className="flex-shrink-0 flex items-center gap-2 px-3 md:px-4 py-3 md:py-4 border-b border-border relative z-20 bg-popover">
         <div className="w-7 h-7 flex-shrink-0 rounded-[4px] flex items-center justify-center bg-card border border-border">
           <Calculator className="w-3.5 h-3.5 text-foreground" />
         </div>
 
-        {/* KEEPING SPACE EMPTY ON MOBILE, SHOWING TITLE ON DESKTOP */}
         {isComposerOpen ? (
           <span className="text-[14px] md:text-[15px] font-bold flex-1 text-foreground truncate select-none">Create Listing</span>
         ) : (

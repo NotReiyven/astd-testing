@@ -10,6 +10,7 @@ import { AquaGuideOverlay } from "./components/guides/AquaGuideOverlay";
 import { TopBar } from "./components/layout/TopBar";
 import { SyncBanner } from "./components/layout/SyncBanner";
 import { WelcomeModal } from "./components/WelcomeModal";
+import { ExternalLinkModal } from "./components/layout/ExternalLinkModal";
 import { MiniProfilePopout } from "./components/layout/MiniProfilePopout";
 import { useTradeStore } from "../store/useTradeStore";
 import { useLayoutStore } from "../store/useLayoutStore";
@@ -63,6 +64,15 @@ export default function App() {
   const [isAnalyzerOpen, setIsAnalyzerOpen] = useStickyState(false, "astd_analyzer", isBoolean);
 
   const { bootStage, isMobile } = useAppBoot();
+
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      document.body.style.overflow = isRosterOpen ? "hidden" : "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isRosterOpen]);
 
   const [banReason, setBanReason] = useState<string>("Violation of Terms of Service.");
   useEffect(() => {
@@ -194,6 +204,7 @@ export default function App() {
         <Suspense fallback={null}>
           <WelcomeModal />
           <HistoryModal />
+          <ExternalLinkModal />
           <AquaGuideOverlay guideState={guideState} onEndGuide={endGuide} />
           <MiniProfilePopout />
 

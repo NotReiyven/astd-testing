@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/hooks/useMobileSwipe.ts
+// ================================================
+
 import { useRef, useCallback } from 'react';
 
 export function useMobileSwipe(isRosterOpen: boolean, setIsRosterOpen: (v: boolean) => void) {
@@ -7,7 +11,7 @@ export function useMobileSwipe(isRosterOpen: boolean, setIsRosterOpen: (v: boole
     const x = e.touches[0].clientX;
     const y = e.touches[0].clientY;
 
-    const edgeWidth = 40;
+    const edgeWidth = 20;
     const isLeftEdge = x <= edgeWidth;
     const isSafeYZone = y > window.innerHeight * 0.2 && y < window.innerHeight * 0.8;
 

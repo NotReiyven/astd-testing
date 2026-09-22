@@ -20,6 +20,7 @@ import { getAvatarStyle, getInitials } from "./TradeAnalyzer/summaryUtils";
 import { triggerHaptic } from "../../data/helpers";
 import { StatusIcon } from "./shared/Formatters";
 import { TradeCard, MasterUnit } from "../../types";
+import { safeOpenExternal } from "../../store/useExternalLinkStore";
 
 const getRoleConfig = (role: string) => {
   switch (role) {
@@ -183,7 +184,7 @@ export function ProfileChannel() {
     if (!profileData?.discord_id) return;
     triggerHaptic('medium');
     navigator.clipboard.writeText(`Hey! Saw your profile on ASTD Value List. Are you around to trade?`);
-    window.open(`https://discord.com/users/${profileData.discord_id}`, '_blank');
+    safeOpenExternal(`https://discord.com/users/${profileData.discord_id}`);
   };
 
   const handleInspectVault = () => {
@@ -242,7 +243,6 @@ export function ProfileChannel() {
   return (
     <div className="flex-1 w-full h-full font-sans relative overflow-hidden flex flex-col overflow-y-auto custom-scrollbar pb-16 z-10 bg-background">
 
-      {/* TELEPORT RETURN BAR */}
       {viewingProfileId && (
         <div className="w-full bg-card border-b border-border p-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
           <button 
@@ -254,7 +254,6 @@ export function ProfileChannel() {
         </div>
       )}
 
-      {/* HERO HEADER */}
       <div className="w-full relative shrink-0">
         <div 
           className="w-full h-[140px] md:h-[160px] transition-colors duration-300 relative border-b border-border"
@@ -329,7 +328,6 @@ export function ProfileChannel() {
 
       <div className="px-4 md:px-8 max-w-7xl mx-auto w-full pt-6 flex flex-col gap-6">
 
-        {/* STATS ROW */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-card border border-border rounded-[6px] p-4 flex flex-col justify-between shadow-sm">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Reputation</span>
@@ -351,10 +349,8 @@ export function ProfileChannel() {
           </div>
         </div>
 
-        {/* BODY: Two Columns */}
         <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start">
 
-          {/* Left Sidebar */}
           <div className="flex flex-col gap-6 lg:sticky lg:top-6">
 
             <div className="bg-card border border-border rounded-[6px] p-5 shadow-sm flex flex-col gap-4">
@@ -422,7 +418,6 @@ export function ProfileChannel() {
 
           </div>
 
-          {/* Right Main Area */}
           <div className="flex-1 flex flex-col min-w-0">
 
             <div className="flex items-center gap-8 border-b border-border mb-6 px-2">
@@ -588,7 +583,6 @@ export function ProfileChannel() {
         </div>
       </div>
 
-      {/* Edit Profile Modal */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-black/80 animate-fade-in">
           <div className="bg-card border border-border rounded-[6px] p-6 max-w-md w-full shadow-2xl flex flex-col relative">
