@@ -7,7 +7,7 @@ import {
   Search, ShieldAlert, Shield, Package, 
   Trash2, Ban, X, Copy, Check, Activity, 
   Users, Megaphone, ArrowRight, AlertTriangle, 
-  UserCircle2, ArrowUpRight, RefreshCw, Eraser, MessageSquareOff, Plus, Settings2, UsersRound
+  UserCircle2, ArrowUpRight, RefreshCw, Eraser, MessageSquareOff, Plus, Settings2, UsersRound, History
 } from "lucide-react";
 import { useInventoryStore } from "../../store/useInventoryStore";
 import { useAdminIntel } from "../../hooks/useAdminIntel";
@@ -17,20 +17,22 @@ export function AdminChannel() {
   const { setViewingUser } = useInventoryStore();
 
   const {
-    users, selectedUser, setSelectedUser, userIntel, metrics, availableRoles,
-    searchQuery, setSearchQuery, isLoading, toast, setToast,
+    users, selectedUser, setSelectedUser, userIntel, metrics, availableRoles, modLogs,
+    searchQuery, setSearchQuery, isLoading, toast, setToast, showBannedOnly, setShowBannedOnly,
     handleSearch, updateUserRole, createNewRole, deleteRole, handleResetProfile, handlePurgeAds, handlePurgeComments,
     handleWipeInventory, handleWipeWishlist, handleTotalAccountNuke,
     profile, isMaster
   } = useAdminIntel();
 
-  // Navigation State
   const [adminTab, setAdminTab] = useState<"users" | "roles">("users");
 
-  // Role Management State
   const [newRoleName, setNewRoleName] = useState("");
   const [newRoleColor, setNewRoleColor] = useState("#10B981");
   const [newRoleRank, setNewRoleRank] = useState(10);
+
+  // Moderation Modal State
+  const [modActionData, setModActionData] = useState<{ type: string, label: string, isDestructive: boolean } | null>(null);
+  const [modReason, setModReason] = useState("");
 
   const handleCopyId = (id: string) => {
     navigator.clipboard.writeText(id);
@@ -54,35 +56,50 @@ export function AdminChannel() {
 
   const getPrimaryRoleDot = (assignedRoles: string[]) => {
     if (!assignedRoles || assignedRoles.length === 0) return '#23a559';
-    // Sort roles by rank to find the primary color dot
     const matched = assignedRoles
       .map(r => availableRoles?.find(ar => ar.name === r))
       .filter(Boolean)
       .sort((a, b) => (a!.rank) - (b!.rank));
-    
     return matched.length > 0 ? matched[0]!.color : '#23a559';
+  };
+
+  const executeModAction = () => {
+    if (!modActionData || !modReason.trim() || !selectedUser) return;
+    
+    switch (modActionData.type) {
+      case "purge_ads": handlePurgeAds(modReason); break;
+      case "reset_profile": handleResetProfile(modReason); break;
+      case "purge_comments": handlePurgeComments(modReason); break;
+      case "wipe_inv": handleWipeInventory(modReason); break;
+      case "wipe_wishlist": handleWipeWishlist(modReason); break;
+      case "nuke": handleTotalAccountNuke(modReason); break;
+      case "ban": updateUserRole(selectedUser.id, "banned", modReason); break;
+    }
+    
+    setModActionData(null);
+    setModReason("");
   };
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background h-full select-none font-sans relative">
       
       {/* TOP HEADER */}
-      <div className="flex-shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4 px-4 md:px-6 py-4 bg-card border-b border-border shadow-sm z-20">
+      <div className="flex-shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4 px-4 md:px-6 py-4 bg-[#111214] border-b border-border shadow-sm z-20">
         <h2 className="text-[16px] font-black text-foreground tracking-tight uppercase flex items-center gap-2">
           <ShieldAlert className="w-5 h-5 text-destructive" /> Tel Aviv Center
         </h2>
         <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar">
-          <div className="flex items-center gap-2 bg-popover border border-border px-3 py-1.5 rounded-[4px] shrink-0">
+          <div className="flex items-center gap-2 bg-[#1E1F22] border border-border px-3 py-1.5 rounded-[4px] shrink-0">
             <Users className="w-3.5 h-3.5 text-primary" />
             <span className="text-[11px] font-bold text-muted-foreground uppercase">Registered Users</span>
             <span className="text-[12px] font-mono font-black text-foreground ml-1">{metrics.totalUsers.toLocaleString()}</span>
           </div>
-          <div className="flex items-center gap-2 bg-popover border border-border px-3 py-1.5 rounded-[4px] shrink-0">
+          <div className="flex items-center gap-2 bg-[#1E1F22] border border-border px-3 py-1.5 rounded-[4px] shrink-0">
             <Megaphone className="w-3.5 h-3.5 text-[#23a559]" />
             <span className="text-[11px] font-bold text-muted-foreground uppercase">Active Ads</span>
             <span className="text-[12px] font-mono font-black text-foreground ml-1">{metrics.activeAds.toLocaleString()}</span>
           </div>
-          <div className="flex items-center gap-2 bg-popover border border-border px-3 py-1.5 rounded-[4px] shrink-0">
+          <div className="flex items-center gap-2 bg-[#1E1F22] border border-border px-3 py-1.5 rounded-[4px] shrink-0">
             <Ban className="w-3.5 h-3.5 text-destructive" />
             <span className="text-[11px] font-bold text-muted-foreground uppercase">Banned</span>
             <span className="text-[12px] font-mono font-black text-foreground ml-1">{metrics.bannedUsers.toLocaleString()}</span>
@@ -90,32 +107,26 @@ export function AdminChannel() {
         </div>
       </div>
 
-      {/* ADMIN TABS (Only visible to Master) */}
       {isMaster && (
-        <div className="flex-shrink-0 bg-card border-b border-border px-4 md:px-6 py-2 flex gap-2 shadow-sm z-10">
+        <div className="flex-shrink-0 bg-[#1E1F22] border-b border-border px-4 md:px-6 py-2 flex gap-2 shadow-sm z-10">
           <button 
             onClick={() => setAdminTab("users")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-[6px] text-[12px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none ${adminTab === "users" ? "bg-primary text-primary-foreground shadow-sm" : "bg-popover text-muted-foreground hover:text-foreground hover:bg-muted border border-border"}`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-[6px] text-[12px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none ${adminTab === "users" ? "bg-primary text-primary-foreground" : "bg-[#111214] text-muted-foreground hover:text-foreground border border-border"}`}
           >
             <UsersRound className="w-4 h-4" /> User Management
           </button>
           <button 
             onClick={() => setAdminTab("roles")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-[6px] text-[12px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none ${adminTab === "roles" ? "bg-primary text-primary-foreground shadow-sm" : "bg-popover text-muted-foreground hover:text-foreground hover:bg-muted border border-border"}`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-[6px] text-[12px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none ${adminTab === "roles" ? "bg-primary text-primary-foreground" : "bg-[#111214] text-muted-foreground hover:text-foreground border border-border"}`}
           >
             <Settings2 className="w-4 h-4" /> Role Management
           </button>
         </div>
       )}
 
-      {/* MAIN CONTENT AREA */}
       {adminTab === "roles" && isMaster ? (
-        // ==========================================
-        // ROLE MANAGEMENT DASHBOARD
-        // ==========================================
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 animate-fade-in bg-background">
           <div className="max-w-3xl mx-auto flex flex-col gap-6">
-            
             <div className="flex items-center gap-3 mb-2">
               <div className="w-12 h-12 rounded-[8px] bg-primary/10 border border-primary/30 flex items-center justify-center">
                 <Settings2 className="w-6 h-6 text-primary" />
@@ -126,8 +137,7 @@ export function AdminChannel() {
               </div>
             </div>
 
-            {/* Create Role Form */}
-            <form onSubmit={handleCreateRole} className="bg-card border border-border rounded-[8px] p-5 shadow-sm flex flex-col gap-4">
+            <form onSubmit={handleCreateRole} className="bg-[#1E1F22] border border-border rounded-[8px] p-5 flex flex-col gap-4">
               <h3 className="text-[12px] font-bold text-foreground uppercase tracking-wider border-b border-border pb-2">Create New Role</h3>
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 flex flex-col gap-1.5">
@@ -137,14 +147,14 @@ export function AdminChannel() {
                     value={newRoleName}
                     onChange={(e) => setNewRoleName(e.target.value)}
                     placeholder="e.g. contributor"
-                    className="bg-input border border-border rounded-[4px] px-3 py-2 text-[13px] text-foreground focus:border-primary outline-none transition-colors w-full"
+                    className="bg-[#111214] border border-border rounded-[4px] px-3 py-2 text-[13px] text-foreground focus:border-primary outline-none transition-colors w-full"
                     maxLength={20}
                     required
                   />
                 </div>
                 <div className="w-full sm:w-[120px] flex flex-col gap-1.5">
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Color (Hex)</label>
-                  <div className="flex items-center gap-2 bg-input border border-border rounded-[4px] p-1.5 h-[38px]">
+                  <div className="flex items-center gap-2 bg-[#111214] border border-border rounded-[4px] p-1.5 h-[38px]">
                     <input 
                       type="color" 
                       value={newRoleColor}
@@ -161,31 +171,30 @@ export function AdminChannel() {
                     value={newRoleRank}
                     onChange={(e) => setNewRoleRank(parseInt(e.target.value) || 10)}
                     min={3} max={98}
-                    className="bg-input border border-border rounded-[4px] px-3 py-2 text-[13px] text-foreground font-mono focus:border-primary outline-none transition-colors w-full h-[38px]"
+                    className="bg-[#111214] border border-border rounded-[4px] px-3 py-2 text-[13px] text-foreground font-mono focus:border-primary outline-none transition-colors w-full h-[38px]"
                   />
                 </div>
               </div>
               <div className="flex justify-end pt-2">
-                <button type="submit" className="bg-[#23a559] hover:bg-[#1f914e] text-white px-5 py-2 rounded-[4px] text-[12px] font-bold flex items-center gap-1.5 transition-colors shadow-sm focus-visible:outline-none">
+                <button type="submit" className="bg-[#23a559] hover:bg-[#1f914e] text-white px-5 py-2 rounded-[4px] text-[12px] font-bold flex items-center gap-1.5 transition-colors focus-visible:outline-none">
                   <Plus className="w-4 h-4" /> Add Role
                 </button>
               </div>
             </form>
 
-            {/* Existing Roles List */}
-            <div className="bg-card border border-border rounded-[8px] flex flex-col shadow-sm overflow-hidden">
-              <div className="bg-popover px-5 py-3 border-b border-border">
+            <div className="bg-[#1E1F22] border border-border rounded-[8px] flex flex-col overflow-hidden">
+              <div className="bg-[#111214] px-5 py-3 border-b border-border">
                 <h3 className="text-[12px] font-bold text-foreground uppercase tracking-wider">Active Roles</h3>
               </div>
               <div className="flex flex-col p-2 gap-1.5">
                 {availableRoles?.map(role => {
                   const isCore = ['master', 'admin', 'mod', 'user', 'banned'].includes(role.name);
                   return (
-                    <div key={role.name} className="flex items-center justify-between p-3 bg-popover border border-border rounded-[6px] hover:border-muted-foreground transition-colors">
+                    <div key={role.name} className="flex items-center justify-between p-3 bg-[#111214] border border-border rounded-[6px] hover:border-muted-foreground transition-colors">
                       <div className="flex items-center gap-4">
                         <span 
-                          className="px-2.5 py-1 rounded-[4px] text-[11px] font-black uppercase tracking-wider min-w-[80px] text-center"
-                          style={{ backgroundColor: `${role.color}20`, color: role.color }}
+                          className="px-2.5 py-1 rounded-[4px] text-[11px] font-black uppercase tracking-wider min-w-[80px] text-center border"
+                          style={{ backgroundColor: `${role.color}15`, borderColor: `${role.color}40`, color: role.color }}
                         >
                           {role.name}
                         </span>
@@ -212,13 +221,10 @@ export function AdminChannel() {
           </div>
         </div>
       ) : (
-        // ==========================================
-        // USER MANAGEMENT DASHBOARD
-        // ==========================================
         <div className="flex-1 flex overflow-hidden animate-fade-in">
           {/* Left Column: Sorted User List */}
-          <div className={`flex flex-col w-full ${selectedUser ? 'hidden md:flex md:w-[350px]' : 'flex'} shrink-0 border-r border-border bg-card`}>
-            <div className="p-3 border-b border-border bg-popover">
+          <div className={`flex flex-col w-full ${selectedUser ? 'hidden md:flex md:w-[350px]' : 'flex'} shrink-0 border-r border-border bg-[#1E1F22]`}>
+            <div className="p-3 border-b border-border bg-[#111214] flex flex-col gap-2">
               <form onSubmit={handleSearch} className="relative w-full">
                 <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -226,9 +232,15 @@ export function AdminChannel() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search by username or ID..."
-                  className="w-full bg-card text-foreground text-[13px] pl-9 pr-3 py-2 rounded-[4px] outline-none border border-border focus:border-primary transition-colors shadow-inner font-medium"
+                  className="w-full bg-[#1E1F22] text-foreground text-[13px] pl-9 pr-3 py-2 rounded-[4px] outline-none border border-border focus:border-primary transition-colors font-medium"
                 />
               </form>
+              <button 
+                onClick={() => setShowBannedOnly(!showBannedOnly)}
+                className={`w-full py-1.5 rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors border ${showBannedOnly ? 'bg-destructive/10 text-destructive border-destructive/30' : 'bg-[#1E1F22] text-muted-foreground border-border hover:bg-[#2B2D31]'}`}
+              >
+                {showBannedOnly ? "Showing Banned Users Only" : "Filter: Banned Users"}
+              </button>
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
@@ -244,25 +256,25 @@ export function AdminChannel() {
                   {users.map(u => {
                     const isSelected = selectedUser?.id === u.id;
                     const primaryColor = getPrimaryRoleDot(u.assigned_roles);
+                    const isBanned = u.assigned_roles?.includes('banned');
                     
                     return (
                       <button
                         key={u.id}
                         onClick={() => { setSelectedUser(u); triggerHaptic('light'); }}
-                        className={`flex items-start gap-3 w-full p-2.5 rounded-[4px] transition-colors focus-visible:outline-none text-left ${isSelected ? 'bg-primary/20 text-white border border-primary/50' : 'hover:bg-popover text-muted-foreground border border-transparent'}`}
+                        className={`flex items-start gap-3 w-full p-2.5 rounded-[4px] transition-colors focus-visible:outline-none text-left border ${isSelected ? 'bg-primary/20 text-white border-primary/50' : 'hover:bg-[#2B2D31] text-muted-foreground border-transparent'} ${isBanned && !isSelected ? 'opacity-60' : ''}`}
                       >
                         <div className="relative shrink-0">
-                          <img src={u.avatar_url || "/units/firezio.webp"} className="w-9 h-9 rounded-full bg-popover object-cover border border-border" alt="" />
+                          <img src={u.avatar_url || "/units/firezio.webp"} className="w-9 h-9 rounded-full bg-[#111214] object-cover border border-border" alt="" />
                           <div 
-                            className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card" 
+                            className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#1E1F22]" 
                             style={{ backgroundColor: primaryColor }}
                           />
                         </div>
                         
                         <div className="flex flex-col min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                            <span className="text-[14px] font-bold truncate leading-tight text-foreground">{u.username}</span>
-                            {/* RENDER ALL ASSIGNED ROLES */}
+                            <span className={`text-[14px] font-bold truncate leading-tight ${isBanned ? 'text-destructive line-through' : 'text-foreground'}`}>{u.username}</span>
                             {u.assigned_roles?.map(roleName => {
                               const matchedRole = availableRoles?.find(r => r.name === roleName);
                               return (
@@ -296,20 +308,20 @@ export function AdminChannel() {
           <div className={`flex-1 flex flex-col bg-background relative overflow-hidden ${!selectedUser ? 'hidden md:flex' : 'flex'}`}>
             {!selectedUser ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-background">
-                <UserCircle2 className="w-16 h-16 text-muted-foreground mb-4 drop-shadow-sm" />
+                <UserCircle2 className="w-16 h-16 text-muted-foreground mb-4 opacity-50" />
                 <h3 className="text-[16px] font-bold text-muted-foreground">No Target Selected</h3>
                 <p className="text-[13px] text-muted-foreground/80 mt-1 max-w-xs">Select a user from the list to view their profile, inspect their vault, or take moderation action.</p>
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto custom-scrollbar animate-fade-in pb-10">
                 
-                <div className="md:hidden p-3 border-b border-border bg-card">
+                <div className="md:hidden p-3 border-b border-border bg-[#1E1F22]">
                   <button onClick={() => setSelectedUser(null)} className="flex items-center gap-1.5 text-[12px] font-bold text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer">
                     <ArrowRight className="w-4 h-4 rotate-180" /> Back to Search
                   </button>
                 </div>
 
-                <div className={`relative h-[120px] border-b border-border ${selectedUser.assigned_roles?.includes('banned') ? 'bg-destructive/20' : 'bg-popover'}`}>
+                <div className={`relative h-[120px] border-b border-border ${selectedUser.assigned_roles?.includes('banned') ? 'bg-destructive/20' : 'bg-[#111214]'}`}>
                   <div className="absolute -bottom-12 left-6">
                     <img src={selectedUser.avatar_url || "/units/firezio.webp"} className="w-[100px] h-[100px] rounded-full object-cover border-[6px] border-background bg-background" alt="" />
                   </div>
@@ -317,8 +329,7 @@ export function AdminChannel() {
 
                 <div className="mt-14 px-6 flex flex-col">
                   <div className="flex flex-wrap items-center gap-3">
-                    <h2 className="text-[20px] font-bold text-foreground tracking-tight">{selectedUser.username}</h2>
-                    {/* RENDER ALL ASSIGNED ROLES ON PROFILE HEADER */}
+                    <h2 className={`text-[20px] font-bold tracking-tight ${selectedUser.assigned_roles?.includes('banned') ? 'text-destructive line-through' : 'text-foreground'}`}>{selectedUser.username}</h2>
                     {selectedUser.assigned_roles?.map(roleName => {
                       const rStyle = availableRoles?.find(r => r.name === roleName);
                       return (
@@ -337,7 +348,7 @@ export function AdminChannel() {
                     })}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5 w-fit group">
-                    <span className="text-[13px] text-muted-foreground">
+                    <span className="text-[13px] font-mono text-muted-foreground">
                       {selectedUser.discord_id}
                     </span>
                     <button onClick={() => handleCopyId(selectedUser.discord_id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground focus-visible:outline-none cursor-pointer" title="Copy Discord ID">
@@ -346,133 +357,160 @@ export function AdminChannel() {
                   </div>
                 </div>
 
-                <div className="mt-8 px-6 max-w-2xl mx-auto w-full flex flex-col gap-6">
+                <div className="mt-8 px-6 max-w-4xl mx-auto w-full flex flex-col xl:flex-row gap-6 items-start">
                   
-                  <div className="bg-card rounded-[8px] p-4 flex flex-col shadow-sm border border-border">
-                    <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
-                      <Activity className="w-3.5 h-3.5" /> Info
-                    </h3>
-                    {userIntel.isLoading ? (
-                      <div className="h-[60px] flex items-center gap-3 text-muted-foreground text-[13px] font-medium animate-pulse">
-                         <Activity className="w-4 h-4" /> Fetching database records...
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-popover p-3 rounded-[4px] border border-border">
-                          <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Vault Net Worth</span>
-                          <span className="text-[16px] font-mono font-black text-foreground">{userIntel.netWorth.toLocaleString()}</span>
-                        </div>
-                        <div className="bg-popover p-3 rounded-[4px] border border-border">
-                          <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Active Listings</span>
-                          <span className="text-[16px] font-mono font-black text-foreground">{userIntel.adCount}</span>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="mt-3 pt-3 border-t border-border">
-                      <button 
-                        onClick={handleInspectVault}
-                        className="w-full flex items-center justify-between px-3 py-2 bg-popover hover:bg-border border border-border text-muted-foreground hover:text-foreground text-[12px] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
-                      >
-                        <span className="flex items-center gap-2"><Package className="w-4 h-4 text-muted-foreground" /> Inspect Vault</span>
-                        <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-3">
-                    <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Toggle Access Roles</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {/* Show all roles except 'banned' and 'master' for toggling */}
-                      {availableRoles?.filter(role => role.name !== 'banned' && role.name !== 'master').map((r) => {
-                        const disabled = selectedUser.id === profile?.id || (!isMaster && (r.name === 'admin' || r.name === 'mod' || selectedUser.assigned_roles?.includes('master') || selectedUser.assigned_roles?.includes('admin')));
-                        const isAssigned = selectedUser.assigned_roles?.includes(r.name);
-
-                        const dynamicStyle = {
-                          backgroundColor: isAssigned ? `${r.color}20` : 'transparent',
-                          borderColor: isAssigned ? `${r.color}50` : 'var(--border)',
-                          color: isAssigned ? r.color : 'var(--muted-foreground)'
-                        };
-
-                        return (
-                          <button
-                            key={r.name}
-                            disabled={disabled}
-                            onClick={() => updateUserRole(selectedUser.id, r.name)}
-                            className={`flex items-center gap-1.5 px-4 py-2 rounded-[4px] border text-[11px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none ${disabled ? 'opacity-30 cursor-not-allowed' : 'hover:bg-popover cursor-pointer'}`}
-                            style={dynamicStyle}
-                            title={isAssigned ? "Click to remove role" : "Click to assign role"}
-                          >
-                            {isAssigned && <Check className="w-3.5 h-3.5" />} {r.name}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {selectedUser.id !== profile?.id && (
-                    <div className="flex flex-col gap-4 mt-2">
-                      <h3 className="text-[11px] font-bold text-destructive uppercase tracking-widest flex items-center gap-1.5">
-                        <AlertTriangle className="w-3.5 h-3.5" /> Moderation Toolkit
+                  {/* Info Column */}
+                  <div className="flex flex-col gap-6 w-full xl:w-[320px] shrink-0">
+                    <div className="bg-[#1E1F22] rounded-[8px] p-4 flex flex-col border border-border">
+                      <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <Activity className="w-3.5 h-3.5" /> Info
                       </h3>
+                      {userIntel.isLoading ? (
+                        <div className="h-[60px] flex items-center gap-3 text-muted-foreground text-[13px] font-medium animate-pulse">
+                           <Activity className="w-4 h-4" /> Fetching records...
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-[#111214] p-3 rounded-[4px] border border-border">
+                            <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Vault Value</span>
+                            <span className="text-[15px] font-mono font-black text-foreground">{userIntel.netWorth.toLocaleString()}</span>
+                          </div>
+                          <div className="bg-[#111214] p-3 rounded-[4px] border border-border">
+                            <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Active Ads</span>
+                            <span className="text-[15px] font-mono font-black text-foreground">{userIntel.adCount}</span>
+                          </div>
+                        </div>
+                      )}
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="flex flex-col gap-2 bg-card p-3 rounded-[8px] border border-border">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Content Controls</span>
-                          <button 
-                            onClick={handlePurgeAds}
-                            className="flex items-center gap-2 w-full p-2.5 bg-popover border border-border hover:border-destructive/50 text-muted-foreground hover:text-destructive rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" /> <span className="text-[12px] font-bold">Purge Active Ads</span>
-                          </button>
-                          <button 
-                            onClick={handleResetProfile}
-                            className="flex items-center gap-2 w-full p-2.5 bg-popover border border-border hover:border-[#FAA61A]/50 text-muted-foreground hover:text-[#FAA61A] rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
-                          >
-                            <RefreshCw className="w-4 h-4" /> <span className="text-[12px] font-bold">Reset Profile Info</span>
-                          </button>
-                          <button 
-                            onClick={handlePurgeComments}
-                            className="flex items-center gap-2 w-full p-2.5 bg-popover border border-border hover:border-destructive/50 text-muted-foreground hover:text-destructive rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
-                          >
-                            <MessageSquareOff className="w-4 h-4" /> <span className="text-[12px] font-bold">Purge All Comments</span>
-                          </button>
+                      <div className="mt-3 pt-3 border-t border-border">
+                        <button 
+                          onClick={handleInspectVault}
+                          className="w-full flex items-center justify-between px-3 py-2 bg-[#111214] hover:bg-[#2B2D31] border border-border text-muted-foreground hover:text-foreground text-[12px] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
+                        >
+                          <span className="flex items-center gap-2"><Package className="w-4 h-4 text-muted-foreground" /> Inspect Vault</span>
+                          <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Toggle Access Roles</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {availableRoles?.filter(role => role.name !== 'banned' && role.name !== 'master').map((r) => {
+                          const disabled = selectedUser.id === profile?.id || (!isMaster && (r.name === 'admin' || r.name === 'mod' || selectedUser.assigned_roles?.includes('master') || selectedUser.assigned_roles?.includes('admin')));
+                          const isAssigned = selectedUser.assigned_roles?.includes(r.name);
+
+                          return (
+                            <button
+                              key={r.name}
+                              disabled={disabled}
+                              onClick={() => setModActionData({ type: "role", label: `Toggle ${r.name.toUpperCase()} role`, isDestructive: false })}
+                              className={`flex items-center gap-1.5 px-4 py-2 rounded-[4px] border text-[11px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none ${disabled ? 'opacity-30 cursor-not-allowed' : 'hover:bg-[#111214] cursor-pointer'}`}
+                              style={{
+                                backgroundColor: isAssigned ? `${r.color}20` : 'transparent',
+                                borderColor: isAssigned ? `${r.color}50` : 'var(--border)',
+                                color: isAssigned ? r.color : 'var(--muted-foreground)'
+                              }}
+                            >
+                              {isAssigned && <Check className="w-3.5 h-3.5" />} {r.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Moderation Toolkit & Logs Column */}
+                  {selectedUser.id !== profile?.id && (
+                    <div className="flex flex-col gap-6 w-full">
+                      <div className="flex flex-col gap-4">
+                        <h3 className="text-[11px] font-bold text-destructive uppercase tracking-widest flex items-center gap-1.5">
+                          <AlertTriangle className="w-3.5 h-3.5" /> Moderation Toolkit
+                        </h3>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="flex flex-col gap-2 bg-[#1E1F22] p-3 rounded-[8px] border border-border">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Content Controls</span>
+                            <button 
+                              onClick={() => setModActionData({ type: "purge_ads", label: "Purge Active Ads", isDestructive: true })}
+                              className="flex items-center gap-2 w-full p-2.5 bg-[#111214] border border-border hover:border-destructive/50 text-muted-foreground hover:text-destructive rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" /> <span className="text-[12px] font-bold">Purge Active Ads</span>
+                            </button>
+                            <button 
+                              onClick={() => setModActionData({ type: "reset_profile", label: "Reset Profile Info", isDestructive: false })}
+                              className="flex items-center gap-2 w-full p-2.5 bg-[#111214] border border-border hover:border-[#FAA61A]/50 text-muted-foreground hover:text-[#FAA61A] rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
+                            >
+                              <RefreshCw className="w-4 h-4" /> <span className="text-[12px] font-bold">Reset Profile Info</span>
+                            </button>
+                            <button 
+                              onClick={() => setModActionData({ type: "purge_comments", label: "Purge All Comments", isDestructive: true })}
+                              className="flex items-center gap-2 w-full p-2.5 bg-[#111214] border border-border hover:border-destructive/50 text-muted-foreground hover:text-destructive rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
+                            >
+                              <MessageSquareOff className="w-4 h-4" /> <span className="text-[12px] font-bold">Purge All Comments</span>
+                            </button>
+                          </div>
+
+                          <div className="flex flex-col gap-2 bg-[#1E1F22] p-3 rounded-[8px] border border-border">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Asset Wipes</span>
+                            <button 
+                              onClick={() => setModActionData({ type: "wipe_inv", label: "Wipe Inventory", isDestructive: true })}
+                              className="flex items-center gap-2 w-full p-2.5 bg-[#111214] border border-border hover:border-destructive/50 text-muted-foreground hover:text-destructive rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
+                            >
+                              <Eraser className="w-4 h-4" /> <span className="text-[12px] font-bold">Wipe Inventory</span>
+                            </button>
+                            <button 
+                              onClick={() => setModActionData({ type: "wipe_wishlist", label: "Wipe Wishlist", isDestructive: true })}
+                              className="flex items-center gap-2 w-full p-2.5 bg-[#111214] border border-border hover:border-destructive/50 text-muted-foreground hover:text-destructive rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
+                            >
+                              <Eraser className="w-4 h-4" /> <span className="text-[12px] font-bold">Wipe Wishlist</span>
+                            </button>
+                          </div>
                         </div>
 
-                        <div className="flex flex-col gap-2 bg-card p-3 rounded-[8px] border border-border">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Asset Wipes</span>
-                          <button 
-                            onClick={handleWipeInventory}
-                            className="flex items-center gap-2 w-full p-2.5 bg-popover border border-border hover:border-destructive/50 text-muted-foreground hover:text-destructive rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
-                          >
-                            <Eraser className="w-4 h-4" /> <span className="text-[12px] font-bold">Wipe Inventory</span>
-                          </button>
-                          <button 
-                            onClick={handleWipeWishlist}
-                            className="flex items-center gap-2 w-full p-2.5 bg-popover border border-border hover:border-destructive/50 text-muted-foreground hover:text-destructive rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
-                          >
-                            <Eraser className="w-4 h-4" /> <span className="text-[12px] font-bold">Wipe Wishlist</span>
-                          </button>
+                        <div className="mt-1 flex flex-col gap-2">
+                          {!selectedUser.assigned_roles?.includes('banned') ? (
+                            <button 
+                              onClick={() => setModActionData({ type: "nuke", label: "Nuke & Ban Account", isDestructive: true })}
+                              className="w-full flex items-center justify-center gap-2 p-3.5 bg-transparent border-2 border-destructive hover:bg-destructive text-destructive hover:text-white rounded-[4px] transition-colors focus-visible:outline-none group cursor-pointer"
+                            >
+                              <Ban className="w-4 h-4" />
+                              <span className="text-[13px] font-black uppercase tracking-widest">Nuke & Ban Account</span>
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => setModActionData({ type: "ban", label: "Revoke Ban & Restore Access", isDestructive: false })}
+                              className="w-full flex items-center justify-center gap-2 p-3.5 bg-transparent border-2 border-[#23a559] hover:bg-[#23a559] text-[#23a559] hover:text-white rounded-[4px] transition-colors focus-visible:outline-none group cursor-pointer"
+                            >
+                              <Shield className="w-4 h-4" />
+                              <span className="text-[13px] font-black uppercase tracking-widest">Revoke Ban & Restore Access</span>
+                            </button>
+                          )}
                         </div>
                       </div>
 
-                      <div className="mt-2 flex flex-col gap-2">
-                        {!selectedUser.assigned_roles?.includes('banned') ? (
-                          <button 
-                            onClick={handleTotalAccountNuke}
-                            className="w-full flex items-center justify-center gap-2 p-3.5 bg-transparent border-2 border-destructive hover:bg-destructive text-destructive hover:text-destructive-foreground rounded-[4px] transition-colors shadow-sm focus-visible:outline-none group cursor-pointer"
-                          >
-                            <Ban className="w-4 h-4" />
-                            <span className="text-[13px] font-black uppercase tracking-widest">Nuke & Ban Account</span>
-                          </button>
+                      {/* Moderation History Log */}
+                      <div className="flex flex-col gap-3 mt-4 border-t border-border pt-6">
+                        <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                          <History className="w-3.5 h-3.5" /> Moderation History
+                        </h3>
+                        {modLogs.length === 0 ? (
+                          <div className="text-[12px] text-muted-foreground italic p-4 bg-[#1E1F22] rounded-[6px] border border-border">
+                            No moderation actions have been recorded for this user.
+                          </div>
                         ) : (
-                          <button 
-                            onClick={() => updateUserRole(selectedUser.id, 'user')} // Toggle 'user' will reset ban because of the toggle logic
-                            className="w-full flex items-center justify-center gap-2 p-3.5 bg-card border-2 border-[#23a559] hover:bg-[#23a559] text-[#23a559] hover:text-white rounded-[4px] transition-colors shadow-sm focus-visible:outline-none group cursor-pointer"
-                          >
-                            <Shield className="w-4 h-4" />
-                            <span className="text-[13px] font-black uppercase tracking-widest">Revoke Ban & Restore Access</span>
-                          </button>
+                          <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                            {modLogs.map(log => (
+                              <div key={log.id} className="bg-[#1E1F22] p-3 rounded-[6px] border border-border flex flex-col gap-1.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-bold uppercase tracking-wider text-destructive">{log.action_type}</span>
+                                  <span className="text-[10px] font-mono text-muted-foreground">{new Date(log.created_at).toLocaleString()}</span>
+                                </div>
+                                <p className="text-[12px] text-foreground leading-snug">"{log.reason}"</p>
+                                <span className="text-[10px] text-muted-foreground mt-1 text-right italic">- by {log.profiles.username}</span>
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -485,9 +523,48 @@ export function AdminChannel() {
         </div>
       )}
 
+      {/* REASON MODAL WITH SOLID COLORS NO GLASSMORPHISM */}
+      {modActionData && (
+        <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-[#111214]/95 animate-fade-in">
+          <div className="bg-[#1E1F22] border border-border rounded-[8px] p-6 max-w-md w-full shadow-2xl flex flex-col animate-slide-up">
+            <h3 className="text-[16px] font-black text-foreground uppercase tracking-wide border-b border-border pb-3 mb-4 flex items-center gap-2">
+              <AlertTriangle className={`w-5 h-5 ${modActionData.isDestructive ? 'text-destructive' : 'text-[#FAA61A]'}`} />
+              Confirm: {modActionData.label}
+            </h3>
+            
+            <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+              Reason for action <span className="text-destructive">*</span>
+            </label>
+            <textarea 
+              value={modReason}
+              onChange={(e) => setModReason(e.target.value)}
+              placeholder="Provide a mandatory reason for the audit logs..."
+              className="bg-[#111214] text-foreground text-[13px] p-3 rounded-[4px] border border-border focus:border-primary outline-none resize-none h-24 mb-5"
+              required
+            />
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={() => { setModActionData(null); setModReason(""); }}
+                className="flex-1 py-2.5 rounded-[4px] bg-[#111214] hover:bg-[#2B2D31] border border-border text-foreground text-[13px] font-bold transition-colors cursor-pointer focus-visible:outline-none"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={executeModAction}
+                disabled={!modReason.trim()}
+                className={`flex-1 py-2.5 rounded-[4px] text-white text-[13px] font-bold transition-colors shadow-sm focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${modActionData.isDestructive ? 'bg-destructive hover:bg-destructive/80' : 'bg-[#FAA61A] hover:bg-[#d98b14]'}`}
+              >
+                Execute Action
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && (
         <div className="absolute bottom-6 right-6 z-[100000] animate-slide-up">
-          <div className={`px-4 py-3 rounded-[6px] shadow-2xl flex items-center gap-3 border ${toast.type === 'error' ? 'bg-popover border-destructive/50 text-destructive' : 'bg-popover border-[#23a559]/50 text-[#23a559]'}`}>
+          <div className={`px-4 py-3 rounded-[6px] shadow-2xl flex items-center gap-3 border ${toast.type === 'error' ? 'bg-[#1E1F22] border-destructive/50 text-destructive' : 'bg-[#1E1F22] border-[#23a559]/50 text-[#23a559]'}`}>
             {toast.type === 'error' ? <AlertTriangle className="w-4 h-4" /> : <Check className="w-4 h-4" />}
             <span className="text-[13px] font-bold">{toast.text}</span>
             <button onClick={() => setToast(null)} className="ml-2 text-muted-foreground hover:text-foreground cursor-pointer"><X className="w-3.5 h-3.5" /></button>

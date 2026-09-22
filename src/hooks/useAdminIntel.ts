@@ -14,7 +14,7 @@ export interface UserProfile {
   username: string;
   avatar_url: string;
   role: string;
-  assigned_roles: string[]; // NEW: Supports multiple roles
+  assigned_roles: string[];
   created_at: string;
 }
 
@@ -22,6 +22,15 @@ export interface SystemMetrics {
   totalUsers: number;
   activeAds: number;
   bannedUsers: number;
+}
+
+export interface ModLog {
+  id: string;
+  action_type: string;
+  reason: string;
+  created_at: string;
+  moderator_id: string;
+  profiles: { username: string };
 }
 
 const ROLE_PRIORITY: Record<string, number> = {
@@ -39,8 +48,10 @@ export function useAdminIntel() {
   const [userIntel, setUserIntel] = useState({ netWorth: 0, adCount: 0, isLoading: false });
   const [metrics, setMetrics] = useState<SystemMetrics>({ totalUsers: 0, activeAds: 0, bannedUsers: 0 });
   const [availableRoles, setAvailableRoles] = useState<{name: string, color: string, rank: number}[]>([]);
+  const [modLogs, setModLogs] = useState<ModLog[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showBannedOnly, setShowBannedOnly] = useState(false);
   const [toast, setToast] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
 
   const showToast = useCallback((text: string, type: 'success' | 'error' = 'success') => {
@@ -68,11 +79,14 @@ export function useAdminIntel() {
     }
   }, []);
 
-  const fetchUsers = useCallback(async (query = "") => {
+  const fetchUsers = useCallback(async (query = "", bannedOnly = showBannedOnly) => {
     setIsLoading(true);
-    // Fetch users AND join their multiple roles from the junction table
     let request = supabase.from('profiles').select('*, user_roles(roles(name))').limit(100);
     
+    if (bannedOnly) {
+      request = request.eq('role', 'banned');
+    }
+
     if (query) {
       if (/^\d+$/.test(query)) {
         request = request.or(`discord_id.eq.${query},username.ilike.%${query}%`);
@@ -84,9 +98,8 @@ export function useAdminIntel() {
     const { data, error } = await request;
     if (!error && data) {
       const mappedUsers = data.map((u: any) => {
-        // Flatten the nested join structure into a simple string array
         const rolesList = u.user_roles?.map((ur: any) => ur.roles?.name).filter(Boolean) || [];
-        if (rolesList.length === 0 && u.role) rolesList.push(u.role); // Fallback
+        if (rolesList.length === 0 && u.role) rolesList.push(u.role);
         return { ...u, assigned_roles: rolesList };
       });
 
@@ -101,12 +114,12 @@ export function useAdminIntel() {
       if (sorted.length === 1 && query) setSelectedUser(sorted[0] as UserProfile);
     }
     setIsLoading(false);
-  }, []);
+  }, [showBannedOnly]);
 
   useEffect(() => {
     loadMetrics();
-    fetchUsers();
-  }, [loadMetrics, fetchUsers]);
+    fetchUsers(searchQuery, showBannedOnly);
+  }, [loadMetrics, fetchUsers, showBannedOnly]);
 
   useEffect(() => {
     if (!selectedUser) return;
@@ -115,9 +128,10 @@ export function useAdminIntel() {
       setUserIntel(prev => ({ ...prev, isLoading: true }));
       const now = new Date().toISOString();
       
-      const [invRes, adsRes] = await Promise.all([
+      const [invRes, adsRes, logsRes] = await Promise.all([
         supabase.from('user_inventory').select('unit_id, quantity').eq('user_id', selectedUser.id),
-        supabase.from('trading_ads').select('id', { count: 'exact', head: true }).eq('user_id', selectedUser.id).gt('expires_at', now)
+        supabase.from('trading_ads').select('id', { count: 'exact', head: true }).eq('user_id', selectedUser.id).gt('expires_at', now),
+        supabase.from('moderation_logs').select('*, profiles!moderation_logs_moderator_id_fkey(username)').eq('target_user_id', selectedUser.id).order('created_at', { ascending: false })
       ]);
 
       let calculatedNetWorth = 0;
@@ -134,6 +148,10 @@ export function useAdminIntel() {
         });
       }
 
+      if (logsRes.data) {
+        setModLogs(logsRes.data as ModLog[]);
+      }
+
       setUserIntel({
         netWorth: calculatedNetWorth,
         adCount: adsRes.count || 0,
@@ -144,7 +162,17 @@ export function useAdminIntel() {
     loadUserIntel();
   }, [selectedUser?.id, ALL_UNITS]);
 
-  const updateUserRole = async (targetUserId: string, newRole: string) => {
+  const logModAction = async (targetUserId: string, actionType: string, reason: string) => {
+    if (!profile) return;
+    await supabase.from('moderation_logs').insert({
+      target_user_id: targetUserId,
+      moderator_id: profile.id,
+      action_type: actionType,
+      reason: reason
+    });
+  };
+
+  const updateUserRole = async (targetUserId: string, newRole: string, reason?: string) => {
     if (!profile) return false;
     if ((newRole === 'master' || newRole === 'admin') && !isMaster) {
       showToast("Only the Master account can assign Admin privileges.", "error");
@@ -157,14 +185,15 @@ export function useAdminIntel() {
       showToast(`Database Error: ${error.message}`, "error");
       return false;
     } else {
-      // Optimistic UI update for toggling multiple roles
+      if (reason) await logModAction(targetUserId, `Role Changed to ${newRole.toUpperCase()}`, reason);
+      
       if (selectedUser?.id === targetUserId) {
         const currentRoles = selectedUser.assigned_roles || [];
         const hasRole = currentRoles.includes(newRole);
         const nextRoles = hasRole ? currentRoles.filter(r => r !== newRole) : [...currentRoles, newRole];
         setSelectedUser({ ...selectedUser, assigned_roles: nextRoles, role: nextRoles[0] || 'user' });
       }
-      fetchUsers(searchQuery); // Refetch in background to sync
+      fetchUsers(searchQuery);
       showToast(`Toggled role: ${newRole.toUpperCase()}`);
       if (newRole === 'banned') loadMetrics();
       return true;
@@ -186,7 +215,7 @@ export function useAdminIntel() {
       showToast(`Failed to create role: ${error.message}`, "error");
     } else {
       showToast(`Role '${cleanName}' created successfully!`);
-      loadMetrics(); // Refresh the available roles
+      loadMetrics();
     }
   };
 
@@ -208,70 +237,76 @@ export function useAdminIntel() {
     }
   };
 
-  const executeAction = async (actionDesc: string, supabaseCall: PromiseLike<any>, onSuccess?: () => void) => {
-    const { error } = await supabaseCall;
-    if (error) showToast(`Failed to ${actionDesc.toLowerCase()}.`, "error");
-    else {
-      showToast(`${actionDesc} successfully.`);
+  const executeModAction = async (targetUserId: string, actionType: string, reason: string, actionPromise: PromiseLike<any>, onSuccess?: () => void) => {
+    const { error } = await actionPromise;
+    if (error) {
+      showToast(`Failed to ${actionType.toLowerCase()}.`, "error");
+    } else {
+      await logModAction(targetUserId, actionType, reason);
+      showToast(`${actionType} successful.`);
       if (onSuccess) onSuccess();
     }
   };
 
-  const handleResetProfile = () => {
-    if (selectedUser && confirm(`Reset profile for ${selectedUser.username}? This will replace their username and avatar.`)) {
-      triggerHaptic('heavy');
-      executeAction("Reset profile", supabase.from('profiles').update({ username: 'Moderated User', avatar_url: '' }).eq('id', selectedUser.id), () => fetchUsers(searchQuery));
-    }
+  const handleResetProfile = (reason: string) => {
+    if (!selectedUser) return;
+    triggerHaptic('heavy');
+    executeModAction(selectedUser.id, "Reset Profile Info", reason, 
+      supabase.from('profiles').update({ username: 'Moderated User', avatar_url: '', bio: '' }).eq('id', selectedUser.id), 
+      () => fetchUsers(searchQuery)
+    );
   };
 
-  const handlePurgeAds = () => {
-    if (selectedUser && confirm(`Are you sure you want to delete ALL active ads for ${selectedUser.username}?`)) {
-      triggerHaptic('heavy');
-      executeAction("Purged all active ads", supabase.from('trading_ads').delete().eq('user_id', selectedUser.id), () => {
+  const handlePurgeAds = (reason: string) => {
+    if (!selectedUser) return;
+    triggerHaptic('heavy');
+    executeModAction(selectedUser.id, "Purged Active Ads", reason, 
+      supabase.from('trading_ads').delete().eq('user_id', selectedUser.id), 
+      () => {
         setUserIntel(prev => ({ ...prev, adCount: 0 }));
         loadMetrics();
-      });
-    }
+      }
+    );
   };
 
-  const handlePurgeComments = () => {
-    if (selectedUser && confirm(`Are you sure you want to delete ALL comments made by ${selectedUser.username}?`)) {
-      triggerHaptic('heavy');
-      executeAction("Purged all comments", supabase.from('ad_comments').delete().eq('user_id', selectedUser.id));
-    }
-  };
-
-  const handleWipeInventory = () => {
-    if (selectedUser && confirm(`WARNING: Are you sure you want to permanently WIPE the inventory of ${selectedUser.username}?`)) {
-      triggerHaptic('heavy');
-      executeAction("Wiped inventory", supabase.from('user_inventory').delete().eq('user_id', selectedUser.id), () => {
-        setUserIntel(prev => ({ ...prev, netWorth: 0 }));
-      });
-    }
-  };
-
-  const handleWipeWishlist = () => {
-    if (selectedUser && confirm(`Are you sure you want to WIPE the wishlist of ${selectedUser.username}?`)) {
-      triggerHaptic('heavy');
-      executeAction("Wiped wishlist", supabase.from('user_wishlist').delete().eq('user_id', selectedUser.id));
-    }
-  };
-
-  const handleTotalAccountNuke = async () => {
+  const handlePurgeComments = (reason: string) => {
     if (!selectedUser) return;
-    const confirmation = prompt(`Type "NUKE" to permanently ban ${selectedUser.username} and wipe all their data.`);
-    if (confirmation !== "NUKE") {
-      showToast("Account wipe cancelled.", "error");
-      return;
-    }
-    
     triggerHaptic('heavy');
+    executeModAction(selectedUser.id, "Purged All Comments", reason, 
+      supabase.from('ad_comments').delete().eq('user_id', selectedUser.id)
+    );
+  };
+
+  const handleWipeInventory = (reason: string) => {
+    if (!selectedUser) return;
+    triggerHaptic('heavy');
+    executeModAction(selectedUser.id, "Wiped Inventory", reason, 
+      supabase.from('user_inventory').delete().eq('user_id', selectedUser.id), 
+      () => setUserIntel(prev => ({ ...prev, netWorth: 0 }))
+    );
+  };
+
+  const handleWipeWishlist = (reason: string) => {
+    if (!selectedUser) return;
+    triggerHaptic('heavy');
+    executeModAction(selectedUser.id, "Wiped Wishlist", reason, 
+      supabase.from('user_wishlist').delete().eq('user_id', selectedUser.id)
+    );
+  };
+
+  const handleTotalAccountNuke = async (reason: string) => {
+    if (!selectedUser) return;
+    triggerHaptic('heavy');
+    
+    // Perform nuke via RPC
     const { error } = await supabase.rpc('admin_nuke_account', { target_user_id: selectedUser.id });
 
     if (error) {
       showToast(`Nuke Failed: ${error.message}`, "error");
       return;
     }
+
+    await logModAction(selectedUser.id, "ACCOUNT NUKED & BANNED", reason);
 
     setUserIntel({ netWorth: 0, adCount: 0, isLoading: false });
     showToast(`ACCOUNT NUKED: ${selectedUser.username} has been eradicated.`);
@@ -280,8 +315,9 @@ export function useAdminIntel() {
   };
 
   return {
-    users, selectedUser, setSelectedUser, userIntel, metrics, availableRoles,
+    users, selectedUser, setSelectedUser, userIntel, metrics, availableRoles, modLogs,
     searchQuery, setSearchQuery, isLoading, toast, showToast, setToast,
+    showBannedOnly, setShowBannedOnly,
     handleSearch: (e: React.FormEvent) => { e.preventDefault(); fetchUsers(searchQuery); },
     updateUserRole, createNewRole, deleteRole, handleResetProfile, handlePurgeAds, handlePurgeComments,
     handleWipeInventory, handleWipeWishlist, handleTotalAccountNuke,

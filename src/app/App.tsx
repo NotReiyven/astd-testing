@@ -3,7 +3,7 @@
 // ================================================
 
 import { useState, useEffect, Suspense, lazy, useCallback } from "react";
-import { Hash, Check, GraduationCap } from "lucide-react";
+import { Hash, Check, GraduationCap, Ban, ExternalLink } from "lucide-react";
 import { FilterKey } from "../types";
 import { useStickyState, isBoolean, isNonEmptyString } from "../hooks/useStickyState";
 import { AquaGuideOverlay } from "./components/guides/AquaGuideOverlay";
@@ -15,11 +15,12 @@ import { useTradeStore } from "../store/useTradeStore";
 import { useLayoutStore } from "../store/useLayoutStore";
 import { HistoryModal } from "./components/MainCanvas/HistoryModal";
 
-// Extracted Business Logic Hooks
 import { useAppBoot } from "../hooks/useAppBoot";
 import { useGuideSystem } from "../hooks/useGuideSystem";
 import { useGlobalEvents } from "../hooks/useGlobalEvents";
 import { useMobileSwipe } from "../hooks/useMobileSwipe";
+import { useAuthStore } from "../store/useAuthStore";
+import { supabase } from "../lib/supabase";
 
 const TradeAnalyzerPanel = lazy(() => import("./components/TradeAnalyzer").then(module => ({ default: module.TradeAnalyzerPanel })));
 const Sidebar = lazy(() => import("./components/Sidebar").then(module => ({ default: module.Sidebar })));
@@ -50,6 +51,7 @@ export default function App() {
   const giveItems = useTradeStore((s) => s.giveItems);
   const getItems = useTradeStore((s) => s.getItems);
   const pinnedIds = useTradeStore((s) => s.pinnedIds);
+  const { profile } = useAuthStore();
 
   const { globalSearchQuery, setGlobalSearchQuery, helpMenuOpen } = useLayoutStore();
 
@@ -61,6 +63,18 @@ export default function App() {
   const [isAnalyzerOpen, setIsAnalyzerOpen] = useStickyState(false, "astd_analyzer", isBoolean);
 
   const { bootStage, isMobile } = useAppBoot();
+  
+  // Fetch ban reason if they are banned
+  const [banReason, setBanReason] = useState<string>("Violation of Terms of Service.");
+  useEffect(() => {
+    if (profile?.role === 'banned') {
+      const getBanReason = async () => {
+        const { data } = await supabase.from('moderation_logs').select('reason').eq('target_user_id', profile.id).eq('action_type', 'ACCOUNT NUKED & BANNED').order('created_at', { ascending: false }).limit(1).single();
+        if (data) setBanReason(data.reason);
+      };
+      getBanReason();
+    }
+  }, [profile]);
 
   const { guideState, setGuideState, completedGuides, setCompletedGuides, startGuide, endGuide } = useGuideSystem({ 
     setActiveChannel, setIsRosterOpen, setIsAnalyzerOpen, setTutorialTab, bootStage 
@@ -121,6 +135,33 @@ export default function App() {
   const mainContentZ = isMainStep2 || guideState.type === "developer" || guideState.type === "filters" || guideState.type === "stats" ? "!z-[100000] relative shadow-[0_0_50px_rgba(0,0,0,0.8)]" : "z-auto";
   const calcHeaderZ = helpMenuOpen || isMainStep3 ? "!z-[99999] shadow-[0_0_50px_rgba(0,0,0,0.8)]" : "z-50";
   const analyzerZ = isMainStep4 || guideState.type === "advanced" || guideState.type === "dictionary" || guideState.type === "management" ? "!z-[100000] shadow-[-20px_0_50px_rgba(0,0,0,0.8)]" : "z-50";
+
+  // HARD LOCK SCREEN FOR BANNED USERS
+  if (bootStage === 'complete' && profile?.role === 'banned') {
+    return (
+      <div className="flex flex-col items-center justify-center w-screen h-screen bg-[#111214] text-[#F2F3F5] font-sans p-6 text-center select-none animate-fade-in">
+        <Ban className="w-20 h-20 text-destructive mb-6 shadow-sm" />
+        <h1 className="text-[28px] font-black uppercase tracking-widest text-destructive mb-2">Account Terminated</h1>
+        <p className="text-[#949BA4] text-[14px] max-w-md leading-relaxed mb-8">
+          Your access to the ASTD Value List platform has been permanently revoked by the moderation team.
+        </p>
+        
+        <div className="bg-[#1E1F22] border border-border rounded-[8px] p-5 w-full max-w-md text-left mb-8 shadow-inner">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">Official Reason</span>
+          <p className="text-[14px] text-foreground font-medium leading-relaxed italic">"{banReason}"</p>
+        </div>
+
+        <a 
+          href="https://discord.gg/Q7JTvPUEM" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="px-8 py-3.5 bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold text-[13px] uppercase tracking-wider rounded-[4px] transition-colors shadow-md flex items-center justify-center gap-2 border border-[#5865F2] focus-visible:outline-none"
+        >
+          Appeal in Discord <ExternalLink className="w-4 h-4" />
+        </a>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -226,7 +267,7 @@ export default function App() {
             className={`fixed bottom-[140px] md:bottom-8 left-1/2 -translate-x-1/2 pointer-events-none transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col gap-2 items-center ${guideState.type ? 'z-[100002]' : 'z-[9999]'}`}
           >
             {academyToast && (
-              <div className="flex items-center gap-3 px-5 py-3.5 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.6)] border border-primary/30 bg-card/95 backdrop-blur-md animate-slide-up">
+              <div className="flex items-center gap-3 px-5 py-3.5 rounded-[8px] shadow-[0_12px_40px_rgba(0,0,0,0.6)] border border-primary/30 bg-[#1E1F22] animate-slide-up">
                  <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 bg-primary shadow-sm">
                    <GraduationCap className="w-4 h-4 text-white" />
                  </div>
@@ -238,8 +279,8 @@ export default function App() {
 
             <div className={`transition-all duration-300 ${toast ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-6 scale-90"}`}>
               {toast && (
-                <div className="flex items-center gap-3 px-5 py-3.5 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.6)] border border-border bg-card/95 backdrop-blur-md">
-                   <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 bg-[#23a559] shadow-sm">
+                <div className="flex items-center gap-3 px-5 py-3.5 rounded-[8px] shadow-[0_12px_40px_rgba(0,0,0,0.6)] border border-border bg-[#1E1F22]">
+                   <div className="w-6 h-6 rounded-[4px] flex items-center justify-center flex-shrink-0 bg-[#23a559] shadow-sm">
                      <Check className="w-4 h-4 text-white" />
                    </div>
                    <span className="text-foreground text-[13.5px] font-medium tracking-wide whitespace-nowrap">

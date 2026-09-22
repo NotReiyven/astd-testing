@@ -37,7 +37,6 @@ const clearLocalAuthCache = () => {
 
 let activeProfileChannel: RealtimeChannel | null = null;
 
-// Extracted for the beforeunload beacon
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
@@ -65,7 +64,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       activeProfileChannel = null;
     }
     
-    // Ensure we mark them offline before destroying the session
     const { profile } = get();
     if (profile) {
       await supabase.from('profiles').update({ status: 'offline' }).eq('id', profile.id);
@@ -80,16 +78,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { profile } = get();
     if (!profile || profile.status === status) return;
 
-    // Save intent to local storage so auto-online respects their override
     if (status === 'dnd' || status === 'invisible') {
       localStorage.setItem('astd_manual_status', status);
     } else if (status === 'online') {
       localStorage.removeItem('astd_manual_status');
     }
 
-    // Optimistic UI update
     set({ profile: { ...profile, status } });
-    
     await supabase.from('profiles').update({ status }).eq('id', profile.id);
   },
 
@@ -102,14 +97,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     if (data) {
-      if (data.role === 'banned') {
-        await get().logout();
-        alert("This account has been permanently banned from the platform.");
-        window.location.href = '/';
-        return;
-      }
-
-      // Auto-Presence Injection
+      // Removed the auto-logout for banned users here so the app can mount and show the Banned UI overlay
+      
       const savedManualStatus = localStorage.getItem('astd_manual_status');
       let targetStatus = data.status;
 
@@ -119,7 +108,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         targetStatus = 'online';
       }
 
-      if (data.status !== targetStatus) {
+      if (data.status !== targetStatus && data.role !== 'banned') {
         await supabase.from('profiles').update({ status: targetStatus }).eq('id', userId);
         data.status = targetStatus;
       }
@@ -137,13 +126,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           'postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
           async (payload) => {
-            if (payload.new.role === 'banned') {
-              await get().logout();
-              alert("This account has been permanently banned from the platform.");
-              window.location.href = '/'; 
-            } else {
-              set({ profile: payload.new as UserProfile });
-            }
+            set({ profile: payload.new as UserProfile });
           }
         )
         .subscribe();
@@ -172,10 +155,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     });
 
-    // The Auto-Offline killswitch
     window.addEventListener('beforeunload', () => {
       const { profile, session } = get();
-      if (profile && session && profile.status !== 'invisible') {
+      if (profile && session && profile.status !== 'invisible' && profile.role !== 'banned') {
         const url = `${supabaseUrl}/rest/v1/profiles?id=eq.${profile.id}`;
         fetch(url, {
           method: 'PATCH',
@@ -185,7 +167,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             'apikey': supabaseAnonKey
           },
           body: JSON.stringify({ status: 'offline' }),
-          keepalive: true // Crucial: allows the request to finish after the tab closes
+          keepalive: true
         });
       }
     });
