@@ -94,7 +94,15 @@ export function MiniProfilePopout() {
   const handleViewFullProfile = () => {
     if (!profile) return;
     triggerHaptic('medium');
-    setViewingProfile(profile.id);
+    
+    // Grab the active channel from localStorage so we know where to return to
+    let activeChannel = "trading-ads";
+    try {
+      const stored = localStorage.getItem("astd_channel");
+      if (stored) activeChannel = JSON.parse(stored);
+    } catch (e) {}
+
+    setViewingProfile(profile.id, activeChannel);
     window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'profile' }));
     closePopout();
   };

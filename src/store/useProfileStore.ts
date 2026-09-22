@@ -29,9 +29,10 @@ interface ProfileState {
   popoutUserId: string | null;
   popoutPosition: { x: number, y: number } | null;
   viewingProfileId: string | null;
+  returnChannel: string | null;
   openPopout: (userId: string, x: number, y: number) => void;
   closePopout: () => void;
-  setViewingProfile: (userId: string | null) => void;
+  setViewingProfile: (userId: string | null, returnChannel?: string | null) => void;
   fetchProfile: (userId: string, force?: boolean) => Promise<UserProfileData | null>;
   updateLocalProfile: (userId: string, updates: Partial<UserProfileData>) => void;
   saveProfileUpdates: (userId: string, updates: Partial<UserProfileData>) => Promise<{ error: any }>;
@@ -44,6 +45,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   popoutUserId: null,
   popoutPosition: null,
   viewingProfileId: null,
+  returnChannel: null,
 
   openPopout: (userId, x, y) => {
     set({ popoutUserId: userId, popoutPosition: { x, y } });
@@ -52,7 +54,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
   closePopout: () => set({ popoutUserId: null, popoutPosition: null }),
 
-  setViewingProfile: (userId) => set({ viewingProfileId: userId }),
+  setViewingProfile: (userId, returnChannel = null) => set({ viewingProfileId: userId, returnChannel }),
 
   fetchProfile: async (userId, force = false) => {
     const { cache } = get();

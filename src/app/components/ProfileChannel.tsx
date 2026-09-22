@@ -7,7 +7,7 @@ import {
   UserCircle, Edit2, Check, X, ShieldAlert, Shield, Star, 
   MessageSquare, Package, Megaphone, Activity, 
   Gamepad2, Clock, AlertTriangle, ArrowRight, Copy, ExternalLink, Sparkles, 
-  Crown, ShieldCheck, Award, Trophy, Zap, ArrowRightLeft, Share2, Eye
+  Crown, ShieldCheck, Award, Trophy, Zap, ArrowRightLeft, Share2, Eye, ArrowLeft
 } from "lucide-react";
 import { useProfileStore } from "../../store/useProfileStore";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -98,7 +98,7 @@ function AdItemGrid({ items, ALL_UNITS, label, labelColor }: { items: TradeCard[
 }
 
 export function ProfileChannel() {
-  const { viewingProfileId, fetchProfile, saveProfileUpdates } = useProfileStore();
+  const { viewingProfileId, fetchProfile, saveProfileUpdates, returnChannel, setViewingProfile } = useProfileStore();
   const { profile: currentUser } = useAuthStore();
   const setViewingUser = useInventoryStore(s => s.setViewingUser);
   
@@ -146,6 +146,15 @@ export function ProfileChannel() {
     loadData();
     return () => { mounted = false; };
   }, [targetId, fetchProfile, fetchAds, fetchInventory, fetchWishlist]);
+
+  const handleCloseProfile = () => {
+    triggerHaptic('light');
+    const target = returnChannel || "trading-ads";
+    window.document.dispatchEvent(new CustomEvent('navigate', { detail: target }));
+    setTimeout(() => setViewingProfile(null), 150);
+  };
+
+  const formatChannelName = (id: string) => id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
   const handleSave = async () => {
     if (!isOwner || !targetId) return;
@@ -233,6 +242,18 @@ export function ProfileChannel() {
   return (
     <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-background h-full font-sans relative z-10 pb-16">
       
+      {/* TELEPORT RETURN BAR */}
+      {viewingProfileId && (
+        <div className="w-full bg-card border-b border-border p-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+          <button 
+            onClick={handleCloseProfile}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-popover hover:bg-muted text-muted-foreground hover:text-foreground border border-border rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to {returnChannel ? formatChannelName(returnChannel) : "Ads"}
+          </button>
+        </div>
+      )}
+
       {/* 1. HERO HEADER (Full content width, no clipping) */}
       <div className="w-full relative shrink-0">
         {/* Banner Strip ~160px tall with gradient blend */}

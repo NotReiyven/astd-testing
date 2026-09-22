@@ -1,4 +1,6 @@
+// ================================================
 // FILE: src/app/components/TutorialChannel/simulatorEngine.ts
+// ================================================
 
 import { MasterUnit, TradeCard } from "../../../types";
 import { getTradeForecast } from "../TradeAnalyzer/summaryUtils";
@@ -9,7 +11,7 @@ export type Scenario = {
   desc: string;
   give: { unit: MasterUnit; qty: number };
   get: { unit: MasterUnit; qty: number };
-  correct: "WIN" | "LOSS" | "UNREASONABLE";
+  correct: "WIN" | "LOSS" | "SCAM";
   forecast: { st: number; lt: number };
   explanation: string;
 };
@@ -51,7 +53,7 @@ export const buildScenariosList = (ALL_UNITS: MasterUnit[]): Scenario[] => {
   const newScenarios: Scenario[] = [];
   let attempts = 0;
   
-  while (newScenarios.length < 8 && attempts < 500) {
+  while (newScenarios.length < 10 && attempts < 500) {
     attempts++;
     const type = Math.floor(Math.random() * 5); 
 
@@ -65,7 +67,7 @@ export const buildScenariosList = (ALL_UNITS: MasterUnit[]): Scenario[] => {
     if (type === 0) {
       g1 = getByCondition(u => u.status === 'stable' && getLiq(u) === 'high');
       match = findPairedUnit(g1, q1, u => u.status === 'dropping' || getLiq(u) === 'low', 0.9, 1.4);
-      title = "The Falling Knife"; desc = "They are overpaying with a dropping asset. Does the raw value justify it?";
+      title = "The Falling Knife"; desc = "They are overpaying with a dropping asset. Does the raw value justify the risk?";
     } else if (type === 1) {
       g1 = getByCondition(u => u.status === 'stable');
       match = findPairedUnit(g1, q1, u => u.status === 'inflated' || u.status === 'highballed', 0.9, 1.4);
@@ -101,12 +103,12 @@ export const buildScenariosList = (ALL_UNITS: MasterUnit[]): Scenario[] => {
     const v2 = (g2.value as number) * q2;
     const vw = v2 / v1;
 
-    let correctAns: "WIN" | "LOSS" | "UNREASONABLE" = isWin ? "WIN" : "LOSS";
+    let correctAns: "WIN" | "LOSS" | "SCAM" = isWin ? "WIN" : "LOSS";
     if (isWin) {
-       if (q2 >= 3 && q1 === 1 && vw < 0.85) correctAns = "UNREASONABLE";
-       if (vw < 0.65) correctAns = "UNREASONABLE";
+       if (q2 >= 3 && q1 === 1 && vw < 0.85) correctAns = "SCAM";
+       if (vw < 0.65) correctAns = "SCAM";
     } else {
-       if (vw > 1.3 && q2 >= 4) correctAns = "UNREASONABLE";
+       if (vw > 1.3 && q2 >= 4) correctAns = "SCAM";
     }
 
     newScenarios.push({
@@ -117,7 +119,7 @@ export const buildScenariosList = (ALL_UNITS: MasterUnit[]): Scenario[] => {
       get: { unit: g2, qty: q2 },
       correct: correctAns,
       forecast: fc,
-      explanation: `The algorithm evaluates this as a ${isWin ? 'WIN' : 'LOSS'} (ST: ${fc.st > 0 ? '+' : ''}${fc.st.toFixed(1)} | LT: ${fc.lt > 0 ? '+' : ''}${fc.lt.toFixed(1)}). ${correctAns === "UNREASONABLE" ? "However, no sane trader would accept this. It's a massive downgrade or completely unrealistic structure." : ""}`
+      explanation: `The algorithm evaluates this as a ${isWin ? 'WIN' : 'LOSS'} (ST: ${fc.st > 0 ? '+' : ''}${fc.st.toFixed(1)} | LT: ${fc.lt > 0 ? '+' : ''}${fc.lt.toFixed(1)}). ${correctAns === "SCAM" ? "However, no sane trader would accept this. It's a massive downgrade or completely unrealistic structure." : ""}`
     });
   }
 

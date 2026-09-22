@@ -11,6 +11,7 @@ import { getTier } from "../data";
 import { getUnitConservativeValue, TIER_ORDER } from "../app/components/InventoryChannel/inventoryUtils";
 import { parseSmartTrade } from "../app/components/TradeAnalyzer/smartParser";
 import { useStickyState } from "./useStickyState";
+import { triggerHaptic } from "../data/helpers";
 
 export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
   const { 
@@ -64,19 +65,16 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
   }, []);
 
   const handleCloseVault = useCallback(() => {
-    // Default fallback to trading-ads to be absolutely safe
+    triggerHaptic('light');
     const target = returnChannel || "trading-ads";
-    
-    // Dispatch navigation IMMEDIATELY before modifying local state
     window.document.dispatchEvent(new CustomEvent('navigate', { detail: target }));
-    
-    // Delay state clearing so the component unmounts cleanly without flashing "My Vault"
     setTimeout(() => {
       setViewingUser(null, null, null);
     }, 100);
   }, [returnChannel, setViewingUser]);
 
   const handleTabSwitch = (view: "owned" | "wishlist") => {
+    triggerHaptic('light');
     setVaultView(view);
     setIsSelectMode(false);
     setSelectedUnits(new Set());
@@ -87,6 +85,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     if (toast?.itemToRestore && profile && !isReadOnly) {
       try {
         await restoreItem(toast.itemToRestore);
+        triggerHaptic('light');
         setToast(null);
       } catch (e) { showToast("Failed to restore unit.", true); }
     }
@@ -96,6 +95,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     if (!profile || delta === 0 || isReadOnly || vaultView === "wishlist") return;
     try { 
       await addOrUpdateUnit(profile.id, unitId, delta);
+      triggerHaptic('light');
       setInspectTarget(prev => {
         if (!prev || prev.item.unit_id !== unitId) return prev;
         const updatedQty = prev.item.quantity + delta;
@@ -109,6 +109,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     if (!profile || isReadOnly) return;
     try { 
       await togglePin(profile.id, unitId, status); 
+      triggerHaptic('light');
       setInspectTarget(prev => prev && prev.item.unit_id === unitId ? { ...prev, item: { ...prev.item, is_pinned: !status } } : prev);
     } catch (e) { showToast("Failed to pin unit.", true); }
   }, [profile, togglePin, showToast, isReadOnly]);
@@ -121,6 +122,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
       } else {
         await removeUnit(profile.id, item.unit_id);
       }
+      triggerHaptic('light');
       setInspectTarget(null);
       showToast(`Removed ${master.name}`, false, vaultView === "wishlist" ? undefined : item);
     } catch (e) { showToast("Failed to remove unit.", true); }
@@ -288,11 +290,13 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     try {
       if (confirmClear === "unpinned") await clearUnpinned(profile.id);
       if (confirmClear === "all") await clearInventory(profile.id);
+      triggerHaptic('heavy');
       setConfirmClear(null);
     } catch (e) { showToast("Failed to clear inventory.", true); }
   }, [profile, confirmClear, clearUnpinned, clearInventory, showToast, isReadOnly]);
 
   const handleCopyVault = useCallback(() => {
+    triggerHaptic('light');
     const header = isReadOnly && viewingUsername 
       ? `${viewingUsername}'s ASTD ${vaultView === "wishlist" ? "Wishlist" : "Vault"}` 
       : `My ASTD ${vaultView === "wishlist" ? "Wishlist" : "Vault"}`;
@@ -304,6 +308,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
   }, [displayInventory, metrics.estimatedValue, vaultLiquidValue, metrics.unobPercentage, showToast, isReadOnly, viewingUsername, vaultView]);
 
   const handleSendToAnalyzer = (type: "give" | "get", targetMaster?: MasterUnit) => {
+    triggerHaptic('medium');
     if (isSelectMode && selectedUnits.size > 0) {
       let count = 0;
       selectedUnits.forEach(itemId => {
@@ -332,6 +337,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
   };
 
   const handlePostAsAd = () => {
+    triggerHaptic('medium');
     const cardsToGive: TradeCard[] = [];
     selectedUnits.forEach(itemId => {
       const invItem = displayInventory.find(i => i.id === itemId);
@@ -352,6 +358,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     try {
       await toggleWishlist(profile.id, unitId);
       await addOrUpdateUnit(profile.id, unitId, 1);
+      triggerHaptic('medium');
       showToast("Moved unit to Vault successfully!", false);
     } catch(e) { showToast("Failed to move unit.", true); }
   };
@@ -361,6 +368,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
       showToast("Cannot select locked units.", true);
       return;
     }
+    triggerHaptic('light');
     setSelectedUnits(prev => {
       const next = new Set(prev);
       if (next.has(item.id)) next.delete(item.id);
@@ -375,6 +383,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
       if (vaultView === "wishlist") await toggleWishlist(profile.id, master.id);
       else await addOrUpdateUnit(profile.id, master.id, 1);
       if (isSandbox) setSandboxDismissed(true);
+      triggerHaptic('medium');
       setSearchQuery("");
       showToast(`Added ${master.name} to ${vaultView === "wishlist" ? "Wishlist" : "Vault"}.`);
     } catch (e) { showToast("Failed to add unit.", true); }
@@ -396,7 +405,10 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
 
     setIsImporting(false);
     setImportText("");
-    if (successCount > 0) showToast(`Imported ${successCount} items successfully.`, false);
+    if (successCount > 0) {
+      triggerHaptic('success');
+      showToast(`Imported ${successCount} items successfully.`, false);
+    }
   };
 
   return {

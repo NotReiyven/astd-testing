@@ -59,7 +59,7 @@ export function GridStatusBadge({ status }: { status: string }) {
       onClick={toggleTip}
     >
       <div 
-        className="inline-flex items-center px-2.5 py-1 rounded-[6px] gap-1.5 backdrop-blur-md shadow-sm" 
+        className="inline-flex items-center px-2.5 py-1 rounded-[6px] gap-1.5 shadow-sm" 
         style={{ background: c.bg, border: `1px solid ${c.border}`, color: c.color }}
       >
         <StatusIcon status={status} />
@@ -173,7 +173,6 @@ export const TierGridCard = memo(function TierGridCard({
   onToggleSelect?: (id: string) => void,
   index?: number
 }) {
-  const [hovered, setHovered] = useState(false);
   const [isAdded, setIsAdded] = useState(false); 
   const [menuOpen, setMenuOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -236,9 +235,8 @@ export const TierGridCard = memo(function TierGridCard({
       onToggleSelect(unit.id);
       return;
     }
-    if (window.innerWidth < 768) {
-      setMenuOpen(true);
-    }
+    // Universal popout open on click (no more hover states)
+    setMenuOpen(true);
   };
 
   const tierKey = getTier(unit as MasterUnit);
@@ -263,22 +261,16 @@ export const TierGridCard = memo(function TierGridCard({
             className={`flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10 will-change-transform bg-card border ${
               isSelected 
                 ? "border-primary ring-2 ring-primary scale-[0.98]" 
-                : "border-border"
+                : "border-border hover:border-muted-foreground"
             }`}
             style={{
               transition: "border-color 0.15s cubic-bezier(0.16, 1, 0.3, 1), transform 0.15s cubic-bezier(0.16, 1, 0.3, 1)",
-              borderColor: isSelected ? "var(--primary)" : isAdded ? tierColor : hovered ? tierColor : "var(--border)",
-              transform: isAdded ? "scale(0.95)" : hovered ? "translateY(-4px)" : "translateY(0)"
+              transform: isAdded ? "scale(0.95)" : "scale(1)"
             }}
-            onMouseEnter={() => {
-              if (window.matchMedia('(hover: hover)').matches) setHovered(true);
-            }}
-            onMouseLeave={() => setHovered(false)}
           >
-            <div className="relative w-full overflow-hidden flex-shrink-0 border-b border-border" style={{ aspectRatio: "1/1", transform: "translateZ(0)" }}>
-              <div className="absolute inset-0 z-0 bg-popover" />
-
-              <div className="absolute inset-0 flex items-center justify-center text-white font-black text-5xl md:text-7xl tracking-tight z-0" style={{ ...getAvatarStyle(unit.name), transform: hovered ? "scale(1.05)" : "scale(1)", transition: "transform 0.7s ease-out" }}>
+            <div className="relative w-full overflow-hidden flex-shrink-0 border-b border-border bg-popover" style={{ aspectRatio: "1/1", transform: "translateZ(0)" }}>
+              
+              <div className="absolute inset-0 flex items-center justify-center text-white font-black text-5xl md:text-7xl tracking-tight z-0 opacity-40 select-none" style={{ ...getAvatarStyle(unit.name) }}>
                 {getInitials(unit.name)}
               </div>
 
@@ -288,12 +280,10 @@ export const TierGridCard = memo(function TierGridCard({
                 loading="lazy" 
                 decoding="async"
                 onError={(e) => handleImageError(e, unit.id)}
-                className="absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-out z-10 bg-popover" 
-                style={{ objectPosition: "center 15%", transform: hovered ? "scale(1.05)" : "scale(1)", willChange: "transform" }} 
+                className="absolute inset-0 w-full h-full object-cover z-10 bg-transparent" 
+                style={{ objectPosition: "center 15%" }} 
               />
 
-              <div className="absolute -bottom-[2px] left-0 right-0 h-[calc(40%+2px)] md:h-[calc(45%+2px)] z-20" style={{ background: "linear-gradient(to bottom, transparent 0%, rgba(30,33,36,0.8) 60%, rgba(30,33,36,1) 100%)" }} />
-              
               {unit.status && (
                 <div className="absolute top-2 left-2 md:top-3 md:left-3 z-50">
                   <GridStatusBadge status={unit.status} />
@@ -305,35 +295,9 @@ export const TierGridCard = memo(function TierGridCard({
                   <Check className="w-4 h-4 stroke-[3]" />
                 </div>
               )}
-
-              {/* TRANSLUCENT GHOST BUTTON GRID OVERLAY (HIDDEN IN SELECT MODE) */}
-              {!isSelectMode && (
-                <div className={`hidden md:flex absolute inset-0 bg-black/60 backdrop-blur-[4px] transition-opacity duration-200 z-40 flex-col justify-center gap-2 p-4 pt-8 ${hovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-                  <div className="grid grid-cols-2 gap-2 w-full">
-                    <button onClick={(e) => { e.stopPropagation(); handleAdd("give"); }} className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-[6px] bg-[#FAA61A]/10 text-[#FAA61A] border border-[#FAA61A]/40 hover:bg-[#FAA61A] hover:text-white transition-all active:scale-95 shadow-sm focus-visible:outline-none min-h-[44px]">
-                      <ArrowUpCircle className="w-5 h-5" />
-                      <span className="text-[11px] font-bold uppercase tracking-wider">Give</span>
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); handleAdd("get"); }} className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-[6px] bg-primary/10 text-primary border border-primary/40 hover:bg-primary hover:text-white transition-all active:scale-95 shadow-sm focus-visible:outline-none min-h-[44px]">
-                      <ArrowDownCircle className="w-5 h-5" />
-                      <span className="text-[11px] font-bold uppercase tracking-wider">Get</span>
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 w-full mt-1">
-                    <button onClick={(e) => { e.stopPropagation(); handleSaveToInventory(); }} disabled={isSaving} className="flex items-center justify-center gap-1.5 py-2 rounded-[6px] bg-[#23a559]/10 text-[#23a559] border border-[#23a559]/40 hover:bg-[#23a559] hover:text-white disabled:opacity-50 disabled:hover:bg-[#23a559]/10 disabled:hover:text-[#23a559] transition-all active:scale-95 shadow-sm focus-visible:outline-none min-h-[44px]">
-                      {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
-                      <span className="text-[11px] font-bold">{isSaving ? "Saving..." : "Save"}</span>
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); openModal(unit.id); }} className="flex items-center justify-center gap-1.5 py-2 rounded-[6px] bg-card/60 text-foreground border border-border hover:bg-muted hover:text-foreground transition-all active:scale-95 shadow-sm focus-visible:outline-none min-h-[44px]">
-                      <History className="w-3.5 h-3.5" />
-                      <span className="text-[11px] font-bold">History</span>
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
 
-            <div className="flex flex-col flex-1 px-3 md:px-4 pt-3 md:pt-4 pb-3 md:pb-4 relative z-10 bg-card -mt-[1px]" onClick={() => { if (!isSelectMode && window.innerWidth >= 768) setMenuOpen(true); }}>
+            <div className="flex flex-col flex-1 px-3 md:px-4 pt-3 md:pt-4 pb-3 md:pb-4 relative z-10 bg-card">
               <div className="flex flex-col">
                 <div className="flex items-start gap-2">
                   <h3 className="text-[13px] md:text-[17px] font-extrabold tracking-tight leading-snug flex-1 min-w-0 line-clamp-2 text-foreground">
@@ -362,7 +326,7 @@ export const TierGridCard = memo(function TierGridCard({
               </div>
 
               <div className="flex flex-col mt-auto pt-3 md:pt-5 w-full">
-                <div className="pl-2 md:pl-3 border-l-[3px] transition-colors duration-300 w-full min-w-0 mb-3 md:mb-4" style={{ borderColor: hovered ? tierColor : "var(--primary)" }}>
+                <div className="pl-2 md:pl-3 border-l-[3px] w-full min-w-0 mb-3 md:mb-4" style={{ borderColor: tierColor }}>
                   <GridValueDisplay unit={unit} />
                 </div>
 
@@ -395,30 +359,30 @@ export const TierGridCard = memo(function TierGridCard({
                   <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-[14px] z-0" style={getAvatarStyle(unit.name)}>
                     {getInitials(unit.name)}
                   </div>
-                  <img src={proxyUrl || undefined} alt={unit.name} className="absolute inset-0 w-full h-full object-cover z-10 bg-card" onError={(e) => handleImageError(e, unit.id)} />
+                  <img src={proxyUrl || undefined} alt={unit.name} className="absolute inset-0 w-full h-full object-cover z-10 bg-transparent" onError={(e) => handleImageError(e, unit.id)} />
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="text-[16px] font-black text-foreground tracking-tight truncate">{unit.name}</span>
                   <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground truncate">{unit.subtitle}</span>
                 </div>
               </div>
-              <button onClick={() => setMenuOpen(false)} className="w-11 h-11 md:w-8 md:h-8 rounded-full bg-white/5 flex items-center justify-center text-muted-foreground shrink-0 active:scale-90 hover:bg-white/10 transition-colors focus-visible:outline-none">
+              <button onClick={() => setMenuOpen(false)} className="w-11 h-11 md:w-8 md:h-8 rounded-[6px] border border-transparent hover:border-border hover:bg-white/5 flex items-center justify-center text-muted-foreground shrink-0 active:scale-90 transition-colors focus-visible:outline-none">
                 <X className="w-6 h-6 md:w-4 md:h-4" />
               </button>
             </div>
 
             <div className="flex flex-col gap-2.5">
-              <button onClick={() => handleAdd("give")} className="w-full flex items-center justify-center gap-2 bg-[#FAA61A] hover:bg-[#d98b14] transition-colors text-white text-[14px] font-bold min-h-[50px] md:h-[44px] rounded-[10px] active:scale-[0.98] shadow-md focus-visible:outline-none">
+              <button onClick={() => handleAdd("give")} className="w-full flex items-center justify-center gap-2 bg-[#FAA61A] hover:bg-[#d98b14] transition-colors text-white text-[14px] font-bold min-h-[50px] md:h-[44px] rounded-[6px] active:scale-[0.98] shadow-sm focus-visible:outline-none">
                 <ArrowUpCircle className="w-5 h-5 md:w-4 md:h-4" /> Add to 'You Give'
               </button>
-              <button onClick={() => handleAdd("get")} className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/80 transition-colors text-white text-[14px] font-bold min-h-[50px] md:h-[44px] rounded-[10px] active:scale-[0.98] shadow-md focus-visible:outline-none">
+              <button onClick={() => handleAdd("get")} className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/80 transition-colors text-white text-[14px] font-bold min-h-[50px] md:h-[44px] rounded-[6px] active:scale-[0.98] shadow-sm focus-visible:outline-none">
                 <ArrowDownCircle className="w-5 h-5 md:w-4 md:h-4" /> Add to 'You Get'
               </button>
-              <button onClick={handleSaveToInventory} disabled={isSaving} className="w-full flex items-center justify-center gap-2 bg-[#23a559] hover:bg-[#1f914e] disabled:opacity-50 transition-colors text-white text-[14px] font-bold min-h-[50px] md:h-[44px] rounded-[10px] active:scale-[0.98] shadow-md focus-visible:outline-none">
+              <button onClick={handleSaveToInventory} disabled={isSaving} className="w-full flex items-center justify-center gap-2 bg-[#23a559] hover:bg-[#1f914e] disabled:opacity-50 transition-colors text-white text-[14px] font-bold min-h-[50px] md:h-[44px] rounded-[6px] active:scale-[0.98] shadow-sm focus-visible:outline-none">
                 {isSaving ? <Loader2 className="w-5 h-5 md:w-4 md:h-4 animate-spin" /> : <Package className="w-5 h-5 md:w-4 md:h-4" />} 
                 {isSaving ? "Saving..." : "Save to My Inventory"}
               </button>
-              <button onClick={() => { setMenuOpen(false); openModal(unit.id); }} className="w-full flex items-center justify-center gap-2 bg-card hover:bg-muted transition-colors text-foreground border border-border text-[13px] font-bold min-h-[50px] md:h-[44px] rounded-[10px] active:scale-[0.98] mt-0.5 focus-visible:outline-none">
+              <button onClick={() => { setMenuOpen(false); openModal(unit.id); }} className="w-full flex items-center justify-center gap-2 bg-card hover:bg-muted transition-colors text-foreground border border-border text-[13px] font-bold min-h-[50px] md:h-[44px] rounded-[6px] active:scale-[0.98] mt-0.5 focus-visible:outline-none">
                 <History className="w-5 h-5 md:w-4 md:h-4" /> View Market History
               </button>
             </div>

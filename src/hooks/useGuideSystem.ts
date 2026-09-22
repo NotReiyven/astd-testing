@@ -1,17 +1,13 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useStickyState } from './useStickyState';
-import { GuideType } from '../app/components/guides/AquaGuideOverlay';
-import { useLayoutStore } from '../store/useLayoutStore';
+
+export type GuideType = "main" | "academy_grad" | null;
 
 export function useGuideSystem({ 
-  setActiveChannel, 
   setIsRosterOpen, 
-  setIsAnalyzerOpen, 
-  setTutorialTab, 
   bootStage 
 }: any) {
   const [guideState, setGuideState] = useState<{ type: GuideType; step: number }>({ type: null, step: 0 });
-  const setHelpMenuOpen = useLayoutStore(s => s.setHelpMenuOpen);
 
   const [completedGuides, setCompletedGuides] = useStickyState<Record<string, boolean>>(
     {}, 
@@ -33,31 +29,17 @@ export function useGuideSystem({
   }, [setIsRosterOpen, completedGuides, bootStage]);
 
   const startGuide = useCallback((type: GuideType, force: boolean = false) => {
-    if (!force && type && completedGuides[type]) return;
-
-    setHelpMenuOpen(false);
+    if (!force && type && completedGuides[type as string]) return;
     setGuideState({ type, step: 1 });
-
-    if (type === "developer") setActiveChannel("home");
-    else if (type === "channels" || type === "main") {
-      if (window.innerWidth < 768) setIsRosterOpen(true);
-    } 
-    else if (type === "advanced" || type === "management") {
-      setActiveChannel("tutorial");
-      setTutorialTab("sandbox");
-      if (type === "advanced") setIsAnalyzerOpen(true);
-    } else if (type === "filters" || type === "stats") {
-      setActiveChannel("tutorial");
-      setTutorialTab("theory");
-    } else if (type === "dictionary") {
-      setActiveChannel("tutorial");
-      setTutorialTab("dictionary");
-      setIsAnalyzerOpen(true);
+    if (type === "main" && window.innerWidth < 768) {
+      setIsRosterOpen(true);
     }
-  }, [completedGuides, setActiveChannel, setIsAnalyzerOpen, setIsRosterOpen, setTutorialTab, setHelpMenuOpen]);
+  }, [completedGuides, setIsRosterOpen]);
 
   const endGuide = useCallback(() => {
-    if (guideState.type) setCompletedGuides((prev: any) => ({ ...prev, [guideState.type as string]: true }));
+    if (guideState.type) {
+      setCompletedGuides((prev: any) => ({ ...prev, [guideState.type as string]: true }));
+    }
     setGuideState({ type: null, step: 0 });
   }, [guideState.type, setCompletedGuides]);
 

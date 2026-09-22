@@ -188,8 +188,6 @@ export const MainCanvas = memo(function MainCanvas({
     catch (e) { console.error("Failed to save banner preference", e); }
   };
 
-  const isStatsTarget = guideState?.type === "stats";
-
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background relative z-10">
       <style>{`
@@ -214,7 +212,7 @@ export const MainCanvas = memo(function MainCanvas({
 
       <div 
         ref={headerRef}
-        className={`flex flex-col absolute top-0 left-0 right-0 w-full transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${guideState?.type === "filters" ? "ring-2 ring-primary rounded-[8px] bg-primary/10 shadow-lg z-[100005] animate-pulse" : "z-30 shadow-sm"} translate-y-0`}
+        className="flex flex-col absolute top-0 left-0 right-0 w-full transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] z-30 shadow-sm translate-y-0"
       >
         <CanvasControls 
           activeTierFilter={activeTierFilter}
@@ -223,7 +221,7 @@ export const MainCanvas = memo(function MainCanvas({
           hasFiltersApplied={hasFiltersApplied}
           handleResetFilters={handleResetFilters}
           statusFilter={statusFilter}
-          setStatusFilter={(s) => { setStatusFilter(s); startGuide("filters"); }} 
+          setStatusFilter={setStatusFilter} 
           sortMode={sortMode}
           setSortMode={setSortMode}
           viewMode={viewMode}
@@ -288,7 +286,7 @@ export const MainCanvas = memo(function MainCanvas({
             <CanvasSkeleton viewMode={viewMode} />
           </div>
         ) : (
-          <div className={`relative ${isStatsTarget ? 'ring-2 ring-primary rounded-[8px] bg-primary/5 shadow-lg z-[100005]' : ''}`} style={{ height: virtualizer.getTotalSize(), width: '100%' }}>
+          <div className="relative" style={{ height: virtualizer.getTotalSize(), width: '100%' }}>
             {virtualizer.getVirtualItems().map((virtualRow) => {
               const item = flattenedItems[virtualRow.index];
 
@@ -364,7 +362,7 @@ export const MainCanvas = memo(function MainCanvas({
                   )}
 
                   {item.type === 'grid-row' && (
-                    <div className={`grid gap-3 sm:gap-5 w-full pb-3 sm:pb-5 ${isStatsTarget && virtualRow.index === 1 ? 'animate-pulse' : ''}`} style={{ gridTemplateColumns: `repeat(${item.cols || 4}, minmax(0, 1fr))` }}>
+                    <div className="grid gap-3 sm:gap-5 w-full pb-3 sm:pb-5" style={{ gridTemplateColumns: `repeat(${item.cols || 4}, minmax(0, 1fr))` }}>
                       {item.units.map((u, i) => (
                         <TierGridCard 
                           key={u.id} 
@@ -380,7 +378,7 @@ export const MainCanvas = memo(function MainCanvas({
                   )}
 
                   {item.type === 'list-row' && (
-                    <div className={`${isStatsTarget && virtualRow.index === 1 ? 'animate-pulse ring-2 ring-primary' : ''}`}>
+                    <div>
                        <UnitListRow unit={item.unit} isLast={item.isLast} searchQuery={item.searchQuery} viewMode={viewMode} />
                     </div>
                   )}

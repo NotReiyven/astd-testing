@@ -53,7 +53,7 @@ export default function App() {
   const pinnedIds = useTradeStore((s) => s.pinnedIds);
   const { profile } = useAuthStore();
 
-  const { globalSearchQuery, setGlobalSearchQuery, helpMenuOpen } = useLayoutStore();
+  const { globalSearchQuery, setGlobalSearchQuery } = useLayoutStore();
 
   const [activeChannel, setActiveChannel] = useStickyState("home", "astd_channel", isNonEmptyString);
   const [tutorialTab, setTutorialTab] = useState<"sandbox" | "simulator" | "theory" | "dictionary">("sandbox");
@@ -64,7 +64,6 @@ export default function App() {
 
   const { bootStage, isMobile } = useAppBoot();
   
-  // Pulls the most recent audit log entry for this user to display exact ban reasoning
   const [banReason, setBanReason] = useState<string>("Violation of Terms of Service.");
   useEffect(() => {
     if (profile?.role === 'banned') {
@@ -139,10 +138,10 @@ export default function App() {
   const isMainStep3 = guideState.type === "main" && guideState.step === 3;
   const isMainStep4 = guideState.type === "main" && guideState.step === 4;
 
-  const sidebarZ = isMainStep1 || guideState.type === "channels" ? "!z-[100000] shadow-[15px_0_50px_rgba(0,0,0,0.8)]" : "z-50";
-  const mainContentZ = isMainStep2 || guideState.type === "developer" || guideState.type === "filters" || guideState.type === "stats" ? "!z-[100000] relative shadow-[0_0_50px_rgba(0,0,0,0.8)]" : "z-auto";
-  const calcHeaderZ = helpMenuOpen || isMainStep3 ? "!z-[99999] shadow-[0_0_50px_rgba(0,0,0,0.8)]" : "z-50";
-  const analyzerZ = isMainStep4 || guideState.type === "advanced" || guideState.type === "dictionary" || guideState.type === "management" ? "!z-[100000] shadow-[-20px_0_50px_rgba(0,0,0,0.8)]" : "z-50";
+  const sidebarZ = isMainStep1 ? "!z-[100000] shadow-[15px_0_50px_rgba(0,0,0,0.8)] relative" : "z-50";
+  const mainContentZ = isMainStep2 ? "!z-[100000] relative shadow-[0_0_50px_rgba(0,0,0,0.8)]" : "z-auto";
+  const calcHeaderZ = isMainStep3 ? "!z-[99999] shadow-[0_0_50px_rgba(0,0,0,0.8)] relative" : "z-50";
+  const analyzerZ = isMainStep4 ? "!z-[100000] shadow-[-20px_0_50px_rgba(0,0,0,0.8)]" : "z-50";
 
   // HARD LOCK SCREEN FOR BANNED USERS
   if (bootStage === 'complete' && profile?.role === 'banned') {
@@ -153,18 +152,11 @@ export default function App() {
         <p className="text-[#949BA4] text-[14px] max-w-md leading-relaxed mb-8">
           Your access to the ASTD Value List platform has been permanently revoked by the moderation team.
         </p>
-        
         <div className="bg-[#1E1F22] border border-border rounded-[8px] p-5 w-full max-w-md text-left mb-8 shadow-inner">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">Official Reason</span>
           <p className="text-[14px] text-foreground font-medium leading-relaxed italic">"{banReason}"</p>
         </div>
-
-        <a 
-          href="https://discord.gg/Q7JTvPUEM" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="px-8 py-3.5 bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold text-[13px] uppercase tracking-wider rounded-[4px] transition-colors shadow-md flex items-center justify-center gap-2 border border-[#5865F2] focus-visible:outline-none"
-        >
+        <a href="https://discord.gg/Q7JTvPUEM" target="_blank" rel="noopener noreferrer" className="px-8 py-3.5 bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold text-[13px] uppercase tracking-wider rounded-[4px] transition-colors shadow-md flex items-center justify-center gap-2 border border-[#5865F2] focus-visible:outline-none">
           Appeal in Discord <ExternalLink className="w-4 h-4" />
         </a>
       </div>
@@ -302,7 +294,7 @@ export default function App() {
           </div>
 
           <div 
-            className={`fixed md:relative top-0 bottom-0 left-0 flex-shrink-0 overflow-hidden transition-all duration-300 ease-out shadow-2xl md:shadow-none will-change-[width,transform] z-50 ${isRosterOpen ? 'w-[85vw] max-w-[320px] md:w-[240px] translate-x-0' : 'w-0 -translate-x-full md:translate-x-0'} ${sidebarZ}`}
+            className={`fixed md:relative top-0 bottom-0 left-0 flex-shrink-0 overflow-hidden transition-all duration-300 ease-out shadow-2xl md:shadow-none will-change-[width,transform] bg-card ${isRosterOpen ? 'w-[85vw] max-w-[320px] md:w-[240px] translate-x-0' : 'w-0 -translate-x-full md:translate-x-0'} ${sidebarZ}`}
             style={{ opacity: isRosterOpen ? 1 : 0 }}
           >
             <div className="w-[85vw] max-w-[320px] md:w-[240px] h-full">
@@ -311,7 +303,7 @@ export default function App() {
           </div>
 
           <div className={`flex-1 flex flex-col min-w-0 bg-background md:pb-0 pb-[80px] ${mainContentZ}`}>
-            <div className={`relative ${helpMenuOpen || isMainStep3 ? '!z-[100002] shadow-[0_20px_50px_rgba(0,0,0,0.8)]' : 'z-40'}`}>
+            <div className={`relative ${calcHeaderZ}`}>
               <SyncBanner />
               <TopBar 
                 calcHeaderZ={calcHeaderZ}

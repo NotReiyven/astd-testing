@@ -120,7 +120,7 @@ export function AdInteractionModal() {
     if (!newComment.trim() || !profile) return;
     
     triggerHaptic('light');
-    const success = await postComment(activeAdId, profile.id, newComment, replyingTo?.id || null);
+    const success = await postComment(activeAdId, profile, newComment, replyingTo?.id || null);
     if (success) {
       setNewComment("");
       setReplyingTo(null);

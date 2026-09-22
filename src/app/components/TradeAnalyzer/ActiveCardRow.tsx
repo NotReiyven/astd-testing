@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/TradeAnalyzer/ActiveCardRow.tsx
+// ================================================
+
 import { useCallback, useMemo, memo } from "react";
 import { X, Pin } from "lucide-react";
 import { TradeCard } from "../../../types";
@@ -6,6 +10,7 @@ import { useUnits } from "../../../context/UnitContext";
 import { getAvatarStyle, getInitials } from "./summaryUtils";
 import { StatusIcon, JargonWrap } from "../MainCanvas/UnitGrid";
 import { QuantitySelector } from "../ui/QuantitySelector";
+import { triggerHaptic } from "../../../data/helpers";
 
 export const ActiveCardRow = memo(function ActiveCardRow({
   card,
@@ -31,14 +36,21 @@ export const ActiveCardRow = memo(function ActiveCardRow({
     onQtyChange(card.id, newQty);
   }, [card.id, onQtyChange]);
 
-  const handleRemove = useCallback(() => onRemove(card.id), [card.id, onRemove]);
-  const handlePin = useCallback(() => onTogglePin(card.id), [card.id, onTogglePin]);
+  const handleRemove = useCallback(() => {
+    triggerHaptic('light');
+    onRemove(card.id);
+  }, [card.id, onRemove]);
+
+  const handlePin = useCallback(() => {
+    triggerHaptic('light');
+    onTogglePin(card.id);
+  }, [card.id, onTogglePin]);
 
   const isOwnerChoice = masterData?.value === "owner" || masterData?.valueDisplay === "Owner's Choice" || masterData?.valueDisplay === "O/C";
 
   return (
     <div 
-      className={`flex flex-col md:flex-row md:items-center gap-2.5 bg-card hover:bg-white/5 p-3 md:p-2 rounded-[8px] border transition-colors group ${isPinned ? "border-primary shadow-[0_0_8px_var(--primary)]" : "border-border"}`}
+      className={`flex flex-col md:flex-row md:items-center gap-2.5 bg-card hover:bg-white/5 p-3 md:p-2 rounded-[8px] border transition-all duration-200 group animate-fade-in ${isPinned ? "border-primary shadow-[0_0_8px_var(--primary)]" : "border-border"}`}
     >
       <div className="flex items-center gap-2.5 w-full min-w-0">
         <div className={`relative w-11 h-11 md:w-10 md:h-10 flex-shrink-0 rounded-[6px] bg-popover overflow-hidden flex items-center justify-center border ${isPinned ? "border-primary/50" : "border-border"}`}>
@@ -97,13 +109,13 @@ export const ActiveCardRow = memo(function ActiveCardRow({
                <button 
                  onClick={handlePin} 
                  title={isPinned ? "Unpin unit" : "Pin unit (prevents clearing)"}
-                 className={`w-7 h-7 flex items-center justify-center transition-colors flex-shrink-0 active:scale-90 rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${isPinned ? "text-foreground bg-white/5" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}
+                 className={`w-7 h-7 flex items-center justify-center transition-all duration-200 flex-shrink-0 active:scale-90 rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer ${isPinned ? "text-foreground bg-white/5" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}
                >
                  <Pin className="w-[14px] h-[14px]" style={{ fill: isPinned ? "currentColor" : "none" }} />
                </button>
                <button 
                  onClick={handleRemove} 
-                 className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0 active:scale-90 rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
+                 className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 flex-shrink-0 active:scale-90 rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive cursor-pointer"
                >
                  <X className="w-[15px] h-[15px]" />
                </button>
@@ -120,13 +132,13 @@ export const ActiveCardRow = memo(function ActiveCardRow({
              <button 
                onClick={handlePin} 
                title={isPinned ? "Unpin unit" : "Pin unit"}
-               className={`w-9 h-9 flex items-center justify-center rounded-[6px] border ${isPinned ? "bg-primary text-primary-foreground border-primary" : "bg-popover text-muted-foreground border-border"}`}
+               className={`w-9 h-9 flex items-center justify-center rounded-[6px] border transition-all active:scale-95 cursor-pointer ${isPinned ? "bg-primary text-primary-foreground border-primary" : "bg-popover text-muted-foreground border-border hover:bg-muted"}`}
              >
                <Pin className="w-4 h-4" style={{ fill: isPinned ? "currentColor" : "none" }} />
              </button>
              <button 
                onClick={handleRemove} 
-               className="w-9 h-9 flex items-center justify-center bg-popover border border-border hover:bg-destructive/20 text-muted-foreground hover:text-destructive rounded-[6px]"
+               className="w-9 h-9 flex items-center justify-center bg-popover border border-border hover:bg-destructive/20 text-muted-foreground hover:text-destructive rounded-[6px] transition-all active:scale-95 cursor-pointer"
              >
                <X className="w-4 h-4" />
              </button>

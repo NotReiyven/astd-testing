@@ -38,7 +38,7 @@ interface AdInteractionState {
   openAdContext: (adId: string, currentUserId?: string) => Promise<void>;
   closeAdContext: () => void;
   
-  postComment: (adId: string, userId: string, content: string, parentId?: string | null) => Promise<boolean>;
+  postComment: (adId: string, userProfile: any, content: string, parentId?: string | null) => Promise<boolean>;
   deleteComment: (commentId: string) => Promise<boolean>;
   voteAd: (adId: string, userId: string, value: number) => Promise<void>;
   voteComment: (commentId: string, userId: string, value: number) => Promise<void>;
@@ -146,45 +146,77 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
       supabase.removeChannel(activeInteractionChannel);
       activeInteractionChannel = null;
     }
-    set({ activeAdId: null, comments: [], commentVotes: {}, adVotes: { upvotes: 0, downvotes: 0, userVote: 0 } });
+    set({ activeAdId: null, comments: [], commentVotes: {}, adVotes: { upvotes: 0, downvotes: 0, userVote: 0 }, isActionPending: false });
   },
 
-  postComment: async (adId, userId, content, parentId = null) => {
+  postComment: async (adId, userProfile, content, parentId = null) => {
     if (containsPhishingOrLink(content)) {
       alert("ACTION BLOCKED: External links, domains, and invite URLs are strictly prohibited to prevent phishing and scams.");
       return false;
     }
 
     set({ isActionPending: true });
-    const { error } = await supabase.from('ad_comments').insert({
+
+    // 1. Create fake optimistic comment
+    const fakeId = `temp-${Date.now()}`;
+    const optimisticComment: AdComment = {
+      id: fakeId,
       ad_id: adId,
-      user_id: userId,
+      user_id: userProfile.id,
+      content: content.trim(),
+      created_at: new Date().toISOString(),
+      parent_id: parentId,
+      profiles: {
+        username: userProfile.username,
+        avatar_url: userProfile.avatar_url,
+        role: userProfile.role,
+        discord_id: userProfile.discord_id
+      }
+    };
+
+    // 2. Inject immediately
+    set(state => ({ comments: [...state.comments, optimisticComment] }));
+
+    // 3. Sync with DB
+    const { data, error } = await supabase.from('ad_comments').insert({
+      ad_id: adId,
+      user_id: userProfile.id,
       content: content.trim(),
       parent_id: parentId
-    });
-    
-    set({ isActionPending: false });
+    }).select('id').single();
     
     if (error) {
+      // Rollback on fail
+      set(state => ({ 
+        comments: state.comments.filter(c => c.id !== fakeId),
+        isActionPending: false
+      }));
       console.error("🚨 POST COMMENT FAILED:", error.message);
       alert(`FAILED TO POST COMMENT:\n${error.message}`);
       return false;
     }
+
+    // Replace fake ID with real DB ID silently
+    set(state => ({
+      comments: state.comments.map(c => c.id === fakeId ? { ...c, id: data.id } : c),
+      isActionPending: false
+    }));
+
     return true;
   },
 
   deleteComment: async (commentId) => {
     set({ isActionPending: true });
-    
     const currentComments = get().comments;
+    // Optimistic delete
     set({ comments: currentComments.filter(c => c.id !== commentId) });
 
     const { error } = await supabase.from('ad_comments').delete().eq('id', commentId);
     
     if (error) {
+      // Rollback
       console.error("🚨 Delete failed", error);
-      set({ comments: currentComments });
-      set({ isActionPending: false });
+      set({ comments: currentComments, isActionPending: false });
       return false;
     }
     
@@ -194,10 +226,20 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
 
   voteAd: async (adId, userId, value) => {
     const { adVotes } = get();
-    const isRemoving = adVotes.userVote === value;
+    const currentVote = adVotes.userVote;
+    const isRemoving = currentVote === value;
     const newValue = isRemoving ? 0 : value;
 
-    set({ adVotes: { ...adVotes, userVote: newValue } });
+    // Optimistically calculate new totals
+    let up = adVotes.upvotes;
+    let down = adVotes.downvotes;
+
+    if (currentVote === 1) up--;
+    if (currentVote === -1) down--;
+    if (newValue === 1) up++;
+    if (newValue === -1) down++;
+
+    set({ adVotes: { upvotes: up, downvotes: down, userVote: newValue } });
 
     if (isRemoving) {
       await supabase.from('ad_votes').delete().match({ ad_id: adId, user_id: userId });
@@ -208,14 +250,24 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
 
   voteComment: async (commentId, userId, value) => {
     const { commentVotes } = get();
-    const currentVote = commentVotes[commentId]?.userVote || 0;
+    const currentData = commentVotes[commentId] || { upvotes: 0, downvotes: 0, userVote: 0 };
+    const currentVote = currentData.userVote;
     const isRemoving = currentVote === value;
     const newValue = isRemoving ? 0 : value;
+
+    // Optimistically calculate new totals
+    let up = currentData.upvotes;
+    let down = currentData.downvotes;
+
+    if (currentVote === 1) up--;
+    if (currentVote === -1) down--;
+    if (newValue === 1) up++;
+    if (newValue === -1) down++;
 
     set({ 
       commentVotes: { 
         ...commentVotes, 
-        [commentId]: { ...(commentVotes[commentId] || { upvotes: 0, downvotes: 0 }), userVote: newValue } 
+        [commentId]: { upvotes: up, downvotes: down, userVote: newValue } 
       } 
     });
 

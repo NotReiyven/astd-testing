@@ -21,6 +21,7 @@ import { useUnits } from "../../context/UnitContext";
 import { getTier } from "../../data";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useProfileStore } from "../../store/useProfileStore";
+import { triggerHaptic } from "../../data/helpers";
 
 type ChannelConfig = { id: string; label: string; isLocked: boolean; hasThreads?: boolean; icon?: LucideIcon; };
 type CategoryConfig = { id: string; label: string; channels: ChannelConfig[]; };
@@ -124,10 +125,12 @@ export function Sidebar({
   }, [units]);
 
   const toggleCategory = (id: string) => {
+    triggerHaptic('light');
     setCollapsedCategories(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   const handleChannelClick = (channelId: string) => {
+    triggerHaptic('light');
     if (channelId === "profile") {
       setViewingProfile(null); 
     }
@@ -175,7 +178,7 @@ export function Sidebar({
                         <div key={channel.id} className="flex flex-col relative">
                           <button
                             onClick={() => handleChannelClick(channel.id)}
-                            className={`group w-full flex items-center justify-between px-2 py-2.5 md:py-1.5 mb-[2px] rounded-[4px] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                            className={`group w-full flex items-center justify-between px-2 py-2.5 md:py-1.5 mb-[2px] rounded-[4px] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none active:scale-[0.98] cursor-pointer ${
                               isTarget 
                                 ? "bg-primary text-primary-foreground shadow-[0_0_20px_var(--primary)] ring-2 ring-primary translate-x-1 z-50 relative animate-pulse"
                                 : isActive
@@ -214,8 +217,11 @@ export function Sidebar({
                                       return (
                                         <button
                                           key={`${group.tier}-${child.id}`}
-                                          onClick={() => onThreadClick(group.tier as FilterKey, child.id)}
-                                          className="relative flex items-center min-h-[36px] md:min-h-[28px] hover:bg-secondary/50 rounded-[4px] px-2 text-muted-foreground hover:text-foreground text-left transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-x-1 focus-visible:outline-none"
+                                          onClick={() => {
+                                            triggerHaptic('light');
+                                            onThreadClick(group.tier as FilterKey, child.id);
+                                          }}
+                                          className="relative flex items-center min-h-[36px] md:min-h-[28px] hover:bg-secondary/50 rounded-[4px] px-2 text-muted-foreground hover:text-foreground text-left transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-x-1 focus-visible:outline-none active:scale-[0.98] cursor-pointer"
                                         >
                                           {isLastChild ? (
                                             <div className="absolute left-[-10px] top-[-12px] w-[12px] h-[30px] md:h-[26px] border-l-2 border-b-2 border-border rounded-bl-[6px]" />

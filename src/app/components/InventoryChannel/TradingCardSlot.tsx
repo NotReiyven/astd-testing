@@ -64,8 +64,6 @@ export const TradingCardSlot = memo(({
     else onInspect(item, master);
   };
 
-  const tagBgTint = dropCfg?.bg ? dropCfg.bg : "transparent";
-
   return (
     <div
       onClick={handleClick}
@@ -75,10 +73,9 @@ export const TradingCardSlot = memo(({
         isSelected 
           ? "border-primary ring-2 ring-primary scale-[0.98]" 
           : isFullyStaged && !isWishlist
-            ? "border-[rgba(255,255,255,0.02)] opacity-50"
-            : "border-border hover:border-[rgba(255,255,255,0.18)] hover:-translate-y-0.5"
+            ? "border-transparent opacity-50"
+            : "border-border hover:border-muted-foreground"
       }`}
-      style={{ boxShadow: "0 4px 14px rgba(0,0,0,0.2)" }}
     >
       {!isSelectMode && !isSandbox && !isReadOnly && !isWishlist && (
         <div className="absolute top-0 bottom-[35%] left-0 w-8 bg-popover border-r border-border flex flex-col justify-center items-center py-2 gap-2 -translate-x-full group-hover:translate-x-0 transition-transform duration-200 z-50 rounded-br-[8px]" onClick={(e) => e.stopPropagation()}>
@@ -96,7 +93,7 @@ export const TradingCardSlot = memo(({
 
       <div 
         className="relative w-full overflow-hidden flex items-center justify-center border-b border-border bg-popover"
-        style={{ aspectRatio: "1/1", background: `radial-gradient(circle at 50% 30%, ${tagBgTint} 0%, var(--popover) 85%)` }}
+        style={{ aspectRatio: "1/1" }}
       >
         {dropCfg && !isSelected && (
           <div 
@@ -130,7 +127,7 @@ export const TradingCardSlot = memo(({
           <img 
             src={proxyUrl} 
             alt={master.name} 
-            className="absolute inset-0 w-full h-full object-cover z-10 transition-transform duration-500 group-hover:scale-105" 
+            className="absolute inset-0 w-full h-full object-cover z-10 bg-transparent" 
             style={{ objectPosition: "center 15%" }}
             onError={(e) => handleImageError(e, master.id)} 
           />
@@ -193,7 +190,7 @@ export const TradingCardSlot = memo(({
               <span className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground">Liquidity</span>
               <span className={`text-[11px] font-mono font-bold uppercase truncate ${
                 (master.liquidity || "").toLowerCase() === "high" ? "text-[#4DB6AC]" :
-                (master.liquidity || "").toLowerCase() === "low" ? "text-[#E57373]" : "text-muted-foreground"
+                (master.liquidity || "").toLowerCase() === "low" ? "text-destructive" : "text-muted-foreground"
               }`}>
                 {master.liquidity || "AVG"}
               </span>

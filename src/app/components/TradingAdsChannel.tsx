@@ -106,8 +106,8 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
           return (
             <div
               key={`item-${i}`}
-              onClick={() => onInspectUnit(item.id)}
-              className={`relative ${slotBase} bg-popover border border-border hover:border-primary cursor-pointer transition-colors overflow-visible flex items-center justify-center group shadow-sm`}
+              onClick={() => { triggerHaptic('light'); onInspectUnit(item.id); }}
+              className={`relative ${slotBase} bg-popover border border-border hover:border-primary cursor-pointer transition-colors overflow-visible flex items-center justify-center group shadow-sm active:scale-95`}
               title={`${item.qty > 1 ? `${item.qty}x ` : ''}${item.name}`}
             >
               <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white z-0 rounded-[6px] overflow-hidden" style={getAvatarStyle(item.name)}>
@@ -228,6 +228,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
     };
 
     const handleAvatarClick = (e: React.MouseEvent) => {
+      triggerHaptic('light');
       const rect = e.currentTarget.getBoundingClientRect();
       openPopout(ad.user_id, rect.left, rect.bottom);
     };
@@ -248,7 +249,6 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
       themeColor = "var(--border)";
     }
 
-    // Compute live values
     const totalGiveVal = ad.give_items.reduce((acc, i) => {
       const m = ALL_UNITS.find(u => u.id === i.id);
       const val = m && typeof m.value === 'number' ? m.value : (m?.valueMin || i.value);
@@ -266,7 +266,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
         <div className="flex items-start justify-between mb-4 h-[44px] relative z-10">
           <div className="flex items-center gap-3 min-w-0">
             <div 
-              className="relative shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+              className="relative shrink-0 cursor-pointer hover:opacity-80 transition-opacity active:scale-95"
               onClick={handleAvatarClick}
               title="View Profile"
             >
@@ -285,6 +285,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
                <span 
                  className="text-[14px] sm:text-[16px] font-bold text-foreground tracking-tight leading-none mb-1.5 truncate cursor-pointer hover:underline"
                  onClick={(e) => {
+                   triggerHaptic('light');
                    const rect = e.currentTarget.getBoundingClientRect();
                    openPopout(ad.user_id, rect.left, rect.bottom);
                  }}
@@ -345,13 +346,13 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
           
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-0.5 bg-popover rounded-[4px] border border-border p-0.5">
-               <button onClick={() => handleVote(1)} className={`p-1.5 sm:p-1 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none cursor-pointer min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground hover:text-[#23a559]'}`}>
+               <button onClick={() => handleVote(1)} className={`p-1.5 sm:p-1 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none cursor-pointer active:scale-90 min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground hover:text-[#23a559]'}`}>
                   <ArrowBigUp className={`w-4 h-4 sm:w-4 sm:h-4 ${votes.userVote === 1 ? 'fill-current' : ''}`} />
                </button>
                <span className={`text-[12px] font-bold min-w-[24px] text-center ${score > 0 ? 'text-[#23a559]' : score < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
                  {score}
                </span>
-               <button onClick={() => handleVote(-1)} className={`p-1.5 sm:p-1 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none cursor-pointer min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${votes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}>
+               <button onClick={() => handleVote(-1)} className={`p-1.5 sm:p-1 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none cursor-pointer active:scale-90 min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${votes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}>
                   <ArrowBigDown className={`w-4 h-4 sm:w-4 sm:h-4 ${votes.userVote === -1 ? 'fill-current' : ''}`} />
                </button>
             </div>
@@ -377,8 +378,8 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
 
             <div className="flex items-center gap-2 w-full">
               <button 
-                onClick={() => isInventory ? handleInspectVault() : onSendToCalculator(ad.give_items, ad.get_items)}
-                className="flex-1 px-3 py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer shadow-sm"
+                onClick={() => { triggerHaptic('light'); isInventory ? handleInspectVault() : onSendToCalculator(ad.give_items, ad.get_items); }}
+                className="flex-1 px-3 py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95 focus-visible:outline-none cursor-pointer shadow-sm"
               >
                 {isInventory ? <Package className="w-4 h-4" /> : <Calculator className="w-4 h-4" />}
                 <span className="hidden sm:inline">{isInventory ? "Inspect Vault" : "Analyze Trade"}</span>
@@ -386,7 +387,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
 
               <button
                 onClick={() => { triggerHaptic('light'); openAdContext(ad.id, currentUserId); }}
-                className="flex-1 px-3 py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer shadow-sm"
+                className="flex-1 px-3 py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95 focus-visible:outline-none cursor-pointer shadow-sm"
               >
                 <MessageSquare className="w-4 h-4" />
                 <span className="hidden sm:inline">Thread</span>
@@ -394,7 +395,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
 
               {canDelete && (
                 <HoldToConfirmButton
-                  onConfirm={() => onDelete(ad.id)}
+                  onConfirm={() => { triggerHaptic('heavy'); onDelete(ad.id); }}
                   title="Hold to delete"
                   className="flex-none p-2 border border-border text-muted-foreground hover:text-foreground hover:border-destructive bg-popover hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none shadow-sm"
                 >
@@ -459,13 +460,13 @@ export function TradingAdsChannel() {
 
   const handleSendToCalculator = (give: TradeCard[], get: TradeCard[]) => {
     triggerHaptic("medium");
-    overwrite(get, give); // Note: Swapped because if I click "Analyze", I want what THEY give to be what I GET
+    overwrite(get, give); 
     window.dispatchEvent(new Event("open-analyzer"));
   };
 
   const handleCreateAdClick = () => {
+    triggerHaptic("medium");
     setComposerOpen(true, "standard");
-    // Ensure the analyzer panel slides open on mobile & desktop!
     window.dispatchEvent(new Event("open-analyzer"));
   };
 
@@ -493,7 +494,7 @@ export function TradingAdsChannel() {
             <button
               type="button"
               onClick={handleCreateAdClick}
-              className="flex items-center justify-center gap-1.5 px-4 md:px-5 py-2 md:py-2.5 rounded-[4px] bg-primary hover:bg-primary/80 text-primary-foreground text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none shrink-0 shadow-sm w-full md:w-auto cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-4 md:px-5 py-2 md:py-2.5 rounded-[4px] bg-primary hover:bg-primary/80 text-primary-foreground text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none shrink-0 shadow-sm w-full md:w-auto cursor-pointer active:scale-95"
             >
               <Plus className="w-4 h-4" />
               <span>Create Ad</span>
@@ -501,8 +502,8 @@ export function TradingAdsChannel() {
           ) : (
             <button
               type="button"
-              onClick={loginWithDiscord}
-              className="flex items-center justify-center gap-1.5 px-4 md:px-5 py-2 md:py-2.5 rounded-[4px] bg-popover border border-border text-muted-foreground text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-colors hover:bg-muted focus-visible:outline-none shrink-0 w-full md:w-auto cursor-pointer"
+              onClick={() => { triggerHaptic('medium'); loginWithDiscord(); }}
+              className="flex items-center justify-center gap-1.5 px-4 md:px-5 py-2 md:py-2.5 rounded-[4px] bg-popover border border-border text-muted-foreground text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-all hover:bg-muted focus-visible:outline-none shrink-0 w-full md:w-auto cursor-pointer active:scale-95"
             >
               <Lock className="w-4 h-4 text-primary" />
               <span>Login to Post</span>
@@ -515,8 +516,8 @@ export function TradingAdsChannel() {
             {[{ id: "all", label: "All" }, { id: "standard", label: "Trades" }, { id: "lf_offers", label: "LF Offers" }, { id: "inventory", label: "Showcases" }].map(t => (
               <button
                 key={t.id}
-                onClick={() => setTypeFilter(t.id)}
-                className={`flex-1 md:flex-none px-4 py-1.5 rounded-[4px] text-[11px] md:text-[12px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none cursor-pointer whitespace-nowrap ${typeFilter === t.id ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                onClick={() => { triggerHaptic('light'); setTypeFilter(t.id); }}
+                className={`flex-1 md:flex-none px-4 py-1.5 rounded-[4px] text-[11px] md:text-[12px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none cursor-pointer whitespace-nowrap active:scale-95 ${typeFilter === t.id ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 {t.label}
               </button>
@@ -559,10 +560,9 @@ export function TradingAdsChannel() {
                 There are currently no trading ads matching your search parameters. Try adjusting your filters or post a new ad yourself.
               </p>
               
-              {/* NEW: Actionable empty state CTA */}
               <button 
                 onClick={handleCreateAdClick}
-                className="mt-4 px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-[6px] transition-colors hover:bg-primary/80 cursor-pointer shadow-md"
+                className="mt-4 px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-[6px] transition-all active:scale-95 hover:bg-primary/80 cursor-pointer shadow-md"
               >
                 Be the first to post a trade
               </button>

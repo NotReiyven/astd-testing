@@ -6,7 +6,7 @@
   --font-sans: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Core Palette mapped from your image */
+  /* Core Palette strictly mapped to Discord standard */
   --discord-blurple: #7289da;
   --discord-light-gray: #424549;
   --discord-mid-gray: #36393e;
@@ -35,7 +35,7 @@
 
   /* Muted Elements (Subtitles, Disabled states) */
   --muted: var(--discord-dark-gray);
-  --muted-foreground: #b9bbbe;
+  --muted-foreground: #949ba4;
 
   /* Accents & Hovers */
   --accent: var(--discord-light-gray);

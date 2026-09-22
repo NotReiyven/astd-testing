@@ -1,8 +1,26 @@
+// ================================================
+// FILE: src/app/components/guides/AquaGuideOverlay.tsx
+// ================================================
+
 import { useState, useEffect, useRef } from "react";
 import { Sparkles, ChevronRight, Zap, MousePointer2 } from "lucide-react";
-import { AQUA_DIALOGUES } from "../../../data";
 
-export type GuideType = "main" | "channels" | "advanced" | "developer" | "filters" | "dictionary" | "stats" | "management" | "annoyed" | "academy_grad" | null;
+export type GuideType = "main" | "academy_grad" | null;
+
+const AQUA_DIALOGUES: Record<string, string[]> = {
+  main: [
+    "",
+    "Listen up, you shut-in NEET! I, the beautiful and wise Goddess Aqua, have descended to save you from getting completely scammed! First, click the ^^Value List^^ channel in the sidebar so we can begin!",
+    "Hmph, even someone with your pitiful intelligence stat can do this part. Let's build a mock trade. ^^Click or tap^^ any unit card to open its menu, then toss it into your *Give* or *Get* side! Don't mess this up!",
+    "W-Wait! Don't just accept a trade blindly! Are you trying to lose all your value?! Use the divine tool I've graciously bestowed upon you! Click that glowing ^^Calculator^^ button up top to open the Analyzer!",
+    "See?! It instantly breaks down the value differences and market momentum! But wait—you're not done! I've enrolled you in the Academy to finish your training. Go complete your Graduation Checklist!"
+  ],
+  academy_grad: [
+    "",
+    "Oh ho? You actually completed the Graduation Checklist?! I didn't think a NEET like you had the attention span!",
+    "I guess my divine guidance is just *that* good! You're officially a certified trader now. Go post an Ad on the live board! ^^Praise Aqua!^^"
+  ]
+};
 
 export function AquaGuideOverlay({ 
   guideState, 
@@ -21,7 +39,7 @@ export function AquaGuideOverlay({
   useEffect(() => {
     if (!guideState.type || guideState.step === 0) return;
 
-    if ((guideState.type === "main" && guideState.step === 3) || guideState.type === "annoyed") {
+    if (guideState.type === "main" && guideState.step === 3) {
       setBoxShake(true);
       setTimeout(() => setBoxShake(false), 500);
     }
@@ -77,7 +95,7 @@ export function AquaGuideOverlay({
         return <strong key={idx} className="text-foreground font-black tracking-wide">{part.slice(2, -2)}</strong>;
       }
       if (part.startsWith('*') && part.endsWith('*')) {
-        return <em key={idx} className="text-card-foreground font-bold not-italic">{part.slice(1, -1)}</em>;
+        return <em key={idx} className="text-foreground/80 font-bold not-italic">{part.slice(1, -1)}</em>;
       }
       return <span key={idx}>{part}</span>;
     });
@@ -104,10 +122,6 @@ export function AquaGuideOverlay({
     } else {
       dynamicAlignment = "items-center md:items-end md:pb-12";
     }
-  } else if (guideState.type === "filters" || guideState.type === "stats" || guideState.type === "channels") {
-    dynamicAlignment = "items-end pb-[90px] md:pb-12";
-  } else if (guideState.type === "dictionary" || guideState.type === "management" || guideState.type === "advanced") {
-    dynamicAlignment = "items-start pt-[110px] md:pt-0 md:items-end md:pb-12";
   }
 
   return (
@@ -137,6 +151,7 @@ export function AquaGuideOverlay({
         .animate-box-shake { animation: boxShake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
       `}</style>
 
+      {/* Screen Dimming Overlay */}
       <div 
         className={`fixed inset-0 z-[99998] transition-all duration-500 ${
           needsInteraction 
@@ -160,7 +175,6 @@ export function AquaGuideOverlay({
            <div 
              className={`bg-card border border-border p-4 sm:p-5 md:p-8 rounded-[12px] flex-1 relative z-10 w-full min-h-[140px] flex flex-col transition-all duration-300 pointer-events-auto shadow-[0_20px_60px_rgba(0,0,0,0.6)] ${boxShake ? 'animate-box-shake ring-2 ring-destructive/50' : ''}`}
            >
-
               <div className="absolute -top-3.5 left-5 md:left-6 bg-popover border border-border px-3 py-1 rounded-[6px] shadow-lg flex items-center gap-2 z-20">
                 <span className={`font-bold text-[13px] md:text-[14px] tracking-wide ${boxShake ? 'text-destructive' : 'text-foreground'}`}>
                   Goddess Aqua
@@ -206,7 +220,7 @@ export function AquaGuideOverlay({
                       onClick={(e) => { e.stopPropagation(); handleEndMainGuide(); }} 
                       className="group flex items-center gap-1.5 bg-primary hover:bg-primary/80 text-primary-foreground font-bold py-2 px-4 rounded-[6px] transition-all duration-300 active:scale-95 shadow-sm border border-border focus-visible:outline-none animate-fade-in shrink-0"
                     >
-                      <span className="text-[12.5px] sm:text-[14px]">{isMainStep4 ? "Go to Academy" : guideState.type === "academy_grad" ? "Praise Aqua!" : "Got it!"}</span>
+                      <span className="text-[12.5px] sm:text-[14px]">{isMainStep4 || guideState.type === "academy_grad" ? "Got it!" : "Continue"}</span>
                       <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </button>
                   )}

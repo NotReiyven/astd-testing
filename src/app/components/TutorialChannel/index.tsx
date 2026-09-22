@@ -1,5 +1,10 @@
+// ================================================
+// FILE: src/app/components/TutorialChannel/index.tsx
+// ================================================
+
 import { LayoutGrid, Target, BookOpen, Search } from "lucide-react";
 import { GuideType } from "../guides/AquaGuideOverlay";
+import { triggerHaptic } from "../../../data/helpers";
 
 import { SandboxTab } from "./SandboxTab";
 import { SimulatorTab } from "./SimulatorTab";
@@ -18,6 +23,11 @@ export function TutorialChannel({
   setActiveTab: (tab: "sandbox" | "simulator" | "theory" | "dictionary") => void;
 }) {
 
+  const handleTabClick = (tab: "sandbox" | "simulator" | "theory" | "dictionary") => {
+    triggerHaptic('light');
+    setActiveTab(tab);
+  };
+
   return (
     <div className={`flex-1 flex flex-col overflow-hidden bg-background h-full select-none`}>
       <style>{`
@@ -33,16 +43,16 @@ export function TutorialChannel({
           onTouchStart={e => e.stopPropagation()}
           onTouchMove={e => e.stopPropagation()}
         >
-          <button onClick={() => setActiveTab("sandbox")} className={`flex items-center gap-1.5 px-5 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap ${activeTab === "sandbox" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+          <button onClick={() => handleTabClick("sandbox")} className={`flex items-center gap-1.5 px-5 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${activeTab === "sandbox" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
             <LayoutGrid className="w-3.5 h-3.5" /> Academy Checklist
           </button>
-          <button onClick={() => setActiveTab("simulator")} className={`flex items-center gap-1.5 px-5 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap ${activeTab === "simulator" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+          <button onClick={() => handleTabClick("simulator")} className={`flex items-center gap-1.5 px-5 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${activeTab === "simulator" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
             <Target className="w-3.5 h-3.5" /> Mock Trades
           </button>
-          <button onClick={() => setActiveTab("theory")} className={`flex items-center gap-1.5 px-5 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap ${activeTab === "theory" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+          <button onClick={() => handleTabClick("theory")} className={`flex items-center gap-1.5 px-5 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${activeTab === "theory" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
             <BookOpen className="w-3.5 h-3.5" /> Market Theory
           </button>
-          <button onClick={() => setActiveTab("dictionary")} className={`flex items-center gap-1.5 px-5 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap ${activeTab === "dictionary" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+          <button onClick={() => handleTabClick("dictionary")} className={`flex items-center gap-1.5 px-5 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${activeTab === "dictionary" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
             <Search className="w-3.5 h-3.5" /> Live Parser Demo
           </button>
         </div>

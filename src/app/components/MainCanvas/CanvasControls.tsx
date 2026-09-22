@@ -1,7 +1,12 @@
+// ================================================
+// FILE: src/app/components/MainCanvas/CanvasControls.tsx
+// ================================================
+
 import { X, LayoutGrid, List, ArrowUpDown, Filter, AlignJustify, CheckSquare } from "lucide-react";
 import { FilterKey } from "../../../types";
 import { FILTERS } from "../../../data";
 import { CustomDropdown } from "./CustomDropdown";
+import { triggerHaptic } from "../../../data/helpers";
 
 const SORT_OPTIONS = {
   "value-desc": "Value: High to Low", "value-asc": "Value: Low to High",
@@ -46,10 +51,11 @@ export function CanvasControls({
           <button
             key={f}
             onClick={() => {
+              triggerHaptic('light');
               setActiveTierFilter(f);
               if (f !== "All") window.dispatchEvent(new Event("academy-used-filter"));
             }}
-            className={`flex-1 md:flex-none px-4 py-1.5 rounded-[4px] text-[12px] font-bold tracking-wide uppercase transition-all whitespace-nowrap focus-visible:outline-none shrink-0 ${
+            className={`flex-1 md:flex-none px-4 py-1.5 rounded-[4px] text-[12px] font-bold tracking-wide uppercase transition-all whitespace-nowrap focus-visible:outline-none shrink-0 active:scale-95 cursor-pointer ${
               activeTierFilter === f && !deferredSearchQuery
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -65,8 +71,11 @@ export function CanvasControls({
         
         <div className="flex items-center gap-2.5">
           <button
-            onClick={() => setIsSelectMode(!isSelectMode)}
-            className={`flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors border focus-visible:outline-none shrink-0 min-h-[36px] ${
+            onClick={() => {
+              triggerHaptic('medium');
+              setIsSelectMode(!isSelectMode);
+            }}
+            className={`flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors border focus-visible:outline-none shrink-0 min-h-[36px] active:scale-95 cursor-pointer ${
               isSelectMode ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-popover text-muted-foreground border-border hover:text-foreground hover:bg-muted"
             }`}
           >
@@ -76,8 +85,11 @@ export function CanvasControls({
 
           {hasFiltersApplied && (
             <button 
-              onClick={handleResetFilters} 
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[11px] font-bold uppercase tracking-wider text-destructive bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground transition-colors animate-fade-in border border-destructive/20 min-h-[36px]"
+              onClick={() => {
+                triggerHaptic('light');
+                handleResetFilters();
+              }} 
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[11px] font-bold uppercase tracking-wider text-destructive bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground transition-all duration-200 animate-fade-in border border-destructive/20 min-h-[36px] active:scale-95 cursor-pointer"
               title="Reset Filters"
             >
               <X className="w-3.5 h-3.5" />
@@ -96,13 +108,25 @@ export function CanvasControls({
 
           <div className="flex justify-end">
             <div className="flex bg-popover rounded-[6px] p-[3px] border border-border flex-shrink-0 shadow-sm w-fit">
-              <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-[4px] transition-all duration-200 ease-out ${viewMode === "grid" ? "bg-muted text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`} title="Grid View">
+              <button 
+                onClick={() => { triggerHaptic('light'); setViewMode("grid"); }} 
+                className={`p-1.5 rounded-[4px] transition-all duration-200 ease-out active:scale-95 cursor-pointer focus-visible:outline-none ${viewMode === "grid" ? "bg-muted text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`} 
+                title="Grid View"
+              >
                 <LayoutGrid className="w-4 h-4" />
               </button>
-              <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-[4px] transition-all duration-200 ease-out ${viewMode === "list" ? "bg-muted text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`} title="List View">
+              <button 
+                onClick={() => { triggerHaptic('light'); setViewMode("list"); }} 
+                className={`p-1.5 rounded-[4px] transition-all duration-200 ease-out active:scale-95 cursor-pointer focus-visible:outline-none ${viewMode === "list" ? "bg-muted text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`} 
+                title="List View"
+              >
                 <List className="w-4 h-4" />
               </button>
-              <button onClick={() => setViewMode("compact")} className={`hidden md:block p-1.5 rounded-[4px] transition-all duration-200 ease-out ${viewMode === "compact" ? "bg-muted text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`} title="Compact View">
+              <button 
+                onClick={() => { triggerHaptic('light'); setViewMode("compact"); }} 
+                className={`hidden md:block p-1.5 rounded-[4px] transition-all duration-200 ease-out active:scale-95 cursor-pointer focus-visible:outline-none ${viewMode === "compact" ? "bg-muted text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`} 
+                title="Compact View"
+              >
                 <AlignJustify className="w-4 h-4" />
               </button>
             </div>

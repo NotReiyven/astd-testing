@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/MainCanvas/HistoryModal.tsx
+// ================================================
+
 import { useState, useEffect, useRef } from "react";
 import { X, TrendingUp, History, BarChart2, Sparkles, AlertCircle, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, ReferenceLine } from 'recharts';
@@ -7,6 +11,7 @@ import { useUnits } from "../../../context/UnitContext";
 import { GRID_STATUS_CFG, TIER_CONFIG, getProxyImage, getTier, handleImageError } from "../../../data";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 import { StatusIcon } from "./UnitGrid";
+import { triggerHaptic } from "../../../data/helpers";
 
 export function HistoryModal() {
   const { isOpen, unitId, closeModal } = useHistoryModalStore();
@@ -19,7 +24,10 @@ export function HistoryModal() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeModal();
+      if (e.key === "Escape") {
+        triggerHaptic('light');
+        closeModal();
+      }
     };
 
     if (isOpen) {
@@ -190,7 +198,7 @@ export function HistoryModal() {
 
   return (
     <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-0 sm:p-5 animate-fade-in">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={closeModal} />
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={() => { triggerHaptic('light'); closeModal(); }} />
 
       <div className="bg-background border border-border rounded-none sm:rounded-[8px] w-full h-full sm:h-auto sm:max-w-5xl sm:max-h-[94vh] flex flex-col relative shadow-2xl overflow-hidden animate-slide-up">
 
@@ -241,8 +249,8 @@ export function HistoryModal() {
             </div>
 
             <button 
-              onClick={closeModal} 
-              className="text-muted-foreground hover:text-foreground bg-white/5 hover:bg-white/10 p-2 rounded-[4px] transition-colors focus-visible:outline-none shrink-0 self-start border border-border active:scale-95"
+              onClick={() => { triggerHaptic('light'); closeModal(); }} 
+              className="text-muted-foreground hover:text-foreground bg-white/5 hover:bg-white/10 p-2 rounded-[4px] transition-colors focus-visible:outline-none shrink-0 self-start border border-border active:scale-95 cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -259,8 +267,8 @@ export function HistoryModal() {
             <div className="w-full lg:w-[300px] flex flex-col gap-3 shrink-0">
               <div className="grid grid-cols-2 gap-3">
                 <div 
-                  onClick={() => setActiveMetric('value')}
-                  className={`col-span-2 rounded-[6px] p-4 flex flex-col justify-center cursor-pointer transition-colors relative overflow-hidden group ${activeMetric === 'value' ? 'bg-card border border-primary' : 'bg-popover hover:bg-card border border-border'}`}
+                  onClick={() => { triggerHaptic('light'); setActiveMetric('value'); }}
+                  className={`col-span-2 rounded-[6px] p-4 flex flex-col justify-center cursor-pointer transition-all active:scale-[0.98] relative overflow-hidden group ${activeMetric === 'value' ? 'bg-card border border-primary' : 'bg-popover hover:bg-card border border-border'}`}
                 >
                   {activeMetric === 'value' && <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary" />}
                   <div className="flex items-center justify-between">
@@ -278,8 +286,8 @@ export function HistoryModal() {
                 </div>
 
                 <div 
-                  onClick={() => setActiveMetric('rarity')}
-                  className={`rounded-[6px] p-4 flex flex-col justify-center cursor-pointer transition-colors relative overflow-hidden group ${activeMetric === 'rarity' ? 'bg-card border border-[#4DB6AC]' : 'bg-popover hover:bg-card border border-border'}`}
+                  onClick={() => { triggerHaptic('light'); setActiveMetric('rarity'); }}
+                  className={`rounded-[6px] p-4 flex flex-col justify-center cursor-pointer transition-all active:scale-[0.98] relative overflow-hidden group ${activeMetric === 'rarity' ? 'bg-card border border-[#4DB6AC]' : 'bg-popover hover:bg-card border border-border'}`}
                 >
                   {activeMetric === 'rarity' && <div className="absolute top-0 left-0 bottom-0 w-1 bg-[#4DB6AC]" />}
                   <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">Rarity (0-20)</span>
@@ -287,8 +295,8 @@ export function HistoryModal() {
                 </div>
 
                 <div 
-                  onClick={() => setActiveMetric('liquidity')}
-                  className={`rounded-[6px] p-4 flex flex-col justify-center cursor-pointer transition-colors relative overflow-hidden group ${activeMetric === 'liquidity' ? 'bg-card border border-[#81C784]' : 'bg-popover hover:bg-card border border-border'}`}
+                  onClick={() => { triggerHaptic('light'); setActiveMetric('liquidity'); }}
+                  className={`rounded-[6px] p-4 flex flex-col justify-center cursor-pointer transition-all active:scale-[0.98] relative overflow-hidden group ${activeMetric === 'liquidity' ? 'bg-card border border-[#81C784]' : 'bg-popover hover:bg-card border border-border'}`}
                 >
                   {activeMetric === 'liquidity' && <div className="absolute top-0 left-0 bottom-0 w-1 bg-[#81C784]" />}
                   <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">Liquidity</span>
