@@ -84,7 +84,22 @@ export function InventoryChannel() {
   const goalProgress = metrics.estimatedValue > 0 ? Math.min(100, (vaultLiquidValue / metrics.estimatedValue) * 100) : 0;
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#313338] h-full select-none font-sans relative">
+    <div 
+      className="flex-1 flex flex-col overflow-hidden h-full select-none font-sans relative"
+      style={{
+        backgroundColor: "#16181c",
+        backgroundImage: `
+          linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025),
+          linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025)
+        `,
+        backgroundSize: "80px 140px",
+        backgroundPosition: "0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px"
+      }}
+    >
       <style>{`.mask-fade-edges { mask-image: linear-gradient(to right, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%); }`}</style>
       
       {/* Read-Only Banner Header */}
@@ -111,25 +126,32 @@ export function InventoryChannel() {
 
       {/* Header Controls Bar */}
       <div className={`flex-shrink-0 flex flex-col bg-[#2B2D31] border-b border-[rgba(0,0,0,0.22)] shadow-sm z-20 relative ${importMenuOpen ? "opacity-30 pointer-events-none blur-sm" : ""}`}>
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between px-3 md:px-5 py-3 md:py-2.5 gap-2.5">
-          <div className="flex flex-nowrap items-center gap-1.5 md:gap-2 overflow-x-auto hide-scrollbar pb-1 -mb-1 w-full xl:w-auto snap-x snap-mandatory pr-6 mask-fade-edges" style={{ WebkitOverflowScrolling: 'touch' }}>
-            
-            {!isReadOnly && vaultView !== "wishlist" && (
-              <div className="flex items-center pr-2 border-r border-[rgba(255,255,255,0.06)] mr-1 shrink-0">
-                <button 
-                  onClick={() => { triggerHaptic('light'); setIsSelectMode(!isSelectMode); setSelectedUnits(new Set()); }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] ${isSelectMode ? 'bg-[rgba(88,101,242,0.15)] text-[#5865F2] ring-1 ring-[#5865F2]/50' : 'bg-[#1E1F22] text-[#80848E] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.04)]'}`}
-                >
-                  <MousePointerSquareDashed className="w-3.5 h-3.5" /> Select
-                </button>
-              </div>
-            )}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between px-3 md:px-5 py-3 gap-3">
+          
+          {/* Filter Pills Row (Scrollable, Cleaned Up) */}
+          <div 
+            className="flex flex-nowrap items-center gap-1.5 md:gap-2 overflow-x-auto w-full lg:w-auto snap-x snap-mandatory pr-4 mask-fade-edges" 
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            <style>{`
+              div::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
 
             <button onClick={() => setActiveTierFilter("All")} className="snap-start flex-shrink-0 px-3.5 py-1.5 rounded-full text-[11.5px] md:text-[12px] font-bold tracking-wide transition-colors border focus-visible:outline-none" style={activeTierFilter === "All" ? { background: "#5865F2", color: "#fff", borderColor: "#5865F2" } : { background: "rgba(255,255,255,0.03)", color: "#949BA4", borderColor: "rgba(255,255,255,0.05)" }}>
               All
             </button>
             {vaultView !== "wishlist" && (
-              <button onClick={() => setActiveTierFilter("Pinned")} className="snap-start flex-shrink-0 px-3.5 py-1.5 rounded-full text-[11.5px] md:text-[12px] font-bold tracking-wide transition-colors border focus-visible:outline-none" style={activeTierFilter === "Pinned" ? { background: "#5865F2", color: "#fff", borderColor: "#5865F2" } : { background: "rgba(255,255,255,0.03)", color: "#FAA61A", borderColor: "rgba(250,166,26,0.3)" }}>
+              <button 
+                onClick={() => setActiveTierFilter("Pinned")} 
+                className="snap-start flex-shrink-0 px-3.5 py-1.5 rounded-full text-[11.5px] md:text-[12px] font-bold tracking-wide transition-colors border focus-visible:outline-none" 
+                style={
+                  activeTierFilter === "Pinned" 
+                    ? { background: "#FAA61A", color: "#1E1F22", borderColor: "#FAA61A" } 
+                    : { background: "#1E1F22", color: "#FAA61A", borderColor: "rgba(250,166,26,0.3)" }
+                }
+              >
                 <LockIcon className="w-3 h-3 inline mr-1" /> Locked
               </button>
             )}
@@ -140,10 +162,25 @@ export function InventoryChannel() {
             ))}
           </div>
           
-          <div className="flex items-center gap-2 w-full xl:w-auto">
-            <CustomDropdown icon={ArrowUpDown} value={sortMode} options={SORT_OPTIONS} onChange={setSortMode} defaultLabel="Sort By" />
+          {/* Action Controls: Select, Sort, Search, Copy, Settings */}
+          <div className="flex items-center gap-2 w-full lg:w-auto shrink-0 justify-between lg:justify-start">
+            <div className="flex items-center gap-2 shrink-0">
+              {!isReadOnly && vaultView !== "wishlist" && (
+                <button 
+                  onClick={() => { triggerHaptic('light'); setIsSelectMode(!isSelectMode); setSelectedUnits(new Set()); }}
+                  className={`flex items-center gap-1.5 px-3 h-[32px] rounded-[4px] text-[12px] font-bold transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] ${isSelectMode ? 'bg-[rgba(88,101,242,0.15)] text-[#5865F2] ring-1 ring-[#5865F2]/50' : 'bg-[#1E1F22] text-[#80848E] hover:text-[#DBDEE1] hover:bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.04)]'}`}
+                  title="Toggle Select Mode"
+                >
+                  <MousePointerSquareDashed className="w-3.5 h-3.5" /> 
+                  <span className="inline">Bulk Select</span>
+                </button>
+              )}
+              <div className="shrink-0">
+                <CustomDropdown icon={ArrowUpDown} value={sortMode} options={SORT_OPTIONS} onChange={setSortMode} defaultLabel="Sort By" />
+              </div>
+            </div>
             
-            <div className="relative flex-1 min-w-[160px] shrink-0 flex items-center gap-1.5" ref={omniboxRef}>
+            <div className="relative flex-1 lg:w-[240px] shrink-0 flex items-center gap-1.5" ref={omniboxRef}>
               <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#80848E]" />
                 <input
@@ -153,7 +190,7 @@ export function InventoryChannel() {
                   onChange={(e) => { setSearchQuery(e.target.value); setIsOmniboxOpen(true); setOmniboxIndex(-1); }}
                   onFocus={() => setIsOmniboxOpen(true)}
                   onKeyDown={handleOmniboxKeyDown}
-                  placeholder={isReadOnly ? `Search ${vaultView === 'wishlist' ? 'wishlist' : 'vault'}...` : vaultView === "wishlist" ? "Search to add wishlist item..." : "Search or add units..."}
+                  placeholder={isReadOnly ? `Search ${vaultView === 'wishlist' ? 'wishlist' : 'vault'}...` : vaultView === "wishlist" ? "Search wishlist..." : "Search units..."}
                   className="w-full bg-[#1E1F22] border border-[rgba(255,255,255,0.04)] rounded-[4px] pl-9 pr-3 py-1 text-[13px] text-[#F2F3F5] outline-none placeholder-[#80848E] focus:ring-1 focus:ring-[#5865F2] transition-colors shadow-inner h-[32px]"
                 />
               </div>
@@ -337,7 +374,7 @@ export function InventoryChannel() {
                           })}
                        </div>
                     </div>
-                 </div>
+                  </div>
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-4 mb-6 animate-fade-in">
                     <div className="bg-[#2B2D31] border border-[rgba(255,255,255,0.04)] rounded-[8px] p-5 flex flex-col justify-between relative overflow-hidden">

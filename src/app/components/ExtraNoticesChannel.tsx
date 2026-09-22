@@ -46,7 +46,22 @@ export function ExtraNoticesChannel() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-8 max-w-6xl mx-auto h-full font-sans">
+    <div 
+      className="flex-1 w-full h-full font-sans relative overflow-hidden flex flex-col"
+      style={{
+        backgroundColor: "#16181c",
+        backgroundImage: `
+          linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025),
+          linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025)
+        `,
+        backgroundSize: "80px 140px",
+        backgroundPosition: "0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px"
+      }}
+    >
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -55,136 +70,139 @@ export function ExtraNoticesChannel() {
         .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
       `}</style>
 
-      {/* Sidebar Navigation */}
-      <nav className="hidden md:flex flex-col w-64 shrink-0 sticky top-0 self-start pt-2">
-        <div className="flex items-center gap-2.5 mb-6 text-foreground">
-          <Megaphone className="w-5 h-5 text-primary" />
-          <h2 className="text-[15px] font-black uppercase tracking-wider">Intelligence</h2>
-        </div>
-
-        <div className="flex flex-col gap-6">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search notices..."
-              className="w-full bg-card border border-border rounded-[6px] pl-9 pr-4 py-2 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-primary focus:border-primary transition-all shadow-sm"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1 border-l-2 border-border pl-4">
-            <button 
-              onClick={() => setActiveFilter("all")} 
-              className={`text-left text-[13px] font-medium py-1.5 transition-colors focus-visible:outline-none flex items-center justify-between ${activeFilter === "all" ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              All Notices
-              <span className="text-[10px] bg-muted px-2 py-0.5 rounded-full">{notices?.length || 0}</span>
-            </button>
-            <button 
-              onClick={() => setActiveFilter("pinned")} 
-              className={`text-left text-[13px] font-medium py-1.5 transition-colors focus-visible:outline-none flex items-center justify-between ${activeFilter === "pinned" ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              Pinned Highlights
-              <span className="text-[10px] bg-muted px-2 py-0.5 rounded-full">{Object.values(pinnedTitles).filter(Boolean).length}</span>
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-16 flex flex-col gap-8">
+      <div className="flex flex-col md:flex-row gap-8 max-w-6xl mx-auto w-full h-full p-6 md:p-8 overflow-hidden">
         
-        {/* Intro */}
-        <div className="flex flex-col gap-3">
-          <h1 className="text-[28px] md:text-[32px] font-black text-foreground tracking-tight">Extra Notices</h1>
-          <p className="text-[15px] text-muted-foreground leading-relaxed max-w-3xl">
-            Official market updates, manipulation warnings, and trading guidelines directly from the Value List Team.
-          </p>
-        </div>
-
-        {/* Fire Zio's Briefing */}
-        <div className="bg-card border border-border rounded-[8px] p-5 flex items-start gap-4 shadow-sm">
-          <img src={FIRE_ZIO_AVATAR} className="w-12 h-12 rounded-full object-cover shrink-0" alt="Fire Zio" />
-          <div className="flex flex-col gap-1">
-            <span className="text-[12px] font-bold text-foreground uppercase tracking-widest">Fire Zio's Briefing</span>
-            <p className="text-muted-foreground text-[14px] leading-relaxed italic">
-              "Read these notices before you open your mouth in the trading channels. If you ask a question that is already answered here, don't expect me to be nice about it."
-            </p>
+        {/* Sidebar Navigation */}
+        <nav className="hidden md:flex flex-col w-64 shrink-0 sticky top-0 self-start pt-2 z-10">
+          <div className="flex items-center gap-2.5 mb-6 text-foreground">
+            <Megaphone className="w-5 h-5 text-primary" />
+            <h2 className="text-[15px] font-black uppercase tracking-wider">Intelligence</h2>
           </div>
-        </div>
 
-        {/* Notices Feed */}
-        {processedNotices.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 border border-dashed border-border rounded-[8px] bg-card/50">
-            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-3">
-              <Inbox className="w-6 h-6 text-muted-foreground" />
+          <div className="flex flex-col gap-6">
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search notices..."
+                className="w-full bg-card border border-border rounded-[6px] pl-9 pr-4 py-2 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-primary focus:border-primary transition-all shadow-sm"
+              />
             </div>
-            <p className="text-foreground text-[15px] font-bold tracking-tight">
-              {notices.length === 0 ? "No Active Notices" : "No Matches Found"}
-            </p>
-            <p className="text-muted-foreground text-[13px] mt-1 text-center max-w-sm">
-              {notices.length === 0 
-                ? "Check back later for official market updates and rules." 
-                : "Try adjusting your search keywords or clear your pinned filter."}
+
+            <div className="flex flex-col gap-1 border-l-2 border-border pl-4">
+              <button 
+                onClick={() => setActiveFilter("all")} 
+                className={`text-left text-[13px] font-medium py-1.5 transition-colors focus-visible:outline-none flex items-center justify-between ${activeFilter === "all" ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                All Notices
+                <span className="text-[10px] bg-muted px-2 py-0.5 rounded-full">{notices?.length || 0}</span>
+              </button>
+              <button 
+                onClick={() => setActiveFilter("pinned")} 
+                className={`text-left text-[13px] font-medium py-1.5 transition-colors focus-visible:outline-none flex items-center justify-between ${activeFilter === "pinned" ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                Pinned Highlights
+                <span className="text-[10px] bg-muted px-2 py-0.5 rounded-full">{Object.values(pinnedTitles).filter(Boolean).length}</span>
+              </button>
+            </div>
+          </div>
+        </nav>
+
+        {/* Main Content */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-16 flex flex-col gap-8 z-10">
+          
+          {/* Intro */}
+          <div className="flex flex-col gap-3">
+            <h1 className="text-[28px] md:text-[32px] font-black text-foreground tracking-tight">Extra Notices</h1>
+            <p className="text-[15px] text-muted-foreground leading-relaxed max-w-3xl">
+              Official market updates, manipulation warnings, and trading guidelines directly from the Value List Team.
             </p>
           </div>
-        ) : (
-          <div className="flex flex-col gap-5 animate-fade-in">
-            {processedNotices.map((notice, idx) => {
-              const { icon: Icon, color } = getStyleForNotice(notice.title);
-              const isPinned = pinnedTitles[notice.title];
-              const activeColor = isPinned ? "#FAA61A" : color;
 
-              return (
-                <article 
-                  key={idx} 
-                  className="group relative bg-card border border-border rounded-[8px] overflow-hidden shadow-sm transition-all hover:shadow-md"
-                >
-                  {/* Semantic left border indicator */}
-                  <div className="absolute left-0 top-0 bottom-0 w-[4px]" style={{ backgroundColor: activeColor }} />
-                  
-                  <div className="p-5 pl-6 flex flex-col gap-3">
-                    <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="p-1.5 rounded-[6px] bg-muted">
-                          <Icon className="w-4 h-4" style={{ color: activeColor }} />
+          {/* Fire Zio's Briefing */}
+          <div className="bg-card border border-border rounded-[8px] p-5 flex items-start gap-4 shadow-sm">
+            <img src={FIRE_ZIO_AVATAR} className="w-12 h-12 rounded-full object-cover shrink-0" alt="Fire Zio" />
+            <div className="flex flex-col gap-1">
+              <span className="text-[12px] font-bold text-foreground uppercase tracking-widest">Fire Zio's Briefing</span>
+              <p className="text-muted-foreground text-[14px] leading-relaxed italic">
+                "Read these notices before you open your mouth in the trading channels. If you ask a question that is already answered here, don't expect me to be nice about it."
+              </p>
+            </div>
+          </div>
+
+          {/* Notices Feed */}
+          {processedNotices.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 border border-dashed border-border rounded-[8px] bg-card/50">
+              <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-3">
+                <Inbox className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <p className="text-foreground text-[15px] font-bold tracking-tight">
+                {notices.length === 0 ? "No Active Notices" : "No Matches Found"}
+              </p>
+              <p className="text-muted-foreground text-[13px] mt-1 text-center max-w-sm">
+                {notices.length === 0 
+                  ? "Check back later for official market updates and rules." 
+                  : "Try adjusting your search keywords or clear your pinned filter."}
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-5 animate-fade-in">
+              {processedNotices.map((notice, idx) => {
+                const { icon: Icon, color } = getStyleForNotice(notice.title);
+                const isPinned = pinnedTitles[notice.title];
+                const activeColor = isPinned ? "#FAA61A" : color;
+
+                return (
+                  <article 
+                    key={idx} 
+                    className="group relative bg-card border border-border rounded-[8px] overflow-hidden shadow-sm transition-all hover:shadow-md"
+                  >
+                    {/* Semantic left border indicator */}
+                    <div className="absolute left-0 top-0 bottom-0 w-[4px]" style={{ backgroundColor: activeColor }} />
+                    
+                    <div className="p-5 pl-6 flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-1.5 rounded-[6px] bg-muted">
+                            <Icon className="w-4 h-4" style={{ color: activeColor }} />
+                          </div>
+                          <h3 className="text-[15px] font-bold text-foreground tracking-tight">
+                            {notice.title}
+                          </h3>
                         </div>
-                        <h3 className="text-[15px] font-bold text-foreground tracking-tight">
-                          {notice.title}
-                        </h3>
+                        
+                        <div className="flex items-center gap-3 shrink-0">
+                          {notice.date && (
+                            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                              {notice.date}
+                            </span>
+                          )}
+                          <button
+                            onClick={(e) => togglePin(notice.title, e)}
+                            title={isPinned ? "Unpin notice" : "Pin notice"}
+                            className={`p-1.5 rounded-[4px] transition-colors focus-visible:outline-none ${
+                              isPinned 
+                                ? "bg-[rgba(250,166,26,0.15)] text-[#FAA61A]" 
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            }`}
+                          >
+                            <Pin className={`w-4 h-4 ${isPinned ? "fill-current" : ""}`} />
+                          </button>
+                        </div>
                       </div>
                       
-                      <div className="flex items-center gap-3 shrink-0">
-                        {notice.date && (
-                          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                            {notice.date}
-                          </span>
-                        )}
-                        <button
-                          onClick={(e) => togglePin(notice.title, e)}
-                          title={isPinned ? "Unpin notice" : "Pin notice"}
-                          className={`p-1.5 rounded-[4px] transition-colors focus-visible:outline-none ${
-                            isPinned 
-                              ? "bg-[rgba(250,166,26,0.15)] text-[#FAA61A]" 
-                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                          }`}
-                        >
-                          <Pin className={`w-4 h-4 ${isPinned ? "fill-current" : ""}`} />
-                        </button>
+                      <div className="text-[14px] text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                        {notice.content}
                       </div>
                     </div>
-                    
-                    <div className="text-[14px] text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                      {notice.content}
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

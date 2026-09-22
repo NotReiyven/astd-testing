@@ -29,17 +29,32 @@ export function TutorialChannel({
   };
 
   return (
-    <div className={`flex-1 flex flex-col overflow-hidden bg-background h-full select-none`}>
+    <div 
+      className="flex-1 flex flex-col overflow-hidden h-full select-none font-sans relative"
+      style={{
+        backgroundColor: "#16181c",
+        backgroundImage: `
+          linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025),
+          linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025)
+        `,
+        backgroundSize: "80px 140px",
+        backgroundPosition: "0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px"
+      }}
+    >
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: var(--card); }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
       `}</style>
 
       {/* Navigation tabs */}
-      <div className="flex-shrink-0 px-4 md:px-6 py-3 border-b border-border bg-card relative z-40">
+      <div className="flex-shrink-0 px-4 md:px-6 py-3 border-b border-border bg-card/90 backdrop-blur-md relative z-40 shadow-sm">
         <div 
-          className="flex bg-popover rounded-[6px] p-1 border border-border w-full overflow-x-auto hide-scrollbar shadow-inner"
+          className="flex bg-popover/90 rounded-[6px] p-1 border border-border w-full overflow-x-auto hide-scrollbar shadow-inner"
           onTouchStart={e => e.stopPropagation()}
           onTouchMove={e => e.stopPropagation()}
         >
@@ -59,7 +74,7 @@ export function TutorialChannel({
       </div>
 
       {/* Tab viewport */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 relative z-10">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 relative z-10 bg-transparent">
         {activeTab === "sandbox" && (
             <SandboxTab 
                 startGuide={startGuide}

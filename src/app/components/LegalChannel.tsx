@@ -8,9 +8,24 @@ export function LegalChannel({ type }: { type: "tos" | "privacy" }) {
   const isTos = type === "tos";
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-background h-full font-sans selection:bg-primary/30">
+    <div 
+      className="flex-1 flex flex-col overflow-y-auto custom-scrollbar h-full font-sans selection:bg-primary/30 relative"
+      style={{
+        backgroundColor: "#16181c",
+        backgroundImage: `
+          linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025),
+          linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025)
+        `,
+        backgroundSize: "80px 140px",
+        backgroundPosition: "0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px"
+      }}
+    >
       
-      <div className="w-full bg-card border-b border-border p-3 flex items-center sticky top-0 z-50 shadow-sm md:hidden">
+      <div className="w-full bg-card/90 backdrop-blur-sm border-b border-border p-3 flex items-center sticky top-0 z-50 shadow-sm md:hidden">
          <button 
            onClick={() => window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'home' }))}
            className="flex items-center gap-1.5 px-3 py-1.5 bg-popover hover:bg-muted text-muted-foreground hover:text-foreground border border-border rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none"
@@ -19,7 +34,7 @@ export function LegalChannel({ type }: { type: "tos" | "privacy" }) {
          </button>
       </div>
 
-      <div className="max-w-3xl mx-auto w-full px-6 py-12 md:py-20 flex flex-col gap-10 animate-fade-in pb-24">
+      <div className="max-w-3xl mx-auto w-full px-6 py-12 md:py-20 flex flex-col gap-10 animate-fade-in pb-24 relative z-10">
         
         <div className="flex flex-col gap-4 border-b border-border pb-8">
           <h1 className="text-[32px] md:text-[40px] font-black text-foreground tracking-tight leading-none">

@@ -240,7 +240,22 @@ export function ProfileChannel() {
   }, 0);
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-background h-full font-sans relative z-10 pb-16">
+    <div 
+      className="flex-1 w-full h-full font-sans relative overflow-hidden flex flex-col overflow-y-auto custom-scrollbar pb-16 z-10"
+      style={{
+        backgroundColor: "#16181c",
+        backgroundImage: `
+          linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025),
+          linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025)
+        `,
+        backgroundSize: "80px 140px",
+        backgroundPosition: "0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px"
+      }}
+    >
       
       {/* TELEPORT RETURN BAR */}
       {viewingProfileId && (
@@ -668,7 +683,7 @@ export function ProfileChannel() {
               <div className="flex items-center gap-3 mt-4 pt-4 border-t border-border">
                 <button onClick={() => setIsEditModalOpen(false)} className="flex-1 py-3 bg-popover hover:bg-muted border border-border rounded-[6px] text-[13px] font-bold text-foreground transition-colors focus-visible:outline-none">Cancel</button>
                 <button onClick={handleSave} disabled={isSaving} className="flex-1 py-3 bg-[#23a559] hover:bg-[#1f914e] text-white rounded-[6px] text-[13px] font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm disabled:opacity-50 focus-visible:outline-none">
-                  {isSaving ? "Saving..." : <><Check className="w-4 h-4" /> Save Changes</>}
+                  {isSaving ? "Saving..." : <span className="flex items-center gap-1.5"><Check className="w-4 h-4" /> Save Changes</span>}
                 </button>
               </div>
             </div>

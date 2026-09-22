@@ -84,7 +84,7 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
       {slots.map((_, i) => {
         if (isOfferTile && i === 0) {
           return (
-            <div key="offer-tile" className={`${slotBase} bg-popover border-2 border-primary flex flex-col items-center justify-center gap-0.5`}>
+            <div key="offer-tile" className={`${slotBase} bg-popover/90 border-2 border-primary flex flex-col items-center justify-center gap-0.5`}>
               <Search className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               <span className="text-[8px] font-black text-primary uppercase tracking-wider">Offer</span>
             </div>
@@ -93,7 +93,7 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
 
         if (extraCount > 0 && i === limit - 1) {
           return (
-            <div key="extra-slot" className={`relative ${slotBase} bg-popover border border-border overflow-hidden flex items-center justify-center shadow-inner`}>
+            <div key="extra-slot" className={`relative ${slotBase} bg-popover/90 border border-border overflow-hidden flex items-center justify-center shadow-inner`}>
                <span className="relative z-10 text-[14px] font-black text-muted-foreground">+{extraCount}</span>
             </div>
           );
@@ -107,7 +107,7 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
             <div
               key={`item-${i}`}
               onClick={() => { triggerHaptic('light'); onInspectUnit(item.id); }}
-              className={`relative ${slotBase} bg-popover border border-border hover:border-primary cursor-pointer transition-colors overflow-visible flex items-center justify-center group shadow-sm active:scale-95`}
+              className={`relative ${slotBase} bg-popover/90 border border-border hover:border-primary cursor-pointer transition-colors overflow-visible flex items-center justify-center group shadow-sm active:scale-95`}
               title={`${item.qty > 1 ? `${item.qty}x ` : ''}${item.name}`}
             >
               <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white z-0 rounded-[6px] overflow-hidden" style={getAvatarStyle(item.name)}>
@@ -117,7 +117,7 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
                 <img src={proxyUrl} alt={item.name} className="absolute inset-0 w-full h-full object-cover z-10 bg-popover rounded-[6px] transition-transform duration-300 group-hover:scale-110" style={{ objectPosition: "center 15%" }} onError={(e) => handleImageError(e, item.id)} />
               )}
               {item.qty > 1 && (
-                <div className="absolute -bottom-1.5 -right-1.5 bg-popover text-primary text-[10px] font-black px-1.5 py-0.5 rounded-[4px] z-20 border border-border shadow-sm leading-none whitespace-nowrap">
+                <div className="absolute -bottom-1.5 -right-1.5 bg-popover/95 text-primary text-[10px] font-black px-1.5 py-0.5 rounded-[4px] z-20 border border-border shadow-sm leading-none whitespace-nowrap">
                   x{item.qty}
                 </div>
               )}
@@ -126,7 +126,7 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
         }
 
         return (
-          <div key={`empty-${i}`} className={`${slotBase} bg-transparent border-2 border-dashed border-border flex items-center justify-center`}>
+          <div key={`empty-${i}`} className={`${slotBase} bg-transparent border-2 border-dashed border-border/60 flex items-center justify-center`}>
             <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-border" strokeWidth={2.5} />
           </div>
         );
@@ -257,7 +257,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
 
     return (
       <div 
-        className={`relative bg-card rounded-[8px] p-4 sm:p-6 flex flex-col h-full overflow-hidden border shadow-md transition-all duration-500 will-change-transform ${
+        className={`relative bg-card/90 backdrop-blur-md rounded-[8px] p-4 sm:p-6 flex flex-col h-full overflow-hidden border shadow-md transition-all duration-500 will-change-transform ${
           isNewAd ? 'animate-[newAdGlow_3s_ease-out_forwards] border-primary scale-[1.02]' : 'hover:border-primary/50 border-border scale-100'
         }`}
       >
@@ -304,7 +304,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
 
         <hr className="border-t border-border mb-4 w-full" />
 
-        <div className="mb-4 sm:mb-5 bg-popover border border-border rounded-[6px] p-3 sm:p-3.5 shadow-inner">
+        <div className="mb-4 sm:mb-5 bg-popover/80 border border-border rounded-[6px] p-3 sm:p-3.5 shadow-inner">
           {ad.note ? (
             <div 
               className="text-[12px] sm:text-[13px] text-foreground font-medium leading-relaxed break-all overflow-hidden"
@@ -345,7 +345,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
         <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-border flex flex-col gap-3 sm:gap-3.5 relative z-10">
           
           <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-0.5 bg-popover rounded-[4px] border border-border p-0.5">
+            <div className="flex items-center gap-0.5 bg-popover/90 rounded-[4px] border border-border p-0.5">
                <button onClick={() => handleVote(1)} className={`p-2 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none cursor-pointer active:scale-90 min-w-[40px] min-h-[40px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground hover:text-[#23a559]'}`}>
                   <ArrowBigUp className={`w-4 h-4 sm:w-4 sm:h-4 ${votes.userVote === 1 ? 'fill-current' : ''}`} />
                </button>
@@ -379,7 +379,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
             <div className="flex items-center gap-2 w-full">
               <button 
                 onClick={() => { triggerHaptic('light'); isInventory ? handleInspectVault() : onSendToCalculator(ad.give_items, ad.get_items); }}
-                className="flex-1 px-3 py-2.5 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95 focus-visible:outline-none cursor-pointer shadow-sm min-h-[40px]"
+                className="flex-1 px-3 py-2.5 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover/90 hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95 focus-visible:outline-none cursor-pointer shadow-sm min-h-[40px]"
               >
                 {isInventory ? <Package className="w-4 h-4" /> : <Calculator className="w-4 h-4" />}
                 <span className="hidden sm:inline">{isInventory ? "Inspect Vault" : "Analyze Trade"}</span>
@@ -387,7 +387,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
 
               <button
                 onClick={() => { triggerHaptic('light'); openAdContext(ad.id, currentUserId); }}
-                className="flex-1 px-3 py-2.5 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95 focus-visible:outline-none cursor-pointer shadow-sm min-h-[40px]"
+                className="flex-1 px-3 py-2.5 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover/90 hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95 focus-visible:outline-none cursor-pointer shadow-sm min-h-[40px]"
               >
                 <MessageSquare className="w-4 h-4" />
                 <span className="hidden sm:inline">Thread</span>
@@ -397,7 +397,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
                 <HoldToConfirmButton
                   onConfirm={() => { triggerHaptic('heavy'); onDelete(ad.id); }}
                   title="Hold to delete"
-                  className="flex-none p-2.5 border border-border text-muted-foreground hover:text-foreground hover:border-destructive bg-popover hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none shadow-sm min-h-[40px] min-w-[40px] flex items-center justify-center"
+                  className="flex-none p-2.5 border border-border text-muted-foreground hover:text-foreground hover:border-destructive bg-popover/90 hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none shadow-sm min-h-[40px] min-w-[40px] flex items-center justify-center"
                 >
                   <Trash2 className="w-4 h-4" />
                 </HoldToConfirmButton>
@@ -471,7 +471,22 @@ export function TradingAdsChannel() {
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-background h-full select-none font-sans relative">
+    <div 
+      className="flex-1 flex flex-col overflow-hidden h-full select-none font-sans relative"
+      style={{
+        backgroundColor: "#16181c",
+        backgroundImage: `
+          linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+          linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025),
+          linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025)
+        `,
+        backgroundSize: "80px 140px",
+        backgroundPosition: "0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px"
+      }}
+    >
       <style>{`
         @keyframes newAdGlow {
           0% { box-shadow: 0 0 0 0 rgba(88,101,242,0.4); border-color: var(--primary); }
@@ -480,7 +495,7 @@ export function TradingAdsChannel() {
         }
       `}</style>
       
-      <div className="flex-shrink-0 flex flex-col px-3 md:px-6 py-3 md:py-4 bg-card border-b border-border shadow-sm z-20 gap-3 md:gap-4">
+      <div className="flex-shrink-0 flex flex-col px-3 md:px-6 py-3 md:py-4 bg-card/90 backdrop-blur-md border-b border-border shadow-sm z-20 gap-3 md:gap-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="relative flex items-center justify-center">
@@ -503,7 +518,7 @@ export function TradingAdsChannel() {
             <button
               type="button"
               onClick={() => { triggerHaptic('medium'); loginWithDiscord(); }}
-              className="flex items-center justify-center gap-1.5 px-4 md:px-5 py-2.5 rounded-[4px] bg-popover border border-border text-muted-foreground text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-all hover:bg-muted focus-visible:outline-none shrink-0 w-full md:w-auto cursor-pointer active:scale-95 min-h-[44px]"
+              className="flex items-center justify-center gap-1.5 px-4 md:px-5 py-2.5 rounded-[4px] bg-popover/90 border border-border text-muted-foreground text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-all hover:bg-muted focus-visible:outline-none shrink-0 w-full md:w-auto cursor-pointer active:scale-95 min-h-[44px]"
             >
               <Lock className="w-4 h-4 text-primary" />
               <span>Login to Post</span>
@@ -512,7 +527,7 @@ export function TradingAdsChannel() {
         </div>
 
         <div className="flex flex-col xl:flex-row xl:items-center gap-3 w-full">
-          <div className="flex bg-popover rounded-[4px] p-1 border border-border w-full md:w-fit overflow-x-auto hide-scrollbar shrink-0 shadow-inner">
+          <div className="flex bg-popover/90 rounded-[4px] p-1 border border-border w-full md:w-fit overflow-x-auto hide-scrollbar shrink-0 shadow-inner">
             {[{ id: "all", label: "All" }, { id: "standard", label: "Trades" }, { id: "lf_offers", label: "LF Offers" }, { id: "inventory", label: "Showcases" }].map(t => (
               <button
                 key={t.id}
@@ -532,7 +547,7 @@ export function TradingAdsChannel() {
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
                 placeholder="Search board by unit name..."
-                className="w-full bg-popover text-foreground text-[13px] md:text-[14px] pl-9 pr-4 py-2.5 rounded-[4px] outline-none border border-border focus:border-primary transition-colors font-medium shadow-inner min-h-[44px]"
+                className="w-full bg-popover/90 text-foreground text-[13px] md:text-[14px] pl-9 pr-4 py-2.5 rounded-[4px] outline-none border border-border focus:border-primary transition-colors font-medium shadow-inner min-h-[44px]"
               />
             </div>
             
@@ -543,7 +558,7 @@ export function TradingAdsChannel() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col bg-background relative z-10">
+      <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col bg-transparent relative z-10">
         <div className="w-full h-full max-w-[1400px] mx-auto p-3 md:p-6 lg:p-8 pb-24">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
@@ -552,7 +567,7 @@ export function TradingAdsChannel() {
             </div>
           ) : filteredAndSortedAds.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center gap-3 md:gap-4 px-4">
-              <div className="w-16 h-16 md:w-20 md:h-20 bg-card rounded-full flex items-center justify-center border border-border mb-2 shadow-inner">
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-card/90 rounded-full flex items-center justify-center border border-border mb-2 shadow-inner">
                 <Megaphone className="w-8 h-8 md:w-10 md:h-10 text-muted-foreground" />
               </div>
               <span className="text-[18px] md:text-[20px] font-black text-foreground tracking-tight">No Active Listings</span>
