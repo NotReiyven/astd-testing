@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Sparkles, ChevronRight, Zap, MousePointer2 } from "lucide-react";
 
-export type GuideType = "main" | "academy_grad" | null;
+export type GuideType = "main" | "academy_grad" | "channels" | "advanced" | "developer" | "filters" | "dictionary" | "stats" | "management" | "annoyed" | null;
 
 const AQUA_DIALOGUES: Record<string, string[]> = {
   main: [

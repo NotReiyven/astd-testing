@@ -60,7 +60,6 @@ const ItemTile = memo(({ item, ALL_UNITS }: { item: TradeCard, ALL_UNITS: Master
         {item.name}
       </span>
 
-      {/* Tooltip */}
       {showTooltip && master && (
         <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-[#111214] border border-border text-foreground text-[11px] p-3 rounded-[8px] shadow-2xl pointer-events-none z-50 w-48 animate-fade-in flex flex-col gap-1">
           <div className="font-extrabold text-foreground truncate">{master.name}</div>
@@ -104,10 +103,12 @@ export function AdInteractionModal() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [comments.length]);
 
-  // Handle ESC key closing modal & focus trap
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeAdContext();
+      if (e.key === "Escape") {
+        triggerHaptic('light');
+        closeAdContext();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -142,7 +143,7 @@ export function AdInteractionModal() {
   };
 
   const handleShareLink = () => {
-    triggerHaptic('light');
+    triggerHaptic('success');
     navigator.clipboard.writeText(window.location.href);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
@@ -165,6 +166,7 @@ export function AdInteractionModal() {
   const getReplies = (parentId: string) => comments.filter(c => c.parent_id === parentId);
 
   const toggleCollapse = (id: string) => {
+    triggerHaptic('light');
     setCollapsedThreads(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
@@ -196,18 +198,17 @@ export function AdInteractionModal() {
       <div className={`flex flex-col ${depth > 0 ? 'ml-4 sm:ml-6 mt-3 pl-3 border-l-2 border-border/60' : 'mt-4'}`}>
         <div className="flex items-start gap-3 group">
           
-          {/* Avatar */}
           <img 
             src={comment.profiles.avatar_url || "/units/firezio.webp"} 
             className="w-8 h-8 rounded-full bg-background object-cover shrink-0 cursor-pointer hover:opacity-80 transition-opacity mt-0.5" 
             alt=""
             onClick={(e) => {
+              triggerHaptic('light');
               const rect = e.currentTarget.getBoundingClientRect();
               openPopout(comment.user_id, rect.left, rect.bottom);
             }}
           />
 
-          {/* Body */}
           <div className="flex flex-col flex-1 min-w-0 bg-popover/40 hover:bg-popover/80 p-3 rounded-[8px] border border-border/40 transition-colors">
             
             <div className="flex items-center justify-between gap-2 mb-1">
@@ -215,6 +216,7 @@ export function AdInteractionModal() {
                 <span 
                   className="text-[13px] font-bold text-foreground truncate cursor-pointer hover:underline"
                   onClick={(e) => {
+                    triggerHaptic('light');
                     const rect = e.currentTarget.getBoundingClientRect();
                     openPopout(comment.user_id, rect.left, rect.bottom);
                   }}
@@ -242,13 +244,11 @@ export function AdInteractionModal() {
               {comment.content}
             </p>
 
-            {/* Comment Footer Action Row */}
             <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border/40">
               <div className="flex items-center gap-3">
-                {/* Compact Horizontal Vote Pill */}
                 <div className="flex items-center gap-1 bg-background rounded-[4px] border border-border px-1.5 py-0.5">
                   <button 
-                    onClick={() => profile && voteComment(comment.id, profile.id, 1)}
+                    onClick={() => { if (profile) { triggerHaptic('light'); voteComment(comment.id, profile.id, 1); } }}
                     className={`focus-visible:outline-none transition-colors hover:text-[#23a559] cursor-pointer ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground'}`}
                   >
                     <ArrowBigUp className={`w-3.5 h-3.5 ${votes.userVote === 1 ? 'fill-current' : ''}`} />
@@ -257,7 +257,7 @@ export function AdInteractionModal() {
                     {score}
                   </span>
                   <button 
-                    onClick={() => profile && voteComment(comment.id, profile.id, -1)}
+                    onClick={() => { if (profile) { triggerHaptic('light'); voteComment(comment.id, profile.id, -1); } }}
                     className={`focus-visible:outline-none transition-colors hover:text-destructive cursor-pointer ${votes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground'}`}
                   >
                     <ArrowBigDown className={`w-3.5 h-3.5 ${votes.userVote === -1 ? 'fill-current' : ''}`} />
@@ -265,7 +265,7 @@ export function AdInteractionModal() {
                 </div>
 
                 <button 
-                  onClick={() => setReplyingTo({ id: comment.id, username: comment.profiles.username })}
+                  onClick={() => { triggerHaptic('light'); setReplyingTo({ id: comment.id, username: comment.profiles.username }); }}
                   className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
                 >
                   <Reply className="w-3 h-3 text-primary" /> Reply
@@ -285,7 +285,7 @@ export function AdInteractionModal() {
 
                 {canModerate(comment.user_id) && (
                   <button 
-                    onClick={() => deleteComment(comment.id)}
+                    onClick={() => { triggerHaptic('medium'); deleteComment(comment.id); }}
                     className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none cursor-pointer"
                   >
                     <Trash2 className="w-3 h-3" /> Delete
@@ -298,7 +298,6 @@ export function AdInteractionModal() {
 
         </div>
 
-        {/* Render Replies Recursively */}
         {!isCollapsed && replies.length > 0 && (
           <div className="flex flex-col">
             {replies.map(reply => <CommentThread key={reply.id} comment={reply} depth={depth + 1} />)}
@@ -337,10 +336,19 @@ export function AdInteractionModal() {
   const valDiff = totalGiveVal - totalGetVal;
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-0 md:p-6 bg-black/75 backdrop-blur-sm animate-fade-in" role="dialog" aria-modal="true">
+    <div 
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-0 md:p-6 bg-black/75 backdrop-blur-sm animate-fade-in" 
+      role="dialog" 
+      aria-modal="true"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          triggerHaptic('light');
+          closeAdContext();
+        }
+      }}
+    >
       <div className="bg-card w-full h-full md:h-[85vh] md:max-w-6xl md:rounded-[14px] shadow-2xl border-0 md:border border-border flex flex-col overflow-hidden">
         
-        {/* 1. SHARED HEADER (Single bar across the whole modal) */}
         <div className="flex items-center justify-between px-4 md:px-6 py-3.5 bg-popover border-b border-border shrink-0 z-20">
           <div className="flex items-center gap-3">
             <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-[6px] border ${statusColor}`}>
@@ -354,14 +362,14 @@ export function AdInteractionModal() {
           <div className="flex items-center gap-2">
             <button 
               onClick={handleShareLink}
-              className="px-3 py-1.5 bg-card hover:bg-muted border border-border rounded-[6px] text-[12px] font-bold text-foreground flex items-center gap-1.5 transition-colors focus-visible:outline-none"
+              className="px-3 py-1.5 bg-card hover:bg-muted border border-border rounded-[6px] text-[12px] font-bold text-foreground flex items-center gap-1.5 transition-colors focus-visible:outline-none cursor-pointer"
               aria-label="Share listing"
             >
               {copiedLink ? <Check className="w-3.5 h-3.5 text-[#23a559]" /> : <Share2 className="w-3.5 h-3.5 text-muted-foreground" />}
               <span className="hidden sm:inline">Share</span>
             </button>
             <button 
-              onClick={closeAdContext} 
+              onClick={() => { triggerHaptic('light'); closeAdContext(); }} 
               className="text-muted-foreground hover:text-foreground focus-visible:outline-none cursor-pointer p-1.5 hover:bg-card rounded-[6px] transition-colors"
               aria-label="Close modal"
             >
@@ -370,31 +378,27 @@ export function AdInteractionModal() {
           </div>
         </div>
 
-        {/* Mobile Tab Control */}
         <div className="flex md:hidden bg-popover border-b border-border p-1 shrink-0">
           <button 
-            onClick={() => setMobileTab("listing")}
+            onClick={() => { triggerHaptic('light'); setMobileTab("listing"); }}
             className={`flex-1 py-2 text-[12px] font-bold uppercase tracking-wider rounded-[6px] transition-colors ${mobileTab === 'listing' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
           >
             Listing
           </button>
           <button 
-            onClick={() => setMobileTab("comments")}
+            onClick={() => { triggerHaptic('light'); setMobileTab("comments"); }}
             className={`flex-1 py-2 text-[12px] font-bold uppercase tracking-wider rounded-[6px] transition-colors flex items-center justify-center gap-1.5 ${mobileTab === 'comments' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
           >
             Discussion <span className="bg-black/20 px-1.5 rounded text-[10px]">{comments.length}</span>
           </button>
         </div>
 
-        {/* Main Content Grid */}
         <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
           
-          {/* 2. LEFT PANEL: THE LISTING */}
           <div className={`w-full md:w-[480px] lg:w-[540px] bg-popover/50 border-r border-border flex flex-col shrink-0 min-h-0 ${mobileTab === 'comments' ? 'hidden md:flex' : 'flex'}`}>
             
             <div className="p-4 md:p-6 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-5">
               
-              {/* Poster Row */}
               <div className="flex items-center justify-between bg-card p-3.5 rounded-[10px] border border-border shadow-sm">
                 <div className="flex items-center gap-3 min-w-0">
                   <img 
@@ -402,6 +406,7 @@ export function AdInteractionModal() {
                     className="w-11 h-11 rounded-full bg-background object-cover cursor-pointer hover:opacity-80 transition-opacity shrink-0" 
                     alt=""
                     onClick={(e) => {
+                      triggerHaptic('light');
                       const rect = e.currentTarget.getBoundingClientRect();
                       openPopout(activeAd.user_id, rect.left, rect.bottom);
                     }}
@@ -410,6 +415,7 @@ export function AdInteractionModal() {
                     <span 
                       className="text-[15px] font-black text-foreground truncate cursor-pointer hover:underline"
                       onClick={(e) => {
+                        triggerHaptic('light');
                         const rect = e.currentTarget.getBoundingClientRect();
                         openPopout(activeAd.user_id, rect.left, rect.bottom);
                       }}
@@ -424,21 +430,19 @@ export function AdInteractionModal() {
 
                 <button
                   onClick={handleCopyDiscord}
-                  className="px-3 py-2 bg-popover hover:bg-muted border border-border rounded-[6px] text-[12px] font-bold text-foreground flex items-center gap-1.5 transition-colors shadow-sm focus-visible:outline-none shrink-0"
+                  className="px-3 py-2 bg-popover hover:bg-muted border border-border rounded-[6px] text-[12px] font-bold text-foreground flex items-center gap-1.5 transition-colors shadow-sm focus-visible:outline-none shrink-0 cursor-pointer"
                 >
                   {copiedDiscord ? <Check className="w-3.5 h-3.5 text-[#23a559]" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}
                   <span>{copiedDiscord ? "Copied" : "Copy Discord"}</span>
                 </button>
               </div>
 
-              {/* Note Quote Block (Hidden entirely if no note exists) */}
               {activeAd.note && (
                 <blockquote className="border-l-4 border-primary pl-4 py-2 italic text-[14px] text-foreground/90 bg-card rounded-r-[8px] border border-border shadow-sm">
                   "{activeAd.note}"
                 </blockquote>
               )}
 
-              {/* Trade Summary & Grids */}
               <div className="flex flex-col gap-4 bg-card rounded-[12px] p-4 border border-border shadow-sm">
                 
                 {isInventory ? (
@@ -478,7 +482,6 @@ export function AdInteractionModal() {
                   </div>
                 ) : (
                   <div className="flex flex-col gap-5">
-                    {/* Offering Side */}
                     <div className="flex flex-col gap-2">
                       <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-wider text-[#FAA61A] border-b border-border pb-2">
                         <span>Offering</span>
@@ -495,7 +498,6 @@ export function AdInteractionModal() {
                       <ArrowRightLeft className="w-4 h-4" />
                     </div>
 
-                    {/* Requesting Side */}
                     <div className="flex flex-col gap-2">
                       <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-wider text-primary border-b border-border pb-2">
                         <span>Requesting</span>
@@ -510,7 +512,6 @@ export function AdInteractionModal() {
                   </div>
                 )}
 
-                {/* Value Difference Indicator */}
                 {!isTakingOffers && !isInventory && totalGetVal > 0 && (
                   <div className="mt-2 pt-3 border-t border-border flex items-center justify-between text-[12px] font-mono">
                     <span className="text-muted-foreground font-bold uppercase">Value Balance</span>
@@ -524,7 +525,6 @@ export function AdInteractionModal() {
 
             </div>
             
-            {/* Sticky Footer Action Bar */}
             <div className="p-4 bg-card border-t border-border shrink-0 flex flex-col sm:flex-row items-center gap-3">
               <button
                 onClick={handleLoadIntoCalculator}
@@ -543,19 +543,16 @@ export function AdInteractionModal() {
 
           </div>
 
-          {/* 3. RIGHT PANEL: DISCUSSION */}
           <div className={`flex-1 flex flex-col min-w-0 bg-background min-h-0 ${mobileTab === 'listing' ? 'hidden md:flex' : 'flex'}`}>
             
-            {/* Discussion Header */}
             <div className="hidden md:flex items-center justify-between px-6 py-4 bg-popover border-b border-border shrink-0">
               <h2 className="text-[15px] font-black text-foreground tracking-tight uppercase flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-primary" /> Discussion <span className="bg-primary/20 text-primary text-[11px] px-2 py-0.5 rounded-[4px] font-mono">{comments.length}</span>
               </h2>
 
-              {/* Listing Vote Control in Header Action Row */}
               <div className="flex items-center gap-1.5 bg-card rounded-[6px] border border-border px-2.5 py-1">
                 <button 
-                  onClick={() => profile && voteAd(activeAd.id, profile.id, 1)}
+                  onClick={() => { if (profile) { triggerHaptic('light'); voteAd(activeAd.id, profile.id, 1); } }}
                   className={`focus-visible:outline-none transition-colors hover:text-[#23a559] cursor-pointer ${adVotes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground'}`}
                   aria-label="Upvote listing"
                 >
@@ -565,7 +562,7 @@ export function AdInteractionModal() {
                   {adScore}
                 </span>
                 <button 
-                  onClick={() => profile && voteAd(activeAd.id, profile.id, -1)}
+                  onClick={() => { if (profile) { triggerHaptic('light'); voteAd(activeAd.id, profile.id, -1); } }}
                   className={`focus-visible:outline-none transition-colors hover:text-destructive cursor-pointer ${adVotes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground'}`}
                   aria-label="Downvote listing"
                 >
@@ -574,7 +571,6 @@ export function AdInteractionModal() {
               </div>
             </div>
 
-            {/* Scrollable Comment List */}
             <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 flex flex-col pb-8">
               {isLoading ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-3">
@@ -595,14 +591,13 @@ export function AdInteractionModal() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Sticky Composer */}
             <div className="p-4 bg-popover border-t border-border shrink-0 flex flex-col gap-2">
               {replyingTo && (
                 <div className="flex items-center justify-between bg-card px-3 py-1.5 rounded-[6px] border border-primary/40 animate-fade-in">
                   <span className="text-[12px] font-bold text-foreground flex items-center gap-1.5">
                     <Reply className="w-3.5 h-3.5 text-primary" /> Replying to @{replyingTo.username}
                   </span>
-                  <button onClick={() => setReplyingTo(null)} className="text-muted-foreground hover:text-destructive focus-visible:outline-none cursor-pointer">
+                  <button onClick={() => { triggerHaptic('light'); setReplyingTo(null); }} className="text-muted-foreground hover:text-destructive focus-visible:outline-none cursor-pointer">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>

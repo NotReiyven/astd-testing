@@ -20,6 +20,16 @@
   background: #111214; 
 }
 
+/* Explicit Utility to Hide Scrollbars cleanly */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

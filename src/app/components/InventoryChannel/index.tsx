@@ -39,13 +39,13 @@ export function InventoryChannel() {
       
       {/* HEADER SECTION */}
       <div className="flex-shrink-0 flex flex-col bg-card border-b border-border shadow-sm z-20">
-        <div className="px-4 md:px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="px-4 md:px-6 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
           
           <div className="flex items-center gap-3">
             {isReadOnly ? (
               <button 
                 onClick={handleCloseVault}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-popover hover:bg-muted border border-border text-muted-foreground hover:text-foreground rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-all active:scale-95 focus-visible:outline-none cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-2 bg-popover hover:bg-muted border border-border text-muted-foreground hover:text-foreground rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-all active:scale-95 focus-visible:outline-none cursor-pointer min-h-[40px]"
               >
                 <ArrowLeft className="w-4 h-4" /> Return
               </button>
@@ -53,13 +53,13 @@ export function InventoryChannel() {
               <div className="flex bg-popover rounded-[4px] p-1 border border-border shadow-inner w-full md:w-fit">
                 <button 
                   onClick={() => handleTabSwitch("owned")}
-                  className={`flex-1 md:flex-none px-4 py-1.5 rounded-[3px] text-[12px] font-bold uppercase tracking-wider transition-all text-center focus-visible:outline-none active:scale-95 cursor-pointer ${vaultView === "owned" ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                  className={`flex-1 md:flex-none px-4 py-2 rounded-[3px] text-[12px] font-bold uppercase tracking-wider transition-all text-center focus-visible:outline-none active:scale-95 cursor-pointer min-h-[40px] flex items-center justify-center ${vaultView === "owned" ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   My Vault
                 </button>
                 <button 
                   onClick={() => handleTabSwitch("wishlist")}
-                  className={`flex-1 md:flex-none px-4 py-1.5 rounded-[3px] text-[12px] font-bold uppercase tracking-wider transition-all text-center focus-visible:outline-none active:scale-95 cursor-pointer ${vaultView === "wishlist" ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                  className={`flex-1 md:flex-none px-4 py-2 rounded-[3px] text-[12px] font-bold uppercase tracking-wider transition-all text-center focus-visible:outline-none active:scale-95 cursor-pointer min-h-[40px] flex items-center justify-center ${vaultView === "wishlist" ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   Wishlist
                 </button>
@@ -74,10 +74,10 @@ export function InventoryChannel() {
           <div className="flex items-center gap-3">
             {!isReadOnly && vaultView === "owned" && profile && (
               <button
-                onClick={() => { triggerHaptic('light'); setConfirmClear("unpinned"); }}
-                className="flex items-center justify-center gap-1.5 px-4 py-2 md:py-1.5 bg-popover hover:bg-destructive/10 border border-border hover:border-destructive/30 text-muted-foreground hover:text-foreground hover:text-destructive rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-all active:scale-95 focus-visible:outline-none cursor-pointer w-full md:w-auto"
+                onClick={() => { triggerHaptic('medium'); setConfirmClear("unpinned"); }}
+                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-popover hover:bg-destructive/10 border border-border hover:border-destructive/30 text-muted-foreground hover:text-foreground hover:text-destructive rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-all active:scale-95 focus-visible:outline-none cursor-pointer w-full md:w-auto min-h-[40px]"
               >
-                <Trash2 className="w-3.5 h-3.5" /> Clear Unpinned
+                <Trash2 className="w-4 h-4" /> Clear Unpinned
               </button>
             )}
           </div>
@@ -100,7 +100,7 @@ export function InventoryChannel() {
             </div>
             {!isReadOnly && (
               <div className="flex items-center gap-2 shrink-0 ml-auto">
-                <button onClick={handleCopyVault} className="text-primary hover:text-primary/80 flex items-center gap-1 transition-all active:scale-95 cursor-pointer focus-visible:outline-none">
+                <button onClick={handleCopyVault} className="text-primary hover:text-primary/80 flex items-center gap-1 transition-all active:scale-95 cursor-pointer focus-visible:outline-none py-1">
                   <ArrowUpRight className="w-3.5 h-3.5" /> Export Text
                 </button>
               </div>
@@ -109,14 +109,15 @@ export function InventoryChannel() {
         )}
 
         {/* CONTROLS BAR */}
-        <div className="px-4 md:px-6 py-3 border-t border-border flex flex-col gap-3">
-          {/* ROW 1: Tier Filters */}
-          <div className="flex bg-popover rounded-[4px] p-1 border border-border w-full md:w-fit overflow-x-auto hide-scrollbar shadow-inner">
+        <div className="px-4 md:px-6 py-3.5 border-t border-border flex flex-col gap-3">
+          
+          {/* ROW 1: Tier Filter Pills (Scrollable with scrollbar hidden via .hide-scrollbar) */}
+          <div className="flex bg-popover rounded-[6px] p-1 border border-border w-full overflow-x-auto hide-scrollbar shadow-inner gap-1">
             {TIER_FILTERS.map(f => (
               <button
                 key={f}
                 onClick={() => { triggerHaptic('light'); setActiveTierFilter(f as FilterKey | "Pinned"); }}
-                className={`flex-1 md:flex-none px-4 py-1.5 rounded-[4px] text-[12px] font-bold tracking-wide uppercase transition-all whitespace-nowrap focus-visible:outline-none shrink-0 active:scale-95 cursor-pointer ${
+                className={`px-4 py-2 rounded-[4px] text-[12px] font-bold tracking-wide uppercase transition-all whitespace-nowrap focus-visible:outline-none shrink-0 active:scale-95 cursor-pointer min-h-[40px] flex items-center justify-center ${
                   activeTierFilter === f
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -127,34 +128,34 @@ export function InventoryChannel() {
             ))}
           </div>
 
-          {/* ROW 2: Utility Controls */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 w-full pt-3 border-t border-border/60">
+          {/* ROW 2: Search, Sort, and Bulk Select Actions */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 w-full pt-2">
             <div className="flex items-center gap-2.5">
               {!isReadOnly && vaultView === "owned" && displayInventory.length > 0 && (
                 <button
                   onClick={() => { triggerHaptic('medium'); setIsSelectMode(!isSelectMode); }}
-                  className={`flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-all active:scale-95 border focus-visible:outline-none shrink-0 min-h-[36px] cursor-pointer ${
+                  className={`flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-all active:scale-95 border focus-visible:outline-none shrink-0 min-h-[40px] cursor-pointer ${
                     isSelectMode ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-popover text-muted-foreground border-border hover:text-foreground hover:bg-muted"
                   }`}
                 >
-                  <CheckSquare className="w-3.5 h-3.5" />
+                  <CheckSquare className="w-4 h-4" />
                   <span>{isSelectMode ? "Cancel Select" : "Bulk Select"}</span>
                 </button>
               )}
             </div>
 
-            <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto flex-1 md:justify-end">
-              <div className="relative w-full md:max-w-[240px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full md:w-auto flex-1 md:justify-end">
+              <div className="relative w-full sm:max-w-[260px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search units..."
-                  className="w-full bg-popover border border-border rounded-[4px] pl-9 pr-3 py-1.5 text-[13px] text-foreground outline-none placeholder-muted-foreground focus:border-primary transition-colors shadow-inner min-h-[36px]"
+                  placeholder="Search or add units..."
+                  className="w-full bg-popover border border-border rounded-[4px] pl-9 pr-8 py-2 text-[13px] text-foreground outline-none placeholder-muted-foreground focus:border-primary transition-colors shadow-inner min-h-[40px]"
                 />
                 {searchQuery && (
-                  <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer focus-visible:outline-none">
+                  <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer focus-visible:outline-none p-1.5">
                     <X className="w-4 h-4" />
                   </button>
                 )}
@@ -163,11 +164,11 @@ export function InventoryChannel() {
               <select
                 value={sortMode}
                 onChange={(e) => { triggerHaptic('light'); setSortMode(e.target.value); }}
-                className="bg-popover text-muted-foreground text-[12px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-[4px] outline-none border border-border focus:border-primary cursor-pointer shrink-0 w-full md:w-auto min-h-[36px] transition-all active:scale-[0.98]"
+                className="bg-popover text-muted-foreground text-[12px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-[4px] outline-none border border-border focus:border-primary cursor-pointer shrink-0 w-full sm:w-auto min-h-[40px] transition-all active:scale-[0.98]"
               >
-                <option value="value-desc">Highest Value</option>
-                <option value="value-asc">Lowest Value</option>
-                <option value="alpha-asc">A to Z</option>
+                <option value="value-desc">Value: High to Low</option>
+                <option value="value-asc">Value: Low to High</option>
+                <option value="alpha-asc">Alphabetical (A-Z)</option>
                 <option value="recent-desc">Recently Added</option>
               </select>
             </div>
@@ -176,28 +177,25 @@ export function InventoryChannel() {
 
       </div>
 
-      {/* MULTI-SELECT ACTION BAR */}
       {isSelectMode && selectedUnits.size > 0 && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border border-primary shadow-[0_10px_40px_rgba(0,0,0,0.8)] px-5 py-3 rounded-[8px] flex items-center gap-4 animate-slide-up whitespace-nowrap">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border border-primary shadow-[0_10px_40px_rgba(0,0,0,0.8)] px-5 py-3.5 rounded-[8px] flex items-center gap-4 animate-slide-up whitespace-nowrap">
           <span className="text-[13px] font-bold text-foreground"><span className="text-primary font-black mr-1">{selectedUnits.size}</span> Units</span>
           <div className="w-px h-5 bg-border shrink-0" />
-          <button onClick={() => handleSendToAnalyzer("give")} className="flex items-center gap-1.5 text-[12px] font-bold bg-[#FAA61A] text-white px-3 py-1.5 rounded-[4px] hover:bg-[#d98b14] transition-all active:scale-95 focus-visible:outline-none cursor-pointer">
-            <ArrowUpCircle className="w-3.5 h-3.5" /> Give
+          <button onClick={() => handleSendToAnalyzer("give")} className="flex items-center gap-1.5 text-[12px] font-bold bg-[#FAA61A] text-white px-4 py-2.5 rounded-[6px] hover:bg-[#d98b14] transition-all active:scale-95 focus-visible:outline-none cursor-pointer min-h-[40px]">
+            <ArrowUpCircle className="w-4 h-4" /> Give
           </button>
-          <button onClick={() => handleSendToAnalyzer("get")} className="flex items-center gap-1.5 text-[12px] font-bold bg-primary text-primary-foreground px-3 py-1.5 rounded-[4px] hover:bg-primary/80 transition-all active:scale-95 focus-visible:outline-none cursor-pointer">
-            <ArrowDownCircle className="w-3.5 h-3.5" /> Get
+          <button onClick={() => handleSendToAnalyzer("get")} className="flex items-center gap-1.5 text-[12px] font-bold bg-primary text-primary-foreground px-4 py-2.5 rounded-[6px] hover:bg-primary/80 transition-all active:scale-95 focus-visible:outline-none cursor-pointer min-h-[40px]">
+            <ArrowDownCircle className="w-4 h-4" /> Get
           </button>
           <div className="w-px h-5 bg-border shrink-0" />
-          <button onClick={handlePostAsAd} className="flex items-center gap-1.5 text-[12px] font-bold bg-[#23a559] text-white px-3 py-1.5 rounded-[4px] hover:bg-[#1f914e] transition-all active:scale-95 focus-visible:outline-none cursor-pointer">
+          <button onClick={handlePostAsAd} className="flex items-center gap-1.5 text-[12px] font-bold bg-[#23a559] text-white px-4 py-2.5 rounded-[6px] hover:bg-[#1f914e] transition-all active:scale-95 focus-visible:outline-none cursor-pointer min-h-[40px]">
             Post as Ad
           </button>
         </div>
       )}
 
-      {/* MAIN CONTENT AREA */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 relative">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 relative pb-safe">
         
-        {/* ADD UNIT SEARCH RESULTS (WHEN SEARCHING) */}
         {!isReadOnly && searchQuery && unownedSearchResults.length > 0 && (
           <div className="mb-6 bg-card border border-primary/30 rounded-[8px] p-4 shadow-sm">
             <h3 className="text-[11px] font-bold text-primary uppercase tracking-widest mb-3">Add to {vaultView === "wishlist" ? "Wishlist" : "Vault"}</h3>
@@ -206,7 +204,7 @@ export function InventoryChannel() {
                 <button
                   key={u.id}
                   onClick={() => handleQuickAdd(u)}
-                  className="flex items-center justify-between p-2.5 bg-popover hover:bg-muted border border-border rounded-[4px] text-left transition-all active:scale-[0.98] group focus-visible:outline-none cursor-pointer"
+                  className="flex items-center justify-between p-3 bg-popover hover:bg-muted border border-border rounded-[6px] text-left transition-all active:scale-[0.98] group focus-visible:outline-none cursor-pointer min-h-[40px]"
                 >
                   <div className="flex flex-col min-w-0 pr-2">
                     <span className="text-[13px] font-bold text-foreground truncate">{u.name}</span>
@@ -219,7 +217,6 @@ export function InventoryChannel() {
           </div>
         )}
 
-        {/* EMPTY STATES */}
         {displayInventory.length === 0 && !searchQuery ? (
           <div className="flex flex-col items-center justify-center h-full text-center opacity-70">
             <div className="w-16 h-16 bg-card border border-border rounded-full flex items-center justify-center mb-4">
@@ -235,7 +232,6 @@ export function InventoryChannel() {
             )}
           </div>
         ) : (
-          /* GRID VIEW */
           <div className="flex flex-col gap-6 pb-20">
             {Object.entries(tierGroupedUnits).map(([tier, itemsInTier]) => {
               if (itemsInTier.length === 0) return null;
@@ -246,7 +242,7 @@ export function InventoryChannel() {
                 <div key={tier} className="flex flex-col">
                   <button 
                     onClick={() => { triggerHaptic('light'); setCollapsedTiers(p => ({ ...p, [tier]: !p[tier] })); }}
-                    className="flex items-center gap-3 mb-3 focus-visible:outline-none group cursor-pointer"
+                    className="flex items-center gap-3 mb-3 focus-visible:outline-none group cursor-pointer py-1"
                   >
                     <span className="text-[12px] font-bold uppercase tracking-widest transition-colors" style={{ color: cfg.badgeColor }}>
                       {tier} {["Pure", "Oddities", "Untiered"].includes(tier) ? "" : "Tier"}
@@ -285,7 +281,6 @@ export function InventoryChannel() {
           </div>
         )}
         
-        {/* MASS IMPORT WIDGET */}
         {!isReadOnly && vaultView === "owned" && (
           <div className="mt-8 bg-card border border-border rounded-[8px] p-5 shadow-sm">
             <h3 className="text-[12px] font-bold text-foreground uppercase tracking-wider mb-1 flex items-center gap-2">
@@ -302,7 +297,7 @@ export function InventoryChannel() {
               <button
                 onClick={executeMassImport}
                 disabled={!importText.trim() || isImporting || parsedImportItems.length === 0}
-                className="bg-primary hover:bg-primary/80 disabled:bg-border disabled:text-muted-foreground text-primary-foreground px-6 rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-all active:scale-95 focus-visible:outline-none flex flex-col items-center justify-center py-3 md:py-0 cursor-pointer"
+                className="bg-primary hover:bg-primary/80 disabled:bg-border disabled:text-muted-foreground text-primary-foreground px-6 rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-all active:scale-95 focus-visible:outline-none flex flex-col items-center justify-center py-3 md:py-0 cursor-pointer min-h-[40px]"
               >
                 {isImporting ? "Importing..." : "Import"}
                 {parsedImportItems.length > 0 && <span className="text-[9px] font-medium normal-case mt-0.5 opacity-80">({parsedImportItems.length} units parsed)</span>}
@@ -313,14 +308,13 @@ export function InventoryChannel() {
 
       </div>
 
-      {/* ITEM INSPECTION MODAL */}
       {inspectTarget && (
-        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setInspectTarget(null)} />
-          <div className="relative bg-card border border-border rounded-[8px] w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden">
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="absolute inset-0" onClick={() => { triggerHaptic('light'); setInspectTarget(null); }} />
+          <div className="relative bg-card border border-border rounded-[8px] w-full max-w-sm shadow-2xl animate-slide-up overflow-hidden z-10">
             <div className="p-4 border-b border-border bg-popover flex items-center justify-between">
               <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">Unit Details</span>
-              <button onClick={() => setInspectTarget(null)} className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"><X className="w-4 h-4" /></button>
+              <button onClick={() => { triggerHaptic('light'); setInspectTarget(null); }} className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer p-2"><X className="w-4 h-4" /></button>
             </div>
             
             <div className="p-5 flex flex-col items-center text-center">
@@ -335,28 +329,27 @@ export function InventoryChannel() {
               {!isReadOnly && vaultView === "owned" && (
                 <div className="w-full flex flex-col gap-3">
                   <div className="flex items-center justify-between bg-popover p-1 rounded-[4px] border border-border">
-                     <button onClick={() => handleQtyChange(inspectTarget.item.unit_id, -1)} className="w-10 h-8 flex items-center justify-center text-destructive hover:bg-destructive/10 rounded-[3px] transition-all active:scale-95 cursor-pointer focus-visible:outline-none">-</button>
-                     <span className="font-mono font-bold text-[14px] text-foreground">{inspectTarget.item.quantity}</span>
-                     <button onClick={() => handleQtyChange(inspectTarget.item.unit_id, 1)} className="w-10 h-8 flex items-center justify-center text-[#23a559] hover:bg-[#23a559]/10 rounded-[3px] transition-all active:scale-95 cursor-pointer focus-visible:outline-none">+</button>
+                     <button onClick={() => handleQtyChange(inspectTarget.item.unit_id, -1)} className="w-12 h-10 flex items-center justify-center text-destructive hover:bg-destructive/10 rounded-[3px] transition-all active:scale-95 cursor-pointer focus-visible:outline-none text-[16px] font-bold">-</button>
+                     <span className="font-mono font-bold text-[15px] text-foreground">{inspectTarget.item.quantity}</span>
+                     <button onClick={() => handleQtyChange(inspectTarget.item.unit_id, 1)} className="w-12 h-10 flex items-center justify-center text-[#23a559] hover:bg-[#23a559]/10 rounded-[3px] transition-all active:scale-95 cursor-pointer focus-visible:outline-none text-[16px] font-bold">+</button>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => handleTogglePin(inspectTarget.item.unit_id, inspectTarget.item.is_pinned)} className={`py-2 text-[12px] font-bold rounded-[4px] border transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer focus-visible:outline-none ${inspectTarget.item.is_pinned ? 'bg-primary/10 text-primary border-primary/30' : 'bg-popover text-muted-foreground border-border hover:bg-muted'}`}>
+                    <button onClick={() => handleTogglePin(inspectTarget.item.unit_id, inspectTarget.item.is_pinned)} className={`py-2.5 text-[12px] font-bold rounded-[4px] border transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer focus-visible:outline-none min-h-[40px] ${inspectTarget.item.is_pinned ? 'bg-primary/10 text-primary border-primary/30' : 'bg-popover text-muted-foreground border-border hover:bg-muted'}`}>
                       <Lock className="w-3.5 h-3.5" /> {inspectTarget.item.is_pinned ? "Unlock" : "Lock"}
                     </button>
-                    <button onClick={() => handleRemove(inspectTarget.item, inspectTarget.master)} className="py-2 text-[12px] font-bold rounded-[4px] border border-border bg-popover text-destructive hover:bg-destructive/10 transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer focus-visible:outline-none">
+                    <button onClick={() => handleRemove(inspectTarget.item, inspectTarget.master)} className="py-2.5 text-[12px] font-bold rounded-[4px] border border-border bg-popover text-destructive hover:bg-destructive/10 transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer focus-visible:outline-none min-h-[40px]">
                       <Trash2 className="w-3.5 h-3.5" /> Remove
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* Analyzer Send Actions */}
               <div className="w-full flex gap-2 mt-4 pt-4 border-t border-border">
-                <button onClick={() => handleSendToAnalyzer("give")} className="flex-1 py-2 text-[12px] font-bold rounded-[4px] bg-[#FAA61A] hover:bg-[#d98b14] text-white transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-sm cursor-pointer focus-visible:outline-none">
+                <button onClick={() => handleSendToAnalyzer("give")} className="flex-1 py-2.5 text-[12px] font-bold rounded-[4px] bg-[#FAA61A] hover:bg-[#d98b14] text-white transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-sm cursor-pointer focus-visible:outline-none min-h-[40px]">
                   <ArrowUpCircle className="w-3.5 h-3.5" /> Give
                 </button>
-                <button onClick={() => handleSendToAnalyzer("get")} className="flex-1 py-2 text-[12px] font-bold rounded-[4px] bg-primary hover:bg-primary/80 text-white transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-sm cursor-pointer focus-visible:outline-none">
+                <button onClick={() => handleSendToAnalyzer("get")} className="flex-1 py-2.5 text-[12px] font-bold rounded-[4px] bg-primary hover:bg-primary/80 text-white transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-sm cursor-pointer focus-visible:outline-none min-h-[40px]">
                   <ArrowDownCircle className="w-3.5 h-3.5" /> Get
                 </button>
               </div>
@@ -366,7 +359,6 @@ export function InventoryChannel() {
         </div>
       )}
 
-      {/* CONFIRMATION OVERLAY */}
       {confirmClear && (
         <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
           <div className="bg-card border border-border rounded-[8px] p-6 max-w-sm w-full shadow-2xl flex flex-col text-center">
@@ -375,10 +367,10 @@ export function InventoryChannel() {
               This will permanently delete {confirmClear === "unpinned" ? "all unpinned items" : "EVERYTHING"} from your inventory.
             </p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmClear(null)} className="flex-1 py-2.5 rounded-[4px] bg-popover hover:bg-muted border border-border text-foreground text-[13px] font-bold transition-all active:scale-95 cursor-pointer focus-visible:outline-none">Cancel</button>
+              <button onClick={() => { triggerHaptic('light'); setConfirmClear(null); }} className="flex-1 py-3 rounded-[4px] bg-popover hover:bg-muted border border-border text-foreground text-[13px] font-bold transition-all active:scale-95 cursor-pointer focus-visible:outline-none min-h-[40px]">Cancel</button>
               <HoldToConfirmButton 
                 onConfirm={handleClearAction} 
-                className="flex-1 py-2.5 rounded-[4px] bg-destructive text-destructive-foreground text-[13px] font-bold transition-colors shadow-md"
+                className="flex-1 py-3 rounded-[4px] bg-destructive text-destructive-foreground text-[13px] font-bold transition-colors shadow-md min-h-[40px]"
                 holdTime={800}
                 title="Hold to Wipe"
               >
@@ -389,7 +381,6 @@ export function InventoryChannel() {
         </div>
       )}
 
-      {/* TOASTS */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-[1000000] animate-slide-up">
           <div className={`px-4 py-3 rounded-[6px] shadow-2xl flex items-center gap-3 border ${toast.isError ? 'bg-popover border-destructive/50 text-destructive' : 'bg-popover border-[#23a559]/50 text-[#23a559]'}`}>
@@ -397,7 +388,7 @@ export function InventoryChannel() {
             {toast.itemToRestore && (
               <button onClick={handleUndo} className="ml-2 text-[11px] uppercase tracking-wider font-bold underline hover:text-white transition-colors cursor-pointer focus-visible:outline-none">Undo</button>
             )}
-            <button onClick={() => setToast(null)} className="ml-2 text-muted-foreground hover:text-foreground cursor-pointer focus-visible:outline-none"><X className="w-3.5 h-3.5" /></button>
+            <button onClick={() => setToast(null)} className="ml-2 text-muted-foreground hover:text-foreground cursor-pointer focus-visible:outline-none p-1"><X className="w-3.5 h-3.5" /></button>
           </div>
         </div>
       )}

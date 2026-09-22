@@ -181,12 +181,12 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
       const newVal = isRemoving ? 0 : val;
       
       setVotes(prev => {
-         let up = prev.up, down = prev.down;
-         if (prev.userVote === 1) up--;
-         if (prev.userVote === -1) down--;
-         if (newVal === 1) up++;
-         if (newVal === -1) down++;
-         return { up, down, userVote: newVal };
+           let up = prev.up, down = prev.down;
+           if (prev.userVote === 1) up--;
+           if (prev.userVote === -1) down--;
+           if (newVal === 1) up++;
+           if (newVal === -1) down++;
+           return { up, down, userVote: newVal };
       });
 
       if (isRemoving) {
@@ -346,13 +346,13 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
           
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-0.5 bg-popover rounded-[4px] border border-border p-0.5">
-               <button onClick={() => handleVote(1)} className={`p-1.5 sm:p-1 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none cursor-pointer active:scale-90 min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground hover:text-[#23a559]'}`}>
+               <button onClick={() => handleVote(1)} className={`p-2 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none cursor-pointer active:scale-90 min-w-[40px] min-h-[40px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground hover:text-[#23a559]'}`}>
                   <ArrowBigUp className={`w-4 h-4 sm:w-4 sm:h-4 ${votes.userVote === 1 ? 'fill-current' : ''}`} />
                </button>
                <span className={`text-[12px] font-bold min-w-[24px] text-center ${score > 0 ? 'text-[#23a559]' : score < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
                  {score}
                </span>
-               <button onClick={() => handleVote(-1)} className={`p-1.5 sm:p-1 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none cursor-pointer active:scale-90 min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${votes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}>
+               <button onClick={() => handleVote(-1)} className={`p-2 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none cursor-pointer active:scale-90 min-w-[40px] min-h-[40px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${votes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}>
                   <ArrowBigDown className={`w-4 h-4 sm:w-4 sm:h-4 ${votes.userVote === -1 ? 'fill-current' : ''}`} />
                </button>
             </div>
@@ -366,7 +366,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
           <div className="flex flex-col gap-2 w-full mt-1">
             <button
               onClick={handleDiscordContact}
-              className={`w-full px-4 py-3 flex items-center justify-center gap-2 text-[13px] font-bold rounded-[6px] transition-all shadow-sm focus-visible:outline-none cursor-pointer ${
+              className={`w-full px-4 py-3 flex items-center justify-center gap-2 text-[13px] font-bold rounded-[6px] transition-all shadow-sm focus-visible:outline-none cursor-pointer min-h-[44px] ${
                 isContacting 
                   ? "bg-[#23a559] text-white active:scale-95" 
                   : "bg-[#5865F2] hover:bg-[#4752C4] text-white active:scale-95"
@@ -379,7 +379,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
             <div className="flex items-center gap-2 w-full">
               <button 
                 onClick={() => { triggerHaptic('light'); isInventory ? handleInspectVault() : onSendToCalculator(ad.give_items, ad.get_items); }}
-                className="flex-1 px-3 py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95 focus-visible:outline-none cursor-pointer shadow-sm"
+                className="flex-1 px-3 py-2.5 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95 focus-visible:outline-none cursor-pointer shadow-sm min-h-[40px]"
               >
                 {isInventory ? <Package className="w-4 h-4" /> : <Calculator className="w-4 h-4" />}
                 <span className="hidden sm:inline">{isInventory ? "Inspect Vault" : "Analyze Trade"}</span>
@@ -387,7 +387,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
 
               <button
                 onClick={() => { triggerHaptic('light'); openAdContext(ad.id, currentUserId); }}
-                className="flex-1 px-3 py-2 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95 focus-visible:outline-none cursor-pointer shadow-sm"
+                className="flex-1 px-3 py-2.5 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95 focus-visible:outline-none cursor-pointer shadow-sm min-h-[40px]"
               >
                 <MessageSquare className="w-4 h-4" />
                 <span className="hidden sm:inline">Thread</span>
@@ -397,7 +397,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
                 <HoldToConfirmButton
                   onConfirm={() => { triggerHaptic('heavy'); onDelete(ad.id); }}
                   title="Hold to delete"
-                  className="flex-none p-2 border border-border text-muted-foreground hover:text-foreground hover:border-destructive bg-popover hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none shadow-sm"
+                  className="flex-none p-2.5 border border-border text-muted-foreground hover:text-foreground hover:border-destructive bg-popover hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none shadow-sm min-h-[40px] min-w-[40px] flex items-center justify-center"
                 >
                   <Trash2 className="w-4 h-4" />
                 </HoldToConfirmButton>
@@ -494,7 +494,7 @@ export function TradingAdsChannel() {
             <button
               type="button"
               onClick={handleCreateAdClick}
-              className="flex items-center justify-center gap-1.5 px-4 md:px-5 py-2 md:py-2.5 rounded-[4px] bg-primary hover:bg-primary/80 text-primary-foreground text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none shrink-0 shadow-sm w-full md:w-auto cursor-pointer active:scale-95"
+              className="flex items-center justify-center gap-1.5 px-4 md:px-5 py-2.5 rounded-[4px] bg-primary hover:bg-primary/80 text-primary-foreground text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none shrink-0 shadow-sm w-full md:w-auto cursor-pointer active:scale-95 min-h-[44px]"
             >
               <Plus className="w-4 h-4" />
               <span>Create Ad</span>
@@ -503,7 +503,7 @@ export function TradingAdsChannel() {
             <button
               type="button"
               onClick={() => { triggerHaptic('medium'); loginWithDiscord(); }}
-              className="flex items-center justify-center gap-1.5 px-4 md:px-5 py-2 md:py-2.5 rounded-[4px] bg-popover border border-border text-muted-foreground text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-all hover:bg-muted focus-visible:outline-none shrink-0 w-full md:w-auto cursor-pointer active:scale-95"
+              className="flex items-center justify-center gap-1.5 px-4 md:px-5 py-2.5 rounded-[4px] bg-popover border border-border text-muted-foreground text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-all hover:bg-muted focus-visible:outline-none shrink-0 w-full md:w-auto cursor-pointer active:scale-95 min-h-[44px]"
             >
               <Lock className="w-4 h-4 text-primary" />
               <span>Login to Post</span>
@@ -517,7 +517,7 @@ export function TradingAdsChannel() {
               <button
                 key={t.id}
                 onClick={() => { triggerHaptic('light'); setTypeFilter(t.id); }}
-                className={`flex-1 md:flex-none px-4 py-1.5 rounded-[4px] text-[11px] md:text-[12px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none cursor-pointer whitespace-nowrap active:scale-95 ${typeFilter === t.id ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`flex-1 md:flex-none px-4 py-2 rounded-[4px] text-[11px] md:text-[12px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none cursor-pointer whitespace-nowrap active:scale-95 min-h-[40px] ${typeFilter === t.id ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 {t.label}
               </button>
@@ -532,12 +532,12 @@ export function TradingAdsChannel() {
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
                 placeholder="Search board by unit name..."
-                className="w-full bg-popover text-foreground text-[13px] md:text-[14px] pl-9 pr-4 py-2 rounded-[4px] outline-none border border-border focus:border-primary transition-colors font-medium shadow-inner"
+                className="w-full bg-popover text-foreground text-[13px] md:text-[14px] pl-9 pr-4 py-2.5 rounded-[4px] outline-none border border-border focus:border-primary transition-colors font-medium shadow-inner min-h-[44px]"
               />
             </div>
             
             <div className="w-full sm:w-[190px] shrink-0">
-              <CustomDropdown icon={Clock} value={sortMode} options={SORT_OPTIONS} onChange={setSortMode} defaultLabel="Sort By" />
+              <CustomDropdown icon={Clock} value={sortMode} options={SORT_OPTIONS} onChange={(val: string) => { triggerHaptic('light'); setSortMode(val); }} defaultLabel="Sort By" />
             </div>
           </div>
         </div>
@@ -562,7 +562,7 @@ export function TradingAdsChannel() {
               
               <button 
                 onClick={handleCreateAdClick}
-                className="mt-4 px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-[6px] transition-all active:scale-95 hover:bg-primary/80 cursor-pointer shadow-md"
+                className="mt-4 px-6 py-3 bg-primary text-primary-foreground font-bold rounded-[6px] transition-all active:scale-95 hover:bg-primary/80 cursor-pointer shadow-md min-h-[44px]"
               >
                 Be the first to post a trade
               </button>

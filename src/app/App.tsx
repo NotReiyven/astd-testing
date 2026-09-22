@@ -146,7 +146,7 @@ export default function App() {
   // HARD LOCK SCREEN FOR BANNED USERS
   if (bootStage === 'complete' && profile?.role === 'banned') {
     return (
-      <div className="flex flex-col items-center justify-center w-screen h-screen bg-[#111214] text-[#F2F3F5] font-sans p-6 text-center select-none animate-fade-in">
+      <div className="flex flex-col items-center justify-center w-screen h-dvh bg-[#111214] text-[#F2F3F5] font-sans p-6 text-center select-none animate-fade-in">
         <Ban className="w-20 h-20 text-destructive mb-6 shadow-sm" />
         <h1 className="text-[28px] font-black uppercase tracking-widest text-destructive mb-2">Account Terminated</h1>
         <p className="text-[#949BA4] text-[14px] max-w-md leading-relaxed mb-8">
@@ -246,7 +246,7 @@ export default function App() {
       )}
 
       <div 
-        className="flex h-screen overflow-hidden relative bg-background text-foreground" 
+        className="flex h-dvh overflow-hidden relative bg-background text-foreground" 
         style={{ 
           transform: bootStage === 'complete' ? 'none' : (bootStage === 'fracture' ? 'scale(1)' : 'scale(1.05)'),
           filter: bootStage === 'complete' ? 'none' : (bootStage === 'fracture' ? 'blur(0px)' : 'blur(8px)'),
@@ -302,7 +302,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className={`flex-1 flex flex-col min-w-0 bg-background md:pb-0 pb-[80px] ${mainContentZ}`}>
+          <div className={`flex-1 flex flex-col min-w-0 bg-background md:pb-0 pb-[84px] ${mainContentZ}`}>
             <div className={`relative ${calcHeaderZ}`}>
               <SyncBanner />
               <TopBar 
