@@ -161,7 +161,7 @@ export function HistoryModal() {
       const chartXStr = isToday 
         ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         : dateObj.toLocaleDateString([], { month: 'short', day: 'numeric' });
-        
+      
       timeline.push({ snap: curr, prev, date: dateObj.toLocaleString(), changed: changes, chartX: chartXStr });
     }
   }
@@ -187,8 +187,8 @@ export function HistoryModal() {
     if (isMin) {
       return (
         <g>
-          <circle cx={cx} cy={cy} r={5} fill="var(--destructive)" stroke="#111214" strokeWidth={2} />
-          <circle cx={cx} cy={cy} r={10} fill="none" stroke="var(--destructive)" strokeWidth={1} opacity={0.6} />
+          <circle cx={cx} cy={cy} r={5} fill="var(--rose-400)" stroke="#111214" strokeWidth={2} />
+          <circle cx={cx} cy={cy} r={10} fill="none" stroke="var(--rose-400)" strokeWidth={1} opacity={0.6} />
         </g>
       );
     }
@@ -200,7 +200,7 @@ export function HistoryModal() {
     <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-0 sm:p-5 animate-fade-in">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={() => { triggerHaptic('light'); closeModal(); }} />
 
-      <div className="bg-background border border-border rounded-none sm:rounded-[8px] w-full h-full sm:h-auto sm:max-w-5xl sm:max-h-[94vh] flex flex-col relative shadow-2xl overflow-hidden animate-slide-up">
+      <div className="bg-card border border-border rounded-none sm:rounded-[12px] w-full h-full sm:h-auto sm:max-w-5xl sm:max-h-[94vh] flex flex-col relative shadow-2xl overflow-hidden animate-slide-up">
 
         <div className="absolute top-0 left-0 right-0 h-[4px] z-[200]" style={{ background: tierCfg.badgeColor }} />
 
@@ -209,7 +209,7 @@ export function HistoryModal() {
             <div className="flex items-center gap-4 sm:gap-5 min-w-0">
               <div className="relative shrink-0">
                 <div 
-                  className="relative overflow-hidden bg-black/20 flex items-center justify-center border border-border w-20 h-20 sm:w-24 sm:h-24 rounded-[6px]"
+                  className="relative overflow-hidden bg-black/20 flex items-center justify-center border border-border w-20 h-20 sm:w-24 sm:h-24 rounded-[8px]"
                 >
                   <div className="absolute inset-0 flex items-center justify-center text-white font-black text-xl sm:text-2xl z-0" style={getAvatarStyle(currentUnit.name)}>
                     {getInitials(currentUnit.name)}
@@ -250,7 +250,7 @@ export function HistoryModal() {
 
             <button 
               onClick={() => { triggerHaptic('light'); closeModal(); }} 
-              className="text-muted-foreground hover:text-foreground bg-white/5 hover:bg-white/10 p-2 rounded-[4px] transition-colors focus-visible:outline-none shrink-0 self-start border border-border active:scale-95 cursor-pointer"
+              className="text-muted-foreground hover:text-foreground bg-white/5 hover:bg-white/10 p-2 rounded-[6px] transition-colors focus-visible:outline-none shrink-0 self-start border border-border active:scale-95 cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -260,7 +260,7 @@ export function HistoryModal() {
         <div 
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto custom-scrollbar relative bg-background"
+          className="flex-1 overflow-y-auto custom-scrollbar relative bg-card/40"
         >
           <div className="p-5 sm:p-6 flex flex-col lg:flex-row gap-6 lg:gap-8">
 
@@ -268,13 +268,13 @@ export function HistoryModal() {
               <div className="grid grid-cols-2 gap-3">
                 <div 
                   onClick={() => { triggerHaptic('light'); setActiveMetric('value'); }}
-                  className={`col-span-2 rounded-[6px] p-4 flex flex-col justify-center cursor-pointer transition-all active:scale-[0.98] relative overflow-hidden group ${activeMetric === 'value' ? 'bg-card border border-primary' : 'bg-popover hover:bg-card border border-border'}`}
+                  className={`col-span-2 rounded-[8px] p-4 flex flex-col justify-center cursor-pointer transition-all active:scale-[0.98] relative overflow-hidden group ${activeMetric === 'value' ? 'bg-card border border-primary' : 'bg-popover hover:bg-card border border-border'}`}
                 >
                   {activeMetric === 'value' && <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary" />}
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">Current Value</span>
                     {displayHistory.length > 1 && oldestSnapVal && oldestSnapVal > 0 && (
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[3px] flex items-center gap-0.5 ${pctChange >= 0 ? 'bg-[#23a559]/10 text-[#23a559]' : 'bg-destructive/10 text-destructive'}`}>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[3px] flex items-center gap-0.5 ${pctChange >= 0 ? 'bg-[#23a559]/10 text-[#23a559]' : 'bg-rose-400/10 text-rose-400'}`}>
                         {pctChange >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                         {pctChange >= 0 ? `+${pctChange.toFixed(1)}%` : `${pctChange.toFixed(1)}%`}
                       </span>
@@ -287,7 +287,7 @@ export function HistoryModal() {
 
                 <div 
                   onClick={() => { triggerHaptic('light'); setActiveMetric('rarity'); }}
-                  className={`rounded-[6px] p-4 flex flex-col justify-center cursor-pointer transition-all active:scale-[0.98] relative overflow-hidden group ${activeMetric === 'rarity' ? 'bg-card border border-[#4DB6AC]' : 'bg-popover hover:bg-card border border-border'}`}
+                  className={`rounded-[8px] p-4 flex flex-col justify-center cursor-pointer transition-all active:scale-[0.98] relative overflow-hidden group ${activeMetric === 'rarity' ? 'bg-card border border-[#4DB6AC]' : 'bg-popover hover:bg-card border border-border'}`}
                 >
                   {activeMetric === 'rarity' && <div className="absolute top-0 left-0 bottom-0 w-1 bg-[#4DB6AC]" />}
                   <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">Rarity (0-20)</span>
@@ -296,7 +296,7 @@ export function HistoryModal() {
 
                 <div 
                   onClick={() => { triggerHaptic('light'); setActiveMetric('liquidity'); }}
-                  className={`rounded-[6px] p-4 flex flex-col justify-center cursor-pointer transition-all active:scale-[0.98] relative overflow-hidden group ${activeMetric === 'liquidity' ? 'bg-card border border-[#81C784]' : 'bg-popover hover:bg-card border border-border'}`}
+                  className={`rounded-[8px] p-4 flex flex-col justify-center cursor-pointer transition-all active:scale-[0.98] relative overflow-hidden group ${activeMetric === 'liquidity' ? 'bg-card border border-[#81C784]' : 'bg-popover hover:bg-card border border-border'}`}
                 >
                   {activeMetric === 'liquidity' && <div className="absolute top-0 left-0 bottom-0 w-1 bg-[#81C784]" />}
                   <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">Liquidity</span>
@@ -305,7 +305,7 @@ export function HistoryModal() {
               </div>
 
               {(currentUnit.notice || (currentUnit.secondaryTags && currentUnit.secondaryTags.length > 0)) && (
-                <div className="bg-popover border border-border rounded-[6px] p-4 flex flex-col gap-3">
+                <div className="bg-popover border border-border rounded-[8px] p-4 flex flex-col gap-3">
                   {currentUnit.notice && (
                     <div className="flex flex-col gap-2">
                       <span className="flex w-fit items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-[4px] bg-primary/20 text-primary border border-primary/30 shrink-0">
@@ -333,20 +333,20 @@ export function HistoryModal() {
             <div className="flex-1 flex flex-col gap-6 min-w-0">
 
               {loading ? (
-                <div className="h-[280px] flex flex-col items-center justify-center text-muted-foreground animate-pulse gap-3 font-medium text-sm bg-popover rounded-[6px] border border-border">
+                <div className="h-[280px] flex flex-col items-center justify-center text-muted-foreground animate-pulse gap-3 font-medium text-sm bg-popover rounded-[8px] border border-border">
                   <Sparkles className="w-6 h-6 animate-spin text-primary" />
                   Syncing historical snapshots...
                 </div>
               ) : error ? (
-                <div className="text-destructive text-sm text-center py-8 bg-popover rounded-[6px] border border-destructive/20">Failed to load history: {error}</div>
+                <div className="text-rose-400 text-sm text-center py-8 bg-popover rounded-[8px] border border-rose-400/20">Failed to load history: {error}</div>
               ) : displayHistory.length <= 1 ? (
-                <div className="flex flex-col items-center justify-center h-[280px] text-center bg-popover border border-border rounded-[6px]">
+                <div className="flex flex-col items-center justify-center h-[280px] text-center bg-popover border border-border rounded-[8px]">
                   <TrendingUp className="w-10 h-10 text-muted-foreground mb-3 opacity-50" />
                   <p className="text-foreground font-bold text-[14px]">Tracking Initiated</p>
                   <p className="text-muted-foreground text-[12px] mt-1 max-w-sm px-6 leading-relaxed">Baseline snapshot recorded for {currentUnit.name}. Trend charts will generate as market shifts happen.</p>
                 </div>
               ) : (
-                <div className="bg-popover border border-border p-4 rounded-[6px] flex flex-col gap-4">
+                <div className="bg-popover border border-border p-4 rounded-[8px] flex flex-col gap-4">
                   <div className="flex items-center justify-between flex-wrap gap-3">
                     <h3 className="text-foreground text-[12px] font-bold uppercase tracking-wider flex items-center gap-2 shrink-0">
                       <BarChart2 className="w-4 h-4" style={{ color: currentConfig.color }} /> {currentConfig.label}
@@ -354,7 +354,7 @@ export function HistoryModal() {
                     <div className="flex items-center gap-3">
                       <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase">
                         <span className="w-2 h-2 rounded-[2px] bg-[#23a559] inline-block" /> Peak
-                        <span className="w-2 h-2 rounded-[2px] bg-destructive inline-block ml-1" /> Low
+                        <span className="w-2 h-2 rounded-[2px] bg-rose-400 inline-block ml-1" /> Low
                       </div>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-[4px] bg-black/20 text-muted-foreground font-mono border border-border uppercase tracking-wider">
                         {displayHistory.length} Snapshots
@@ -362,7 +362,7 @@ export function HistoryModal() {
                     </div>
                   </div>
 
-                  <div className="h-[240px] sm:h-[260px] w-full bg-black/20 p-2 rounded-[4px] border border-border">
+                  <div className="h-[240px] sm:h-[260px] w-full bg-black/20 p-2 rounded-[6px] border border-border">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                         <defs>
@@ -379,7 +379,7 @@ export function HistoryModal() {
                           domain={activeMetric === 'liquidity' ? [0, 4] : ['auto', 'auto']}
                         />
                         <Tooltip 
-                          contentStyle={{ backgroundColor: 'var(--background)', border: '1px solid var(--border)', borderRadius: '6px', padding: '8px 12px' }}
+                          contentStyle={{ backgroundColor: 'var(--background)', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px 12px' }}
                           labelStyle={{ color: 'var(--muted-foreground)', fontSize: '10px', marginBottom: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}
                           formatter={(value: any, name: any, props: any) => [props.payload.label, currentConfig.unitLabel]}
                           labelFormatter={(label, payload) => payload.length > 0 ? payload[0].payload.fullDate : label}
@@ -418,12 +418,12 @@ export function HistoryModal() {
                         <div key={idx} className="relative group">
                           <div className="absolute -left-[29px] top-1.5 w-2 h-2 bg-primary rounded-sm ring-4 ring-background" />
 
-                          <div className="bg-popover border border-border rounded-[6px] p-4 flex flex-col gap-3 hover:border-muted-foreground transition-colors">
+                          <div className="bg-popover border border-border rounded-[8px] p-4 flex flex-col gap-3 hover:border-muted-foreground transition-colors">
                             <div className="flex items-center justify-between border-b border-border pb-2 flex-wrap gap-2">
                               <span className="text-muted-foreground text-[11px] font-mono font-bold uppercase tracking-wider">{t.date}</span>
                               <div className="flex gap-1.5 flex-wrap">
                                 {t.changed.map((c: string) => (
-                                  <span key={c} className="text-[9px] font-bold bg-black/20 text-foreground px-2 py-0.5 rounded-[3px] border border-border uppercase tracking-wider">
+                                  <span key={c} className="text-[9px] font-bold bg-black/20 text-foreground px-2 py-0.5 rounded-[4px] border border-border uppercase tracking-wider">
                                     {c}
                                   </span>
                                 ))}
@@ -432,10 +432,10 @@ export function HistoryModal() {
 
                             <div className="flex flex-col gap-2">
                               {t.changed.includes("Value") && (
-                                <div className="flex items-center justify-between bg-black/20 px-3 py-2 rounded-[4px] border border-border flex-wrap gap-2">
+                                <div className="flex items-center justify-between bg-black/20 px-3 py-2 rounded-[6px] border border-border flex-wrap gap-2">
                                   <span className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">Value Shift</span>
                                   <div className="flex items-center gap-3 font-mono text-[12px] font-bold">
-                                    <span className="text-muted-foreground line-through decoration-destructive">{t.prev.value_display || (t.prev.value ?? 0).toLocaleString()}</span>
+                                    <span className="text-muted-foreground line-through decoration-rose-400">{t.prev.value_display || (t.prev.value ?? 0).toLocaleString()}</span>
                                     <span className="text-primary">➔</span>
                                     <span className="text-foreground">{t.snap.value_display || (t.snap.value ?? 0).toLocaleString()}</span>
                                   </div>
@@ -443,15 +443,15 @@ export function HistoryModal() {
                               )}
 
                               {t.changed.includes("Status") && (
-                                <div className="flex items-center justify-between bg-black/20 px-3 py-2 rounded-[4px] border border-border flex-wrap gap-2">
+                                <div className="flex items-center justify-between bg-black/20 px-3 py-2 rounded-[6px] border border-border flex-wrap gap-2">
                                   <span className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">Status Badge</span>
                                   <div className="flex items-center gap-3 text-[10px] font-bold tracking-wider">
-                                    <span className="px-2 py-0.5 rounded-[3px] border uppercase inline-flex items-center gap-1" style={{ backgroundColor: prevCfg?.bg || 'var(--card)', color: prevCfg?.color || 'var(--muted-foreground)', borderColor: prevCfg?.border || 'var(--border)' }}>
+                                    <span className="px-2 py-0.5 rounded-[4px] border uppercase inline-flex items-center gap-1" style={{ backgroundColor: prevCfg?.bg || 'var(--card)', color: prevCfg?.color || 'var(--muted-foreground)', borderColor: prevCfg?.border || 'var(--border)' }}>
                                       <StatusIcon status={t.prev.status} />
                                       {prevCfg?.label || t.prev.status}
                                     </span>
                                     <span className="text-primary">➔</span>
-                                    <span className="px-2 py-0.5 rounded-[3px] border uppercase inline-flex items-center gap-1" style={{ backgroundColor: currCfg?.bg || 'var(--card)', color: currCfg?.color || 'var(--foreground)', borderColor: currCfg?.border || 'var(--border)' }}>
+                                    <span className="px-2 py-0.5 rounded-[4px] border uppercase inline-flex items-center gap-1" style={{ backgroundColor: currCfg?.bg || 'var(--card)', color: currCfg?.color || 'var(--foreground)', borderColor: currCfg?.border || 'var(--border)' }}>
                                       <StatusIcon status={t.snap.status} />
                                       {currCfg?.label || t.snap.status}
                                     </span>
@@ -460,7 +460,7 @@ export function HistoryModal() {
                               )}
 
                               {t.changed.includes("Rarity") && (
-                                <div className="flex items-center justify-between bg-black/20 px-3 py-2 rounded-[4px] border border-border flex-wrap gap-2">
+                                <div className="flex items-center justify-between bg-black/20 px-3 py-2 rounded-[6px] border border-border flex-wrap gap-2">
                                   <span className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">Rarity Shift</span>
                                   <div className="flex gap-3 font-mono text-[11px] font-bold text-foreground">
                                     <span className="text-muted-foreground">{t.prev.rarity}</span> ➔ <span className="text-[#4DB6AC]">{t.snap.rarity}</span>
@@ -469,7 +469,7 @@ export function HistoryModal() {
                               )}
 
                               {t.changed.includes("Liquidity") && (
-                                <div className="flex items-center justify-between bg-black/20 px-3 py-2 rounded-[4px] border border-border flex-wrap gap-2">
+                                <div className="flex items-center justify-between bg-black/20 px-3 py-2 rounded-[6px] border border-border flex-wrap gap-2">
                                   <span className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">Liquidity Shift</span>
                                   <div className="flex gap-3 font-mono text-[11px] font-bold text-foreground uppercase">
                                     <span className="text-muted-foreground">{t.prev.liquidity || 'Average'}</span> ➔ <span className="text-[#81C784]">{t.snap.liquidity || 'Average'}</span>

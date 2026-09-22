@@ -195,7 +195,7 @@ export function AdInteractionModal() {
     const isOp = comment.user_id === activeAd.user_id;
 
     return (
-      <div className={`flex flex-col ${depth > 0 ? 'ml-4 sm:ml-6 mt-3 pl-3 border-l-2 border-border/60' : 'mt-4'}`}>
+      <div className={`flex flex-col ${depth > 0 ? 'ml-4 sm:ml-6 mt-3 pl-3 border-l border-border' : 'mt-4'}`}>
         <div className="flex items-start gap-3 group">
           
           <img 
@@ -209,7 +209,7 @@ export function AdInteractionModal() {
             }}
           />
 
-          <div className="flex flex-col flex-1 min-w-0 bg-popover/40 hover:bg-popover/80 p-3 rounded-[8px] border border-border/40 transition-colors">
+          <div className="flex flex-col flex-1 min-w-0 bg-black/20 hover:bg-black/30 p-3 rounded-[8px] border border-border/60 transition-colors">
             
             <div className="flex items-center justify-between gap-2 mb-1">
               <div className="flex items-center gap-2 min-w-0">
@@ -347,7 +347,7 @@ export function AdInteractionModal() {
         }
       }}
     >
-      <div className="bg-card w-full h-full md:h-[85vh] md:max-w-6xl md:rounded-[14px] shadow-2xl border-0 md:border border-border flex flex-col overflow-hidden">
+      <div className="bg-card w-full h-full md:h-[85vh] md:max-w-6xl md:rounded-[12px] shadow-2xl border-0 md:border border-border flex flex-col overflow-hidden">
         
         <div className="flex items-center justify-between px-4 md:px-6 py-3.5 bg-popover border-b border-border shrink-0 z-20">
           <div className="flex items-center gap-3">
@@ -395,7 +395,7 @@ export function AdInteractionModal() {
 
         <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
           
-          <div className={`w-full md:w-[480px] lg:w-[540px] bg-popover/50 border-r border-border flex flex-col shrink-0 min-h-0 ${mobileTab === 'comments' ? 'hidden md:flex' : 'flex'}`}>
+          <div className={`w-full md:w-[480px] lg:w-[540px] bg-card/50 border-r border-border flex flex-col shrink-0 min-h-0 ${mobileTab === 'comments' ? 'hidden md:flex' : 'flex'}`}>
             
             <div className="p-4 md:p-6 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-5">
               
@@ -443,7 +443,7 @@ export function AdInteractionModal() {
                 </blockquote>
               )}
 
-              <div className="flex flex-col gap-4 bg-card rounded-[12px] p-4 border border-border shadow-sm">
+              <div className="flex flex-col gap-4 bg-card rounded-[10px] p-4 border border-border shadow-sm">
                 
                 {isInventory ? (
                   <div className="flex flex-col gap-2">
@@ -473,7 +473,7 @@ export function AdInteractionModal() {
 
                     <div className="flex flex-col gap-2 pt-2 border-t border-border">
                       <span className="text-[12px] font-bold uppercase tracking-wider text-primary">Requesting</span>
-                      <div className="bg-popover border-2 border-dashed border-border rounded-[8px] p-6 flex flex-col items-center justify-center text-center gap-2">
+                      <div className="bg-black/20 border-2 border-dashed border-border rounded-[8px] p-6 flex flex-col items-center justify-center text-center gap-2">
                         <Search className="w-8 h-8 text-primary opacity-60" />
                         <span className="text-[13px] font-black text-foreground uppercase tracking-wider">Open to offers</span>
                         <span className="text-[11px] text-muted-foreground">The trader is looking for general offers for their items.</span>
@@ -515,7 +515,7 @@ export function AdInteractionModal() {
                 {!isTakingOffers && !isInventory && totalGetVal > 0 && (
                   <div className="mt-2 pt-3 border-t border-border flex items-center justify-between text-[12px] font-mono">
                     <span className="text-muted-foreground font-bold uppercase">Value Balance</span>
-                    <span className={`font-black ${valDiff > 0 ? 'text-[#23a559]' : valDiff < 0 ? 'text-destructive' : 'text-foreground'}`}>
+                    <span className={`font-black ${valDiff > 0 ? 'text-[#23a559]' : valDiff < 0 ? 'text-rose-400' : 'text-foreground'}`}>
                       {valDiff > 0 ? `+${valDiff.toLocaleString()} (Advantage)` : valDiff < 0 ? `${valDiff.toLocaleString()} (Deficit)` : 'Even Trade'}
                     </span>
                   </div>
@@ -528,14 +528,14 @@ export function AdInteractionModal() {
             <div className="p-4 bg-card border-t border-border shrink-0 flex flex-col sm:flex-row items-center gap-3">
               <button
                 onClick={handleLoadIntoCalculator}
-                className="w-full sm:flex-1 py-3 bg-primary hover:bg-primary/90 text-primary-foreground text-[13px] font-black uppercase tracking-wider rounded-[8px] transition-colors shadow-md focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2"
+                className="w-full sm:flex-1 py-3 bg-primary hover:bg-primary/90 text-primary-foreground text-[13px] font-black uppercase tracking-wider rounded-[6px] transition-colors shadow-md focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2"
               >
                 <Calculator className="w-4 h-4" /> Load into Calculator
               </button>
               
               <button
                 onClick={handleContact}
-                className="w-full sm:w-auto px-5 py-3 bg-[#5865F2] hover:bg-[#4752C4] text-white text-[13px] font-bold rounded-[8px] transition-colors shadow-md focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-5 py-3 bg-[#5865F2] hover:bg-[#4752C4] text-white text-[13px] font-bold rounded-[6px] transition-colors shadow-md focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2"
               >
                 <MessageSquare className="w-4 h-4" /> Message on Discord
               </button>
@@ -543,7 +543,7 @@ export function AdInteractionModal() {
 
           </div>
 
-          <div className={`flex-1 flex flex-col min-w-0 bg-background min-h-0 ${mobileTab === 'listing' ? 'hidden md:flex' : 'flex'}`}>
+          <div className={`flex-1 flex flex-col min-w-0 bg-transparent min-h-0 ${mobileTab === 'listing' ? 'hidden md:flex' : 'flex'}`}>
             
             <div className="hidden md:flex items-center justify-between px-6 py-4 bg-popover border-b border-border shrink-0">
               <h2 className="text-[15px] font-black text-foreground tracking-tight uppercase flex items-center gap-2">
@@ -558,12 +558,12 @@ export function AdInteractionModal() {
                 >
                   <ArrowBigUp className={`w-4 h-4 ${adVotes.userVote === 1 ? 'fill-current' : ''}`} />
                 </button>
-                <span className={`text-[12px] font-bold font-mono min-w-[20px] text-center ${adScore > 0 ? 'text-[#23a559]' : adScore < 0 ? 'text-destructive' : 'text-foreground'}`}>
+                <span className={`text-[12px] font-bold font-mono min-w-[20px] text-center ${adScore > 0 ? 'text-[#23a559]' : adScore < 0 ? 'text-rose-400' : 'text-foreground'}`}>
                   {adScore}
                 </span>
                 <button 
                   onClick={() => { if (profile) { triggerHaptic('light'); voteAd(activeAd.id, profile.id, -1); } }}
-                  className={`focus-visible:outline-none transition-colors hover:text-destructive cursor-pointer ${adVotes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground'}`}
+                  className={`focus-visible:outline-none transition-colors hover:text-rose-400 cursor-pointer ${adVotes.userVote === -1 ? 'text-rose-400' : 'text-muted-foreground'}`}
                   aria-label="Downvote listing"
                 >
                   <ArrowBigDown className={`w-4 h-4 ${adVotes.userVote === -1 ? 'fill-current' : ''}`} />
@@ -623,7 +623,7 @@ export function AdInteractionModal() {
                       maxLength={500}
                       rows={1}
                       disabled={isActionPending}
-                      className="w-full bg-card text-foreground text-[14px] px-3.5 py-2.5 rounded-[8px] outline-none border border-border focus:border-primary transition-colors font-medium placeholder:text-muted-foreground resize-none max-h-[120px] custom-scrollbar"
+                      className="w-full bg-card text-foreground text-[14px] px-3.5 py-2.5 rounded-[6px] outline-none border border-border focus:border-primary transition-colors font-medium placeholder:text-muted-foreground resize-none max-h-[120px] custom-scrollbar shadow-inner"
                     />
                     <div className="absolute right-2 bottom-2.5 text-[10px] font-mono text-muted-foreground pointer-events-none">
                       {newComment.length}/500
@@ -633,14 +633,14 @@ export function AdInteractionModal() {
                   <button 
                     type="submit"
                     disabled={!newComment.trim() || isActionPending}
-                    className="h-10 px-4 flex items-center justify-center rounded-[8px] bg-primary hover:bg-primary/85 text-primary-foreground disabled:opacity-40 transition-colors focus-visible:outline-none cursor-pointer shrink-0"
+                    className="h-10 px-4 flex items-center justify-center rounded-[6px] bg-primary hover:bg-primary/85 text-primary-foreground disabled:opacity-40 transition-colors focus-visible:outline-none cursor-pointer shrink-0"
                     aria-label="Send message"
                   >
                     <Send className="w-4 h-4" />
                   </button>
                 </form>
               ) : (
-                <div className="w-full bg-card text-muted-foreground text-[13px] font-bold text-center py-3 rounded-[8px] border border-border">
+                <div className="w-full bg-card text-muted-foreground text-[13px] font-bold text-center py-3 rounded-[6px] border border-border">
                   You must be logged in to participate in the discussion.
                 </div>
               )}

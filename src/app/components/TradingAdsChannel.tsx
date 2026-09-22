@@ -257,7 +257,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
 
     return (
       <div 
-        className={`relative bg-card/90 backdrop-blur-md rounded-[8px] p-4 sm:p-6 flex flex-col h-full overflow-hidden border shadow-md transition-all duration-500 will-change-transform ${
+        className={`relative bg-card rounded-[8px] p-4 sm:p-6 flex flex-col h-full overflow-hidden border shadow-md transition-all duration-500 will-change-transform ${
           isNewAd ? 'animate-[newAdGlow_3s_ease-out_forwards] border-primary scale-[1.02]' : 'hover:border-primary/50 border-border scale-100'
         }`}
       >
@@ -304,7 +304,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
 
         <hr className="border-t border-border mb-4 w-full" />
 
-        <div className="mb-4 sm:mb-5 bg-popover/80 border border-border rounded-[6px] p-3 sm:p-3.5 shadow-inner">
+        <div className="mb-4 sm:mb-5 bg-black/20 border border-border rounded-[6px] p-3 sm:p-3.5 shadow-inner">
           {ad.note ? (
             <div 
               className="text-[12px] sm:text-[13px] text-foreground font-medium leading-relaxed break-all overflow-hidden"
@@ -342,18 +342,19 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
           )}
         </div>
 
-        <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-border flex flex-col gap-3 sm:gap-3.5 relative z-10">
+        {/* Cleaned up, well-spaced action footer */}
+        <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-border flex flex-col gap-3 relative z-10">
           
           <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-0.5 bg-popover/90 rounded-[4px] border border-border p-0.5">
-               <button onClick={() => handleVote(1)} className={`p-2 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none cursor-pointer active:scale-90 min-w-[40px] min-h-[40px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground hover:text-[#23a559]'}`}>
-                  <ArrowBigUp className={`w-4 h-4 sm:w-4 sm:h-4 ${votes.userVote === 1 ? 'fill-current' : ''}`} />
+            <div className="flex items-center gap-0.5 bg-popover rounded-[4px] border border-border p-0.5">
+               <button onClick={() => handleVote(1)} className={`p-2 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none cursor-pointer active:scale-90 min-h-[36px] flex items-center justify-center ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground hover:text-[#23a559]'}`}>
+                  <ArrowBigUp className={`w-4 h-4 ${votes.userVote === 1 ? 'fill-current' : ''}`} />
                </button>
                <span className={`text-[12px] font-bold min-w-[24px] text-center ${score > 0 ? 'text-[#23a559]' : score < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
                  {score}
                </span>
-               <button onClick={() => handleVote(-1)} className={`p-2 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none cursor-pointer active:scale-90 min-w-[40px] min-h-[40px] sm:min-w-0 sm:min-h-0 flex items-center justify-center ${votes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}>
-                  <ArrowBigDown className={`w-4 h-4 sm:w-4 sm:h-4 ${votes.userVote === -1 ? 'fill-current' : ''}`} />
+               <button onClick={() => handleVote(-1)} className={`p-2 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none cursor-pointer active:scale-90 min-h-[36px] flex items-center justify-center ${votes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}>
+                  <ArrowBigDown className={`w-4 h-4 ${votes.userVote === -1 ? 'fill-current' : ''}`} />
                </button>
             </div>
 
@@ -376,32 +377,34 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
               {isContacting ? "Copied! Paste in Discord" : "Contact on Discord"}
             </button>
 
-            <div className="flex items-center gap-2 w-full">
+            <div className="grid grid-cols-2 gap-2 w-full">
               <button 
                 onClick={() => { triggerHaptic('light'); isInventory ? handleInspectVault() : onSendToCalculator(ad.give_items, ad.get_items); }}
-                className="flex-1 px-3 py-2.5 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover/90 hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95 focus-visible:outline-none cursor-pointer shadow-sm min-h-[40px]"
+                className="px-3 py-2.5 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[6px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95 focus-visible:outline-none cursor-pointer shadow-sm min-h-[40px]"
               >
                 {isInventory ? <Package className="w-4 h-4" /> : <Calculator className="w-4 h-4" />}
-                <span className="hidden sm:inline">{isInventory ? "Inspect Vault" : "Analyze Trade"}</span>
+                <span className="truncate">{isInventory ? "Inspect Vault" : "Analyze Trade"}</span>
               </button>
 
-              <button
-                onClick={() => { triggerHaptic('light'); openAdContext(ad.id, currentUserId); }}
-                className="flex-1 px-3 py-2.5 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[4px] border border-border bg-popover/90 hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95 focus-visible:outline-none cursor-pointer shadow-sm min-h-[40px]"
-              >
-                <MessageSquare className="w-4 h-4" />
-                <span className="hidden sm:inline">Thread</span>
-              </button>
-
-              {canDelete && (
-                <HoldToConfirmButton
-                  onConfirm={() => { triggerHaptic('heavy'); onDelete(ad.id); }}
-                  title="Hold to delete"
-                  className="flex-none p-2.5 border border-border text-muted-foreground hover:text-foreground hover:border-destructive bg-popover/90 hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none shadow-sm min-h-[40px] min-w-[40px] flex items-center justify-center"
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { triggerHaptic('light'); openAdContext(ad.id, currentUserId); }}
+                  className="flex-1 px-3 py-2.5 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[6px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95 focus-visible:outline-none cursor-pointer shadow-sm min-h-[40px]"
                 >
-                  <Trash2 className="w-4 h-4" />
-                </HoldToConfirmButton>
-              )}
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="truncate">Thread</span>
+                </button>
+
+                {canDelete && (
+                  <HoldToConfirmButton
+                    onConfirm={() => { triggerHaptic('heavy'); onDelete(ad.id); }}
+                    title="Hold to delete"
+                    className="p-2.5 border border-border text-muted-foreground hover:text-foreground hover:border-destructive bg-popover hover:bg-destructive/10 rounded-[6px] transition-colors focus-visible:outline-none shadow-sm min-h-[40px] min-w-[40px] flex items-center justify-center"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </HoldToConfirmButton>
+                )}
+              </div>
             </div>
           </div>
 

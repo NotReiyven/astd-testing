@@ -6,57 +6,57 @@
   --font-sans: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Core Palette mapped to Discord standard */
+  /* Core Palette */
   --discord-blurple: #7289da;
-  --discord-light-gray: #424549;
-  --discord-mid-gray: #36393e;
-  --discord-dark-gray: #282b30;
-  --discord-darker-gray: #1e2124;
+  --discord-light-gray: #313338;
+  --discord-mid-gray: #1e1f22;
+  --discord-dark-gray: #18191c;
+  --discord-darker-gray: #111214;
 
-  /* App Backgrounds & Global Textured Pattern */
+  /* App Backgrounds & Low-Contrast Atmospheric Pattern */
   --background-pattern: 
-    linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
-    linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
-    linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
-    linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
-    linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025),
-    linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025);
+    linear-gradient(30deg, #16171a 12%, transparent 12.5%, transparent 87%, #16171a 87.5%, #16171a),
+    linear-gradient(150deg, #16171a 12%, transparent 12.5%, transparent 87%, #16171a 87.5%, #16171a),
+    linear-gradient(30deg, #16171a 12%, transparent 12.5%, transparent 87%, #16171a 87.5%, #16171a),
+    linear-gradient(150deg, #16171a 12%, transparent 12.5%, transparent 87%, #16171a 87.5%, #16171a),
+    linear-gradient(60deg, #191a1e 25%, transparent 25.5%, transparent 75%, #191a1e 75.5%, #191a1e),
+    linear-gradient(60deg, #191a1e 25%, transparent 25.5%, transparent 75%, #191a1e 75.5%, #191a1e);
   
-  --background: #16181c;
-  --foreground: #ffffff;
+  --background: #111214;
+  --foreground: #dbdee1;
 
-  /* Cards & Panels - Solid surfaces for clean separation against the pattern */
-  --card: var(--discord-dark-gray);
-  --card-foreground: #dcddde;
+  /* Cards & Panels - Deeply unified with the background, minimal contrast */
+  --card: #1e1f22;
+  --card-foreground: #f2f3f5;
 
-  /* Modals & Dropdowns - Solid surfaces */
-  --popover: var(--discord-darker-gray);
-  --popover-foreground: #dcddde;
+  /* Modals & Dropdowns */
+  --popover: #18191c;
+  --popover-foreground: #f2f3f5;
 
   /* Brand Colors */
   --primary: var(--discord-blurple);
   --primary-foreground: #ffffff;
 
   /* Secondary Elements */
-  --secondary: var(--discord-light-gray);
+  --secondary: #2b2d31;
   --secondary-foreground: #ffffff;
 
   /* Muted Elements */
-  --muted: var(--discord-dark-gray);
+  --muted: #18191c;
   --muted-foreground: #949ba4;
 
   /* Accents & Hovers */
-  --accent: var(--discord-light-gray);
+  --accent: #2b2d31;
   --accent-foreground: #ffffff;
 
   /* Alerts */
   --destructive: #ed4245;
   --destructive-foreground: #ffffff;
 
-  /* Structural - Crisp, solid borders instead of alpha fades */
-  --border: #424549;
-  --input: var(--discord-darker-gray);
-  --input-background: var(--discord-darker-gray);
+  /* Structural - Barely visible borders to remove harsh box-cutting */
+  --border: #2b2d31;
+  --input: #111214;
+  --input-background: #111214;
   --switch-background: var(--discord-light-gray);
   --ring: var(--discord-blurple);
 

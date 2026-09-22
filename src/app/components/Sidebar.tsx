@@ -178,40 +178,40 @@ export function Sidebar({
                         <div key={channel.id} className="flex flex-col relative">
                           <button
                             onClick={() => handleChannelClick(channel.id)}
-                            className={`group w-full flex items-center justify-between px-2 py-2.5 md:py-1.5 mb-[2px] rounded-[4px] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none active:scale-[0.98] cursor-pointer ${
+                            className={`group w-full flex items-center justify-between px-2.5 py-2.5 md:py-1.5 mb-[2px] rounded-[6px] transition-all duration-200 ease-out focus-visible:outline-none active:scale-[0.98] cursor-pointer ${
                               isTarget 
-                                ? "bg-primary text-primary-foreground shadow-[0_0_20px_var(--primary)] ring-2 ring-primary translate-x-1 z-50 relative animate-pulse"
+                                ? "bg-primary text-primary-foreground shadow-[0_0_20px_var(--primary)] ring-2 ring-primary z-50 relative animate-pulse"
                                 : isActive
-                                  ? "bg-secondary text-secondary-foreground translate-x-1"
-                                  : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground hover:translate-x-1"
+                                  ? "bg-white/10 text-foreground font-bold shadow-sm"
+                                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
                             }`}
                           >
-                            <div className="flex items-center gap-1.5 min-w-0">
+                            <div className="flex items-center gap-2 min-w-0">
                               {channel.isLocked ? (
-                                <div className="relative flex items-center justify-center w-5 h-5 opacity-70 flex-shrink-0">
-                                  <Icon className="w-5 h-5" />
-                                  <Lock className={`w-2.5 h-2.5 absolute bottom-0 right-0 rounded-full p-[1px] ${isTarget ? 'bg-primary' : 'bg-card'}`} />
+                                <div className="relative flex items-center justify-center w-4 h-4 opacity-70 flex-shrink-0">
+                                  <Icon className="w-4 h-4" />
+                                  <Lock className={`w-2.5 h-2.5 absolute -bottom-1 -right-1 rounded-full p-[1px] ${isTarget ? 'bg-primary' : 'bg-card'}`} />
                                 </div>
                               ) : (
-                                <Icon className="w-5 h-5 opacity-70 flex-shrink-0" />
+                                <Icon className="w-4 h-4 opacity-70 flex-shrink-0" />
                               )}
-                              <span className="text-[15px] font-medium leading-none pb-[1px] truncate">{channel.label}</span>
+                              <span className="text-[13.5px] leading-none pb-[1px] truncate">{channel.label}</span>
                             </div>
                           </button>
 
                           {channel.hasThreads && isActive && (
-                            <div className="relative flex flex-col ml-[26px] mt-0.5 mb-3 animate-fade-in">
-                              <div className="absolute left-[-16px] top-0 bottom-[14px] w-[2px] bg-border" />
+                            <div className="relative flex flex-col ml-[22px] mt-1 mb-3 animate-fade-in">
+                              <div className="absolute left-[-12px] top-0 bottom-[14px] w-[1px] bg-border/80" />
                               {dynamicTierGroups.map((group) => (
-                                <div key={group.tier} className="relative flex flex-col mb-1.5">
-                                  <div className="relative flex items-center min-h-[30px] md:min-h-[24px]">
-                                    <div className="absolute left-[-16px] top-[-10px] w-[14px] h-[24px] border-l-2 border-b-2 border-border rounded-bl-[6px]" />
-                                    <span className="text-[12px] font-bold uppercase tracking-widest pl-1.5" style={{ color: group.color }}>
+                                <div key={group.tier} className="relative flex flex-col mb-2">
+                                  <div className="relative flex items-center min-h-[26px]">
+                                    <div className="absolute left-[-12px] top-[-8px] w-[10px] h-[20px] border-l border-b border-border/80 rounded-bl-[4px]" />
+                                    <span className="text-[11px] font-extrabold uppercase tracking-widest pl-2" style={{ color: group.color }}>
                                       {group.tier} {["Pure", "Oddities", "Untiered"].includes(group.tier) ? "" : "Tier"}
                                     </span>
                                   </div>
                                   <div className="relative flex flex-col ml-[6px] mt-0.5">
-                                    <div className="absolute left-[-10px] top-[-6px] bottom-[12px] w-[2px] bg-border" />
+                                    <div className="absolute left-[-8px] top-[-4px] bottom-[10px] w-[1px] bg-border/60" />
                                     {group.children.map((child, cIdx) => {
                                       const isLastChild = cIdx === group.children.length - 1;
                                       return (
@@ -221,14 +221,14 @@ export function Sidebar({
                                             triggerHaptic('light');
                                             onThreadClick(group.tier as FilterKey, child.id);
                                           }}
-                                          className="relative flex items-center min-h-[36px] md:min-h-[28px] hover:bg-secondary/50 rounded-[4px] px-2 text-muted-foreground hover:text-foreground text-left transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-x-1 focus-visible:outline-none active:scale-[0.98] cursor-pointer"
+                                          className="relative flex items-center min-h-[32px] md:min-h-[26px] hover:bg-white/5 rounded-[4px] px-2 text-muted-foreground hover:text-foreground text-left transition-all duration-150 focus-visible:outline-none active:scale-[0.98] cursor-pointer"
                                         >
                                           {isLastChild ? (
-                                            <div className="absolute left-[-10px] top-[-12px] w-[12px] h-[30px] md:h-[26px] border-l-2 border-b-2 border-border rounded-bl-[6px]" />
+                                            <div className="absolute left-[-8px] top-[-10px] w-[8px] h-[22px] border-l border-b border-border/60 rounded-bl-[4px]" />
                                           ) : (
-                                            <div className="absolute left-[-10px] top-1/2 w-[12px] h-[2px] bg-border" />
+                                            <div className="absolute left-[-8px] top-1/2 w-[8px] h-[1px] bg-border/60" />
                                           )}
-                                          <span className="text-[14px] font-medium leading-none pl-2 truncate">{child.label}</span>
+                                          <span className="text-[13px] font-medium leading-none pl-2 truncate">{child.label}</span>
                                         </button>
                                       );
                                     })}

@@ -47,7 +47,7 @@ export function TradeSummaryBox({
           
           {giveTotal > 0 && getTotal > 0 && (
              <div className="flex flex-col items-center flex-shrink-0 px-2">
-                <span className={`text-[13px] sm:text-[14px] font-black font-mono flex items-center ${getTotal > giveTotal ? 'text-[#23a559]' : getTotal < giveTotal ? 'text-destructive' : 'text-foreground'}`}>
+                <span className={`text-[13px] sm:text-[14px] font-black font-mono flex items-center ${getTotal > giveTotal ? 'text-[#23a559]' : getTotal < giveTotal ? 'text-rose-400' : 'text-foreground'}`}>
                   {getTotal > giveTotal ? '+' : ''}<RollingNumber value={getTotal - giveTotal} />
                 </span>
                 <span className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Raw Diff</span>
@@ -66,11 +66,12 @@ export function TradeSummaryBox({
           {giveTotal === 0 && getTotal === 0 && <div className="w-full h-full rounded-full bg-popover transition-all duration-500" />}
         </div>
 
-        <div className="bg-popover border border-border rounded-[8px] p-3 shadow-sm">
+        {/* Flattened surface layout without nested bounding boxes */}
+        <div className="bg-black/20 rounded-[6px] p-3">
           {forecast.calculable ? (
             <div className="flex justify-between items-stretch">
                <div 
-                 className="flex flex-col flex-1 border-r border-border pr-3 py-1 relative cursor-help"
+                 className="flex flex-col flex-1 border-r border-border/60 pr-3 py-1 relative cursor-help"
                  onMouseEnter={() => handleEnter('st')}
                  onMouseLeave={handleLeave}
                >
@@ -79,7 +80,7 @@ export function TradeSummaryBox({
                     <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Short-Term Flip</span>
                   </div>
                   <div className="flex items-baseline gap-1.5">
-                     <span className={`text-[16px] sm:text-[20px] font-black font-mono leading-none ${forecast.st > 0 ? 'text-[#23a559]' : forecast.st < 0 ? 'text-destructive' : 'text-foreground'}`}>
+                     <span className={`text-[16px] sm:text-[20px] font-black font-mono leading-none ${forecast.st > 0 ? 'text-[#23a559]' : forecast.st < 0 ? 'text-rose-400' : 'text-foreground'}`}>
                        {forecast.st > 0 ? '+' : ''}{forecast.st.toFixed(1)}
                      </span>
                   </div>
@@ -99,7 +100,7 @@ export function TradeSummaryBox({
                     <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Long-Term Hold</span>
                   </div>
                   <div className="flex items-baseline gap-1.5">
-                     <span className={`text-[16px] sm:text-[20px] font-black font-mono leading-none ${forecast.lt > 0 ? 'text-[#23a559]' : forecast.lt < 0 ? 'text-destructive' : 'text-foreground'}`}>
+                     <span className={`text-[16px] sm:text-[20px] font-black font-mono leading-none ${forecast.lt > 0 ? 'text-[#23a559]' : forecast.lt < 0 ? 'text-rose-400' : 'text-foreground'}`}>
                        {forecast.lt > 0 ? '+' : ''}{forecast.lt.toFixed(1)}
                      </span>
                   </div>
@@ -127,7 +128,7 @@ export function TradeSummaryBox({
       <div className="grid grid-cols-2 gap-1.5 sm:gap-2 w-full">
         {/* RARITY */}
         <div 
-          className="flex flex-col items-center p-1.5 sm:p-2 rounded-[6px] bg-popover border border-border transition-all duration-300 hover:-translate-y-1 hover:shadow-md relative cursor-help"
+          className="flex flex-col items-center p-2 rounded-[6px] bg-black/20 border border-border/50 transition-all duration-300 hover:bg-black/30 relative cursor-help"
           onMouseEnter={() => handleEnter('rarity')}
           onMouseLeave={handleLeave}
         >
@@ -140,7 +141,7 @@ export function TradeSummaryBox({
         </div>
         {/* LIQUIDITY */}
         <div 
-          className="flex flex-col items-center p-1.5 sm:p-2 rounded-[6px] bg-popover border border-border transition-all duration-300 hover:-translate-y-1 hover:shadow-md relative cursor-help"
+          className="flex flex-col items-center p-2 rounded-[6px] bg-black/20 border border-border/50 transition-all duration-300 hover:bg-black/30 relative cursor-help"
           onMouseEnter={() => handleEnter('liquidity')}
           onMouseLeave={handleLeave}
         >

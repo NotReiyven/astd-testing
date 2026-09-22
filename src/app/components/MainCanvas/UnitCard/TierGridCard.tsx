@@ -129,7 +129,7 @@ export function GridStatBox({ label, value, type }: { label: string; value: numb
   return (
     <div
       ref={btnRef}
-      className="flex flex-col justify-center bg-popover border border-border rounded-[6px] p-2 hover:bg-white/5 transition-colors cursor-help shadow-inner relative z-20 min-h-[44px]"
+      className="flex flex-col justify-center bg-black/20 border border-border/50 rounded-[6px] p-2 hover:bg-black/30 transition-colors cursor-help relative z-20 min-h-[40px]"
       onMouseEnter={() => {
         if (!window.matchMedia('(hover: hover)').matches) return;
         hoverTimer.current = setTimeout(openTip, 200);
@@ -141,7 +141,7 @@ export function GridStatBox({ label, value, type }: { label: string; value: numb
       onClick={toggleTip}
     >
       <span className="text-[8px] md:text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">{label}</span>
-      <span className="text-[10px] md:text-[14px] font-black tracking-wide truncate" style={{ color: textColor }}>
+      <span className="text-[10px] md:text-[13px] font-black tracking-wide truncate" style={{ color: textColor }}>
         {displayValue === "BM" ? (
           <JargonWrap title="Black Marketed (BM)" tip="This unit's value is heavily manipulated by outside-game currency trades. Highly risky.">
             BM
@@ -235,7 +235,6 @@ export const TierGridCard = memo(function TierGridCard({
       onToggleSelect(unit.id);
       return;
     }
-    // Universal popout open on click (no more hover states)
     setMenuOpen(true);
   };
 
@@ -243,7 +242,6 @@ export const TierGridCard = memo(function TierGridCard({
   const tierColor = TIER_CONFIG[tierKey]?.badgeColor || "var(--primary)";
   const proxyUrl = getProxyImage(unit.id, unit.imageUrl);
 
-  // Staggered load animation delay based on grid position
   const staggerDelay = `${(index || 0) * 40}ms`;
 
   return (
