@@ -48,9 +48,9 @@ export function TradeAnalyzerPanel({
 
   const [copied, setCopied] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  
+
   const { panelWidth, startResize, panelRef } = usePanelResize(480, 420, 800);
-  
+
   // Custom Hook Injections
   const { undoCache, confirmClear, saveUndoState, handleSafeClear, handleUndo } = useTradeUndo();
   const { isGlobalDragging, smartMenuOpen, setSmartMenuOpen, initialParserText, setInitialParserText } = useTradeGlobalInput();
@@ -140,12 +140,12 @@ export function TradeAnalyzerPanel({
   const onTouchStart = (e: React.TouchEvent) => {
     if (!isMobile || !isOpen) return;
     if ((e.target as HTMLElement).closest('.custom-scrollbar, button, input, textarea, a, select')) return;
-    
+
     touchStartYRef.current = e.touches[0].clientY;
     lastYRef.current = e.touches[0].clientY;
     lastTimeRef.current = Date.now();
     velocityRef.current = 0;
-    
+
     if (sheetRef.current) {
       sheetRef.current.style.transition = 'none';
     }
@@ -153,10 +153,10 @@ export function TradeAnalyzerPanel({
 
   const onTouchMove = (e: React.TouchEvent) => {
     if (!isMobile || !isOpen || touchStartYRef.current === null) return;
-    
+
     const currentY = e.touches[0].clientY;
     const dy = currentY - touchStartYRef.current;
-    
+
     const currentTime = Date.now();
     const dt = currentTime - lastTimeRef.current;
     if (dt > 0) {
@@ -164,7 +164,7 @@ export function TradeAnalyzerPanel({
     }
     lastYRef.current = currentY;
     lastTimeRef.current = currentTime;
-    
+
     if (dy > 0) {
       if (sheetRef.current) {
         sheetRef.current.style.transform = `translateY(${dy}px)`;
@@ -174,13 +174,13 @@ export function TradeAnalyzerPanel({
 
   const onTouchEnd = () => {
     if (!isMobile || !isOpen || touchStartYRef.current === null) return;
-    
+
     const dy = lastYRef.current - touchStartYRef.current;
-    
+
     if (sheetRef.current) {
       sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
-      
-      // Momentum dismiss: Dragged past 25% or flicked downwards with high velocity
+
+      // Momentum dismiss
       if (dy > window.innerHeight * 0.25 || velocityRef.current > 0.4) {
         closeSheet();
         sheetRef.current.style.transform = 'translateY(100%)';
@@ -188,7 +188,7 @@ export function TradeAnalyzerPanel({
         sheetRef.current.style.transform = 'translateY(0px)';
       }
     }
-    
+
     touchStartYRef.current = null;
   };
 
@@ -201,12 +201,12 @@ export function TradeAnalyzerPanel({
   const renderCalculatorContent = () => (
     <>
       <div 
-        className="flex-shrink-0 flex items-center gap-2 px-3 md:px-4 py-3 md:py-4 border-b border-border relative z-20"
+        className="flex-shrink-0 flex items-center gap-2 px-3 md:px-4 py-3 md:py-4 border-b border-border relative z-20 bg-popover"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        <div className="w-7 h-7 flex-shrink-0 rounded-[6px] flex items-center justify-center bg-popover border border-border">
+        <div className="w-7 h-7 flex-shrink-0 rounded-[4px] flex items-center justify-center bg-card border border-border">
           <Calculator className="w-3.5 h-3.5 text-foreground" />
         </div>
         <span className="text-[14px] md:text-[15px] font-bold flex-1 text-foreground truncate select-none">
@@ -216,7 +216,7 @@ export function TradeAnalyzerPanel({
         {isComposerOpen ? (
           <button 
             onClick={() => { triggerHaptic('light'); setComposerOpen(false); }}
-            className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-popover hover:bg-muted text-foreground text-[12px] font-bold rounded-[4px] border border-border transition-colors focus-visible:outline-none min-h-[44px] md:min-h-0 cursor-pointer"
+            className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-muted hover:bg-card text-foreground text-[12px] font-bold rounded-[4px] border border-border transition-colors focus-visible:outline-none min-h-[44px] md:min-h-0 cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back
           </button>
@@ -225,7 +225,7 @@ export function TradeAnalyzerPanel({
             {undoCache && (
                <button 
                  onClick={() => { triggerHaptic('medium'); handleUndo(); }} 
-                 className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-destructive-foreground bg-destructive hover:bg-destructive/80 focus-visible:outline-none relative z-35 pointer-events-auto animate-fade-in shadow-sm mr-1 min-h-[44px] md:min-h-0 cursor-pointer"
+                 className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-bold transition-colors active:scale-95 text-destructive-foreground bg-destructive hover:bg-destructive/80 focus-visible:outline-none relative z-35 pointer-events-auto shadow-sm mr-1 min-h-[44px] md:min-h-0 cursor-pointer"
                  title="Undo Clear"
                >
                  <RotateCcw className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Undo Clear</span>
@@ -234,12 +234,12 @@ export function TradeAnalyzerPanel({
 
             <button 
               onClick={() => { triggerHaptic('light'); setSmartMenuOpen(!smartMenuOpen); startGuide("dictionary"); }} 
-              className={`flex-shrink-0 w-11 h-11 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto cursor-pointer ${
+              className={`flex-shrink-0 w-11 h-11 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
                 isWandTarget 
-                  ? "bg-primary text-primary-foreground shadow-[0_0_20px_var(--primary)] ring-2 ring-primary z-[100005] animate-pulse" 
+                  ? "bg-primary text-primary-foreground border-primary z-[100005] animate-pulse" 
                   : smartMenuOpen 
-                    ? "bg-primary/15 text-primary" 
-                    : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                    ? "bg-primary text-primary-foreground border-primary" 
+                    : "bg-muted border-border text-muted-foreground hover:bg-card hover:text-foreground"
               }`} 
               title="Context Recognition"
             >
@@ -247,12 +247,12 @@ export function TradeAnalyzerPanel({
             </button>
             <button 
               onClick={() => { triggerHaptic('medium'); handleSafeClear(); }} 
-              className={`flex-shrink-0 w-11 h-11 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-all duration-300 ease-out hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto cursor-pointer ${
+              className={`flex-shrink-0 w-11 h-11 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
                 isClearTarget 
-                  ? "bg-destructive text-destructive-foreground shadow-[0_0_20px_var(--destructive)] ring-2 ring-destructive z-[100005] animate-pulse" 
+                  ? "bg-destructive text-destructive-foreground border-destructive z-[100005] animate-pulse" 
                   : confirmClear
-                    ? "bg-destructive text-destructive-foreground shadow-md animate-pulse"
-                    : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                    ? "bg-destructive text-destructive-foreground border-destructive animate-pulse"
+                    : "bg-muted border-border text-muted-foreground hover:bg-card hover:text-foreground"
               }`} 
               title={confirmClear ? "Click again to confirm" : "Clear trade"}
             >
@@ -260,16 +260,16 @@ export function TradeAnalyzerPanel({
             </button>
             <button 
               onClick={handleShare} 
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-2.5 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto min-h-[44px] md:min-h-0 cursor-pointer" 
-              style={{ background: copied ? "#23a559" : "var(--popover)", border: "1px solid var(--border)", fontFamily: "var(--font-sans)" }}
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-2.5 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-colors active:scale-95 text-foreground focus-visible:outline-none relative z-35 pointer-events-auto min-h-[44px] md:min-h-0 cursor-pointer" 
+              style={{ background: copied ? "#23a559" : "var(--muted)", border: "1px solid var(--border)", fontFamily: "var(--font-sans)" }}
               title="Share formatted trade string"
             >
-              {copied ? <Check className="w-4 h-4 md:w-3.5 md:h-3.5" /> : <Share2 className="w-4 h-4 md:w-3.5 md:h-3.5 text-muted-foreground" />}
+              {copied ? <Check className="w-4 h-4 md:w-3.5 md:h-3.5 text-white" /> : <Share2 className="w-4 h-4 md:w-3.5 md:h-3.5 text-muted-foreground" />}
               <span className="hidden sm:inline">{copied ? "Copied!" : "Share"}</span>
             </button>
             <button 
               onClick={handleAdvertise} 
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-3 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-95 text-primary-foreground bg-primary hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white relative z-35 pointer-events-auto shadow-sm min-h-[44px] md:min-h-0 cursor-pointer" 
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-3 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-colors active:scale-95 text-primary-foreground bg-primary hover:bg-primary/90 focus-visible:outline-none border border-primary relative z-35 pointer-events-auto shadow-sm min-h-[44px] md:min-h-0 cursor-pointer" 
               title="Post this trade as an advertisement"
             >
               <Megaphone className="w-4 h-4 md:w-3.5 md:h-3.5" />
@@ -281,7 +281,7 @@ export function TradeAnalyzerPanel({
         {(!isMobile && onClose) && (
           <button 
             onClick={closeSheet} 
-            className="flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive relative z-35 pointer-events-auto cursor-pointer" 
+            className="flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors focus-visible:outline-none border border-transparent hover:border-destructive relative z-35 pointer-events-auto cursor-pointer" 
             title="Close Analyzer"
           >
             <X className="w-4 h-4" />
@@ -340,7 +340,7 @@ export function TradeAnalyzerPanel({
 
             <div className="relative mx-3 md:mx-4 flex items-center justify-center my-1">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-              <button onClick={() => { triggerHaptic('light'); swap(); }} className="relative flex items-center justify-center w-11 h-11 md:w-8 md:h-8 rounded-full transition-all duration-300 ease-out hover:scale-110 z-10 bg-popover border border-border text-muted-foreground hover:text-foreground hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm cursor-pointer" title="Swap Give and Get">
+              <button onClick={() => { triggerHaptic('light'); swap(); }} className="relative flex items-center justify-center w-11 h-11 md:w-8 md:h-8 rounded-full transition-colors z-10 bg-muted border border-border text-muted-foreground hover:text-foreground hover:bg-card focus-visible:outline-none cursor-pointer" title="Swap Give and Get">
                 <ArrowUpDown className="w-5 h-5 md:w-4 md:h-4" />
               </button>
             </div>
@@ -379,26 +379,26 @@ export function TradeAnalyzerPanel({
       <>
         {isOpen && (
           <div 
-            className="fixed inset-0 bg-black/60 z-[90] animate-fade-in" 
+            className="fixed inset-0 bg-black/80 z-[90] transition-opacity" 
             onClick={closeSheet}
             aria-hidden="true"
           />
         )}
 
         <div 
-          className={`fixed left-0 right-0 bottom-0 bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer pb-safe
+          className={`fixed left-0 right-0 bottom-0 bg-card border-t border-border transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer pb-safe
           ${isOpen ? 'translate-y-[100%] opacity-0 pointer-events-none z-[80]' : 'bottom-0 translate-y-0 opacity-100'} 
-          ${isMainStep3 && !isOpen ? '!z-[100005] ring-4 ring-primary shadow-lg animate-pulse' : 'z-[80]'}`}
+          ${isMainStep3 && !isOpen ? '!z-[100005] ring-2 ring-primary shadow-lg' : 'z-[80]'}`}
           onClick={openSheet}
         >
           <div className="flex items-center justify-between px-4 py-3 pb-safe">
             <div className="flex flex-col min-w-0 flex-1 border-r border-border pr-3">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#FAA61A]" /> Give</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-[2px] bg-[#FAA61A]" /> Give</span>
               <span className="text-[14px] font-black text-foreground font-mono truncate"><RollingNumber value={giveTotal} /></span>
             </div>
 
             <div className="flex flex-col min-w-0 flex-1 pl-3">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-primary" /> Get</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-[2px] bg-primary" /> Get</span>
               <span className="text-[14px] font-black text-foreground font-mono truncate"><RollingNumber value={getTotal} /></span>
             </div>
           </div>
@@ -406,19 +406,19 @@ export function TradeAnalyzerPanel({
 
         <div 
           ref={sheetRef}
-          className={`fixed left-0 right-0 bottom-0 bg-card flex flex-col shadow-[0_-12px_40px_rgba(0,0,0,0.8)] rounded-t-[16px] overflow-hidden transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isElevated ? "!z-[100000]" : "z-[100]"}`}
+          className={`fixed left-0 right-0 bottom-0 bg-card flex flex-col border-t border-border rounded-t-[12px] overflow-hidden transition-transform duration-200 ease-out ${isElevated ? "!z-[100000]" : "z-[100]"}`}
           style={{ 
             height: '92vh',
             transform: isOpen ? 'translateY(0%)' : 'translateY(100%)'
           }}
         >
           <div 
-            className="w-full pt-3 pb-1 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none flex-shrink-0 select-none"
+            className="w-full pt-3 pb-2 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none flex-shrink-0 select-none bg-popover"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
           >
-            <div className="w-16 h-1.5 bg-white/20 rounded-full pointer-events-none" />
+            <div className="w-12 h-1 bg-border rounded-full pointer-events-none" />
           </div>
 
           {renderCalculatorContent()}
@@ -429,14 +429,14 @@ export function TradeAnalyzerPanel({
 
   return (
     <div 
-      className={`hidden md:block relative top-0 bottom-0 right-0 flex-shrink-0 overflow-hidden transition-all duration-300 ease-out will-change-[width,transform] ${isOpen ? 'translate-x-0 pointer-events-auto' : 'translate-x-full pointer-events-none'} ${analyzerZ}`}
+      className={`hidden md:block relative top-0 bottom-0 right-0 flex-shrink-0 overflow-hidden transition-all duration-200 ease-out will-change-[width,transform] ${isOpen ? 'translate-x-0 pointer-events-auto' : 'translate-x-full pointer-events-none'} ${analyzerZ}`}
       style={{ opacity: isOpen ? 1 : 0, width: isOpen ? `${panelWidth}px` : '0px' }}
     >
       <div className="w-full h-full">
         <div className="w-full h-full">
           <div 
             ref={panelRef} 
-            className="flex flex-col h-full w-full select-none border-l border-border shadow-[-12px_0_40px_rgba(0,0,0,0.5)] bg-card relative" 
+            className="flex flex-col h-full w-full select-none border-l border-border bg-card relative" 
             style={{ width: `${panelWidth}px`, minWidth: "420px", fontFamily: "var(--font-sans)" }}
           >
             <div 

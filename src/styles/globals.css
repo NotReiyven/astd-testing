@@ -1,23 +1,22 @@
 @import "tailwindcss";
 
-/* Discord-style Scrollbars */
+/* Technical Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #2B2D31; 
-  border-radius: 4px;
+  background: var(--background); 
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1A1B1E; 
+  background: var(--border); 
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #111214; 
+  background: var(--muted-foreground); 
 }
 
 /* Explicit Utility to Hide Scrollbars cleanly */
@@ -36,7 +35,8 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background);
+    color: var(--foreground);
     font-family: var(--font-sans);
     font-weight: 500;
   }
@@ -45,7 +45,72 @@
     font-size: var(--font-size);
   }
 
-  button, a {
-    @apply cursor-pointer;
+  /* Tabular numbers for financial stability */
+  .font-mono, span[class*="font-mono"] {
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
   }
+
+  /* Refined, smooth transitions for interactive elements */
+  button, a {
+    transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  button:active, a:active {
+    transform: scale(0.96);
+  }
+
+  /* High-end primary button styling */
+  button.bg-primary {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2); 
+  }
+}
+
+@layer utilities {
+  /* Vercel/GitHub style skeleton shimmer */
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  .animate-shimmer {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--card);
+  }
+
+  .animate-shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0.03) 20%,
+      rgba(255, 255, 255, 0.06) 60%,
+      rgba(255, 255, 255, 0)
+    );
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+/* Premium Structural Cards - Restoring depth without performance-heavy blurs */
+.specular-card {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  /* Top inner highlight mimics physical light; subtle drop shadow grounds it */
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 2px 4px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.specular-card:hover {
+  /* Utilizes the --hover-glow variable from TierGridCard, defaulting to #444 */
+  border-color: var(--hover-glow, #444444);
+  transform: translateY(-2px);
+  /* Elevated premium shadow for depth */
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 12px 24px -4px rgba(0, 0, 0, 0.8);
 }

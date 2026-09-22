@@ -47,20 +47,18 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
   const [open, setOpen] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  
+
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setSelectedIndex(-1);
   }, [query, open]);
 
-  // Listen for the global hotkey custom event
   useEffect(() => {
     const handleFocusSearch = (e: Event) => {
       const customEvent = e as CustomEvent<string>;
       if (customEvent.detail === type) {
         setOpen(true);
-        // Small timeout ensures the panel is fully expanded before forcing focus
         setTimeout(() => searchInputRef.current?.focus(), 50);
       }
     };
@@ -125,40 +123,39 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
 
   const isGive = type === "give";
   const accentColorHex = isGive ? "#FAA61A" : "var(--primary)";
-  
-  let dropZoneClasses = "flex flex-col justify-center rounded-[8px] transition-all duration-200 ";
+
+  let dropZoneClasses = "flex flex-col justify-center rounded-[6px] transition-colors duration-150 ";
   let dropZoneStyle: React.CSSProperties = { minHeight: items.length === 0 ? "90px" : "auto" };
 
   if (isDraggingOver) {
-    dropZoneClasses += "bg-popover border";
+    dropZoneClasses += "bg-popover border-2";
     dropZoneStyle.borderColor = accentColorHex;
-    dropZoneStyle.boxShadow = `0 0 0 1px ${accentColorHex}40`; 
   } else if (items.length === 0) {
-    dropZoneClasses += "bg-popover border border-border shadow-inner";
+    dropZoneClasses += "bg-muted border border-border";
   } else {
     dropZoneClasses += "bg-transparent border border-transparent";
   }
 
   return (
-    <div className="px-4 py-3">
+    <div className="px-3 md:px-4 py-3">
       <div className="flex items-baseline justify-between mb-3">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: accentColorHex }} />
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: accentColorHex }} />
           <p
             className="text-[12px] md:text-[13px] font-extrabold uppercase tracking-widest text-foreground"
             style={{ fontFamily: "var(--font-sans)" }}
           >
             {label}
           </p>
-          <span className="hidden md:inline-flex px-1.5 py-[2px] bg-white/5 rounded-[4px] text-[9px] font-semibold text-muted-foreground ml-1 border border-border">
+          <span className="hidden md:inline-flex px-1.5 py-[2px] bg-muted rounded-[2px] text-[9px] font-semibold text-muted-foreground ml-1 border border-border">
             Press {isGive ? '/' : '\\'}
           </span>
         </div>
-        
+
         <div className="flex items-center gap-3">
           {items.length > 0 && (
             <button
-              className="text-[11px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[4px] px-3 py-2 md:px-2 md:py-1 bg-white/5 border border-transparent hover:border-destructive/30 hover:bg-destructive/10 text-muted-foreground hover:text-destructive active:scale-95 cursor-pointer"
+              className="text-[11px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none rounded-[4px] px-3 py-2 md:px-2 md:py-1 bg-muted border border-border hover:bg-destructive hover:text-destructive-foreground hover:border-destructive text-muted-foreground active:scale-95 cursor-pointer"
               onClick={onClear}
             >
               Clear {isGive ? "Give" : "Get"}
@@ -169,10 +166,8 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
 
       <div className="relative mb-3">
         <div
-          className="flex items-center gap-2 px-3 py-2 rounded-[6px] focus-within:ring-2 focus-within:ring-primary shadow-inner bg-input transition-all duration-150"
-          style={{
-            border: open ? `1px solid ${accentColorHex}66` : "1px solid var(--border)",
-          }}
+          className="flex items-center gap-2 px-3 py-2 rounded-[4px] focus-within:border-primary bg-input transition-colors duration-100"
+          style={{ border: open ? `1px solid ${accentColorHex}` : "1px solid var(--border)" }}
         >
           <Search className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
           <input
@@ -215,7 +210,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
           />
           {query.length > 0 && (
             <button
-              className="flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[3px] p-2 -m-2 md:p-0.5 md:-m-0 hover:bg-white/10 transition-colors text-muted-foreground cursor-pointer"
+              className="flex-shrink-0 focus-visible:outline-none rounded-[2px] p-2 -m-2 md:p-0.5 md:-m-0 hover:bg-muted transition-colors text-muted-foreground cursor-pointer"
               onMouseDown={(e) => { e.preventDefault(); setQuery(""); }}
             >
               <X className="w-3.5 h-3.5" />
@@ -225,10 +220,10 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
 
         {open && results.length > 0 && (
           <div
-            className="absolute left-0 right-0 mt-1 rounded-[8px] overflow-hidden bg-card border border-border shadow-lg z-[999999]"
+            className="absolute left-0 right-0 mt-1 rounded-[6px] overflow-hidden bg-card border border-border shadow-lg z-[999999]"
             onMouseDown={(e) => e.preventDefault()}
           >
-            <p className="px-3 pt-2.5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            <p className="px-3 pt-2.5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted border-b border-border">
               Quick Add
             </p>
             {results.map((u, i) => {
@@ -238,7 +233,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
                   key={u.id}
                   onClick={() => handleAdd(u)}
                   onMouseEnter={() => setSelectedIndex(i)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors text-left focus-visible:outline-none cursor-pointer ${isSelected ? 'bg-white/5' : 'bg-transparent hover:bg-white/5'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors text-left focus-visible:outline-none cursor-pointer ${isSelected ? 'bg-muted' : 'bg-transparent hover:bg-muted'}`}
                   style={{ borderTop: i === 0 ? "none" : "1px solid var(--border)" }}
                 >
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
@@ -261,7 +256,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
 
       <div style={dropZoneStyle} className={dropZoneClasses} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center pointer-events-none gap-0.5 py-4 opacity-70">
+          <div className="flex flex-col items-center justify-center pointer-events-none gap-0.5 py-4">
             <p className="text-[13px] font-bold" style={{ color: isDraggingOver ? "var(--foreground)" : "var(--muted-foreground)" }}>
               {isDraggingGlobal ? "Drop unit here" : "Empty Section"}
             </p>

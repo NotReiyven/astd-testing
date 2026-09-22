@@ -51,9 +51,9 @@ export function JargonWrap({ title, tip, children }: { title: string; tip: strin
       {tipPos && createPortal(
         <>
           <div className="md:hidden fixed inset-0 z-[99998]" onClick={(e) => { e.stopPropagation(); setTipPos(null); }} onTouchStart={(e) => { e.stopPropagation(); setTipPos(null); }} />
-          <div className="rounded-[8px] px-3 py-2.5 pointer-events-none fixed z-[99999] -translate-x-1/2 -translate-y-full animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.6)]" style={{ top: tipPos.y, left: tipPos.x, minWidth: 200, maxWidth: 240, background: "var(--popover)", border: "1px solid var(--border)" }}>
+          <div className="rounded-[6px] px-3 py-2.5 pointer-events-none fixed z-[99999] -translate-x-1/2 -translate-y-full animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.8)]" style={{ top: tipPos.y, left: tipPos.x, minWidth: 200, maxWidth: 240, background: "var(--popover)", border: "1px solid var(--border)" }}>
             <p className="text-[12px] font-bold text-foreground mb-0.5">{title}</p>
-            <p className="text-[11px] font-medium leading-snug text-muted-foreground whitespace-normal" style={{ fontFamily: "var(--font-sans)" }}>{tip}</p>
+            <p className="text-[11.5px] font-medium leading-snug text-[#ededed] opacity-90 whitespace-normal" style={{ fontFamily: "var(--font-sans)" }}>{tip}</p>
           </div>
         </>,
         document.body
@@ -81,7 +81,7 @@ export function StatusIcon({ status }: { status?: string | null }) {
   if (!status) return null;
   const lower = status.toLowerCase();
   const sz = "w-3 h-3 shrink-0";
-  
+
   if (lower === "rising") return <ChevronsUp className={sz} />;
   if (lower === "dropping") return <ChevronsDown className={sz} />;
   if (lower === "unstable") return <Activity className={sz} />;
@@ -91,11 +91,11 @@ export function StatusIcon({ status }: { status?: string | null }) {
   if (lower === "hyped") return <Flame className={sz} />;
   if (lower === "gatekept") return <Lock className={sz} />;
   if (lower === "black-marketed") return <EyeOff className={sz} />;
-  
+
   if (lower === "stable") return <span className="flex items-center justify-center w-3 h-3 font-black text-[12px] leading-none shrink-0">≈</span>;
   if (lower === "varies") return <span className="flex items-center justify-center w-3 h-3 font-black text-[12px] leading-none shrink-0">↕</span>;
   if (lower === "lowballed") return <span className="flex items-center justify-center w-3 h-3 font-black text-[12px] leading-none shrink-0">↓</span>;
-  
+
   return null;
 }
 
@@ -144,14 +144,14 @@ export function NoticeTooltip({ notice }: { notice?: string }) {
       }}
       onClick={toggleTip}
     >
-      <div className="flex items-center justify-center rounded-full transition-colors w-5 h-5 md:w-4 md:h-4" style={{ background: tipPos ? "rgba(255,255,255,0.1)" : "transparent" }}>
-        <span className="text-[11px] md:text-[10px] font-bold" style={{ color: tipPos ? "var(--foreground)" : "var(--muted-foreground)" }}>?</span>
+      <div className="flex items-center justify-center rounded-[4px] transition-colors w-5 h-5 md:w-4 md:h-4 hover:bg-white/10">
+        <span className="text-[11px] md:text-[10px] font-bold text-muted-foreground">?</span>
       </div>
       {tipPos && createPortal(
         <>
           <div className="md:hidden fixed inset-0 z-[99998]" onClick={(e) => { e.stopPropagation(); setTipPos(null); }} onTouchStart={(e) => { e.stopPropagation(); setTipPos(null); }} />
-          <div className="px-3 py-2.5 rounded-[8px] pointer-events-none fixed z-[99999] -translate-x-1/2 -translate-y-full w-[220px] animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.5)]" style={{ top: tipPos.y, left: tipPos.x, background: "#111214", border: "1px solid var(--border)" }}>
-            <p className="text-[11px] font-medium leading-relaxed text-[#DBDEE1]">{notice}</p>
+          <div className="px-3 py-2.5 rounded-[6px] pointer-events-none fixed z-[99999] -translate-x-1/2 -translate-y-full w-[220px] animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.8)]" style={{ top: tipPos.y, left: tipPos.x, background: "var(--popover)", border: "1px solid var(--border)" }}>
+            <p className="text-[11.5px] font-medium leading-relaxed text-[#ededed] opacity-90">{notice}</p>
           </div>
         </>,
         document.body
@@ -171,11 +171,11 @@ export function HoldToConfirmButton({ onConfirm, children, className, holdTime =
     setIsHolding(true);
     setProgress(0);
     const startTime = Date.now();
-    
+
     intervalRef.current = setInterval(() => {
       setProgress(Math.min(((Date.now() - startTime) / holdTime) * 100, 100));
     }, 16);
-    
+
     timerRef.current = setTimeout(() => {
       clearInterval(intervalRef.current);
       onConfirm();
@@ -202,7 +202,7 @@ export function HoldToConfirmButton({ onConfirm, children, className, holdTime =
       onPointerCancel={stop}
       onContextMenu={e => e.preventDefault()}
     >
-      <div className="absolute left-0 top-0 bottom-0 bg-black/30 pointer-events-none" style={{ width: `${progress}%`, transition: isHolding ? 'none' : 'width 0.2s' }} />
+      <div className="absolute left-0 top-0 bottom-0 bg-white/10 pointer-events-none" style={{ width: `${progress}%`, transition: isHolding ? 'none' : 'width 0.2s' }} />
       <div className="relative z-10 flex items-center justify-center gap-2">{children}</div>
     </button>
   );
@@ -215,21 +215,21 @@ export function RollingNumber({ value, className }: { value: number, className?:
     let start = displayValue;
     let end = value;
     if (start === end) return;
-    
+
     let startTime = performance.now();
     const duration = 300;
-    
+
     const animate = (currTime: number) => {
       const elapsed = currTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const ease = progress * (2 - progress);
-      
+
       setDisplayValue(Math.floor(start + (end - start) * ease));
-      
+
       if (progress < 1) requestAnimationFrame(animate);
       else setDisplayValue(end);
     };
-    
+
     requestAnimationFrame(animate);
   }, [value]);
 

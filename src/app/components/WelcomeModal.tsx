@@ -33,7 +33,6 @@ export function WelcomeModal() {
 
   const handleNavigate = (channel: string) => {
     setIsMinimized(true);
-    // Instantly unlock the scroll wheel so they can read the legal text
     document.body.style.overflow = "auto"; 
     window.document.dispatchEvent(new CustomEvent('navigate', { detail: channel }));
   };
@@ -43,39 +42,39 @@ export function WelcomeModal() {
   return (
     <div className={
       isMinimized 
-        ? "fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[100000] w-[calc(100vw-32px)] max-w-[380px] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
-        : "fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/75 animate-fade-in transition-all duration-500"
+        ? "fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[100000] w-[calc(100vw-32px)] max-w-[380px] transition-all duration-300 ease-out"
+        : "fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in transition-all duration-300"
     }>
-      <div className={`bg-[#313338] w-full rounded-[8px] flex flex-col overflow-hidden border border-[rgba(255,255,255,0.05)] transition-all duration-500 ${isMinimized ? 'shadow-[0_20px_60px_rgba(0,0,0,0.8)]' : 'max-w-[500px] shadow-2xl animate-slide-up'}`}>
+      <div className={`bg-card w-full rounded-[8px] flex flex-col overflow-hidden border border-border transition-all duration-300 ${isMinimized ? 'shadow-[0_20px_60px_rgba(0,0,0,0.8)]' : 'max-w-[500px] shadow-2xl animate-slide-up'}`}>
 
         {!isMinimized && (
           <>
-            <div className="pt-6 px-6 pb-5 bg-[#2B2D31] border-b border-[rgba(255,255,255,0.04)]">
-              <h2 className="text-[18px] font-bold text-[#F2F3F5] tracking-tight">
-                ASTD Value List Overview
+            <div className="pt-6 px-6 pb-5 bg-muted border-b border-border">
+              <h2 className="text-[18px] font-bold text-foreground tracking-tight">
+                Stop Getting Scammed.
               </h2>
-              <p className="text-[13px] text-[#B5BAC1] mt-1.5 leading-relaxed">
-                A quick guide on how to navigate the platform, interpret unit values, and use the built-in trading tools.
+              <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">
+                Here is how you read the data, lock in your units, and use the Analyzer to check if an offer is actual garbage.
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 px-6 py-5 overflow-y-auto max-h-[60vh] custom-scrollbar">
-              <div className="bg-[#2B2D31] p-4 rounded-[6px] border border-[rgba(255,255,255,0.03)]">
-                <span className="block text-[14px] font-semibold text-[#DBDEE1] mb-1.5">1. Navigation</span>
-                <span className="block text-[13px] text-[#949BA4] leading-relaxed">
-                  Use the left sidebar to switch between the <strong className="text-[#F2F3F5] font-medium">Main Value List</strong>, <strong className="text-[#F2F3F5] font-medium">Patch Notes</strong>, and <strong className="text-[#F2F3F5] font-medium">Extra Notices</strong>. On mobile devices, swipe right to open the channel menu.
+            <div className="flex flex-col gap-3 px-6 py-5 overflow-y-auto max-h-[60vh] custom-scrollbar bg-card">
+              <div className="bg-popover p-4 rounded-[6px] border border-border">
+                <span className="block text-[14px] font-bold text-foreground mb-1.5">1. Navigation</span>
+                <span className="block text-[13px] text-muted-foreground leading-relaxed">
+                  Use the left sidebar to access the <strong className="text-foreground font-semibold">Value List</strong>, <strong className="text-foreground font-semibold">Trading Ads</strong>, and <strong className="text-foreground font-semibold">Your Inventory</strong>. On mobile, swipe right to open the menu.
                 </span>
               </div>
-              <div className="bg-[#2B2D31] p-4 rounded-[6px] border border-[rgba(255,255,255,0.03)]">
-                <span className="block text-[14px] font-semibold text-[#DBDEE1] mb-1.5">2. Values & Market Tags</span>
-                <span className="block text-[13px] text-[#949BA4] leading-relaxed">
-                  Unit values are estimations based on active community trades. Always check a unit's status tag (e.g., <strong className="text-[#F2F3F5] font-medium">Rising</strong>, <strong className="text-[#F2F3F5] font-medium">Dropping</strong>, or <strong className="text-[#F2F3F5] font-medium">Unstable</strong>) to understand its current market trajectory before evaluating a trade.
+              <div className="bg-popover p-4 rounded-[6px] border border-border">
+                <span className="block text-[14px] font-bold text-foreground mb-1.5">2. Read the Market Tags</span>
+                <span className="block text-[13px] text-muted-foreground leading-relaxed">
+                  Raw value is useless without context. Always check a unit's status tag (e.g., <strong className="text-foreground font-semibold">Rising</strong>, <strong className="text-[#ef4444] font-semibold">Dropping</strong>, or <strong className="text-[#38bdf8] font-semibold">Highballed</strong>) to understand its trajectory before accepting a trade.
                 </span>
               </div>
-              <div className="bg-[#2B2D31] p-4 rounded-[6px] border border-[rgba(255,255,255,0.03)]">
-                <span className="block text-[14px] font-semibold text-[#DBDEE1] mb-1.5">3. Using the Calculator</span>
-                <span className="block text-[13px] text-[#949BA4] leading-relaxed">
-                  Open the Trade Analyzer panel to compare offers. <strong className="text-[#F2F3F5] font-medium">Left-Click</strong> any unit on the list to add it to your "Give" section, or <strong className="text-[#F2F3F5] font-medium">Right-Click</strong> to add it to your "Get" section. You can also drag and drop units directly into the panel.
+              <div className="bg-popover p-4 rounded-[6px] border border-border">
+                <span className="block text-[14px] font-bold text-foreground mb-1.5">3. The Trade Analyzer</span>
+                <span className="block text-[13px] text-muted-foreground leading-relaxed">
+                  Click any unit card to throw it into your "Give" or "Get" columns. The Analyzer breaks down the mathematical difference and projects long-term momentum. 
                 </span>
               </div>
             </div>
@@ -83,11 +82,11 @@ export function WelcomeModal() {
         )}
 
         {isMinimized && (
-          <div className="px-5 py-3 bg-[#2B2D31] border-b border-[rgba(255,255,255,0.04)] flex justify-between items-center">
-            <span className="text-[13px] font-bold text-[#F2F3F5] uppercase tracking-wide">Legal Agreement</span>
+          <div className="px-5 py-3 bg-muted border-b border-border flex justify-between items-center">
+            <span className="text-[13px] font-bold text-foreground uppercase tracking-wide">Legal Agreement</span>
             <button 
               onClick={() => { setIsMinimized(false); document.body.style.overflow = "hidden"; }}
-              className="flex items-center gap-1.5 text-[#949BA4] hover:text-[#DBDEE1] text-[11px] font-bold uppercase transition-colors"
+              className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-[11px] font-bold uppercase transition-colors"
             >
               <Maximize2 className="w-3.5 h-3.5" />
               Read Overview
@@ -95,22 +94,22 @@ export function WelcomeModal() {
           </div>
         )}
 
-        <div className={`p-4 bg-[#2B2D31] flex flex-col sm:flex-row items-center justify-between gap-4 ${!isMinimized ? 'border-t border-[rgba(255,255,255,0.04)]' : ''}`}>
+        <div className={`p-4 bg-muted flex flex-col sm:flex-row items-center justify-between gap-4 ${!isMinimized ? 'border-t border-border' : ''}`}>
           <label className="flex items-start gap-2.5 cursor-pointer group select-none w-full sm:w-auto">
-            <div className="relative flex items-center justify-center w-5 h-5 mt-0.5 rounded-[4px] border border-[rgba(255,255,255,0.2)] bg-[rgba(0,0,0,0.2)] group-hover:border-[#5865F2] transition-colors flex-shrink-0">
+            <div className="relative flex items-center justify-center w-5 h-5 mt-0.5 rounded-[4px] border border-border bg-card group-hover:border-primary transition-colors flex-shrink-0">
               <input
                 type="checkbox"
                 className="peer absolute opacity-0 w-full h-full cursor-pointer"
                 checked={hasConsented}
                 onChange={(e) => setHasConsented(e.target.checked)}
               />
-              {hasConsented && <Check className="w-3.5 h-3.5 text-[#5865F2] pointer-events-none" />}
+              {hasConsented && <Check className="w-3.5 h-3.5 text-primary pointer-events-none" />}
             </div>
-            <span className="text-[12px] text-[#949BA4] leading-relaxed">
+            <span className="text-[12px] text-muted-foreground leading-relaxed">
               I accept the{" "}
-              <button type="button" onClick={() => handleNavigate('terms-of-service')} className="text-[#5865F2] hover:underline focus:outline-none">Terms of Service</button>
+              <button type="button" onClick={() => handleNavigate('terms-of-service')} className="text-primary hover:underline focus:outline-none font-medium">Terms of Service</button>
               ,{" "}
-              <button type="button" onClick={() => handleNavigate('privacy-policy')} className="text-[#5865F2] hover:underline focus:outline-none">Privacy Policy</button>
+              <button type="button" onClick={() => handleNavigate('privacy-policy')} className="text-primary hover:underline focus:outline-none font-medium">Privacy Policy</button>
               , and cookies.
             </span>
           </label>
@@ -118,13 +117,13 @@ export function WelcomeModal() {
           <button
             onClick={handleAccept}
             disabled={!hasConsented}
-            className={`px-6 py-2 rounded-[4px] text-[13px] font-medium transition-all flex-shrink-0 w-full sm:w-auto ${
+            className={`px-6 py-2 rounded-[4px] text-[13px] font-bold transition-all flex-shrink-0 w-full sm:w-auto active:scale-[0.98] ${
               hasConsented 
-                ? "bg-[#5865F2] hover:bg-[#4752C4] text-white active:scale-[0.98]" 
-                : "bg-[rgba(255,255,255,0.05)] text-[#80848E] cursor-not-allowed"
+                ? "bg-primary hover:bg-primary/90 text-primary-foreground border border-primary shadow-sm" 
+                : "bg-popover text-muted-foreground border border-border cursor-not-allowed"
             }`}
           >
-            Continue{isMinimized ? "" : " to Website"}
+            Continue{isMinimized ? "" : " to App"}
           </button>
         </div>
 

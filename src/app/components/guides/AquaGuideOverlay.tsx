@@ -32,7 +32,7 @@ export function AquaGuideOverlay({
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [boxShake, setBoxShake] = useState(false);
-  
+
   const fullTextRef = useRef("");
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -89,7 +89,7 @@ export function AquaGuideOverlay({
         return <strong key={idx} className="text-destructive font-black tracking-wide animate-text-shake">{part.slice(2, -2)}</strong>;
       }
       if (part.startsWith('^^') && part.endsWith('^^')) {
-        return <strong key={idx} className="text-primary font-black tracking-wide">{part.slice(2, -2)}</strong>;
+        return <strong key={idx} className="text-[#FAA61A] font-black tracking-wide">{part.slice(2, -2)}</strong>;
       }
       if (part.startsWith('**') && part.endsWith('**')) {
         return <strong key={idx} className="text-foreground font-black tracking-wide">{part.slice(2, -2)}</strong>;
@@ -153,16 +153,16 @@ export function AquaGuideOverlay({
 
       {/* Screen Dimming Overlay */}
       <div 
-        className={`fixed inset-0 z-[99998] transition-all duration-500 ${
+        className={`fixed inset-0 z-[99998] transition-all duration-300 ${
           needsInteraction 
-            ? 'pointer-events-none bg-black/60 backdrop-blur-[2px]' 
-            : 'pointer-events-auto bg-black/80 backdrop-blur-[4px]'
+            ? 'pointer-events-none bg-black/40 backdrop-blur-sm' 
+            : 'pointer-events-auto bg-black/60 backdrop-blur-sm'
         }`} 
         onClick={handleSkipOrFastForward} 
       />
 
-      <div className={`fixed inset-0 z-[100005] pointer-events-none flex justify-center px-3 sm:px-4 md:px-8 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${dynamicAlignment}`}>
-        <div className={`relative w-full max-w-[700px] flex items-center md:items-end drop-shadow-2xl animate-slide-up ${needsInteraction ? 'pointer-events-none' : 'pointer-events-auto'}`} onClick={handleSkipOrFastForward}>
+      <div className={`fixed inset-0 z-[100005] pointer-events-none flex justify-center px-3 sm:px-4 md:px-8 transition-all duration-300 ease-out ${dynamicAlignment}`}>
+        <div className={`relative w-full max-w-[700px] flex items-center md:items-end drop-shadow-2xl animate-fade-in ${needsInteraction ? 'pointer-events-none' : 'pointer-events-auto'}`} onClick={handleSkipOrFastForward}>
 
            <div className="hidden md:block relative z-20 pointer-events-none animate-aqua-float shrink-0 -mr-6 -mb-2">
               <img 
@@ -173,13 +173,13 @@ export function AquaGuideOverlay({
            </div>
 
            <div 
-             className={`bg-card border border-border p-4 sm:p-5 md:p-8 rounded-[12px] flex-1 relative z-10 w-full min-h-[140px] flex flex-col transition-all duration-300 pointer-events-auto shadow-[0_20px_60px_rgba(0,0,0,0.6)] ${boxShake ? 'animate-box-shake ring-2 ring-destructive/50' : ''}`}
+             className={`bg-card border border-border p-4 sm:p-5 md:p-8 rounded-[8px] flex-1 relative z-10 w-full min-h-[140px] flex flex-col transition-all duration-150 pointer-events-auto shadow-[0_20px_60px_rgba(0,0,0,0.8)] ${boxShake ? 'animate-box-shake ring-2 ring-destructive/50' : ''}`}
            >
-              <div className="absolute -top-3.5 left-5 md:left-6 bg-popover border border-border px-3 py-1 rounded-[6px] shadow-lg flex items-center gap-2 z-20">
+              <div className="absolute -top-3.5 left-5 md:left-6 bg-popover border border-border px-3 py-1 rounded-[4px] shadow-lg flex items-center gap-2 z-20">
                 <span className={`font-bold text-[13px] md:text-[14px] tracking-wide ${boxShake ? 'text-destructive' : 'text-foreground'}`}>
                   Goddess Aqua
                 </span>
-                <span className="bg-primary text-primary-foreground text-[9px] px-1.5 py-0.5 rounded-[4px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                <span className="bg-primary text-primary-foreground text-[9px] px-1.5 py-0.5 rounded-[2px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
                   <Sparkles className="w-2.5 h-2.5" /> SYSTEM
                 </span>
               </div>
@@ -193,7 +193,7 @@ export function AquaGuideOverlay({
                 <span className="text-[11px] font-bold text-foreground uppercase tracking-widest">Goddess Aqua</span>
               </div>
 
-              <p className="text-muted-foreground text-[13px] sm:text-[14px] md:text-[16px] leading-[1.6] md:leading-[1.7] min-h-[60px] pt-1 select-none font-medium">
+              <p className="text-foreground/90 text-[13px] sm:text-[14px] md:text-[15px] leading-[1.6] md:leading-[1.7] min-h-[60px] pt-1 select-none font-medium">
                 {renderDialogue(displayedText)}
                 {isTyping && <span className="inline-block w-1.5 h-3.5 md:h-4 bg-primary animate-pulse ml-1 align-middle" />}
               </p>
@@ -218,7 +218,7 @@ export function AquaGuideOverlay({
                   {!needsInteraction && !isTyping && (
                     <button 
                       onClick={(e) => { e.stopPropagation(); handleEndMainGuide(); }} 
-                      className="group flex items-center gap-1.5 bg-primary hover:bg-primary/80 text-primary-foreground font-bold py-2 px-4 rounded-[6px] transition-all duration-300 active:scale-95 shadow-sm border border-border focus-visible:outline-none animate-fade-in shrink-0"
+                      className="group flex items-center gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 px-4 rounded-[4px] transition-all duration-150 active:scale-95 shadow-sm border border-transparent focus-visible:outline-none animate-fade-in shrink-0"
                     >
                       <span className="text-[12.5px] sm:text-[14px]">{isMainStep4 || guideState.type === "academy_grad" ? "Got it!" : "Continue"}</span>
                       <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -228,7 +228,7 @@ export function AquaGuideOverlay({
 
                 <button 
                   onClick={(e) => { e.stopPropagation(); onEndGuide(); }} 
-                  className="text-muted-foreground hover:text-foreground text-[10px] sm:text-[11.5px] font-bold uppercase tracking-wider transition-colors px-2.5 py-1 rounded-[4px] hover:bg-white/5 focus-visible:outline-none shrink-0"
+                  className="text-muted-foreground hover:text-foreground text-[10px] sm:text-[11.5px] font-bold uppercase tracking-wider transition-colors px-2.5 py-1 rounded-[4px] hover:bg-muted focus-visible:outline-none shrink-0"
                 >
                   Skip
                 </button>

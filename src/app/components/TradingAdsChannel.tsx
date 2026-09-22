@@ -34,9 +34,9 @@ const SORT_OPTIONS = {
 
 const STATUS_COLORS: Record<string, string> = {
   online: "#23a559",
-  dnd: "#f23f43",
-  invisible: "#80848e",
-  offline: "#80848e"
+  dnd: "#ef4444",
+  invisible: "#888888",
+  offline: "#888888"
 };
 
 function getTimeAgo(dateStr: string) {
@@ -63,74 +63,102 @@ function CountdownTimer({ expiresAt }: { expiresAt: string }) {
       const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       setTimeLeft(h > 0 ? `${h}h ${m}m left` : `${m}m left`);
     };
-    
+
     updateTimer();
     const interval = setInterval(updateTimer, 60000);
     return () => clearInterval(interval);
   }, [expiresAt]);
 
-  return <span className="text-[11px] font-bold tracking-wider uppercase">{timeLeft}</span>;
+  return <span className="text-[11px] font-bold tracking-wider uppercase font-mono">{timeLeft}</span>;
 }
 
-const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8 }: { items: TradeCard[]; ALL_UNITS: MasterUnit[]; onInspectUnit: (id: string) => void; isOfferTile?: boolean; limit?: number; }) => {
+const getUnitConservativeValue = (master: MasterUnit): number => {
+  if (master.value === "owner" || master.valueDisplay === "Owner's Choice" || master.valueDisplay === "O/C") return 0;
+  if (typeof master.value === "number" && master.value > 0) return master.value;
+  if (typeof master.valueMin === "number" && master.valueMin > 0) return master.valueMin;
+  return 0; 
+};
+
+const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8, label }: { items: TradeCard[]; ALL_UNITS: MasterUnit[]; onInspectUnit: (id: string) => void; isOfferTile?: boolean; limit?: number; label: string; }) => {
   const slots = Array.from({ length: limit });
   const displayItems = items.slice(0, limit);
   const extraCount = items.length > limit ? items.length - limit + 1 : 0; 
 
   const slotBase = "w-full aspect-square rounded-[6px] shrink-0";
 
+  const totalVal = items.reduce((acc, i) => {
+    const m = ALL_UNITS.find(u => u.id === i.id);
+    const liveVal = m ? getUnitConservativeValue(m) : i.value;
+    return acc + (liveVal * i.qty);
+  }, 0);
+
   return (
-    <div className="grid grid-cols-4 gap-2 sm:gap-2.5 w-full">
-      {slots.map((_, i) => {
-        if (isOfferTile && i === 0) {
-          return (
-            <div key="offer-tile" className={`${slotBase} bg-popover/90 border-2 border-primary flex flex-col items-center justify-center gap-0.5`}>
-              <Search className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              <span className="text-[8px] font-black text-primary uppercase tracking-wider">Offer</span>
-            </div>
-          );
-        }
-
-        if (extraCount > 0 && i === limit - 1) {
-          return (
-            <div key="extra-slot" className={`relative ${slotBase} bg-popover/90 border border-border overflow-hidden flex items-center justify-center shadow-inner`}>
-               <span className="relative z-10 text-[14px] font-black text-muted-foreground">+{extraCount}</span>
-            </div>
-          );
-        }
-
-        if (i < displayItems.length) {
-          const item = displayItems[i];
-          const master = ALL_UNITS.find(u => u.id === item.id);
-          const proxyUrl = master ? getProxyImage(item.id, master.imageUrl) : null;
-          return (
-            <div
-              key={`item-${i}`}
-              onClick={() => { triggerHaptic('light'); onInspectUnit(item.id); }}
-              className={`relative ${slotBase} bg-popover/90 border border-border hover:border-primary cursor-pointer transition-colors overflow-visible flex items-center justify-center group shadow-sm active:scale-95`}
-              title={`${item.qty > 1 ? `${item.qty}x ` : ''}${item.name}`}
-            >
-              <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white z-0 rounded-[6px] overflow-hidden" style={getAvatarStyle(item.name)}>
-                {getInitials(item.name)}
+    <div className="flex flex-col gap-3 w-full">
+      <div className="flex items-center justify-between border-b border-border pb-2">
+         <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
+         {totalVal > 0 && !isOfferTile && (
+            <span className="text-[12px] font-mono font-bold text-foreground">{totalVal.toLocaleString()}</span>
+         )}
+      </div>
+      <div className="grid grid-cols-4 gap-2 sm:gap-2.5 w-full">
+        {slots.map((_, i) => {
+          if (isOfferTile && i === 0) {
+            return (
+              <div key="offer-tile" className={`${slotBase} bg-popover border border-border flex flex-col items-center justify-center gap-1 shadow-inner`}>
+                <Search className="w-5 h-5 text-muted-foreground opacity-80" />
+                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-wider">Offers</span>
               </div>
-              {proxyUrl && (
-                <img src={proxyUrl} alt={item.name} className="absolute inset-0 w-full h-full object-cover z-10 bg-popover rounded-[6px] transition-transform duration-300 group-hover:scale-110" style={{ objectPosition: "center 15%" }} onError={(e) => handleImageError(e, item.id)} />
-              )}
-              {item.qty > 1 && (
-                <div className="absolute -bottom-1.5 -right-1.5 bg-popover/95 text-primary text-[10px] font-black px-1.5 py-0.5 rounded-[4px] z-20 border border-border shadow-sm leading-none whitespace-nowrap">
-                  x{item.qty}
+            );
+          }
+
+          if (extraCount > 0 && i === limit - 1) {
+            return (
+              <div key="extra-slot" className={`relative ${slotBase} bg-muted border border-border overflow-hidden flex items-center justify-center shadow-sm`}>
+                 <span className="relative z-10 text-[16px] font-black font-mono text-muted-foreground">+{extraCount}</span>
+              </div>
+            );
+          }
+
+          if (i < displayItems.length) {
+            const item = displayItems[i];
+            const master = ALL_UNITS.find(u => u.id === item.id);
+            const proxyUrl = master ? getProxyImage(item.id, master.imageUrl) : null;
+            return (
+              <div
+                key={`item-${i}`}
+                onClick={() => { triggerHaptic('light'); onInspectUnit(item.id); }}
+                className={`relative ${slotBase} bg-muted border border-border hover:border-primary cursor-pointer transition-colors overflow-hidden flex items-center justify-center group active:scale-95`}
+                title={`${item.qty > 1 ? `${item.qty}x ` : ''}${item.name}`}
+              >
+                <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white z-0" style={getAvatarStyle(item.name)}>
+                  {getInitials(item.name)}
                 </div>
-              )}
+                {proxyUrl && (
+                  <img src={proxyUrl} alt={item.name} className="absolute inset-0 w-full h-full object-cover z-10 transition-transform duration-300 group-hover:scale-110" style={{ objectPosition: "center 15%" }} onError={(e) => handleImageError(e, item.id)} />
+                )}
+
+                {/* Inline Unit Name Label (Replaces muddy tooltips) */}
+                <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-20 pointer-events-none" />
+                <div className="absolute inset-x-0 bottom-0 p-1.5 z-30 pointer-events-none flex flex-col justify-end">
+                   <span className="block text-[9px] font-bold text-white leading-tight truncate drop-shadow-md">{item.name}</span>
+                </div>
+
+                {item.qty > 1 && (
+                  <div className="absolute top-1 right-1 bg-background/90 text-foreground text-[10px] font-black px-1.5 py-0.5 rounded-[4px] z-30 border border-border shadow-sm leading-none">
+                    x{item.qty}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <div key={`empty-${i}`} className={`${slotBase} bg-muted/30 border border-dashed border-border/80 flex items-center justify-center`}>
+              <Plus className="w-5 h-5 text-muted-foreground/50" strokeWidth={2} />
             </div>
           );
-        }
-
-        return (
-          <div key={`empty-${i}`} className={`${slotBase} bg-transparent border-2 border-dashed border-border/60 flex items-center justify-center`}>
-            <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-border" strokeWidth={2.5} />
-          </div>
-        );
-      })}
+        })}
+      </div>
     </div>
   );
 };
@@ -176,10 +204,10 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
     const handleVote = async (val: number) => {
       if (!currentUserId) return;
       triggerHaptic('light');
-      
+
       const isRemoving = votes.userVote === val;
       const newVal = isRemoving ? 0 : val;
-      
+
       setVotes(prev => {
            let up = prev.up, down = prev.down;
            if (prev.userVote === 1) up--;
@@ -209,7 +237,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
 
       const giveNames = ad.give_items.map(i => `${i.qty > 1 ? `${i.qty}x ` : ''}${i.name}`).join(', ');
       const getNames = ad.get_items.length > 0 ? ad.get_items.map(i => `${i.qty > 1 ? `${i.qty}x ` : ''}${i.name}`).join(', ') : 'Offers';
-      
+
       let messageStr = "";
       if (isInventory) {
         messageStr = `Hey! Saw your inventory showcase on ASTD Value List.\nI'm interested in offering for some of your units. Are you around to trade?`;
@@ -234,36 +262,25 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
     };
 
     const score = votes.up - votes.down;
-    
+
     let badgeTitle = "TRADE";
-    let badgeBg = "bg-primary";
-    let themeColor = "var(--primary)";
+    let badgeClasses = "bg-primary text-primary-foreground border-primary";
 
     if (isTakingOffers) {
       badgeTitle = "LF OFFERS";
-      badgeBg = "bg-popover";
-      themeColor = "var(--border)"; 
+      badgeClasses = "bg-foreground text-background border-foreground"; 
     } else if (isInventory) {
       badgeTitle = "SHOWCASE";
-      badgeBg = "bg-popover";
-      themeColor = "var(--border)";
+      badgeClasses = "bg-muted text-foreground border-border";
     }
-
-    const totalGiveVal = ad.give_items.reduce((acc, i) => {
-      const m = ALL_UNITS.find(u => u.id === i.id);
-      const val = m && typeof m.value === 'number' ? m.value : (m?.valueMin || i.value);
-      return acc + (val * i.qty);
-    }, 0);
 
     return (
       <div 
-        className={`relative bg-card rounded-[8px] p-4 sm:p-6 flex flex-col h-full overflow-hidden border shadow-md transition-all duration-500 will-change-transform ${
-          isNewAd ? 'animate-[newAdGlow_3s_ease-out_forwards] border-primary scale-[1.02]' : 'hover:border-primary/50 border-border scale-100'
+        className={`relative rounded-[8px] p-4 sm:p-5 flex flex-col h-full transition-all duration-200 will-change-transform specular-card ${
+          isNewAd ? 'border-primary ring-1 ring-primary' : ''
         }`}
       >
-        <div className="absolute top-0 left-0 right-0 h-[4px]" style={{ backgroundColor: themeColor }} />
-
-        <div className="flex items-start justify-between mb-4 h-[44px] relative z-10">
+        <div className="flex items-start justify-between mb-4 h-[40px] relative z-10">
           <div className="flex items-center gap-3 min-w-0">
             <div 
               className="relative shrink-0 cursor-pointer hover:opacity-80 transition-opacity active:scale-95"
@@ -272,8 +289,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
             >
               <img 
                 src={ad.profiles?.avatar_url || "/units/firezio.webp"} 
-                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-popover object-cover ring-2 ring-offset-2 ring-offset-card" 
-                style={{ '--tw-ring-color': 'var(--primary)' } as React.CSSProperties}
+                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-muted object-cover border border-border" 
                 alt=""
               />
               <div 
@@ -283,7 +299,7 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
             </div>
             <div className="flex flex-col min-w-0 pt-0.5">
                <span 
-                 className="text-[14px] sm:text-[16px] font-bold text-foreground tracking-tight leading-none mb-1.5 truncate cursor-pointer hover:underline"
+                 className="text-[14px] sm:text-[15px] font-bold text-foreground tracking-tight leading-none mb-1.5 truncate cursor-pointer hover:underline"
                  onClick={(e) => {
                    triggerHaptic('light');
                    const rect = e.currentTarget.getBoundingClientRect();
@@ -297,122 +313,95 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
                </span>
             </div>
           </div>
-          <span className={`px-2 py-1 sm:px-2.5 sm:py-1 rounded-[4px] text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-white shrink-0 ml-2 border border-border ${badgeBg}`}>
+          <span className={`px-2 py-1 rounded-[4px] text-[9px] font-black uppercase tracking-wider shrink-0 ml-2 border ${badgeClasses}`}>
             {badgeTitle}
           </span>
         </div>
 
-        <hr className="border-t border-border mb-4 w-full" />
-
-        <div className="mb-4 sm:mb-5 bg-black/20 border border-border rounded-[6px] p-3 sm:p-3.5 shadow-inner">
-          {ad.note ? (
-            <div 
-              className="text-[12px] sm:text-[13px] text-foreground font-medium leading-relaxed break-all overflow-hidden"
-              style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
-            >
-              {ad.note}
-            </div>
-          ) : (
-            <div className="text-[12px] sm:text-[13px] text-muted-foreground font-medium italic">
-              No notes provided.
-            </div>
-          )}
+        <div className="mb-5 bg-muted/30 border border-border border-l-2 border-l-primary rounded-[4px] p-3 shadow-inner">
+          <div 
+            className="text-[12px] text-foreground font-medium leading-relaxed break-words overflow-hidden"
+            style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
+          >
+            {ad.note || <span className="italic text-muted-foreground">No notes provided.</span>}
+          </div>
         </div>
 
-        <div className="flex flex-col w-full flex-1 relative z-10">
+        <div className="flex flex-col w-full flex-1 relative z-10 gap-5">
           {isInventory ? (
-            <>
-              <h4 className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-2 text-muted-foreground">Showcase Assets</h4>
-              <FixedSlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} limit={20} />
-            </>
+            <FixedSlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} limit={20} label="Showcase Assets" />
           ) : (
-            <div className="flex flex-col">
-              <div>
-                <h4 className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-2 text-muted-foreground">Offering</h4>
-                <FixedSlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} limit={8} />
-              </div>
-              
-              <div className="w-full h-px bg-border my-3 sm:my-4" />
-              
-              <div>
-                <h4 className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-2 text-muted-foreground">Requesting</h4>
-                <FixedSlotGrid items={ad.get_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} isOfferTile={isTakingOffers} limit={8} />
-              </div>
-            </div>
+            <>
+              <FixedSlotGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} limit={8} label="Offering" />
+              <FixedSlotGrid items={ad.get_items} ALL_UNITS={ALL_UNITS} onInspectUnit={onInspectUnit} isOfferTile={isTakingOffers} limit={8} label="Requesting" />
+            </>
           )}
         </div>
 
-        {/* Cleaned up, well-spaced action footer */}
-        <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-border flex flex-col gap-3 relative z-10">
-          
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-0.5 bg-popover rounded-[4px] border border-border p-0.5">
-               <button onClick={() => handleVote(1)} className={`p-2 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none cursor-pointer active:scale-90 min-h-[36px] flex items-center justify-center ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground hover:text-[#23a559]'}`}>
+        <div className="mt-6 pt-4 border-t border-border flex flex-col gap-2 relative z-10">
+
+          <div className="flex items-center justify-between w-full mb-2">
+            <div className="flex items-center gap-0.5 bg-muted rounded-[4px] border border-border p-0.5">
+               <button onClick={() => handleVote(1)} className={`p-1.5 rounded-[3px] hover:bg-card transition-colors focus-visible:outline-none cursor-pointer active:scale-90 flex items-center justify-center ${votes.userVote === 1 ? 'text-[#23a559]' : 'text-muted-foreground hover:text-[#23a559]'}`}>
                   <ArrowBigUp className={`w-4 h-4 ${votes.userVote === 1 ? 'fill-current' : ''}`} />
                </button>
-               <span className={`text-[12px] font-bold min-w-[24px] text-center ${score > 0 ? 'text-[#23a559]' : score < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+               <span className={`text-[12px] font-bold min-w-[20px] text-center font-mono ${score > 0 ? 'text-[#23a559]' : score < 0 ? 'text-destructive' : 'text-foreground'}`}>
                  {score}
                </span>
-               <button onClick={() => handleVote(-1)} className={`p-2 rounded-[3px] hover:bg-muted transition-colors focus-visible:outline-none cursor-pointer active:scale-90 min-h-[36px] flex items-center justify-center ${votes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}>
+               <button onClick={() => handleVote(-1)} className={`p-1.5 rounded-[3px] hover:bg-card transition-colors focus-visible:outline-none cursor-pointer active:scale-90 flex items-center justify-center ${votes.userVote === -1 ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}>
                   <ArrowBigDown className={`w-4 h-4 ${votes.userVote === -1 ? 'fill-current' : ''}`} />
                </button>
             </div>
 
-            <div className="flex items-center gap-1.5 text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-muted-foreground bg-muted px-2 py-1 rounded-[4px] border border-border">
               <Clock className="w-3.5 h-3.5" />
               <CountdownTimer expiresAt={ad.expires_at} />
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 w-full mt-1">
-            <button
-              onClick={handleDiscordContact}
-              className={`w-full px-4 py-3 flex items-center justify-center gap-2 text-[13px] font-bold rounded-[6px] transition-all shadow-sm focus-visible:outline-none cursor-pointer min-h-[44px] ${
-                isContacting 
-                  ? "bg-[#23a559] text-white active:scale-95" 
-                  : "bg-[#5865F2] hover:bg-[#4752C4] text-white active:scale-95"
-              }`}
+          <button
+            onClick={handleDiscordContact}
+            className={`w-full px-4 py-2.5 flex items-center justify-center gap-2 text-[12px] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer border ${
+              isContacting 
+                ? "bg-[#23a559] text-white border-[#23a559]" 
+                : "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
+            }`}
+          >
+            {isContacting ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+            {isContacting ? "Copied! Paste in Discord" : "Contact on Discord"}
+          </button>
+
+          <div className="flex gap-2 w-full mt-1">
+            <button 
+              onClick={() => { triggerHaptic('light'); isInventory ? handleInspectVault() : onSendToCalculator(ad.give_items, ad.get_items); }}
+              className="flex-1 px-3 py-2 flex items-center justify-center gap-1.5 text-[11px] font-bold rounded-[4px] border border-border bg-muted hover:bg-card text-foreground transition-colors active:scale-95 focus-visible:outline-none cursor-pointer"
             >
-              {isContacting ? <Check className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-              {isContacting ? "Copied! Paste in Discord" : "Contact on Discord"}
+              {isInventory ? <Package className="w-3.5 h-3.5" /> : <Calculator className="w-3.5 h-3.5" />}
+              <span className="truncate">{isInventory ? "Inspect Vault" : "Analyze Trade"}</span>
             </button>
 
-            <div className="grid grid-cols-2 gap-2 w-full">
-              <button 
-                onClick={() => { triggerHaptic('light'); isInventory ? handleInspectVault() : onSendToCalculator(ad.give_items, ad.get_items); }}
-                className="px-3 py-2.5 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[6px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95 focus-visible:outline-none cursor-pointer shadow-sm min-h-[40px]"
+            <button
+              onClick={() => { triggerHaptic('light'); openAdContext(ad.id, currentUserId); }}
+              className="flex-1 px-3 py-2 flex items-center justify-center gap-1.5 text-[11px] font-bold rounded-[4px] border border-border bg-muted hover:bg-card text-foreground transition-colors active:scale-95 focus-visible:outline-none cursor-pointer"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span className="truncate">Thread</span>
+            </button>
+
+            {canDelete && (
+              <HoldToConfirmButton
+                onConfirm={() => { triggerHaptic('heavy'); onDelete(ad.id); }}
+                title="Hold to delete"
+                className="px-3 py-2 border border-border text-muted-foreground hover:text-destructive-foreground hover:border-destructive bg-muted hover:bg-destructive rounded-[4px] transition-colors focus-visible:outline-none flex items-center justify-center shrink-0"
               >
-                {isInventory ? <Package className="w-4 h-4" /> : <Calculator className="w-4 h-4" />}
-                <span className="truncate">{isInventory ? "Inspect Vault" : "Analyze Trade"}</span>
-              </button>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => { triggerHaptic('light'); openAdContext(ad.id, currentUserId); }}
-                  className="flex-1 px-3 py-2.5 flex items-center justify-center gap-1.5 text-[11px] sm:text-[12px] font-bold rounded-[6px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-95 focus-visible:outline-none cursor-pointer shadow-sm min-h-[40px]"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span className="truncate">Thread</span>
-                </button>
-
-                {canDelete && (
-                  <HoldToConfirmButton
-                    onConfirm={() => { triggerHaptic('heavy'); onDelete(ad.id); }}
-                    title="Hold to delete"
-                    className="p-2.5 border border-border text-muted-foreground hover:text-foreground hover:border-destructive bg-popover hover:bg-destructive/10 rounded-[6px] transition-colors focus-visible:outline-none shadow-sm min-h-[40px] min-w-[40px] flex items-center justify-center"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </HoldToConfirmButton>
-                )}
-              </div>
-            </div>
+                <Trash2 className="w-3.5 h-3.5" />
+              </HoldToConfirmButton>
+            )}
           </div>
-
         </div>
       </div>
     );
-  }
-);
+});
 
 export function TradingAdsChannel() {
   const { ads, isLoading, fetchAds, subscribeToAds, deleteAd } = useTradingAdsStore();
@@ -474,45 +463,23 @@ export function TradingAdsChannel() {
   };
 
   return (
-    <div 
-      className="flex-1 flex flex-col overflow-hidden h-full select-none font-sans relative"
-      style={{
-        backgroundColor: "#16181c",
-        backgroundImage: `
-          linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
-          linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
-          linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
-          linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
-          linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025),
-          linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025)
-        `,
-        backgroundSize: "80px 140px",
-        backgroundPosition: "0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px"
-      }}
-    >
-      <style>{`
-        @keyframes newAdGlow {
-          0% { box-shadow: 0 0 0 0 rgba(88,101,242,0.4); border-color: var(--primary); }
-          50% { box-shadow: 0 0 20px 0 rgba(88,101,242,0.6); border-color: var(--primary); }
-          100% { box-shadow: 0 0 0 0 rgba(88,101,242,0); border-color: var(--border); }
-        }
-      `}</style>
-      
-      <div className="flex-shrink-0 flex flex-col px-3 md:px-6 py-3 md:py-4 bg-card/90 backdrop-blur-md border-b border-border shadow-sm z-20 gap-3 md:gap-4">
+    <div className="flex-1 flex flex-col overflow-hidden h-full select-none font-sans relative bg-background">
+
+      <div className="flex-shrink-0 flex flex-col px-4 py-4 border-b border-border z-20 gap-4 bg-card">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="relative flex items-center justify-center">
               <div className="w-2.5 h-2.5 bg-primary rounded-full z-10" />
               <div className="absolute inset-0 bg-primary rounded-full animate-ping opacity-60" />
             </div>
-            <h2 className="text-[15px] md:text-[16px] font-black text-foreground tracking-tight">Live Trading Board</h2>
+            <h2 className="text-[16px] font-black text-foreground tracking-tight">Live Trading Board</h2>
           </div>
 
           {profile ? (
             <button
               type="button"
               onClick={handleCreateAdClick}
-              className="flex items-center justify-center gap-1.5 px-4 md:px-5 py-2.5 rounded-[4px] bg-primary hover:bg-primary/80 text-primary-foreground text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none shrink-0 shadow-sm w-full md:w-auto cursor-pointer active:scale-95 min-h-[44px]"
+              className="flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-[4px] bg-primary hover:bg-primary/90 text-primary-foreground text-[12px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none shrink-0 shadow-sm w-full md:w-auto cursor-pointer active:scale-95 border border-primary"
             >
               <Plus className="w-4 h-4" />
               <span>Create Ad</span>
@@ -521,7 +488,7 @@ export function TradingAdsChannel() {
             <button
               type="button"
               onClick={() => { triggerHaptic('medium'); loginWithDiscord(); }}
-              className="flex items-center justify-center gap-1.5 px-4 md:px-5 py-2.5 rounded-[4px] bg-popover/90 border border-border text-muted-foreground text-[12px] md:text-[13px] font-bold uppercase tracking-wider transition-all hover:bg-muted focus-visible:outline-none shrink-0 w-full md:w-auto cursor-pointer active:scale-95 min-h-[44px]"
+              className="flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-[4px] bg-muted border border-border text-foreground text-[12px] font-bold uppercase tracking-wider transition-all hover:bg-card focus-visible:outline-none shrink-0 w-full md:w-auto cursor-pointer active:scale-95"
             >
               <Lock className="w-4 h-4 text-primary" />
               <span>Login to Post</span>
@@ -530,12 +497,12 @@ export function TradingAdsChannel() {
         </div>
 
         <div className="flex flex-col xl:flex-row xl:items-center gap-3 w-full">
-          <div className="flex bg-popover/90 rounded-[4px] p-1 border border-border w-full md:w-fit overflow-x-auto hide-scrollbar shrink-0 shadow-inner">
+          <div className="flex bg-muted rounded-[4px] p-1 border border-border w-full md:w-fit overflow-x-auto hide-scrollbar shrink-0 shadow-inner">
             {[{ id: "all", label: "All" }, { id: "standard", label: "Trades" }, { id: "lf_offers", label: "LF Offers" }, { id: "inventory", label: "Showcases" }].map(t => (
               <button
                 key={t.id}
                 onClick={() => { triggerHaptic('light'); setTypeFilter(t.id); }}
-                className={`flex-1 md:flex-none px-4 py-2 rounded-[4px] text-[11px] md:text-[12px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none cursor-pointer whitespace-nowrap active:scale-95 min-h-[40px] ${typeFilter === t.id ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`flex-1 md:flex-none px-4 py-2 rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none cursor-pointer whitespace-nowrap active:scale-95 ${typeFilter === t.id ? 'bg-foreground text-background shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border'}`}
               >
                 {t.label}
               </button>
@@ -550,10 +517,10 @@ export function TradingAdsChannel() {
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
                 placeholder="Search board by unit name..."
-                className="w-full bg-popover/90 text-foreground text-[13px] md:text-[14px] pl-9 pr-4 py-2.5 rounded-[4px] outline-none border border-border focus:border-primary transition-colors font-medium shadow-inner min-h-[44px]"
+                className="w-full bg-input text-foreground text-[13px] pl-9 pr-4 py-2.5 rounded-[4px] outline-none border border-border focus:border-foreground transition-colors font-medium h-[40px] shadow-inner"
               />
             </div>
-            
+
             <div className="w-full sm:w-[190px] shrink-0">
               <CustomDropdown icon={Clock} value={sortMode} options={SORT_OPTIONS} onChange={(val: string) => { triggerHaptic('light'); setSortMode(val); }} defaultLabel="Sort By" />
             </div>
@@ -562,7 +529,7 @@ export function TradingAdsChannel() {
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col bg-transparent relative z-10">
-        <div className="w-full h-full max-w-[1400px] mx-auto p-3 md:p-6 lg:p-8 pb-24">
+        <div className="w-full h-full max-w-[1400px] mx-auto p-4 md:p-6 lg:p-8 pb-24">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
               <Activity className="w-8 h-8 animate-pulse text-primary" />
@@ -570,17 +537,17 @@ export function TradingAdsChannel() {
             </div>
           ) : filteredAndSortedAds.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center gap-3 md:gap-4 px-4">
-              <div className="w-16 h-16 md:w-20 md:h-20 bg-card/90 rounded-full flex items-center justify-center border border-border mb-2 shadow-inner">
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-muted rounded-[8px] flex items-center justify-center border border-border mb-2 shadow-sm">
                 <Megaphone className="w-8 h-8 md:w-10 md:h-10 text-muted-foreground" />
               </div>
               <span className="text-[18px] md:text-[20px] font-black text-foreground tracking-tight">No Active Listings</span>
               <p className="text-[13px] md:text-[14px] text-muted-foreground max-w-md leading-relaxed">
                 There are currently no trading ads matching your search parameters. Try adjusting your filters or post a new ad yourself.
               </p>
-              
+
               <button 
                 onClick={handleCreateAdClick}
-                className="mt-4 px-6 py-3 bg-primary text-primary-foreground font-bold rounded-[6px] transition-all active:scale-95 hover:bg-primary/80 cursor-pointer shadow-md min-h-[44px]"
+                className="mt-4 px-6 py-3 bg-primary text-primary-foreground font-bold rounded-[4px] transition-all active:scale-95 hover:bg-primary/80 cursor-pointer shadow-md min-h-[44px]"
               >
                 Be the first to post a trade
               </button>

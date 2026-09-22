@@ -63,7 +63,7 @@ export default function App() {
   const [isAnalyzerOpen, setIsAnalyzerOpen] = useStickyState(false, "astd_analyzer", isBoolean);
 
   const { bootStage, isMobile } = useAppBoot();
-  
+
   const [banReason, setBanReason] = useState<string>("Violation of Terms of Service.");
   useEffect(() => {
     if (profile?.role === 'banned') {
@@ -74,7 +74,7 @@ export default function App() {
           .eq('target_user_id', profile.id)
           .order('created_at', { ascending: false })
           .limit(1);
-          
+
         if (data && data.length > 0 && data[0].reason) {
           setBanReason(data[0].reason);
         }
@@ -143,20 +143,19 @@ export default function App() {
   const calcHeaderZ = isMainStep3 ? "!z-[99999] shadow-[0_0_50px_rgba(0,0,0,0.8)] relative" : "z-50";
   const analyzerZ = isMainStep4 ? "!z-[100000] shadow-[-20px_0_50px_rgba(0,0,0,0.8)]" : "z-50";
 
-  // HARD LOCK SCREEN FOR BANNED USERS
   if (bootStage === 'complete' && profile?.role === 'banned') {
     return (
-      <div className="flex flex-col items-center justify-center w-screen h-dvh bg-[#111214] text-[#F2F3F5] font-sans p-6 text-center select-none animate-fade-in">
-        <Ban className="w-20 h-20 text-destructive mb-6 shadow-sm" />
+      <div className="flex flex-col items-center justify-center w-screen h-dvh bg-background text-foreground font-sans p-6 text-center select-none">
+        <Ban className="w-20 h-20 text-destructive mb-6" />
         <h1 className="text-[28px] font-black uppercase tracking-widest text-destructive mb-2">Account Terminated</h1>
-        <p className="text-[#949BA4] text-[14px] max-w-md leading-relaxed mb-8">
+        <p className="text-muted-foreground text-[14px] max-w-md leading-relaxed mb-8">
           Your access to the ASTD Value List platform has been permanently revoked by the moderation team.
         </p>
-        <div className="bg-[#1E1F22] border border-border rounded-[8px] p-5 w-full max-w-md text-left mb-8 shadow-inner">
+        <div className="bg-card border border-border rounded-[4px] p-5 w-full max-w-md text-left mb-8">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">Official Reason</span>
           <p className="text-[14px] text-foreground font-medium leading-relaxed italic">"{banReason}"</p>
         </div>
-        <a href="https://discord.gg/Q7JTvPUEM" target="_blank" rel="noopener noreferrer" className="px-8 py-3.5 bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold text-[13px] uppercase tracking-wider rounded-[4px] transition-colors shadow-md flex items-center justify-center gap-2 border border-[#5865F2] focus-visible:outline-none">
+        <a href="https://discord.gg/Q7JTvPUEM" target="_blank" rel="noopener noreferrer" className="px-8 py-3.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[13px] uppercase tracking-wider rounded-[4px] flex items-center justify-center gap-2 border border-border focus-visible:outline-none">
           Appeal in Discord <ExternalLink className="w-4 h-4" />
         </a>
       </div>
@@ -168,90 +167,27 @@ export default function App() {
       <style>{`
         @keyframes loadingBarProgress { 0% { transform: translateX(-100%); width: 30%; } 50% { transform: translateX(100%); width: 50%; } 100% { transform: translateX(350%); width: 30%; } }
         .animate-loading-bar { animation: loadingBarProgress 1.5s infinite ease-in-out; }
-
-        @keyframes masterSlash { 
-          0% { transform: scaleX(0) rotate(-45deg); opacity: 0; } 
-          20% { transform: scaleX(0.15) rotate(-45deg); opacity: 1; } 
-          50% { transform: scaleX(1.1) rotate(-45deg); opacity: 1; filter: drop-shadow(0 0 16px var(--primary)); } 
-          100% { transform: scaleX(1.4) rotate(-45deg); opacity: 0; filter: drop-shadow(0 0 8px var(--primary)); } 
-        }
-        .animate-master-slash { animation: masterSlash 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-
-        @keyframes sparkFly1 {
-          0% { transform: rotate(45deg) translateX(0) scaleX(0); opacity: 0; }
-          20% { transform: rotate(45deg) translateX(0) scaleX(1); opacity: 1; }
-          100% { transform: rotate(45deg) translateX(20vw) scaleX(0); opacity: 0; }
-        }
-        @keyframes sparkFly2 {
-          0% { transform: rotate(45deg) translateX(0) scaleX(0); opacity: 0; }
-          20% { transform: rotate(45deg) translateX(0) scaleX(1); opacity: 1; }
-          100% { transform: rotate(45deg) translateX(-20vw) scaleX(0); opacity: 0; }
-        }
-        .animate-spark-1 { animation: sparkFly1 0.3s cubic-bezier(0.16,1,0.3,1) forwards; }
-        .animate-spark-2 { animation: sparkFly2 0.3s cubic-bezier(0.16,1,0.3,1) forwards; }
-
-        @keyframes edgeGlow {
-          0% { box-shadow: inset 0 0 40px rgba(114, 137, 218, 0.7), inset 0 0 15px rgba(114, 137, 218, 0.5); }
-          100% { box-shadow: inset 0 0 0px rgba(114, 137, 218, 0), inset 0 0 0px rgba(114, 137, 218, 0); }
-        }
-        .animate-edge-glow { animation: edgeGlow 0.8s ease-out forwards; }
-
-        @keyframes lensGlint {
-          0%, 15% { opacity: 0; transform: scale(0) rotate(0deg); }
-          30% { opacity: 1; transform: scale(1.2) rotate(45deg); }
-          50% { opacity: 0; transform: scale(0.4) rotate(90deg); }
-          100% { opacity: 0; }
-        }
-        .animate-lens-glint { animation: lensGlint 0.3s ease-out forwards; }
-
-        @keyframes fadeThrough {
-          0% { opacity: 0; transform: scale(0.995); }
-          100% { opacity: 1; transform: scale(1); }
-        }
-        .animate-fade-through { animation: fadeThrough 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
       `}</style>
 
       {bootStage !== 'complete' && (
-        <div className="fixed inset-0 z-[1000000] pointer-events-none flex items-center justify-center overflow-hidden bg-transparent">
-          <div className="absolute inset-0 w-full h-full">
-            <div className={`absolute inset-0 transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${bootStage === 'fracture' ? '-translate-x-full -translate-y-full opacity-0' : 'translate-x-0 translate-y-0 opacity-100'} ${bootStage === 'fracture' ? 'animate-edge-glow' : ''}`}>
-               <div className="absolute inset-0 bg-background" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
-            </div>
-            <div className={`absolute inset-0 transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${bootStage === 'fracture' ? 'translate-x-full translate-y-full opacity-0' : 'translate-x-0 translate-y-0 opacity-100'} ${bootStage === 'fracture' ? 'animate-edge-glow' : ''}`}>
-               <div className="absolute inset-0 bg-background" style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 100%)' }} />
-            </div>
-          </div>
-          {(bootStage === 'strike' || bootStage === 'fracture') && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="absolute w-12 h-12 bg-white rounded-full blur-[4px] animate-lens-glint z-40" />
-              <div className="w-[160vw] h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_25px_4px_var(--primary)] animate-master-slash rounded-full z-40" />
-              <div className="absolute w-[35vw] h-[1.5px] bg-primary shadow-[0_0_12px_var(--primary)] animate-spark-1 z-30" />
-              <div className="absolute w-[25vw] h-[1px] bg-white shadow-[0_0_12px_var(--primary)] animate-spark-2 z-30" />
-            </div>
-          )}
-          <div className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-500 ease-in-out ${bootStage === 'loading' ? 'opacity-100 scale-100 blur-none' : 'opacity-0 scale-95 blur-sm'}`}>
+        <div className="fixed inset-0 z-[1000000] pointer-events-none flex items-center justify-center overflow-hidden bg-background">
+          <div className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-300 ${bootStage === 'loading' ? 'opacity-100' : 'opacity-0'}`}>
             <div className="relative flex items-center justify-center mb-6">
-               <div className="absolute w-24 h-24 bg-primary rounded-full blur-[40px] opacity-30 animate-pulse"></div>
-               <div className="w-16 h-16 bg-card rounded-[16px] border border-border flex items-center justify-center shadow-xl relative z-10">
+               <div className="w-16 h-16 bg-card rounded-[8px] border border-border flex items-center justify-center shadow-sm relative z-10">
                  <Hash className="w-8 h-8 text-primary" />
                </div>
             </div>
-            <h3 className="text-foreground font-extrabold text-[18px] tracking-tight mb-1">ASTD Value List</h3>
-            <p className="text-muted-foreground text-[12px] font-medium uppercase tracking-widest mb-6 animate-pulse">Starting Engine...</p>
-            <div className="w-48 h-[3px] bg-popover rounded-full overflow-hidden border border-border relative">
-              <div className="absolute top-0 bottom-0 left-0 bg-primary rounded-full animate-loading-bar shadow-[0_0_8px_var(--primary)]"></div>
+            <h3 className="text-foreground font-black text-[18px] tracking-tight mb-1">ASTD Value List</h3>
+            <p className="text-muted-foreground text-[12px] font-bold uppercase tracking-widest mb-6">Starting Engine...</p>
+            <div className="w-48 h-[2px] bg-border overflow-hidden relative">
+              <div className="absolute top-0 bottom-0 left-0 bg-primary animate-loading-bar"></div>
             </div>
           </div>
         </div>
       )}
 
       <div 
-        className="flex h-dvh overflow-hidden relative bg-transparent text-foreground" 
-        style={{ 
-          transform: bootStage === 'complete' ? 'none' : (bootStage === 'fracture' ? 'scale(1)' : 'scale(1.05)'),
-          filter: bootStage === 'complete' ? 'none' : (bootStage === 'fracture' ? 'blur(0px)' : 'blur(8px)'),
-          transition: 'transform 0.7s cubic-bezier(0.16,1,0.3,1), filter 0.7s cubic-bezier(0.16,1,0.3,1)'
-        }}
+        className="flex h-dvh overflow-hidden relative bg-background text-foreground" 
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -261,31 +197,31 @@ export default function App() {
           <AquaGuideOverlay guideState={guideState} onEndGuide={endGuide} />
           <MiniProfilePopout />
 
-          {isRosterOpen && <div className="md:hidden fixed inset-0 bg-black/60 z-40 animate-fade-in" onClick={() => setIsRosterOpen(false)} />}
+          {isRosterOpen && <div className="md:hidden fixed inset-0 bg-black/80 z-40" onClick={() => setIsRosterOpen(false)} />}
 
           <div 
-            className={`fixed bottom-[140px] md:bottom-8 left-1/2 -translate-x-1/2 pointer-events-none transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col gap-2 items-center ${guideState.type ? 'z-[100002]' : 'z-[9999]'}`}
+            className={`fixed bottom-[140px] md:bottom-8 left-1/2 -translate-x-1/2 pointer-events-none transition-all flex flex-col gap-2 items-center ${guideState.type ? 'z-[100002]' : 'z-[9999]'}`}
           >
             {academyToast && (
-              <div className="flex items-center gap-3 px-5 py-3.5 rounded-[8px] shadow-[0_12px_40px_rgba(0,0,0,0.6)] border border-primary/30 bg-[#1E1F22] animate-slide-up">
-                 <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 bg-primary shadow-sm">
-                   <GraduationCap className="w-4 h-4 text-white" />
+              <div className="flex items-center gap-3 px-5 py-3.5 rounded-[4px] border border-border bg-card shadow-sm">
+                 <div className="w-6 h-6 rounded-[4px] flex items-center justify-center flex-shrink-0 bg-primary">
+                   <GraduationCap className="w-4 h-4 text-primary-foreground" />
                  </div>
-                 <span className="text-foreground text-[13.5px] font-medium tracking-wide whitespace-nowrap">
+                 <span className="text-foreground text-[13px] font-bold tracking-wide whitespace-nowrap">
                    Academy Task Complete! <strong className="font-black text-primary">({academyToast.step}/4)</strong>
                  </span>
               </div>
             )}
 
-            <div className={`transition-all duration-300 ${toast ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-6 scale-90"}`}>
+            <div className={`transition-all duration-150 ${toast ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-2 scale-95"}`}>
               {toast && (
-                <div className="flex items-center gap-3 px-5 py-3.5 rounded-[8px] shadow-[0_12px_40px_rgba(0,0,0,0.6)] border border-border bg-[#1E1F22]">
-                   <div className="w-6 h-6 rounded-[4px] flex items-center justify-center flex-shrink-0 bg-[#23a559] shadow-sm">
+                <div className="flex items-center gap-3 px-5 py-3.5 rounded-[4px] border border-border bg-card shadow-sm">
+                   <div className="w-6 h-6 rounded-[4px] flex items-center justify-center flex-shrink-0 bg-[#23a559]">
                      <Check className="w-4 h-4 text-white" />
                    </div>
-                   <span className="text-foreground text-[13.5px] font-medium tracking-wide whitespace-nowrap">
-                     Added <strong className="font-black text-white">{toast.unitName}</strong>
-                     {toast.count > 1 && <span className="text-muted-foreground ml-1 font-bold">({toast.count - 1} more)</span>}
+                   <span className="text-foreground text-[13px] font-bold tracking-wide whitespace-nowrap">
+                     Added <strong className="font-black">{toast.unitName}</strong>
+                     {toast.count > 1 && <span className="text-muted-foreground ml-1">({toast.count - 1} more)</span>}
                      {" "}to {toast.type === "give" ? "Give" : "Get"}
                    </span>
                 </div>
@@ -294,15 +230,14 @@ export default function App() {
           </div>
 
           <div 
-            className={`fixed md:relative top-0 bottom-0 left-0 flex-shrink-0 overflow-hidden transition-all duration-300 ease-out shadow-2xl md:shadow-none will-change-[width,transform] bg-card ${isRosterOpen ? 'w-[85vw] max-w-[320px] md:w-[240px] translate-x-0' : 'w-0 -translate-x-full md:translate-x-0'} ${sidebarZ}`}
-            style={{ opacity: isRosterOpen ? 1 : 0 }}
+            className={`fixed md:relative top-0 bottom-0 left-0 flex-shrink-0 overflow-hidden transition-transform shadow-2xl md:shadow-none bg-card ${isRosterOpen ? 'w-[85vw] max-w-[260px] md:w-[240px] translate-x-0' : 'w-0 -translate-x-full md:translate-x-0'} ${sidebarZ}`}
           >
-            <div className="w-[85vw] max-w-[320px] md:w-[240px] h-full">
+            <div className="w-[85vw] max-w-[260px] md:w-[240px] h-full">
               <Sidebar activeChannel={activeChannel} setActiveChannel={handleChannelChange} onThreadClick={handleThreadClick} guideState={guideState} />
             </div>
           </div>
 
-          <div className={`flex-1 flex flex-col min-w-0 bg-transparent md:pb-0 pb-[84px] ${mainContentZ}`}>
+          <div className={`flex-1 flex flex-col min-w-0 bg-background md:pb-0 pb-[84px] ${mainContentZ}`}>
             <div className={`relative ${calcHeaderZ}`}>
               <SyncBanner />
               <TopBar 
@@ -319,7 +254,7 @@ export default function App() {
               />
             </div>
 
-            <div key={activeChannel} className="flex-1 flex flex-col overflow-hidden relative animate-fade-through h-full">
+            <div key={activeChannel} className="flex-1 flex flex-col overflow-hidden relative h-full">
               {activeChannel === "home" ? ( <HomeChannel guideState={guideState} />
               ) : activeChannel === "tutorial" ? ( 
                 <TutorialChannel 

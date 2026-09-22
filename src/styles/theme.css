@@ -1,145 +1,84 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Typography */
+  /* Typography - Vercel Geist */
   --font-size: 14px;
-  --font-sans: 'Inter', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'Geist', sans-serif;
+  --font-mono: 'Geist Mono', monospace;
 
-  /* Core Palette */
-  --discord-blurple: #5865F2;
-  --discord-light-gray: #2b2d31;
-  --discord-mid-gray: #1e1f22;
-  --discord-dark-gray: #141517;
-  --discord-darker-gray: #0b0c0e;
+  /* Deep, high-contrast backgrounds */
+  --background: #000000;
+  --foreground: #ededed;
 
-  /* Deep, rich unified background */
-  --background: #0b0c0e;
-  --foreground: #dbdee1;
+  /* Elevated panels - Very subtle gray steps */
+  --card: #0a0a0a;
+  --card-foreground: #ededed;
 
-  /* Cards & Panels - Clean elevation step above background */
-  --card: #141517;
-  --card-foreground: #f2f3f5;
+  --popover: #111111;
+  --popover-foreground: #ededed;
 
-  /* Modals & Dropdowns - Deep grounding layer */
-  --popover: #111214;
-  --popover-foreground: #f2f3f5;
+  /* Premium Monochrome Primary (Inverted) */
+  --primary: #ededed;
+  --primary-foreground: #000000;
 
-  /* Brand Colors */
-  --primary: var(--discord-blurple);
-  --primary-foreground: #ffffff;
+  /* Secondary & Muted Elements (GitHub/Vercel standard grays) */
+  --secondary: #1a1a1a;
+  --secondary-foreground: #ededed;
 
-  /* Secondary Elements */
-  --secondary: #1e1f22;
-  --secondary-foreground: #ffffff;
+  --muted: #1a1a1a;
+  --muted-foreground: #888888;
 
-  /* Muted Elements */
-  --muted: #141517;
-  --muted-foreground: #949ba4;
+  --accent: #222222;
+  --accent-foreground: #ededed;
 
-  /* Accents & Hovers */
-  --accent: #1e1f22;
-  --accent-foreground: #ffffff;
-
-  /* Alerts */
-  --destructive: #ed4245;
+  /* Alerts - Keeping a sharp functional red */
+  --destructive: #ef4444;
   --destructive-foreground: #ffffff;
 
-  /* Structural - Soft, unified borders that prevent box clutter */
-  --border: #222428;
-  --input: #141517;
-  --input-background: #141517;
-  --switch-background: var(--discord-light-gray);
-  --ring: var(--discord-blurple);
+  /* Structural - Sharp, visible borders */
+  --border: #222222;
+  --input: #0a0a0a;
+  --input-background: #0a0a0a;
+  --switch-background: #222222;
+  --ring: #ededed;
 
-  /* Miscellaneous */
+  /* Tight, technical border radius */
   --radius: 6px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  
+
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-  
+
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  
+
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  
+
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  
+
   --color-muted: var(--muted);
   --color-muted-foreground: var(--color-muted-foreground);
-  
+
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  
+
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  
+
   --color-border: var(--border);
   --color-input: var(--input);
   --color-input-background: var(--input-background);
   --color-switch-background: var(--switch-background);
   --color-ring: var(--ring);
-  
+
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);
   --radius-xl: calc(var(--radius) + 4px);
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-
-  body {
-    background-color: var(--background);
-    /* Studio ambient lighting radial gradients */
-    background-image: 
-      radial-gradient(circle at 15% 15%, rgba(88, 101, 242, 0.04) 0%, transparent 40%),
-      radial-gradient(circle at 85% 85%, rgba(114, 137, 218, 0.03) 0%, transparent 40%);
-    background-attachment: fixed;
-    color: var(--foreground);
-    font-family: var(--font-sans);
-    font-weight: 500;
-  }
-
-  html {
-    font-size: var(--font-size);
-  }
-
-  /* Tabular numbers for financial stability */
-  .font-mono, span[class*="font-mono"] {
-    font-feature-settings: "tnum";
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* Tactile button and interactive micro-interactions */
-  button, a {
-    transition: transform 0.1s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-  }
-
-  button:active, a:active {
-    transform: scale(0.97);
-  }
-}
-
-/* Specular physical depth card styles */
-.specular-card {
-  background-color: var(--card);
-  border: 1px solid var(--border);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
-  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.specular-card:hover {
-  border-color: rgba(88, 101, 242, 0.4);
-  transform: translateY(-1px);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.12), 0 10px 30px rgba(0, 0, 0, 0.4);
 }

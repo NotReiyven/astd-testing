@@ -50,10 +50,10 @@ export const ActiveCardRow = memo(function ActiveCardRow({
 
   return (
     <div 
-      className={`flex flex-col md:flex-row md:items-center gap-2.5 bg-card hover:bg-white/5 p-3 md:p-2 rounded-[8px] border transition-all duration-200 group animate-fade-in ${isPinned ? "border-primary shadow-[0_0_8px_var(--primary)]" : "border-border"}`}
+      className={`flex flex-col md:flex-row md:items-center gap-2.5 bg-card hover:bg-muted p-3 md:p-2 rounded-[6px] border transition-colors duration-150 group ${isPinned ? "border-primary" : "border-border"}`}
     >
       <div className="flex items-center gap-2.5 w-full min-w-0">
-        <div className={`relative w-11 h-11 md:w-10 md:h-10 flex-shrink-0 rounded-[6px] bg-popover overflow-hidden flex items-center justify-center border ${isPinned ? "border-primary/50" : "border-border"}`}>
+        <div className={`relative w-11 h-11 md:w-10 md:h-10 flex-shrink-0 rounded-[4px] bg-muted overflow-hidden flex items-center justify-center border ${isPinned ? "border-primary/50" : "border-border"}`}>
            <div className="absolute inset-0 flex items-center justify-center text-white font-black text-[13px] z-0" style={getAvatarStyle(card.name)}>
              {getInitials(card.name)}
            </div>
@@ -61,7 +61,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
              src={proxyUrl || undefined} 
              alt={card.name} 
              onError={(e) => handleImageError(e, card.id)}
-             className="absolute inset-0 w-full h-full object-cover object-[center_15%] z-10 bg-popover transition-opacity duration-300" 
+             className="absolute inset-0 w-full h-full object-cover object-[center_15%] z-10 bg-muted transition-opacity duration-300" 
            />
         </div>
 
@@ -72,7 +72,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
              </span>
              {dropCfg && (
                 <div
-                  className="flex-shrink-0 flex items-center gap-1 px-1.5 py-[1px] rounded-[3px]"
+                  className="flex-shrink-0 flex items-center gap-1 px-1.5 py-[1px] rounded-[2px]"
                   style={{ background: dropCfg.bg, border: `1px solid ${dropCfg.border}` }}
                 >
                   <StatusIcon status={masterData?.status} />
@@ -98,7 +98,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
            >
              {isOwnerChoice ? (
                 <JargonWrap title="Owner's Choice (O/C)" tip="This unit is so rare the owner dictates the price. Value depends entirely on what they want.">
-                   O/C
+                  <span className="bg-foreground text-background px-1.5 py-0.5 rounded-[2px] text-[11px] uppercase">O/C</span>
                 </JargonWrap>
              ) : (card.value * card.qty).toLocaleString()}
            </span>
@@ -109,13 +109,13 @@ export const ActiveCardRow = memo(function ActiveCardRow({
                <button 
                  onClick={handlePin} 
                  title={isPinned ? "Unpin unit" : "Pin unit (prevents clearing)"}
-                 className={`w-7 h-7 flex items-center justify-center transition-all duration-200 flex-shrink-0 active:scale-90 rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer ${isPinned ? "text-foreground bg-white/5" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}
+                 className={`w-7 h-7 flex items-center justify-center transition-all duration-150 flex-shrink-0 active:scale-90 rounded-[4px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer ${isPinned ? "text-foreground bg-muted border border-border" : "text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent"}`}
                >
                  <Pin className="w-[14px] h-[14px]" style={{ fill: isPinned ? "currentColor" : "none" }} />
                </button>
                <button 
                  onClick={handleRemove} 
-                 className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 flex-shrink-0 active:scale-90 rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive cursor-pointer"
+                 className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-destructive-foreground hover:bg-destructive transition-all duration-150 flex-shrink-0 active:scale-90 rounded-[4px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive cursor-pointer"
                >
                  <X className="w-[15px] h-[15px]" />
                </button>
@@ -132,13 +132,13 @@ export const ActiveCardRow = memo(function ActiveCardRow({
              <button 
                onClick={handlePin} 
                title={isPinned ? "Unpin unit" : "Pin unit"}
-               className={`w-9 h-9 flex items-center justify-center rounded-[6px] border transition-all active:scale-95 cursor-pointer ${isPinned ? "bg-primary text-primary-foreground border-primary" : "bg-popover text-muted-foreground border-border hover:bg-muted"}`}
+               className={`w-9 h-9 flex items-center justify-center rounded-[4px] border transition-all active:scale-95 cursor-pointer ${isPinned ? "bg-primary text-primary-foreground border-primary" : "bg-popover text-muted-foreground border-border hover:bg-muted"}`}
              >
                <Pin className="w-4 h-4" style={{ fill: isPinned ? "currentColor" : "none" }} />
              </button>
              <button 
                onClick={handleRemove} 
-               className="w-9 h-9 flex items-center justify-center bg-popover border border-border hover:bg-destructive/20 text-muted-foreground hover:text-destructive rounded-[6px] transition-all active:scale-95 cursor-pointer"
+               className="w-9 h-9 flex items-center justify-center bg-popover border border-border hover:bg-destructive hover:text-destructive-foreground text-muted-foreground rounded-[4px] transition-all active:scale-95 cursor-pointer"
              >
                <X className="w-4 h-4" />
              </button>
