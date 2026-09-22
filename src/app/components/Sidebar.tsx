@@ -139,7 +139,8 @@ export function Sidebar({
 
   return (
     <div className="flex flex-col h-screen select-none border-r border-border md:border-r-0 bg-card w-full">
-      <div className="h-[48px] flex-shrink-0 px-4 flex items-center justify-between border-b border-border bg-card">
+      {/* Locked explicit height h-[57px] to perfectly align with top navigation bar */}
+      <div className="h-[57px] flex-shrink-0 px-4 flex items-center justify-between border-b border-border bg-card">
         <span className="font-black text-foreground text-[14px] truncate">
           ASTD Value List
         </span>

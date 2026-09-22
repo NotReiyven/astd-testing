@@ -48,6 +48,11 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   returnChannel: null,
 
   openPopout: (userId, x, y) => {
+    const currentPopout = get().popoutUserId;
+    if (currentPopout === userId) {
+      get().closePopout();
+      return;
+    }
     set({ popoutUserId: userId, popoutPosition: { x, y } });
     get().fetchProfile(userId); 
   },

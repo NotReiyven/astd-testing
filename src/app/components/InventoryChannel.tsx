@@ -118,7 +118,10 @@ export function InventoryChannel() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between px-3 md:px-5 py-3 gap-3">
           
           {/* Filter Toggles Row */}
-          <div className="flex flex-nowrap items-center gap-2 overflow-x-auto w-full lg:w-auto hide-scrollbar pr-4">
+          <div 
+            className="flex flex-nowrap items-center gap-2 overflow-x-auto w-full lg:w-auto hide-scrollbar pr-4 mask-fade-edges" 
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
             <button 
               onClick={() => setActiveTierFilter("All")} 
               className={`flex-shrink-0 px-3 py-1.5 rounded-[4px] text-[12px] font-bold tracking-wide transition-colors border focus-visible:outline-none ${
