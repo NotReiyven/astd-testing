@@ -64,13 +64,21 @@ export default function App() {
 
   const { bootStage, isMobile } = useAppBoot();
   
-  // Fetch ban reason if they are banned
+  // Pulls the most recent audit log entry for this user to display exact ban reasoning
   const [banReason, setBanReason] = useState<string>("Violation of Terms of Service.");
   useEffect(() => {
     if (profile?.role === 'banned') {
       const getBanReason = async () => {
-        const { data } = await supabase.from('moderation_logs').select('reason').eq('target_user_id', profile.id).eq('action_type', 'ACCOUNT NUKED & BANNED').order('created_at', { ascending: false }).limit(1).single();
-        if (data) setBanReason(data.reason);
+        const { data } = await supabase
+          .from('moderation_logs')
+          .select('reason')
+          .eq('target_user_id', profile.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+          
+        if (data && data.length > 0 && data[0].reason) {
+          setBanReason(data[0].reason);
+        }
       };
       getBanReason();
     }

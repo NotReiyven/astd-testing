@@ -411,7 +411,9 @@ export function AdminChannel() {
                       <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Toggle Access Roles</h3>
                       <div className="flex flex-wrap gap-2">
                         {availableRoles?.filter(role => role.name !== 'banned' && role.name !== 'master').map((r) => {
-                          const disabled = selectedUser.id === profile?.id || 
+                          const isBanned = selectedUser.assigned_roles?.includes('banned');
+                          const disabled = isBanned || 
+                            selectedUser.id === profile?.id || 
                             (profile?.role !== 'master' && (r.name === 'master' || r.name === 'admin')) || 
                             (profile?.role !== 'master' && selectedUser.assigned_roles?.includes('master'));
                           
@@ -428,6 +430,7 @@ export function AdminChannel() {
                                 borderColor: isAssigned ? `${r.color}50` : 'var(--border)',
                                 color: isAssigned ? r.color : 'var(--muted-foreground)'
                               }}
+                              title={isBanned ? "Cannot modify roles of a banned user. Revoke ban first." : ""}
                             >
                               {isAssigned && <Check className="w-3.5 h-3.5" />} {r.name}
                             </button>

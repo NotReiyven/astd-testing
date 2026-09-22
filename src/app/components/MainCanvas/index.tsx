@@ -44,7 +44,6 @@ export const MainCanvas = memo(function MainCanvas({
   const [sortMode, setSortMode] = useState("value-desc");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // Bulk Selection State for Value List
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedUnitIds, setSelectedUnitIds] = useState<Set<string>>(new Set());
 
@@ -131,7 +130,6 @@ export const MainCanvas = memo(function MainCanvas({
     cols
   });
 
-  // VIRTUALIZER OPTIMIZED FOR FAST SCROLLING
   const virtualizer = useVirtualizer({
     count: flattenedItems.length,
     getScrollElement: () => scrollRef.current,
@@ -151,7 +149,6 @@ export const MainCanvas = memo(function MainCanvas({
           default: return 50;
        }
     },
-    // Dramatically increased from 14 to 35 to pre-render rows and kill scrolling lag
     overscan: 35,
   });
 
@@ -242,7 +239,6 @@ export const MainCanvas = memo(function MainCanvas({
         )}
       </div>
 
-      {/* MULTI-SELECT FLOATING ACTION BAR FOR VALUE LIST (FIXED SPACING) */}
       {isSelectMode && selectedUnitIds.size > 0 && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[99999] bg-card border border-primary shadow-[0_15px_50px_rgba(0,0,0,0.85)] px-5 py-3.5 rounded-[10px] flex items-center gap-4 animate-slide-up whitespace-nowrap">
           <span className="text-[13px] font-bold text-foreground pr-1">
@@ -368,7 +364,7 @@ export const MainCanvas = memo(function MainCanvas({
                   )}
 
                   {item.type === 'grid-row' && (
-                    <div className={`grid gap-3 sm:gap-5 w-full pb-3 sm:pb-5 ${isStatsTarget && virtualRow.index === 1 ? 'animate-pulse' : ''}`} style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, 155px), 1fr))` }}>
+                    <div className={`grid gap-3 sm:gap-5 w-full pb-3 sm:pb-5 ${isStatsTarget && virtualRow.index === 1 ? 'animate-pulse' : ''}`} style={{ gridTemplateColumns: `repeat(${item.cols || 4}, minmax(0, 1fr))` }}>
                       {item.units.map((u, i) => (
                         <TierGridCard 
                           key={u.id} 
@@ -377,7 +373,7 @@ export const MainCanvas = memo(function MainCanvas({
                           isSelectMode={isSelectMode}
                           isSelected={selectedUnitIds.has(u.id)}
                           onToggleSelect={toggleSelectUnit}
-                          index={i} // Use row-level mapping index for horizontal stagger effect
+                          index={i}
                         />
                       ))}
                     </div>
