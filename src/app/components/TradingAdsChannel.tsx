@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo, memo } from "react";
 import { 
   Megaphone, Search, Plus, Trash2, Clock, 
   Check, Lock, Calculator, Package, 
-  Copy, Activity, MessageSquare, ArrowBigUp, ArrowBigDown, Send
+  Copy, Activity, MessageSquare, ArrowBigUp, ArrowBigDown, Send, ChevronDown, ChevronUp, SlidersHorizontal
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
@@ -137,10 +137,9 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
                   <img src={proxyUrl} alt={item.name} className="absolute inset-0 w-full h-full object-cover z-10 transition-transform duration-300 group-hover:scale-110" style={{ objectPosition: "center 15%" }} onError={(e) => handleImageError(e, item.id)} />
                 )}
 
-                {/* Inline Unit Name Label (Replaces muddy tooltips) */}
                 <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-20 pointer-events-none" />
                 <div className="absolute inset-x-0 bottom-0 p-1.5 z-30 pointer-events-none flex flex-col justify-end">
-                   <span className="block text-[9px] font-bold text-white leading-tight truncate drop-shadow-md">{item.name}</span>
+                    <span className="block text-[9px] font-bold text-white leading-tight truncate drop-shadow-md">{item.name}</span>
                 </div>
 
                 {item.qty > 1 && (
@@ -255,12 +254,6 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
       setTimeout(() => setIsContacting(false), 2500);
     };
 
-    const handleAvatarClick = (e: React.MouseEvent) => {
-      triggerHaptic('light');
-      const rect = e.currentTarget.getBoundingClientRect();
-      openPopout(ad.user_id, rect.left, rect.bottom);
-    };
-
     const score = votes.up - votes.down;
 
     let badgeTitle = "TRADE";
@@ -284,7 +277,11 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
           <div className="flex items-center gap-3 min-w-0">
             <div 
               className="relative shrink-0 cursor-pointer hover:opacity-80 transition-opacity active:scale-95"
-              onClick={handleAvatarClick}
+              onClick={(e) => {
+                triggerHaptic('light');
+                const rect = e.currentTarget.getBoundingClientRect();
+                openPopout(ad.user_id, rect.left, rect.bottom);
+              }}
               title="View Profile"
             >
               <img 
@@ -413,6 +410,7 @@ export function TradingAdsChannel() {
   const [searchFilter, setSearchFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortMode, setSortMode] = useState("newest");
+  const [isControlsCollapsed, setIsControlsCollapsed] = useState(false);
 
   useEffect(() => {
     fetchAds();
@@ -465,64 +463,77 @@ export function TradingAdsChannel() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full select-none font-sans relative bg-background">
 
-      <div className="flex-shrink-0 flex flex-col px-4 py-4 border-b border-border z-20 gap-4 bg-card">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="flex-shrink-0 flex flex-col px-4 py-3 border-b border-border z-20 gap-3 bg-card">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="relative flex items-center justify-center">
               <div className="w-2.5 h-2.5 bg-primary rounded-full z-10" />
               <div className="absolute inset-0 bg-primary rounded-full animate-ping opacity-60" />
             </div>
-            <h2 className="text-[16px] font-black text-foreground tracking-tight">Live Trading Board</h2>
+            <h2 className="text-[15px] font-black text-foreground tracking-tight">Live Trading Board</h2>
           </div>
 
-          {profile ? (
+          <div className="flex items-center gap-2">
             <button
-              type="button"
-              onClick={handleCreateAdClick}
-              className="flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-[4px] bg-primary hover:bg-primary/90 text-primary-foreground text-[12px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none shrink-0 shadow-sm w-full md:w-auto cursor-pointer active:scale-95 border border-primary"
+              onClick={() => { triggerHaptic('light'); setIsControlsCollapsed(!isControlsCollapsed); }}
+              className="md:hidden flex items-center gap-1 px-3 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-[11px] font-bold uppercase tracking-wider cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
-              <span>Create Ad</span>
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span>{isControlsCollapsed ? "Filters" : "Collapse"}</span>
+              {isControlsCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
             </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => { triggerHaptic('medium'); loginWithDiscord(); }}
-              className="flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-[4px] bg-muted border border-border text-foreground text-[12px] font-bold uppercase tracking-wider transition-all hover:bg-card focus-visible:outline-none shrink-0 w-full md:w-auto cursor-pointer active:scale-95"
-            >
-              <Lock className="w-4 h-4 text-primary" />
-              <span>Login to Post</span>
-            </button>
-          )}
+
+            {profile ? (
+              <button
+                type="button"
+                onClick={handleCreateAdClick}
+                className="flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-[4px] bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none shrink-0 shadow-sm cursor-pointer active:scale-95 border border-primary"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Create Ad</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => { triggerHaptic('medium'); loginWithDiscord(); }}
+                className="flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-[11px] font-bold uppercase tracking-wider transition-all hover:bg-card focus-visible:outline-none shrink-0 cursor-pointer active:scale-95"
+              >
+                <Lock className="w-3.5 h-3.5 text-primary" />
+                <span>Login</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-col xl:flex-row xl:items-center gap-3 w-full">
-          <div className="flex bg-muted rounded-[4px] p-1 border border-border w-full md:w-fit overflow-x-auto hide-scrollbar shrink-0 shadow-inner">
-            {[{ id: "all", label: "All" }, { id: "standard", label: "Trades" }, { id: "lf_offers", label: "LF Offers" }, { id: "inventory", label: "Showcases" }].map(t => (
-              <button
-                key={t.id}
-                onClick={() => { triggerHaptic('light'); setTypeFilter(t.id); }}
-                className={`flex-1 md:flex-none px-4 py-2 rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none cursor-pointer whitespace-nowrap active:scale-95 ${typeFilter === t.id ? 'bg-foreground text-background shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border'}`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
-            <div className="relative w-full">
-              <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                value={searchFilter}
-                onChange={(e) => setSearchFilter(e.target.value)}
-                placeholder="Search board by unit name..."
-                className="w-full bg-input text-foreground text-[13px] pl-9 pr-4 py-2.5 rounded-[4px] outline-none border border-border focus:border-foreground transition-colors font-medium h-[40px] shadow-inner"
-              />
+        <div className={`flex flex-col gap-3 transition-all duration-300 overflow-hidden ${isControlsCollapsed ? 'max-h-0 opacity-0 md:max-h-none md:opacity-100' : 'max-h-[300px] opacity-100'}`}>
+          <div className="flex flex-col xl:flex-row xl:items-center gap-3 w-full">
+            <div className="flex bg-muted rounded-[4px] p-1 border border-border w-full md:w-fit overflow-x-auto hide-scrollbar shrink-0 shadow-inner">
+              {[{ id: "all", label: "All" }, { id: "standard", label: "Trades" }, { id: "lf_offers", label: "LF Offers" }, { id: "inventory", label: "Showcases" }].map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => { triggerHaptic('light'); setTypeFilter(t.id); }}
+                  className={`flex-1 md:flex-none px-4 py-1.5 rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none cursor-pointer whitespace-nowrap active:scale-95 ${typeFilter === t.id ? 'bg-foreground text-background shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border'}`}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
 
-            <div className="w-full sm:w-[190px] shrink-0">
-              <CustomDropdown icon={Clock} value={sortMode} options={SORT_OPTIONS} onChange={(val: string) => { triggerHaptic('light'); setSortMode(val); }} defaultLabel="Sort By" />
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
+              <div className="relative w-full">
+                <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchFilter}
+                  onChange={(e) => setSearchFilter(e.target.value)}
+                  placeholder="Search board by unit name..."
+                  className="w-full bg-input text-foreground text-[13px] pl-9 pr-4 py-2 rounded-[4px] outline-none border border-border focus:border-foreground transition-colors font-medium h-[36px] shadow-inner"
+                />
+              </div>
+
+              <div className="w-full sm:w-[190px] shrink-0">
+                <CustomDropdown icon={Clock} value={sortMode} options={SORT_OPTIONS} onChange={(val: string) => { triggerHaptic('light'); setSortMode(val); }} defaultLabel="Sort By" />
+              </div>
             </div>
           </div>
         </div>
@@ -532,7 +543,7 @@ export function TradingAdsChannel() {
         <div className="w-full h-full max-w-[1400px] mx-auto p-4 md:p-6 lg:p-8 pb-24">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
-              <Activity className="w-8 h-8 animate-pulse text-primary" />
+              <Activity className="w-8 h-8 animate-pulse text-primary" /> 
               <span className="text-[12px] md:text-[13px] font-bold uppercase tracking-widest">Connecting to live market...</span>
             </div>
           ) : filteredAndSortedAds.length === 0 ? (
