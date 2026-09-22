@@ -8,6 +8,21 @@ import { TradeCard } from "../../../types";
 import { useUnits } from "../../../context/UnitContext";
 import { ActiveCardRow } from "./ActiveCardRow";
 
+interface TradeSectionPanelProps {
+  label: string;
+  type: "give" | "get";
+  items: TradeCard[];
+  isDraggingGlobal: boolean;
+  onQtyChange: (id: string, qty: number) => void;
+  onRemove: (id: string) => void;
+  onClear: () => void;
+  onAdd: (card: TradeCard) => void;
+  pinnedIds: Set<string>;
+  onTogglePin: (id: string) => void;
+  onInputFocus?: () => void;
+  onInputBlur?: () => void;
+}
+
 const HighlightedText = ({ text, query }: { text: string; query: string }) => {
   if (!query || !text) return <>{text}</>;
   const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -36,20 +51,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
   onTogglePin,
   onInputFocus,
   onInputBlur
-}: {
-  label: string;
-  type: "give" | "get";
-  items: TradeCard[];
-  isDraggingGlobal: boolean;
-  onQtyChange: (id: string, qty: number) => void;
-  onRemove: (id: string) => void;
-  onClear: () => void;
-  onAdd: (card: TradeCard) => void;
-  pinnedIds: Set<string>;
-  onTogglePin: (id: string) => void;
-  onInputFocus?: () => void;
-  onInputBlur?: () => void;
-}) {
+}: TradeSectionPanelProps) {
   const { units: ALL_UNITS } = useUnits();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -67,7 +69,10 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
       const customEvent = e as CustomEvent<string>;
       if (customEvent.detail === type) {
         setOpen(true);
-        setTimeout(() => searchInputRef.current?.focus(), 50);
+        setTimeout(() => {
+          searchInputRef.current?.focus();
+          searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
       }
     };
     window.addEventListener("focus-trade-search", handleFocusSearch);
@@ -189,9 +194,10 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
               setQuery(e.target.value); 
               setOpen(true); 
             }}
-            onFocus={() => { 
+            onFocus={(e) => { 
               setOpen(true); 
               onInputFocus?.();
+              e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }}
             onBlur={() => { 
               setTimeout(() => setOpen(false), 200); 
