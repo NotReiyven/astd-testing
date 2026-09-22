@@ -189,7 +189,7 @@ export const MainCanvas = memo(function MainCanvas({
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-background relative z-10">
+    <div className="flex-1 flex flex-col overflow-hidden bg-transparent relative z-10">
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: var(--card); }

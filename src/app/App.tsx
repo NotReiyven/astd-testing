@@ -246,7 +246,7 @@ export default function App() {
       )}
 
       <div 
-        className="flex h-dvh overflow-hidden relative bg-background text-foreground" 
+        className="flex h-dvh overflow-hidden relative bg-transparent text-foreground" 
         style={{ 
           transform: bootStage === 'complete' ? 'none' : (bootStage === 'fracture' ? 'scale(1)' : 'scale(1.05)'),
           filter: bootStage === 'complete' ? 'none' : (bootStage === 'fracture' ? 'blur(0px)' : 'blur(8px)'),
@@ -302,7 +302,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className={`flex-1 flex flex-col min-w-0 bg-background md:pb-0 pb-[84px] ${mainContentZ}`}>
+          <div className={`flex-1 flex flex-col min-w-0 bg-transparent md:pb-0 pb-[84px] ${mainContentZ}`}>
             <div className={`relative ${calcHeaderZ}`}>
               <SyncBanner />
               <TopBar 

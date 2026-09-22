@@ -6,49 +6,57 @@
   --font-sans: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Core Palette strictly mapped to Discord standard */
+  /* Core Palette mapped to Discord standard */
   --discord-blurple: #7289da;
   --discord-light-gray: #424549;
   --discord-mid-gray: #36393e;
   --discord-dark-gray: #282b30;
   --discord-darker-gray: #1e2124;
 
-  /* App Backgrounds */
-  --background: var(--discord-mid-gray);
+  /* App Backgrounds & Global Textured Pattern */
+  --background-pattern: 
+    linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+    linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+    linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+    linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
+    linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025),
+    linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025);
+  
+  --background: #16181c;
   --foreground: #ffffff;
 
-  /* Cards & Panels */
-  --card: var(--discord-dark-gray);
+  /* Cards & Panels - Updated to semi-transparent frosted glass */
+  --card: rgba(40, 43, 48, 0.82);
   --card-foreground: #dcddde;
 
-  /* Modals & Dropdowns */
-  --popover: var(--discord-darker-gray);
+  /* Modals & Dropdowns - Semi-transparent */
+  --popover: rgba(30, 33, 36, 0.88);
   --popover-foreground: #dcddde;
 
   /* Brand Colors */
   --primary: var(--discord-blurple);
   --primary-foreground: #ffffff;
 
-  /* Secondary Elements (Buttons, Badges) */
-  --secondary: var(--discord-light-gray);
+  /* Secondary Elements */
+  --secondary: rgba(66, 69, 73, 0.5);
   --secondary-foreground: #ffffff;
 
-  /* Muted Elements (Subtitles, Disabled states) */
-  --muted: var(--discord-dark-gray);
+  /* Muted Elements */
+  --muted: rgba(40, 43, 48, 0.6);
   --muted-foreground: #949ba4;
 
   /* Accents & Hovers */
-  --accent: var(--discord-light-gray);
+  --accent: rgba(66, 69, 73, 0.6);
   --accent-foreground: #ffffff;
 
   /* Alerts */
   --destructive: #ed4245;
   --destructive-foreground: #ffffff;
 
-  /* Structural */
-  --border: var(--discord-light-gray);
-  --input: var(--discord-darker-gray);
-  --input-background: var(--discord-darker-gray);
+  /* Structural - Softer borders to blend with pattern */
+  --border: rgba(66, 69, 73, 0.35);
+  --input: rgba(30, 33, 36, 0.8);
+  --input-background: rgba(30, 33, 36, 0.8);
   --switch-background: var(--discord-light-gray);
   --ring: var(--discord-blurple);
 
@@ -99,7 +107,11 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background);
+    background-image: var(--background-pattern);
+    background-size: 80px 140px;
+    background-position: 0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px;
+    color: var(--foreground);
     font-family: var(--font-sans);
     font-weight: 500;
   }
