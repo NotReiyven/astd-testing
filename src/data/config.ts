@@ -3,8 +3,8 @@ import { FilterKey, TierConfig, UnitStatus, TradeCard } from "../types";
 export const FILTERS: FilterKey[] = ["All", "S", "A", "B", "C", "Pure", "Oddities", "Untiered"];
 
 export const TIER_CONFIG: Record<string, TierConfig> = {
-  All:      { label: "All Tiers", units: [], badgeChar: "∞", badgeColor: "#5865F2", badgeShadow: "rgba(88,101,242,0.35)", subtitle: "Every tracked unit in the value list" },
-  S:        { label: "S Tier",    units: [], badgeChar: "S", badgeColor: "#dd7e6b", badgeShadow: "rgba(245,158,11,0.35)", subtitle: "Rarest & most valuable units in the game" },
+  All:      { label: "All Tiers", units: [], badgeChar: "∞", badgeColor: "#7289da", badgeShadow: "rgba(114,137,218,0.35)", subtitle: "Every tracked unit in the value list" },
+  S:        { label: "S Tier",    units: [], badgeChar: "S", badgeColor: "#dd7e6b", badgeShadow: "rgba(221,126,107,0.35)", subtitle: "Rarest & most valuable units in the game" },
   A:        { label: "A Tier",    units: [], badgeChar: "A", badgeColor: "#a855f7", badgeShadow: "rgba(168,85,247,0.35)", subtitle: "High-value units with strong demand" },
   B:        { label: "B Tier",    units: [], badgeChar: "B", badgeColor: "#3b82f6", badgeShadow: "rgba(59,130,246,0.35)", subtitle: "Mid-tier units worth holding" },
   C:        { label: "C Tier",    units: [], badgeChar: "C", badgeColor: "#22c55e", badgeShadow: "rgba(34,197,94,0.28)",  subtitle: "Lower-value units, good for bulk trades" },
@@ -22,18 +22,18 @@ export const TIER_STYLES: Record<string, string> = {
 };
 
 export const GRID_STATUS_CFG: Record<UnitStatus, { label: string; tip: string; bg: string; border: string; color: string }> = {
-  stable:          { label: "Stable",        tip: "Fair and consistently decent offers. Most likely won't move unless something happens.", bg: "rgba(30, 33, 36, 0.95)", border: "#E6D8A166", color: "#E6D8A1" },
-  unstable:        { label: "Unstable",      tip: "Could rise or drop at any moment, or stabilize.",                                       bg: "rgba(30, 33, 36, 0.95)", border: "#6B9EB566", color: "#6B9EB5" },
-  rising:          { label: "Rising",        tip: "If a unit is rising, it means the unit is being consistently overpaid.",                bg: "rgba(30, 33, 36, 0.95)", border: "#30A16366", color: "#30A163" },
-  dropping:        { label: "Dropping",      tip: "If a unit is dropping, it means owners are constantly taking underpays.",               bg: "rgba(30, 33, 36, 0.95)", border: "#E60A1866", color: "#E60A18" },
-  inflated:        { label: "Inflated",      tip: "If a unit has this tag, they are inflated and cost way more than they should be worth.",bg: "rgba(30, 33, 36, 0.95)", border: "#c27a4066", color: "#c27a40" },
-  deflated:        { label: "Deflated",      tip: "If a unit is underpriced, they are deflated and are way cheaper than they should be.",  bg: "rgba(30, 33, 36, 0.95)", border: "#3C81F366", color: "#3C81F3" },
-  varies:          { label: "Varies",        tip: "If a unit varies, then it can get fair but it can also get lowballs or highballs.",     bg: "rgba(30, 33, 36, 0.95)", border: "#9b8de866", color: "#9b8de8" },
-  lowballed:       { label: "Lowballed",     tip: "If a unit has this tag, it can get fair at most, but also gets lowballs.",              bg: "rgba(30, 33, 36, 0.95)", border: "#E66C1966", color: "#E66C19" },
-  highballed:      { label: "Highballed",    tip: "If a unit has this tag, it can get fair at minimum, but also gets highballs.",          bg: "rgba(30, 33, 36, 0.95)", border: "#01EFFD66", color: "#01EFFD" },
-  hyped:           { label: "Hyped",         tip: "If a unit is hyped, something big changed, skyrocketing value and demand.",             bg: "rgba(30, 33, 36, 0.95)", border: "#3A7CE666", color: "#3A7CE6" },
-  gatekept:        { label: "Gatekept",      tip: "If a unit is gatekept, owners are refusing to trade this unit waiting for a rise.",     bg: "rgba(30, 33, 36, 0.95)", border: "#AF78A866", color: "#AF78A8" },
-  "black-marketed":{ label: "Black Market",  tip: "People who buy units with outside-game currency are heavily impacting it.",             bg: "rgba(30, 33, 36, 0.95)", border: "#9aa3b266", color: "#9aa3b2" },
+  stable:          { label: "Stable",        tip: "Fair and consistently decent offers. Most likely won't move unless something happens.", bg: "rgba(30, 33, 36, 0.95)", border: "rgba(230, 216, 161, 0.3)", color: "#e6d8a1" },
+  unstable:        { label: "Unstable",      tip: "Could rise or drop at any moment, or stabilize.",                                     bg: "rgba(30, 33, 36, 0.95)", border: "rgba(107, 158, 181, 0.3)", color: "#6b9eb5" },
+  rising:          { label: "Rising",        tip: "If a unit is rising, it means the unit is being consistently overpaid.",                bg: "rgba(30, 33, 36, 0.95)", border: "rgba(48, 161, 99, 0.3)", color: "#30a163" },
+  dropping:        { label: "Dropping",      tip: "If a unit is dropping, it means owners are constantly taking underpays.",               bg: "rgba(30, 33, 36, 0.95)", border: "rgba(230, 10, 24, 0.3)", color: "#f87171" },
+  inflated:        { label: "Inflated",      tip: "If a unit has this tag, they are inflated and cost way more than they should be worth.",bg: "rgba(30, 33, 36, 0.95)", border: "rgba(194, 122, 64, 0.3)", color: "#d97706" },
+  deflated:        { label: "Deflated",      tip: "If a unit is underpriced, they are deflated and are way cheaper than they should be.",  bg: "rgba(30, 33, 36, 0.95)", border: "rgba(60, 129, 243, 0.3)", color: "#60a5fa" },
+  varies:          { label: "Varies",        tip: "If a unit varies, then it can get fair but it can also get lowballs or highballs.",     bg: "rgba(30, 33, 36, 0.95)", border: "rgba(155, 141, 232, 0.3)", color: "#a78bfa" },
+  lowballed:       { label: "Lowballed",     tip: "If a unit has this tag, it can get fair at most, but also gets lowballs.",              bg: "rgba(30, 33, 36, 0.95)", border: "rgba(230, 108, 25, 0.3)", color: "#fb923c" },
+  highballed:      { label: "Highballed",    tip: "If a unit has this tag, it can get fair at minimum, but also gets highballs.",          bg: "rgba(30, 33, 36, 0.95)", border: "rgba(1, 239, 253, 0.3)", color: "#38bdf8" },
+  hyped:           { label: "Hyped",         tip: "If a unit is hyped, something big changed, skyrocketing value and demand.",             bg: "rgba(30, 33, 36, 0.95)", border: "rgba(58, 124, 230, 0.3)", color: "#60a5fa" },
+  gatekept:        { label: "Gatekept",      tip: "If a unit is gatekept, owners are refusing to trade this unit waiting for a rise.",     bg: "rgba(30, 33, 36, 0.95)", border: "rgba(175, 120, 168, 0.3)", color: "#c084fc" },
+  "black-marketed":{ label: "Black Market",  tip: "People who buy units with outside-game currency are heavily impacting it.",              bg: "rgba(30, 33, 36, 0.95)", border: "rgba(154, 163, 178, 0.3)", color: "#9ca3af" },
 };
 
 export const RARITY_SCALE: { min: number; max: number; label: string }[] = [
@@ -69,8 +69,8 @@ export const SEARCHABLE_UNITS: { id: string; name: string; subtitle: string; val
   { id: "ultra-kovegu",  name: "Ultra Kovegu",  subtitle: "SSJ3 Gogeta",  value: 20000 },
   { id: "death",         name: "Death",         subtitle: "Ryuk",         value: 160000 },
   { id: "beardcutter",   name: "Beardcutter",   subtitle: "Goblin Slayer", value: 210000 },
-  { id: "slayer-mage",   name: "Slayer Mage",   subtitle: "Frieren",       value: 40000 },
-  { id: "galaxy-girl",   name: "Galaxy Girl",   subtitle: "Sasaki Miyo",   value: 350000 },
+  { id: "slayer-mage",   name: "Slayer Mage",   subtitle: "Frieren",      value: 40000 },
+  { id: "galaxy-girl",   name: "Galaxy Girl",   subtitle: "Sasaki Miyo",  value: 350000 },
   { id: "azure-specter", name: "Azure Specter", subtitle: "Neon Edge",     value: 3200 },
   { id: "ember-shard",   name: "Ember Shard",   subtitle: "Classic Pure",  value: 900 },
 ];

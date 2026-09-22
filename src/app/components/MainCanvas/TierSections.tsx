@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/MainCanvas/TierSections.tsx
+// ================================================
+
 import { MasterUnit } from "../../../types";
 
 export function getSortValue(u: MasterUnit): number {
@@ -114,30 +118,36 @@ export function buildSections(units: MasterUnit[], sortMode: string, statusFilte
   return mappedSections;
 }
 
-export function TierBanner({ tier }: { tier: { label: string; badgeColor: string } }) {
+export function TierBanner({ tier }: { tier: { label: string; badgeColor: string; subtitle?: string } }) {
   return (
-    <div className="relative w-full mb-8 overflow-hidden rounded-xl bg-card border border-border shadow-sm">
-      <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse at 50% -30%, ${tier.badgeColor}25 0%, transparent 70%)` }} />
-      <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: tier.badgeColor }} />
-      <div className="relative z-10 flex min-h-[88px] items-center justify-center px-6">
-        <div className="flex flex-col items-center">
-          <span className="mb-2 text-[10px] font-bold uppercase tracking-[0.35em] opacity-80" style={{ color: tier.badgeColor }}>Tier</span>
-          <h1 className="text-[28px] font-black uppercase tracking-[0.18em] leading-none text-center" style={{ color: tier.badgeColor }}>{tier.label}</h1>
+    <div className="flex items-center justify-between py-4 px-1 border-b border-border my-2">
+      <div className="flex items-center gap-3">
+        <div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: tier.badgeColor }} />
+        <div className="flex flex-col">
+          <h2 className="text-[18px] font-black text-foreground tracking-tight uppercase flex items-center gap-2">
+            {tier.label}
+          </h2>
+          {tier.subtitle && (
+            <p className="text-[11px] text-muted-foreground font-medium tracking-wide mt-0.5">
+              {tier.subtitle}
+            </p>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-export function TierSubHeader({ label, valueRange, count }: { label: string; valueRange: string; count: number }) {
+export function TierSubHeader({ label, valueRange, count }: { label: string; valueRange?: string; count: number }) {
   return (
-    <div className="flex items-center gap-3 mb-3 mt-4">
-      <div className="flex items-baseline gap-2 flex-shrink-0">
-        <span className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
-        <span className="text-[12px] font-semibold text-foreground">{valueRange}</span>
+    <div className="flex items-center justify-between py-2 px-1 text-muted-foreground">
+      <div className="flex items-center gap-2">
+        <span className="text-[12px] font-black uppercase tracking-widest text-foreground">{label}</span>
+        {valueRange && <span className="text-[11px] font-mono text-muted-foreground">• {valueRange}</span>}
       </div>
-      <div className="flex-1 h-px bg-border" />
-      <span className="text-[10px] font-bold px-1.5 py-[2px] rounded-[4px] bg-white/5 text-muted-foreground border border-border">{count}</span>
+      <span className="text-[11px] font-mono font-bold bg-card border border-border px-2 py-0.5 rounded-[4px]">
+        {count} {count === 1 ? 'Unit' : 'Units'}
+      </span>
     </div>
   );
 }

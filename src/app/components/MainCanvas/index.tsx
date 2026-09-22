@@ -19,7 +19,7 @@ import { GuideType } from "../guides/AquaGuideOverlay";
 import { useCanvasVirtualization } from "./useCanvasVirtualization";
 import { useCanvasScroll } from "../../../hooks/useCanvasScroll";
 
-const STICKY_HEADER_CLASS = "bg-background pt-2 md:pt-3 pb-3 -mx-2 px-2 md:-mx-8 md:px-8";
+const STICKY_HEADER_CLASS = "bg-background pt-2 md:pt-3 pb-3 -mx-4 px-4 md:-mx-10 md:px-10";
 const FIRE_ZIO_AVATAR = "/units/firezio.webp";
 
 export const MainCanvas = memo(function MainCanvas({
@@ -69,8 +69,8 @@ export const MainCanvas = memo(function MainCanvas({
         const width = entries[0].contentRect.width;
         const isDesktop = window.innerWidth >= 768;
         const baseCardWidth = isDesktop ? 200 : 155;
-        const gap = isDesktop ? 20 : 12;
-        const padding = isDesktop ? 64 : 16; 
+        const gap = isDesktop ? 24 : 16; 
+        const padding = isDesktop ? 80 : 32; 
         const available = width - padding;
         const c = Math.max(1, Math.floor((available + gap) / (baseCardWidth + gap)));
 
@@ -137,15 +137,15 @@ export const MainCanvas = memo(function MainCanvas({
     estimateSize: (index) => {
        const item = flattenedItems[index];
        switch(item.type) {
-          case 'space-top': return 16;
-          case 'welcome': return window.innerWidth < 768 ? 180 : 120;
-          case 'search-stats': return 40;
+          case 'space-top': return 20;
+          case 'welcome': return window.innerWidth < 768 ? 190 : 130;
+          case 'search-stats': return 48;
           case 'no-results': return 250; 
-          case 'tier-banner': return 110; 
-          case 'sub-header': return 50;
-          case 'grid-row': return window.innerWidth < 768 ? 290 : 360;
-          case 'list-row': return viewMode === 'compact' ? 30 : 57;
-          case 'space-bottom': return 100;
+          case 'tier-banner': return 120; 
+          case 'sub-header': return 60;
+          case 'grid-row': return window.innerWidth < 768 ? 300 : 380;
+          case 'list-row': return viewMode === 'compact' ? 32 : 60;
+          case 'space-bottom': return 120;
           default: return 50;
        }
     },
@@ -231,7 +231,7 @@ export const MainCanvas = memo(function MainCanvas({
         />
 
         {(viewMode === "list" || viewMode === "compact") && !isLoading && (
-          <div className="hidden md:block w-full border-b border-border bg-popover">
+          <div className="hidden md:block w-full border-b border-border bg-popover px-4 md:px-10">
             <ListHeaderRow sortMode={sortMode} setSortMode={setSortMode} viewMode={viewMode} />
           </div>
         )}
@@ -271,16 +271,16 @@ export const MainCanvas = memo(function MainCanvas({
       <div 
         id="main-scroll-container"
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-2 md:px-8 custom-scrollbar relative z-0 h-full" 
+        className="flex-1 overflow-y-auto px-4 md:px-10 custom-scrollbar relative z-0 h-full" 
         style={{ 
-          paddingTop: headerHeight + 12,
+          paddingTop: headerHeight + 16,
           overflowAnchor: "none",
           touchAction: "pan-y"
         }}
       >
         {isLoading ? (
           <div className="pt-4 md:pt-6">
-            <div className={`${STICKY_HEADER_CLASS} relative z-20 mb-4 shadow-sm`}>
+            <div className={`${STICKY_HEADER_CLASS} relative z-20 mb-6 shadow-sm`}>
               <TierBanner tier={TIER_CONFIG[activeTierFilter] ?? TIER_CONFIG["S"]} />
             </div>
             <CanvasSkeleton viewMode={viewMode} />
@@ -298,15 +298,15 @@ export const MainCanvas = memo(function MainCanvas({
                   className="absolute top-0 left-0 w-full"
                   style={{ transform: `translateY(${virtualRow.start}px)` }}
                 >
-                  {item.type === 'space-top' && <div className="h-4 md:h-6" />}
-                  {item.type === 'space-bottom' && <div className="h-10 md:h-16" />}
+                  {item.type === 'space-top' && <div className="h-6 md:h-8" />}
+                  {item.type === 'space-bottom' && <div className="h-16 md:h-24" />}
 
                   {item.type === 'welcome' && (
-                    <div className="mb-4 md:mb-8 flex flex-col md:flex-row gap-3 md:gap-4 bg-card md:bg-transparent p-3 md:p-0 rounded-[8px] md:rounded-none border md:border-none border-border mx-2 md:mx-0 font-sans">
+                    <div className="mb-6 md:mb-10 flex flex-col md:flex-row gap-4 md:gap-6 bg-card p-4 md:p-6 rounded-[8px] border border-border mx-2 md:mx-0 font-sans shadow-sm">
                       <div className="flex items-start justify-between md:hidden w-full">
-                        <div className="flex items-center gap-2">
-                          <img src={FIRE_ZIO_AVATAR} className="w-8 h-8 rounded-full border border-destructive object-cover shrink-0 bg-popover" alt="Fire Zio" />
-                          <h2 className="text-[16px] font-bold text-foreground tracking-tight">Listen up.</h2>
+                        <div className="flex items-center gap-3">
+                          <img src={FIRE_ZIO_AVATAR} className="w-9 h-9 rounded-full border border-destructive object-cover shrink-0 bg-popover" alt="Fire Zio" />
+                          <h2 className="text-[16px] font-bold text-foreground tracking-tight">Stop getting scammed.</h2>
                         </div>
                         <button onClick={dismissWelcome} className="text-muted-foreground hover:text-foreground p-1 cursor-pointer focus-visible:outline-none"><X className="w-4 h-4" /></button>
                       </div>
@@ -314,14 +314,14 @@ export const MainCanvas = memo(function MainCanvas({
                       <img src={FIRE_ZIO_AVATAR} className="hidden md:block w-14 h-14 rounded-full border-2 border-destructive object-cover shrink-0 bg-popover shadow-sm" alt="Fire Zio" />
 
                       <div className="flex flex-col justify-center max-w-2xl">
-                        <h2 className="hidden md:block text-[20px] font-black text-foreground mb-1 tracking-tight">Stop getting scammed.</h2>
-                        <p className="text-[12px] md:text-[13px] text-muted-foreground mb-2 md:mb-2.5 leading-relaxed">
-                          This is the value list. Tap any unit card to instantly throw it into <i>You Give</i> or <i>You Get</i>. Check your stats before you open your mouth in trade chat.
+                        <h2 className="hidden md:block text-[20px] font-black text-foreground mb-1.5 tracking-tight">Stop getting scammed.</h2>
+                        <p className="text-[13px] md:text-[14px] text-muted-foreground mb-3 leading-relaxed">
+                          This is the value list. Tap any unit card to instantly throw it into You Give or You Get. Check your stats before you open your mouth in trade chat.
                         </p>
-                        <div className="flex flex-wrap items-center gap-1.5 md:gap-3 text-[9px] md:text-[11px] font-bold text-muted-foreground">
-                          <span className="bg-popover px-2 py-1 rounded border border-border">R = Rarity (/20)</span>
-                          <span className="bg-popover px-2 py-1 rounded border border-border">S = Supply (/5)</span>
-                          <span className="bg-popover px-2 py-1 rounded border border-border">D = Demand (/5)</span>
+                        <div className="flex flex-wrap items-center gap-2 md:gap-3 text-[10px] md:text-[11px] font-bold text-muted-foreground">
+                          <span className="bg-popover px-2.5 py-1 rounded border border-border">R = Rarity (/20)</span>
+                          <span className="bg-popover px-2.5 py-1 rounded border border-border">S = Supply (/5)</span>
+                          <span className="bg-popover px-2.5 py-1 rounded border border-border">D = Demand (/5)</span>
                         </div>
                       </div>
                       <button onClick={dismissWelcome} className="hidden md:block ml-auto self-start text-muted-foreground hover:text-foreground p-2 cursor-pointer focus-visible:outline-none"><X className="w-5 h-5" /></button>
@@ -329,16 +329,16 @@ export const MainCanvas = memo(function MainCanvas({
                   )}
 
                   {item.type === 'search-stats' && (
-                    <div className="flex items-center gap-2 mb-2 mx-2 md:mx-0">
+                    <div className="flex items-center gap-2 mb-3 mx-2 md:mx-0">
                       <span className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">Search Results</span>
-                      <span className="text-[11px] font-bold bg-white/5 text-foreground px-2 py-0.5 rounded transition-all">{item.count} Found</span>
+                      <span className="text-[11px] font-bold bg-white/5 text-foreground px-2.5 py-0.5 rounded transition-all">{item.count} Found</span>
                     </div>
                   )}
 
                   {item.type === 'no-results' && (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4">
-                      <div className="w-14 h-14 rounded-[8px] flex items-center justify-center bg-white/5 border border-border">
-                        <Search className="w-6 h-6 text-muted-foreground" />
+                    <div className="flex flex-col items-center justify-center py-24 gap-4">
+                      <div className="w-16 h-16 rounded-[8px] flex items-center justify-center bg-white/5 border border-border">
+                        <Search className="w-7 h-7 text-muted-foreground" />
                       </div>
                       <p className="text-sm font-bold text-muted-foreground">No units match your current filters.</p>
 
@@ -352,17 +352,19 @@ export const MainCanvas = memo(function MainCanvas({
                   )}
 
                   {item.type === 'tier-banner' && (
-                    <div className={`${STICKY_HEADER_CLASS} relative z-20 mb-4`}>
+                    <div className={`${STICKY_HEADER_CLASS} relative z-20 mb-6`}>
                       <TierBanner tier={item.tier} />
                     </div>
                   )}
 
                   {item.type === 'sub-header' && (
-                    <TierSubHeader label={item.label} valueRange={item.range} count={item.count} />
+                    <div className="mb-4 mt-6">
+                      <TierSubHeader label={item.label} valueRange={item.range} count={item.count} />
+                    </div>
                   )}
 
                   {item.type === 'grid-row' && (
-                    <div className="grid gap-3 sm:gap-5 w-full pb-3 sm:pb-5" style={{ gridTemplateColumns: `repeat(${item.cols || 4}, minmax(0, 1fr))` }}>
+                    <div className="grid gap-4 sm:gap-6 w-full pb-4 sm:pb-6" style={{ gridTemplateColumns: `repeat(${item.cols || 4}, minmax(0, 1fr))` }}>
                       {item.units.map((u, i) => (
                         <TierGridCard 
                           key={u.id} 
@@ -378,7 +380,7 @@ export const MainCanvas = memo(function MainCanvas({
                   )}
 
                   {item.type === 'list-row' && (
-                    <div>
+                    <div className="py-0.5">
                        <UnitListRow unit={item.unit} isLast={item.isLast} searchQuery={item.searchQuery} viewMode={viewMode} />
                     </div>
                   )}

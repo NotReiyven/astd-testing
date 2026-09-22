@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/TradeAnalyzer/TradeSummaryBox.tsx
+// ================================================
+
 import { useState } from "react";
 import { avgStat, getTradeForecast, getLiquidityScore } from "./summaryUtils";
 import { TradeCard, MasterUnit } from "../../../types";
@@ -36,46 +40,45 @@ export function TradeSummaryBox({
   const handleLeave = () => setActiveTip(null);
 
   return (
-    <div className={`flex-shrink-0 mx-3 md:mx-4 mt-4 rounded-[8px] px-4 py-3 md:px-5 md:py-4 relative bg-card border transition-all duration-300 z-20 ${isMainStep4 ? 'border-primary shadow-[0_0_20px_var(--primary)] ring-4 ring-primary/30' : 'border-border'}`}>
-      <div className="mb-4">
+    <div className={`flex-shrink-0 mx-4 mt-5 rounded-[8px] px-5 py-4 md:px-6 md:py-5 relative bg-card border transition-all duration-300 z-20 ${isMainStep4 ? 'border-primary shadow-[0_0_20px_var(--primary)] ring-4 ring-primary/30' : 'border-border'}`}>
+      <div className="mb-5">
         
-        <div className="flex items-center justify-between mb-3 gap-4">
+        <div className="flex items-center justify-between mb-4 gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Total Give</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Total Give</p>
             <p className="text-[16px] sm:text-[18px] font-black text-foreground font-mono truncate" title={giveTotal.toLocaleString()}><RollingNumber value={giveTotal} /></p>
           </div>
           
           {giveTotal > 0 && getTotal > 0 && (
-             <div className="flex flex-col items-center flex-shrink-0 px-2">
+             <div className="flex flex-col items-center flex-shrink-0 px-3">
                 <span className={`text-[13px] sm:text-[14px] font-black font-mono flex items-center ${getTotal > giveTotal ? 'text-[#23a559]' : getTotal < giveTotal ? 'text-rose-400' : 'text-foreground'}`}>
                   {getTotal > giveTotal ? '+' : ''}<RollingNumber value={getTotal - giveTotal} />
                 </span>
-                <span className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Raw Diff</span>
+                <span className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-0.5">Raw Diff</span>
              </div>
           )}
 
           <div className="min-w-0 flex-1 text-right">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Total Get</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Total Get</p>
             <p className="text-[16px] sm:text-[18px] font-black text-foreground font-mono truncate" title={getTotal.toLocaleString()}><RollingNumber value={getTotal} /></p>
           </div>
         </div>
 
-        <div className="flex w-full h-[6px] gap-1 mb-4">
+        <div className="flex w-full h-[6px] gap-1.5 mb-5">
           {giveTotal > 0 && <div className="rounded-full bg-[#FAA61A]" style={{ width: `${givePercent}%`, transition: "width 0.8s cubic-bezier(0.16, 1, 0.3, 1)" }} />}
           {getTotal > 0 && <div className="rounded-full bg-primary" style={{ width: `${getPercent}%`, transition: "width 0.8s cubic-bezier(0.16, 1, 0.3, 1)" }} />}
           {giveTotal === 0 && getTotal === 0 && <div className="w-full h-full rounded-full bg-popover transition-all duration-500" />}
         </div>
 
-        {/* Flattened surface layout without nested bounding boxes */}
-        <div className="bg-black/20 rounded-[6px] p-3">
+        <div className="bg-black/20 rounded-[6px] p-3.5">
           {forecast.calculable ? (
             <div className="flex justify-between items-stretch">
                <div 
-                 className="flex flex-col flex-1 border-r border-border/60 pr-3 py-1 relative cursor-help"
+                 className="flex flex-col flex-1 border-r border-border/60 pr-4 py-1 relative cursor-help"
                  onMouseEnter={() => handleEnter('st')}
                  onMouseLeave={handleLeave}
                >
-                  <div className="flex items-center gap-1.5 mb-1.5">
+                  <div className="flex items-center gap-1.5 mb-2">
                     <TrendingUp className="w-3.5 h-3.5 text-[#FAA61A]" />
                     <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Short-Term Flip</span>
                   </div>
@@ -95,7 +98,7 @@ export function TradeSummaryBox({
                  onMouseEnter={() => handleEnter('lt')}
                  onMouseLeave={handleLeave}
                >
-                  <div className="flex items-center gap-1.5 mb-1.5">
+                  <div className="flex items-center gap-1.5 mb-2">
                     <Clock className="w-3.5 h-3.5 text-primary" />
                     <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Long-Term Hold</span>
                   </div>
@@ -111,7 +114,7 @@ export function TradeSummaryBox({
                </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-2 text-center gap-1">
+            <div className="flex flex-col items-center justify-center py-2.5 text-center gap-1.5">
               <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-[#FAA61A] opacity-80" />
               <span className="text-[10px] sm:text-[11px] font-bold text-foreground">Forecast Unavailable</span>
               <span className="text-[9px] sm:text-[10px] font-medium text-muted-foreground">
@@ -125,15 +128,15 @@ export function TradeSummaryBox({
 
       </div>
 
-      <div className="grid grid-cols-2 gap-1.5 sm:gap-2 w-full">
+      <div className="grid grid-cols-2 gap-2 w-full">
         {/* RARITY */}
         <div 
-          className="flex flex-col items-center p-2 rounded-[6px] bg-black/20 border border-border/50 transition-all duration-300 hover:bg-black/30 relative cursor-help"
+          className="flex flex-col items-center p-2.5 rounded-[6px] bg-black/20 border border-border/50 transition-all duration-300 hover:bg-black/30 relative cursor-help"
           onMouseEnter={() => handleEnter('rarity')}
           onMouseLeave={handleLeave}
         >
-          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">Rarity</span>
-          <span className="text-[10px] sm:text-[12px] font-bold text-foreground font-mono flex items-center gap-1">{avgStat(giveItems, "rarity", ALL_UNITS)} <span className="text-muted-foreground text-[9px] sm:text-[10px]">➔</span> {avgStat(getItems, "rarity", ALL_UNITS)}</span>
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Rarity</span>
+          <span className="text-[10px] sm:text-[12px] font-bold text-foreground font-mono flex items-center gap-1.5">{avgStat(giveItems, "rarity", ALL_UNITS)} <span className="text-muted-foreground text-[9px] sm:text-[10px]">➔</span> {avgStat(getItems, "rarity", ALL_UNITS)}</span>
           <div className={`absolute top-full mt-2 left-0 sm:left-1/2 sm:-translate-x-1/2 w-[160px] bg-popover border border-border text-foreground text-[11px] p-2.5 rounded-[6px] shadow-lg pointer-events-none transition-opacity z-[100] text-left sm:text-center ${activeTip === 'rarity' ? 'opacity-100' : 'opacity-0'}`}>
             <strong className="text-foreground block mb-1">Rarity (0-20)</strong>
             <span className="text-[#23a559] font-bold">Higher is better.</span> Determines absolute scarcity. Impacts Long-Term hold scores heavily.
@@ -141,12 +144,12 @@ export function TradeSummaryBox({
         </div>
         {/* LIQUIDITY */}
         <div 
-          className="flex flex-col items-center p-2 rounded-[6px] bg-black/20 border border-border/50 transition-all duration-300 hover:bg-black/30 relative cursor-help"
+          className="flex flex-col items-center p-2.5 rounded-[6px] bg-black/20 border border-border/50 transition-all duration-300 hover:bg-black/30 relative cursor-help"
           onMouseEnter={() => handleEnter('liquidity')}
           onMouseLeave={handleLeave}
         >
-          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">Liquidity</span>
-          <span className="text-[10px] sm:text-[12px] font-bold text-foreground font-mono flex items-center gap-1">{getLiqLabel(giveItems)} <span className="text-muted-foreground text-[9px] sm:text-[10px]">➔</span> {getLiqLabel(getItems)}</span>
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Liquidity</span>
+          <span className="text-[10px] sm:text-[12px] font-bold text-foreground font-mono flex items-center gap-1.5">{getLiqLabel(giveItems)} <span className="text-muted-foreground text-[9px] sm:text-[10px]">➔</span> {getLiqLabel(getItems)}</span>
           <div className={`absolute top-full mt-2 right-0 sm:left-1/2 sm:-translate-x-1/2 w-[160px] bg-popover border border-border text-foreground text-[11px] p-2.5 rounded-[6px] shadow-lg pointer-events-none transition-opacity z-[100] text-right sm:text-center ${activeTip === 'liquidity' ? 'opacity-100' : 'opacity-0'}`}>
             <strong className="text-foreground block mb-1">Liquidity</strong>
             <span className="text-[#23a559] font-bold">High is better.</span> How fast you can find a buyer. Dictates short-term viability.
