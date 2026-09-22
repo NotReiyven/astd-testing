@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/TradeAnalyzer/TradeSectionPanel.tsx
+// ================================================
+
 import { useState, useRef, useEffect, memo, useMemo } from "react";
 import { Search, X } from "lucide-react";
 import { TradeCard } from "../../../types";
@@ -29,7 +33,9 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
   onClear,
   onAdd,
   pinnedIds,
-  onTogglePin
+  onTogglePin,
+  onInputFocus,
+  onInputBlur
 }: {
   label: string;
   type: "give" | "get";
@@ -41,6 +47,8 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
   onAdd: (card: TradeCard) => void;
   pinnedIds: Set<string>;
   onTogglePin: (id: string) => void;
+  onInputFocus?: () => void;
+  onInputBlur?: () => void;
 }) {
   const { units: ALL_UNITS } = useUnits();
   const [query, setQuery] = useState("");
@@ -183,9 +191,11 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
             }}
             onFocus={() => { 
               setOpen(true); 
+              onInputFocus?.();
             }}
             onBlur={() => { 
               setTimeout(() => setOpen(false), 200); 
+              onInputBlur?.();
             }}
             onKeyDown={(e) => {
               if (e.key === "ArrowDown") {

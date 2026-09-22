@@ -32,7 +32,7 @@ export function CustomDropdown({ icon: Icon, value, options, onChange, defaultLa
   useClickOutside(ref, () => setIsOpen(false));
 
   return (
-    <div ref={ref} className="relative min-w-[170px] sm:min-w-[190px]">
+    <div ref={ref} className="relative w-full sm:min-w-[190px]">
       <button
         onClick={() => {
           triggerHaptic('light');

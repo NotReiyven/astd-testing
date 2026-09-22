@@ -347,7 +347,7 @@ export function AdInteractionModal() {
         }
       }}
     >
-      <div className="bg-card w-full h-full md:h-[85vh] md:max-w-6xl md:rounded-[6px] shadow-2xl border-0 md:border border-border flex flex-col overflow-hidden">
+      <div className="bg-card w-full h-[100dvh] md:h-[85vh] md:max-w-6xl md:rounded-[6px] shadow-2xl border-0 md:border border-border flex flex-col overflow-hidden">
 
         <div className="flex items-center justify-between px-4 md:px-6 py-3 bg-popover border-b border-border shrink-0 z-20">
           <div className="flex items-center gap-3">

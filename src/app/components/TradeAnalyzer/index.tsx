@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/TradeAnalyzer/index.tsx
+// ================================================
+
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Calculator, RotateCcw, Share2, Check, ArrowUpDown, Wand2, X, Megaphone, ArrowLeft } from "lucide-react";
 import { TradeSectionPanel } from "./TradeSectionPanel";
@@ -48,6 +52,7 @@ export function TradeAnalyzerPanel({
 
   const [copied, setCopied] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   const { panelWidth, startResize, panelRef } = usePanelResize(480, 420, 800);
 
@@ -311,6 +316,7 @@ export function TradeAnalyzerPanel({
             giveItems={giveItems}
             getItems={getItems}
             ALL_UNITS={ALL_UNITS}
+            isCompact={isMobile && isInputFocused}
           />
 
           <div className="flex-1 overflow-y-auto py-1 custom-scrollbar overscroll-y-contain pb-safe">
@@ -335,6 +341,8 @@ export function TradeAnalyzerPanel({
                 }} 
                 pinnedIds={new Set(pinnedIds)}
                 onTogglePin={(id) => { togglePin("give", id); startGuide("management"); }}
+                onInputFocus={() => setIsInputFocused(true)}
+                onInputBlur={() => setIsInputFocused(false)}
               />
             </div>
 
@@ -365,6 +373,8 @@ export function TradeAnalyzerPanel({
               }} 
               pinnedIds={new Set(pinnedIds)}
               onTogglePin={(id) => { togglePin("get", id); startGuide("management"); }}
+              onInputFocus={() => setIsInputFocused(true)}
+              onInputBlur={() => setIsInputFocused(false)}
             />
 
             <TradeNotices giveItems={giveItems} getItems={getItems} ALL_UNITS={ALL_UNITS} />
@@ -408,7 +418,7 @@ export function TradeAnalyzerPanel({
           ref={sheetRef}
           className={`fixed left-0 right-0 bottom-0 bg-card flex flex-col border-t border-border rounded-t-[12px] overflow-hidden transition-transform duration-200 ease-out ${isElevated ? "!z-[100000]" : "z-[100]"}`}
           style={{ 
-            height: '92vh',
+            height: '92dvh',
             transform: isOpen ? 'translateY(0%)' : 'translateY(100%)'
           }}
         >

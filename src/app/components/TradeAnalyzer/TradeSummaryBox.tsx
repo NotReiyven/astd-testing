@@ -17,10 +17,11 @@ interface TradeSummaryBoxProps {
   giveItems: TradeCard[];
   getItems: TradeCard[];
   ALL_UNITS: MasterUnit[];
+  isCompact?: boolean;
 }
 
 export function TradeSummaryBox({
-  isMainStep4, giveTotal, getTotal, givePercent, getPercent, giveItems, getItems, ALL_UNITS
+  isMainStep4, giveTotal, getTotal, givePercent, getPercent, giveItems, getItems, ALL_UNITS, isCompact = false
 }: TradeSummaryBoxProps) {
   const [activeTip, setActiveTip] = useState<string | null>(null);
   const forecast = getTradeForecast(giveItems, getItems, ALL_UNITS);
@@ -38,6 +39,28 @@ export function TradeSummaryBox({
   };
 
   const handleLeave = () => setActiveTip(null);
+
+  // Compact collapsed bar when mobile user is typing/searching to prevent keyboard overlap
+  if (isCompact) {
+    const valDiff = getTotal - giveTotal;
+    return (
+      <div className="flex-shrink-0 mx-3 mt-2 rounded-[6px] px-3.5 py-2.5 bg-popover border border-border flex items-center justify-between shadow-sm z-20 animate-fade-in">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase">Give:</span>
+          <span className="text-[12px] font-black font-mono text-[#FAA61A]"><RollingNumber value={giveTotal} /></span>
+        </div>
+        <div className="flex items-center gap-1 font-mono text-[11px] font-black">
+          <span className={valDiff > 0 ? 'text-[#23a559]' : valDiff < 0 ? 'text-rose-400' : 'text-foreground'}>
+            {valDiff > 0 ? '+' : ''}<RollingNumber value={valDiff} />
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase">Get:</span>
+          <span className="text-[12px] font-black font-mono text-primary"><RollingNumber value={getTotal} /></span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex-shrink-0 mx-4 mt-5 rounded-[8px] px-5 py-4 md:px-6 md:py-5 relative bg-card border transition-all duration-300 z-20 ${isMainStep4 ? 'border-primary shadow-[0_0_20px_var(--primary)] ring-4 ring-primary/30' : 'border-border'}`}>

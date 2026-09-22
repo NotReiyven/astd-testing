@@ -142,9 +142,9 @@ export function CanvasControls({
         </div>
       </div>
 
-      {/* MOBILE LAYOUT */}
+      {/* MOBILE LAYOUT: Stacked grid for ultra-narrow screens */}
       <div className="flex md:hidden flex-col gap-3 w-full pt-3 border-t border-border/60">
-        <div className="grid grid-cols-2 gap-2.5 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full">
           <CustomDropdown icon={Filter} value={statusFilter} options={FILTER_OPTIONS} onChange={(s: string) => { triggerHaptic('light'); setStatusFilter(s); if (s !== "all") window.dispatchEvent(new Event("academy-used-filter")); }} defaultLabel="All Statuses" />
           <CustomDropdown icon={ArrowUpDown} value={sortMode} options={SORT_OPTIONS} onChange={(s: string) => { triggerHaptic('light'); setSortMode(s); }} />
         </div>
