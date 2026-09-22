@@ -25,12 +25,12 @@
   --background: #16181c;
   --foreground: #ffffff;
 
-  /* Cards & Panels - Updated to semi-transparent frosted glass */
-  --card: rgba(40, 43, 48, 0.82);
+  /* Cards & Panels - Solid surfaces for clean separation against the pattern */
+  --card: var(--discord-dark-gray);
   --card-foreground: #dcddde;
 
-  /* Modals & Dropdowns - Semi-transparent */
-  --popover: rgba(30, 33, 36, 0.88);
+  /* Modals & Dropdowns - Solid surfaces */
+  --popover: var(--discord-darker-gray);
   --popover-foreground: #dcddde;
 
   /* Brand Colors */
@@ -38,25 +38,25 @@
   --primary-foreground: #ffffff;
 
   /* Secondary Elements */
-  --secondary: rgba(66, 69, 73, 0.5);
+  --secondary: var(--discord-light-gray);
   --secondary-foreground: #ffffff;
 
   /* Muted Elements */
-  --muted: rgba(40, 43, 48, 0.6);
+  --muted: var(--discord-dark-gray);
   --muted-foreground: #949ba4;
 
   /* Accents & Hovers */
-  --accent: rgba(66, 69, 73, 0.6);
+  --accent: var(--discord-light-gray);
   --accent-foreground: #ffffff;
 
   /* Alerts */
   --destructive: #ed4245;
   --destructive-foreground: #ffffff;
 
-  /* Structural - Softer borders to blend with pattern */
-  --border: rgba(66, 69, 73, 0.35);
-  --input: rgba(30, 33, 36, 0.8);
-  --input-background: rgba(30, 33, 36, 0.8);
+  /* Structural - Crisp, solid borders instead of alpha fades */
+  --border: #424549;
+  --input: var(--discord-darker-gray);
+  --input-background: var(--discord-darker-gray);
   --switch-background: var(--discord-light-gray);
   --ring: var(--discord-blurple);
 
@@ -69,7 +69,7 @@
   --color-foreground: var(--foreground);
   
   --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
+  --color-card-foreground: var(--color-card-foreground);
   
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
