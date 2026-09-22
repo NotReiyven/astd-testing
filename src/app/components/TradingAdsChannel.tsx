@@ -464,19 +464,20 @@ export function TradingAdsChannel() {
     <div className="flex-1 flex flex-col overflow-hidden h-full select-none font-sans relative bg-background">
 
       <div className="flex-shrink-0 flex flex-col px-4 py-3 border-b border-border z-20 gap-3 bg-card">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="relative flex items-center justify-center">
+        <div className="flex items-center justify-between gap-2.5">
+          {/* Hidden on mobile viewports */}
+          <div className="hidden sm:flex items-center gap-2.5 min-w-0">
+            <div className="relative flex items-center justify-center shrink-0">
               <div className="w-2.5 h-2.5 bg-primary rounded-full z-10" />
               <div className="absolute inset-0 bg-primary rounded-full animate-ping opacity-60" />
             </div>
-            <h2 className="text-[15px] font-black text-foreground tracking-tight">Live Trading Board</h2>
+            <h2 className="text-[15px] font-black text-foreground tracking-tight whitespace-nowrap">Live Trading Board</h2>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
             <button
               onClick={() => { triggerHaptic('light'); setIsControlsCollapsed(!isControlsCollapsed); }}
-              className="md:hidden flex items-center gap-1 px-3 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-[11px] font-bold uppercase tracking-wider cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-[11px] font-bold uppercase tracking-wider cursor-pointer"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
               <span>{isControlsCollapsed ? "Filters" : "Collapse"}</span>
@@ -487,7 +488,7 @@ export function TradingAdsChannel() {
               <button
                 type="button"
                 onClick={handleCreateAdClick}
-                className="flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-[4px] bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none shrink-0 shadow-sm cursor-pointer active:scale-95 border border-primary"
+                className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-[4px] bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none shrink-0 shadow-sm cursor-pointer active:scale-95 border border-primary"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Create Ad</span>
@@ -496,7 +497,7 @@ export function TradingAdsChannel() {
               <button
                 type="button"
                 onClick={() => { triggerHaptic('medium'); loginWithDiscord(); }}
-                className="flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-[11px] font-bold uppercase tracking-wider transition-all hover:bg-card focus-visible:outline-none shrink-0 cursor-pointer active:scale-95"
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-[11px] font-bold uppercase tracking-wider transition-all hover:bg-card focus-visible:outline-none shrink-0 cursor-pointer active:scale-95"
               >
                 <Lock className="w-3.5 h-3.5 text-primary" />
                 <span>Login</span>

@@ -12,10 +12,10 @@ import { useUnits } from "../../../context/UnitContext";
 import { TradeCard } from "../../../types";
 
 const TTL_OPTIONS = [
-  { hours: 1, label: "1 Hour (Quick Flip)" },
-  { hours: 4, label: "4 Hours (Standard)" },
-  { hours: 12, label: "12 Hours (Overnight)" },
-  { hours: 24, label: "24 Hours (Maximum)" }
+  { hours: 1, label: "1 Hour" },
+  { hours: 4, label: "4 Hours" },
+  { hours: 12, label: "12 Hours" },
+  { hours: 24, label: "24 Hours" }
 ];
 
 const PRESET_NOTES = [
@@ -132,7 +132,7 @@ export function AdComposer() {
           </div>
         )}
 
-        {/* CLEAN TYPOGRAPHIC FORMAT CARDS */}
+        {/* HIGH CONTRAST FORMAT CARDS */}
         <div className="flex flex-col gap-2.5">
           <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Listing Format</label>
           <div className="grid grid-cols-1 gap-2.5">
@@ -143,15 +143,15 @@ export function AdComposer() {
               className={`flex flex-col text-left p-4 rounded-[8px] transition-all focus-visible:outline-none cursor-pointer border ${
                 adType === "standard" 
                   ? "bg-popover border-primary ring-1 ring-primary/30 shadow-md" 
-                  : "bg-card hover:bg-muted/60 border-border text-muted-foreground hover:text-foreground"
+                  : "bg-card hover:bg-muted/60 border-border text-foreground/80 hover:text-foreground"
               }`}
             >
-              <div className="flex items-center justify-between w-full mb-1">
+              <div className="flex items-center justify-between w-full mb-1.5">
                 <span className="text-[13px] font-extrabold uppercase tracking-wide text-foreground">Specific Trade</span>
                 {adType === "standard" && <Check className="w-4 h-4 text-primary" />}
               </div>
-              <span className="text-[12px] text-muted-foreground leading-relaxed">
-                Offer specific units in exchange for specific requested units. Requires items in both <strong>Give</strong> and <strong>Get</strong>.
+              <span className="text-[12px] text-zinc-300 leading-relaxed font-medium">
+                Offer specific units in exchange for specific requested units. Requires items in both <strong className="text-foreground">Give</strong> and <strong className="text-foreground">Get</strong>.
               </span>
             </button>
 
@@ -161,15 +161,15 @@ export function AdComposer() {
               className={`flex flex-col text-left p-4 rounded-[8px] transition-all focus-visible:outline-none cursor-pointer border ${
                 adType === "lf_offers" 
                   ? "bg-popover border-[#FAA61A] ring-1 ring-[#FAA61A]/30 shadow-md" 
-                  : "bg-card hover:bg-muted/60 border-border text-muted-foreground hover:text-foreground"
+                  : "bg-card hover:bg-muted/60 border-border text-foreground/80 hover:text-foreground"
               }`}
             >
-              <div className="flex items-center justify-between w-full mb-1">
+              <div className="flex items-center justify-between w-full mb-1.5">
                 <span className="text-[13px] font-extrabold uppercase tracking-wide text-foreground">Taking Offers (LF Offers)</span>
                 {adType === "lf_offers" && <Check className="w-4 h-4 text-[#FAA61A]" />}
               </div>
-              <span className="text-[12px] text-muted-foreground leading-relaxed">
-                Offer your units and leave the request open to general community offers. Requires items only in <strong>Give</strong>.
+              <span className="text-[12px] text-zinc-300 leading-relaxed font-medium">
+                Offer your units and leave the request open to general community offers. Requires items only in <strong className="text-foreground">Give</strong>.
               </span>
             </button>
 
@@ -179,14 +179,14 @@ export function AdComposer() {
               className={`flex flex-col text-left p-4 rounded-[8px] transition-all focus-visible:outline-none cursor-pointer border ${
                 adType === "inventory" 
                   ? "bg-popover border-[#23a559] ring-1 ring-[#23a559]/30 shadow-md" 
-                  : "bg-card hover:bg-muted/60 border-border text-muted-foreground hover:text-foreground"
+                  : "bg-card hover:bg-muted/60 border-border text-foreground/80 hover:text-foreground"
               }`}
             >
-              <div className="flex items-center justify-between w-full mb-1">
+              <div className="flex items-center justify-between w-full mb-1.5">
                 <span className="text-[13px] font-extrabold uppercase tracking-wide text-foreground">Vault Showcase</span>
                 {adType === "inventory" && <Check className="w-4 h-4 text-[#23a559]" />}
               </div>
-              <span className="text-[12px] text-muted-foreground leading-relaxed">
+              <span className="text-[12px] text-zinc-300 leading-relaxed font-medium">
                 Showcase your entire personal vault collection on the trading board. Automatically pulls your unpinned vault items.
               </span>
             </button>
@@ -206,7 +206,7 @@ export function AdComposer() {
                 key={preset}
                 type="button"
                 onClick={() => setNote(preset)}
-                className="text-[11px] font-semibold bg-popover hover:bg-muted text-muted-foreground hover:text-foreground px-3 py-2 rounded-[6px] border border-border transition-colors focus-visible:outline-none shadow-sm cursor-pointer"
+                className="text-[11px] font-semibold bg-popover hover:bg-muted text-foreground/90 hover:text-foreground px-3 py-2 rounded-[6px] border border-border transition-colors focus-visible:outline-none shadow-sm cursor-pointer"
               >
                 {preset}
               </button>
@@ -221,18 +221,25 @@ export function AdComposer() {
           />
         </div>
 
-        {/* LISTING DURATION */}
+        {/* LISTING DURATION PILLS */}
         <div className="flex flex-col gap-2">
           <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Listing Duration</label>
-          <select
-            value={ttl}
-            onChange={(e) => setTtl(Number(e.target.value))}
-            className="bg-input text-foreground text-[13px] px-3.5 py-3 rounded-[6px] outline-none border border-border focus:border-primary shadow-inner w-full cursor-pointer min-h-[44px]"
-          >
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {TTL_OPTIONS.map((o) => (
-              <option key={o.hours} value={o.hours}>{o.label}</option>
+              <button
+                key={o.hours}
+                type="button"
+                onClick={() => setTtl(o.hours)}
+                className={`py-2.5 px-3 rounded-[6px] text-[12px] font-bold transition-all border cursor-pointer focus-visible:outline-none ${
+                  ttl === o.hours 
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm" 
+                    : "bg-popover text-foreground/80 hover:text-foreground border-border hover:bg-muted"
+                }`}
+              >
+                {o.label}
+              </button>
             ))}
-          </select>
+          </div>
         </div>
       </div>
 

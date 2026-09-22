@@ -214,9 +214,16 @@ export function TradeAnalyzerPanel({
         <div className="w-7 h-7 flex-shrink-0 rounded-[4px] flex items-center justify-center bg-card border border-border">
           <Calculator className="w-3.5 h-3.5 text-foreground" />
         </div>
-        <span className="text-[14px] md:text-[15px] font-bold flex-1 text-foreground truncate select-none">
-          {isComposerOpen ? "Create Listing" : "Trade Analyzer"}
-        </span>
+
+        {/* KEEPING SPACE EMPTY ON MOBILE, SHOWING TITLE ON DESKTOP */}
+        {isComposerOpen ? (
+          <span className="text-[14px] md:text-[15px] font-bold flex-1 text-foreground truncate select-none">Create Listing</span>
+        ) : (
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <span className="hidden md:inline text-[15px] font-bold text-foreground select-none">Trade Analyzer</span>
+            <div className="flex-1 md:hidden" />
+          </div>
+        )}
 
         {isComposerOpen ? (
           <button 

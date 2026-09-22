@@ -5,9 +5,9 @@
 import { useState, useRef } from "react";
 import { 
   Package, Search, Trash2, Plus, ArrowUpDown, 
-  Settings2, X, Wand2, UploadCloud, Check, ChevronDown, 
+  Settings2, X, Wand2, UploadCloud, Check, ChevronDown, ChevronUp, 
   Copy, ArrowUpCircle, ArrowDownCircle, MousePointerSquareDashed, 
-  Lock as LockIcon, TrendingUp, TrendingDown, Heart, Info, ArrowLeft, Megaphone, History, Pin
+  Lock as LockIcon, TrendingUp, TrendingDown, Heart, Info, ArrowLeft, Megaphone, History, Pin, SlidersHorizontal
 } from "lucide-react";
 import { useUnits } from "../../context/UnitContext";
 import { getProxyImage, handleImageError, TIER_CONFIG, FILTERS, getTier, GRID_STATUS_CFG } from "../../data";
@@ -43,6 +43,8 @@ export function InventoryChannel() {
   
   const [isOmniboxOpen, setIsOmniboxOpen] = useState(false);
   const [omniboxIndex, setOmniboxIndex] = useState(-1);
+  const [isControlsCollapsed, setIsControlsCollapsed] = useState(false);
+
   const searchInputRef = useRef<HTMLInputElement>(null);
   const omniboxRef = useRef<HTMLDivElement>(null);
   useClickOutside(omniboxRef, () => setIsOmniboxOpen(false));
@@ -108,14 +110,27 @@ export function InventoryChannel() {
       )}
 
       {/* Master Tabs */}
-      <div className="flex items-center gap-6 px-6 pt-4 bg-card border-b border-border shrink-0 z-20">
-        <button onClick={() => handleTabSwitch('owned')} className={`pb-3 text-[13px] font-bold uppercase tracking-widest transition-all border-b-[2px] focus-visible:outline-none ${vaultView === 'owned' ? 'text-foreground border-foreground' : 'text-muted-foreground border-transparent hover:text-foreground'}`}>{isReadOnly ? 'Vault' : 'My Vault'}</button>
-        <button onClick={() => handleTabSwitch('wishlist')} className={`pb-3 text-[13px] font-bold uppercase tracking-widest transition-all border-b-[2px] focus-visible:outline-none ${vaultView === 'wishlist' ? 'text-foreground border-foreground' : 'text-muted-foreground border-transparent hover:text-foreground'}`}>Wishlist</button>
+      <div className="flex items-center justify-between px-6 pt-4 bg-card border-b border-border shrink-0 z-20">
+        <div className="flex items-center gap-6">
+          <button onClick={() => handleTabSwitch('owned')} className={`pb-3 text-[13px] font-bold uppercase tracking-widest transition-all border-b-[2px] focus-visible:outline-none cursor-pointer ${vaultView === 'owned' ? 'text-foreground border-foreground' : 'text-muted-foreground border-transparent hover:text-foreground'}`}>{isReadOnly ? 'Vault' : 'My Vault'}</button>
+          <button onClick={() => handleTabSwitch('wishlist')} className={`pb-3 text-[13px] font-bold uppercase tracking-widest transition-all border-b-[2px] focus-visible:outline-none cursor-pointer ${vaultView === 'wishlist' ? 'text-foreground border-foreground' : 'text-muted-foreground border-transparent hover:text-foreground'}`}>Wishlist</button>
+        </div>
+
+        <div className="flex items-center gap-2 pb-2">
+          <button
+            onClick={() => { triggerHaptic('light'); setIsControlsCollapsed(!isControlsCollapsed); }}
+            className="md:hidden flex items-center gap-1 px-3 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-[11px] font-bold uppercase tracking-wider cursor-pointer"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>{isControlsCollapsed ? "Filters" : "Collapse"}</span>
+            {isControlsCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+          </button>
+        </div>
       </div>
 
-      {/* Header Controls Bar */}
+      {/* Header Controls Bar (Collapsible on Mobile) */}
       <div className={`flex-shrink-0 flex flex-col bg-card border-b border-border shadow-sm z-20 relative ${importMenuOpen ? "opacity-30 pointer-events-none" : ""}`}>
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between px-3 md:px-5 py-3 gap-3">
+        <div className={`flex flex-col lg:flex-row lg:items-center justify-between px-3 md:px-5 py-3 gap-3 transition-all duration-300 overflow-hidden ${isControlsCollapsed ? 'max-h-0 opacity-0 md:max-h-none md:opacity-100 py-0 md:py-3' : 'max-h-[300px] opacity-100'}`}>
           
           {/* Filter Toggles Row */}
           <div 
@@ -124,7 +139,7 @@ export function InventoryChannel() {
           >
             <button 
               onClick={() => setActiveTierFilter("All")} 
-              className={`flex-shrink-0 px-3 py-1.5 rounded-[4px] text-[12px] font-bold tracking-wide transition-colors border focus-visible:outline-none ${
+              className={`flex-shrink-0 px-3 py-1.5 rounded-[4px] text-[12px] font-bold tracking-wide transition-colors border focus-visible:outline-none cursor-pointer ${
                 activeTierFilter === "All" 
                   ? "bg-foreground text-background border-foreground shadow-sm" 
                   : "bg-muted text-muted-foreground border-transparent hover:bg-card hover:border-border hover:text-foreground"
@@ -135,7 +150,7 @@ export function InventoryChannel() {
             {vaultView !== "wishlist" && (
               <button 
                 onClick={() => setActiveTierFilter("Pinned")} 
-                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-bold tracking-wide transition-colors border focus-visible:outline-none ${
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-bold tracking-wide transition-colors border focus-visible:outline-none cursor-pointer ${
                   activeTierFilter === "Pinned" 
                     ? "bg-foreground text-background border-foreground shadow-sm" 
                     : "bg-muted text-muted-foreground border-transparent hover:bg-card hover:border-border hover:text-foreground"
@@ -148,7 +163,7 @@ export function InventoryChannel() {
               <button 
                 key={f} 
                 onClick={() => setActiveTierFilter(f)} 
-                className={`flex-shrink-0 px-3 py-1.5 rounded-[4px] text-[12px] font-bold tracking-wide transition-colors border focus-visible:outline-none ${
+                className={`flex-shrink-0 px-3 py-1.5 rounded-[4px] text-[12px] font-bold tracking-wide transition-colors border focus-visible:outline-none cursor-pointer ${
                   activeTierFilter === f 
                     ? "bg-foreground text-background border-foreground shadow-sm" 
                     : "bg-muted text-muted-foreground border-transparent hover:bg-card hover:border-border hover:text-foreground"
@@ -165,7 +180,7 @@ export function InventoryChannel() {
               {!isReadOnly && vaultView !== "wishlist" && (
                 <button 
                   onClick={() => { triggerHaptic('light'); setIsSelectMode(!isSelectMode); setSelectedUnits(new Set()); }}
-                  className={`flex items-center gap-1.5 px-3 h-[32px] rounded-[4px] text-[12px] font-bold transition-all shrink-0 focus-visible:outline-none border ${
+                  className={`flex items-center gap-1.5 px-3 h-[32px] rounded-[4px] text-[12px] font-bold transition-all shrink-0 focus-visible:outline-none border cursor-pointer ${
                     isSelectMode 
                       ? 'bg-foreground text-background border-foreground' 
                       : 'bg-muted text-muted-foreground hover:text-foreground hover:bg-card border-transparent hover:border-border'
@@ -198,7 +213,7 @@ export function InventoryChannel() {
 
               <button
                 onClick={handleCopyVault}
-                className="w-[32px] h-[32px] shrink-0 bg-muted hover:bg-card text-muted-foreground hover:text-foreground rounded-[4px] flex items-center justify-center transition-colors focus-visible:outline-none border border-transparent hover:border-border"
+                className="w-[32px] h-[32px] shrink-0 bg-muted hover:bg-card text-muted-foreground hover:text-foreground rounded-[4px] flex items-center justify-center transition-colors focus-visible:outline-none border border-transparent hover:border-border cursor-pointer"
                 title={`Copy ${vaultView === "wishlist" ? "Wishlist" : "Vault"} Summary`}
               >
                 <Copy className="w-3.5 h-3.5" />
@@ -208,7 +223,7 @@ export function InventoryChannel() {
                 <div className="relative shrink-0" ref={manageRef}>
                   <button 
                     onClick={() => setManageOpen(!manageOpen)}
-                    className={`w-[32px] h-[32px] shrink-0 flex items-center justify-center rounded-[4px] transition-colors focus-visible:outline-none border ${manageOpen || confirmClear ? 'bg-card text-foreground border-border' : 'bg-muted text-muted-foreground hover:text-foreground hover:bg-card border-transparent hover:border-border'}`}
+                    className={`w-[32px] h-[32px] shrink-0 flex items-center justify-center rounded-[4px] transition-colors focus-visible:outline-none border cursor-pointer ${manageOpen || confirmClear ? 'bg-card text-foreground border-border' : 'bg-muted text-muted-foreground hover:text-foreground hover:bg-card border-transparent hover:border-border'}`}
                     title="Inventory Options"
                   >
                     <Settings2 className="w-3.5 h-3.5" />
@@ -222,8 +237,8 @@ export function InventoryChannel() {
                             Remove {confirmClear === "unpinned" ? <span className="font-bold text-destructive">{metrics.unpinnedCount} unlocked</span> : <span className="font-bold text-destructive">all {metrics.uniqueCount}</span>} units? This cannot be undone.
                           </span>
                           <div className="flex items-center gap-2">
-                            <button onClick={() => setConfirmClear(null)} className="flex-1 px-3 py-2 bg-muted hover:bg-card rounded-[2px] text-[12px] font-bold text-foreground transition-colors focus-visible:outline-none">Cancel</button>
-                            <button onClick={handleClearAction} className="flex-1 px-3 py-2 bg-destructive hover:bg-destructive/90 rounded-[2px] text-[12px] font-bold text-white transition-colors focus-visible:outline-none">Clear</button>
+                            <button onClick={() => setConfirmClear(null)} className="flex-1 px-3 py-2 bg-muted hover:bg-card rounded-[2px] text-[12px] font-bold text-foreground transition-colors focus-visible:outline-none cursor-pointer">Cancel</button>
+                            <button onClick={handleClearAction} className="flex-1 px-3 py-2 bg-destructive hover:bg-destructive/90 rounded-[2px] text-[12px] font-bold text-white transition-colors focus-visible:outline-none cursor-pointer">Clear</button>
                           </div>
                         </div>
                       ) : (
