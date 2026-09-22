@@ -1,6 +1,7 @@
 // ================================================
 // FILE: src/app/components/InventoryChannel/index.tsx
 // ================================================
+
 import { useMemo } from "react";
 import { 
   Package, Search, X, Lock, 
@@ -11,7 +12,6 @@ import { useUnits } from "../../../context/UnitContext";
 import { useInventoryManager } from "../../../hooks/useInventoryManager";
 import { TIER_CONFIG } from "../../../data";
 import { TradingCardSlot } from "./TradingCardSlot";
-import { Sparkline } from "./Sparkline";
 import { FilterKey } from "../../../types";
 import { getUnitConservativeValue } from "./inventoryUtils";
 import { HoldToConfirmButton } from "../shared/Formatters";
@@ -49,16 +49,17 @@ export function InventoryChannel() {
                 <ArrowLeft className="w-4 h-4" /> Return
               </button>
             ) : (
-              <div className="flex bg-popover rounded-[4px] p-1 border border-border shadow-inner">
+              // FIXED: Added w-full md:w-fit to ensure the toggle buttons stretch properly on mobile
+              <div className="flex bg-popover rounded-[4px] p-1 border border-border shadow-inner w-full md:w-fit">
                 <button 
                   onClick={() => handleTabSwitch("owned")}
-                  className={`px-4 py-1.5 rounded-[3px] text-[12px] font-bold uppercase tracking-wider transition-colors ${vaultView === "owned" ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                  className={`flex-1 md:flex-none px-4 py-1.5 rounded-[3px] text-[12px] font-bold uppercase tracking-wider transition-colors text-center ${vaultView === "owned" ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   My Vault
                 </button>
                 <button 
                   onClick={() => handleTabSwitch("wishlist")}
-                  className={`px-4 py-1.5 rounded-[3px] text-[12px] font-bold uppercase tracking-wider transition-colors ${vaultView === "wishlist" ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                  className={`flex-1 md:flex-none px-4 py-1.5 rounded-[3px] text-[12px] font-bold uppercase tracking-wider transition-colors text-center ${vaultView === "wishlist" ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   Wishlist
                 </button>
@@ -74,7 +75,7 @@ export function InventoryChannel() {
             {!isReadOnly && vaultView === "owned" && profile && (
               <button
                 onClick={() => setConfirmClear("unpinned")}
-                className="flex items-center gap-1.5 px-4 py-1.5 bg-popover hover:bg-destructive/10 border border-border hover:border-destructive/30 text-muted-foreground hover:text-foreground hover:text-destructive rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none cursor-pointer"
+                className="flex items-center justify-center gap-1.5 px-4 py-2 md:py-1.5 bg-popover hover:bg-destructive/10 border border-border hover:border-destructive/30 text-muted-foreground hover:text-foreground hover:text-destructive rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none cursor-pointer w-full md:w-auto"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Clear Unpinned
               </button>
@@ -205,7 +206,7 @@ export function InventoryChannel() {
                 <button
                   key={u.id}
                   onClick={() => handleQuickAdd(u)}
-                  className="flex items-center justify-between p-2.5 bg-popover hover:bg-muted border border-border rounded-[4px] text-left transition-colors group focus-visible:outline-none"
+                  className="flex items-center justify-between p-2.5 bg-popover hover:bg-muted border border-border rounded-[4px] text-left transition-colors group focus-visible:outline-none cursor-pointer"
                 >
                   <div className="flex flex-col min-w-0 pr-2">
                     <span className="text-[13px] font-bold text-foreground truncate">{u.name}</span>
@@ -229,7 +230,7 @@ export function InventoryChannel() {
             </h3>
             {!isReadOnly && (
               <p className="text-[13px] text-muted-foreground max-w-sm mt-2">
-                Use the search bar above to find and add units, or use the Mass Import tool below.
+                Use the search bar above to find and add units.
               </p>
             )}
           </div>

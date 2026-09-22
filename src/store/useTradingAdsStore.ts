@@ -41,7 +41,6 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
     set({ isLoading: true });
     const now = new Date().toISOString();
     
-    // FIXED: Re-added explicit foreign key to prevent 400 multiple relationship errors
     const { data, error } = await supabase
       .from('trading_ads')
       .select(`
@@ -63,37 +62,29 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
   },
 
   subscribeToAds: () => {
-    const channel = supabase.channel('public:trading_ads')
+    // 1. Subscribe to Trading Ads changes
+    const adsChannel = supabase.channel('public:trading_ads')
       .on(
         'postgres_changes',
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'trading_ads' 
-        },
+        { event: '*', schema: 'public', table: 'trading_ads' },
         (payload) => {
           const { eventType, new: newRecord, old: oldRecord } = payload;
           
           if (eventType === 'INSERT') {
             supabase
               .from('trading_ads')
-              // FIXED: Re-added explicit foreign key for realtime inserts
               .select(`*, profiles!trading_ads_user_id_fkey(username, avatar_url, role, discord_id, status)`)
               .eq('id', newRecord.id)
               .single()
               .then(({ data, error }) => {
                 if (error) console.error("🚨 Realtime Fetch Error:", error);
                 if (data) {
-                  set((state) => ({
-                    ads: [data as TradingAd, ...state.ads]
-                  }));
+                  set((state) => ({ ads: [data as TradingAd, ...state.ads] }));
                 }
               });
           } 
           else if (eventType === 'DELETE') {
-            set((state) => ({
-              ads: state.ads.filter(ad => ad.id !== oldRecord.id)
-            }));
+            set((state) => ({ ads: state.ads.filter(ad => ad.id !== oldRecord.id) }));
           }
           else if (eventType === 'UPDATE') {
              set((state) => ({
@@ -101,23 +92,38 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
              }));
           }
         }
-      )
-      .subscribe();
+      ).subscribe();
 
+    // 2. Subscribe to Profile Status changes
+    const profilesChannel = supabase.channel('public:profiles_status')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles' },
+        (payload) => {
+          // Patch the status of the specific user across all their active ads
+          set((state) => ({
+            ads: state.ads.map(ad => 
+              ad.user_id === payload.new.id 
+                ? { ...ad, profiles: { ...ad.profiles!, status: payload.new.status } } 
+                : ad
+            )
+          }));
+        }
+      ).subscribe();
+
+    // Return cleanup function to unsubscribe from both
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(adsChannel);
+      supabase.removeChannel(profilesChannel);
     };
   },
 
   createAd: async (adData: any) => {
     const payload: any = {};
-
     payload.user_id = adData.user_id || adData.userId;
     if (!payload.user_id) {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        payload.user_id = session.user.id;
-      }
+      if (session?.user) payload.user_id = session.user.id;
     }
 
     payload.ad_type = adData.ad_type || adData.adType || 'standard';
@@ -146,9 +152,7 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
   deleteAd: async (id: string) => {
     const currentAds = get().ads;
     set({ ads: currentAds.filter(ad => ad.id !== id) });
-    
     const { error } = await supabase.from('trading_ads').delete().eq('id', id);
-    
     if (error) {
       console.error("🚨 Error deleting ad:", error.message);
       set({ ads: currentAds });

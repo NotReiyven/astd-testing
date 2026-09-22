@@ -13,7 +13,8 @@ export interface UserProfile {
   discord_id: string;
   username: string;
   avatar_url: string;
-  role: 'user' | 'mod' | 'admin' | 'master' | 'banned';
+  role: string;
+  assigned_roles: string[]; // NEW: Supports multiple roles
   created_at: string;
 }
 
@@ -30,12 +31,14 @@ const ROLE_PRIORITY: Record<string, number> = {
 export function useAdminIntel() {
   const { profile } = useAuthStore();
   const { units: ALL_UNITS } = useUnits();
-  const isMaster = profile?.role === 'master';
+  
+  const isMaster = profile?.role?.toLowerCase() === 'master';
 
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [userIntel, setUserIntel] = useState({ netWorth: 0, adCount: 0, isLoading: false });
   const [metrics, setMetrics] = useState<SystemMetrics>({ totalUsers: 0, activeAds: 0, bannedUsers: 0 });
+  const [availableRoles, setAvailableRoles] = useState<{name: string, color: string, rank: number}[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
@@ -47,21 +50,28 @@ export function useAdminIntel() {
 
   const loadMetrics = useCallback(async () => {
     const now = new Date().toISOString();
-    const [usersRes, adsRes, bannedRes] = await Promise.all([
+    const [usersRes, adsRes, bannedRes, rolesRes] = await Promise.all([
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
       supabase.from('trading_ads').select('id', { count: 'exact', head: true }).gt('expires_at', now),
-      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'banned')
+      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'banned'),
+      supabase.from('roles').select('name, color, rank').order('rank', { ascending: true })
     ]);
+    
     setMetrics({
       totalUsers: usersRes.count || 0,
       activeAds: adsRes.count || 0,
       bannedUsers: bannedRes.count || 0
     });
+
+    if (rolesRes.data) {
+      setAvailableRoles(rolesRes.data);
+    }
   }, []);
 
   const fetchUsers = useCallback(async (query = "") => {
     setIsLoading(true);
-    let request = supabase.from('profiles').select('*').limit(100);
+    // Fetch users AND join their multiple roles from the junction table
+    let request = supabase.from('profiles').select('*, user_roles(roles(name))').limit(100);
     
     if (query) {
       if (/^\d+$/.test(query)) {
@@ -73,9 +83,16 @@ export function useAdminIntel() {
 
     const { data, error } = await request;
     if (!error && data) {
-      const sorted = [...data].sort((a, b) => {
-        const priorityA = ROLE_PRIORITY[a.role] ?? 3;
-        const priorityB = ROLE_PRIORITY[b.role] ?? 3;
+      const mappedUsers = data.map((u: any) => {
+        // Flatten the nested join structure into a simple string array
+        const rolesList = u.user_roles?.map((ur: any) => ur.roles?.name).filter(Boolean) || [];
+        if (rolesList.length === 0 && u.role) rolesList.push(u.role); // Fallback
+        return { ...u, assigned_roles: rolesList };
+      });
+
+      const sorted = [...mappedUsers].sort((a, b) => {
+        const priorityA = ROLE_PRIORITY[a.role] ?? 99;
+        const priorityB = ROLE_PRIORITY[b.role] ?? 99;
         if (priorityA !== priorityB) return priorityA - priorityB;
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
@@ -134,19 +151,60 @@ export function useAdminIntel() {
       return false;
     }
 
-    const { error } = await supabase.rpc('admin_update_role', { target_user_id: targetUserId, new_role: newRole });
+    const { error } = await supabase.rpc('admin_assign_role', { target_user_id: targetUserId, role_name: newRole });
     
     if (error) {
       showToast(`Database Error: ${error.message}`, "error");
       return false;
     } else {
-      fetchUsers(searchQuery);
+      // Optimistic UI update for toggling multiple roles
       if (selectedUser?.id === targetUserId) {
-        setSelectedUser({ ...selectedUser, role: newRole as any });
+        const currentRoles = selectedUser.assigned_roles || [];
+        const hasRole = currentRoles.includes(newRole);
+        const nextRoles = hasRole ? currentRoles.filter(r => r !== newRole) : [...currentRoles, newRole];
+        setSelectedUser({ ...selectedUser, assigned_roles: nextRoles, role: nextRoles[0] || 'user' });
       }
-      showToast(`Updated role to ${newRole.toUpperCase()}`);
+      fetchUsers(searchQuery); // Refetch in background to sync
+      showToast(`Toggled role: ${newRole.toUpperCase()}`);
       if (newRole === 'banned') loadMetrics();
       return true;
+    }
+  };
+
+  const createNewRole = async (name: string, color: string, rank: number) => {
+    if (!isMaster) return showToast("Only Master can create roles.", "error");
+    
+    const cleanName = name.toLowerCase().replace(/\s+/g, '-');
+    const { error } = await supabase.from('roles').insert({ 
+      name: cleanName, 
+      color, 
+      rank, 
+      permissions: {} 
+    });
+
+    if (error) {
+      showToast(`Failed to create role: ${error.message}`, "error");
+    } else {
+      showToast(`Role '${cleanName}' created successfully!`);
+      loadMetrics(); // Refresh the available roles
+    }
+  };
+
+  const deleteRole = async (name: string) => {
+    if (!isMaster) return showToast("Only Master can delete roles.", "error");
+    if (['master', 'admin', 'mod', 'user', 'banned'].includes(name)) {
+      return showToast("Cannot delete core system roles.", "error");
+    }
+
+    if (!confirm(`Are you absolutely sure you want to delete the role '${name}'? Users with this role will be downgraded to 'user'.`)) return;
+
+    const { error } = await supabase.from('roles').delete().eq('name', name);
+    if (error) {
+      showToast(`Failed to delete role: ${error.message}`, "error");
+    } else {
+      showToast(`Role '${name}' deleted.`);
+      loadMetrics();
+      fetchUsers(searchQuery);
     }
   };
 
@@ -222,10 +280,10 @@ export function useAdminIntel() {
   };
 
   return {
-    users, selectedUser, setSelectedUser, userIntel, metrics,
+    users, selectedUser, setSelectedUser, userIntel, metrics, availableRoles,
     searchQuery, setSearchQuery, isLoading, toast, showToast, setToast,
     handleSearch: (e: React.FormEvent) => { e.preventDefault(); fetchUsers(searchQuery); },
-    updateUserRole, handleResetProfile, handlePurgeAds, handlePurgeComments,
+    updateUserRole, createNewRole, deleteRole, handleResetProfile, handlePurgeAds, handlePurgeComments,
     handleWipeInventory, handleWipeWishlist, handleTotalAccountNuke,
     profile, isMaster
   };

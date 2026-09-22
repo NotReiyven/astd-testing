@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/hooks/useAppBoot.ts
+// ================================================
+
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useInventoryStore } from '../store/useInventoryStore';
@@ -10,6 +14,7 @@ export function useAppBoot() {
   
   const initializeAuth = useAuthStore((s) => s.initialize);
   const fetchInventory = useInventoryStore((s) => s.fetchInventory);
+  const fetchWishlist = useInventoryStore((s) => s.fetchWishlist); // ADDED: Fetch wishlist
   const profile = useAuthStore((s) => s.profile);
 
   // Layout & Auth Initialization
@@ -21,12 +26,13 @@ export function useAppBoot() {
     return () => window.removeEventListener('resize', checkMobile);
   }, [initializeAuth]);
 
-  // Inventory Sync
+  // Inventory & Wishlist Sync
   useEffect(() => {
     if (profile) {
       fetchInventory(profile.id);
+      fetchWishlist(profile.id); // ADDED: Hydrate wishlist immediately upon auth
     }
-  }, [profile, fetchInventory]);
+  }, [profile, fetchInventory, fetchWishlist]);
 
   // Boot Sequence & Preloading
   useEffect(() => {

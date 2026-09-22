@@ -80,16 +80,16 @@ export const AQUA_DIALOGUES: Record<string, string[]> = {
     "",
     "Listen up, you shut-in NEET! I, the beautiful and wise Goddess Aqua, have descended to save you from getting completely scammed! First, click the ^^Value List^^ channel in the sidebar so we can begin!",
     "Hmph, even someone with your pitiful intelligence stat can do this part. Let's build a mock trade. ^^Click or tap^^ any unit card to open its menu, then toss it into your *Give* or *Get* side! Don't mess this up!",
-    "W-Wait! Don't just accept a trade blindly! Are you trying to lose all your value?! Use the divine tool I've graciously bestowed upon you! Click that glowing ^^Calculator^^ button up top—or tap the ^^Trade Bar^^ at the bottom on your phone—to open the Analyzer!",
+    "W-Wait! Don't just accept a trade blindly! Are you trying to lose all your value?! Use the divine tool I've graciously bestowed upon you! Click that glowing ^^Calculator^^ button up top to open the Analyzer!",
     "See?! It instantly breaks down the value differences and market momentum! But wait—you're not done! I've enrolled you in the Academy to finish your training. Go complete your Graduation Checklist!"
   ],
   channels: [
     "",
-    "Lost, are we? Typical. Pay attention to the sidebar on the left! ^^Home^^ has patch notes, ^^Tutorial^^ is where you learn how to trade, and ^^Extra Notices^^ has crucial market rules you probably ignored!"
+    "Lost, are we? Typical. The sidebar on the left is your holy map! ^^My Inventory^^ is your personal vault. ^^Trading Ads^^ is the live market. And ^^Extra Notices^^ has crucial market rules you probably ignored!"
   ],
   advanced: [
     "",
-    "Want to be a pro? The Academy Sandbox tracks your progress. Go finish your Graduation Checklist before you bother me again!"
+    "Want to be a pro? The Academy Sandbox tracks your progress. Open your Calculator and use the ^^Pin^^ icon to lock units, or click the ^^Wand^^ to import text trades! Go finish your Graduation Checklist!"
   ],
   developer: [
     "",
@@ -101,7 +101,7 @@ export const AQUA_DIALOGUES: Record<string, string[]> = {
   ],
   dictionary: [
     "",
-    "I'm a Goddess, not a mind reader! Click the ^^Wand^^ icon in the Calculator to open the Smart Parser. It uses the exact Dictionary logic you can test in the Academy! Teach me your weird abbreviations!"
+    "I'm a Goddess, not a mind reader! The Smart Parser uses the exact Dictionary logic you can test in the Academy! Teach me your weird abbreviations so I can read your messy trades!"
   ],
   stats: [
     "",
@@ -118,7 +118,7 @@ export const AQUA_DIALOGUES: Record<string, string[]> = {
   academy_grad: [
     "",
     "Oh ho? You actually completed the Graduation Checklist?! I didn't think a NEET like you had the attention span!",
-    "I guess my divine guidance is just *that* good! You're officially a certified trader now. Don't go losing all your value, or I'll laugh at you! ^^Praise Aqua!^^"
+    "I guess my divine guidance is just *that* good! You're officially a certified trader now. Go post an Ad on the live board! ^^Praise Aqua!^^"
   ]
 };
 

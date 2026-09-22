@@ -248,6 +248,13 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
       themeColor = "var(--border)";
     }
 
+    // Compute live values
+    const totalGiveVal = ad.give_items.reduce((acc, i) => {
+      const m = ALL_UNITS.find(u => u.id === i.id);
+      const val = m && typeof m.value === 'number' ? m.value : (m?.valueMin || i.value);
+      return acc + (val * i.qty);
+    }, 0);
+
     return (
       <div 
         className={`relative bg-card rounded-[8px] p-4 sm:p-6 flex flex-col h-full overflow-hidden border shadow-md transition-all duration-500 will-change-transform ${
@@ -452,12 +459,14 @@ export function TradingAdsChannel() {
 
   const handleSendToCalculator = (give: TradeCard[], get: TradeCard[]) => {
     triggerHaptic("medium");
-    overwrite(get, give);
+    overwrite(get, give); // Note: Swapped because if I click "Analyze", I want what THEY give to be what I GET
     window.dispatchEvent(new Event("open-analyzer"));
   };
 
   const handleCreateAdClick = () => {
     setComposerOpen(true, "standard");
+    // Ensure the analyzer panel slides open on mobile & desktop!
+    window.dispatchEvent(new Event("open-analyzer"));
   };
 
   return (
@@ -549,13 +558,21 @@ export function TradingAdsChannel() {
               <p className="text-[13px] md:text-[14px] text-muted-foreground max-w-md leading-relaxed">
                 There are currently no trading ads matching your search parameters. Try adjusting your filters or post a new ad yourself.
               </p>
+              
+              {/* NEW: Actionable empty state CTA */}
+              <button 
+                onClick={handleCreateAdClick}
+                className="mt-4 px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-[6px] transition-colors hover:bg-primary/80 cursor-pointer shadow-md"
+              >
+                Be the first to post a trade
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 w-full animate-fade-in">
               {filteredAndSortedAds.map((ad) => (
                 <VanguardAdCard
                   key={ad.id}
-                  ad= {ad}
+                  ad={ad}
                   currentUserId={profile?.id}
                   currentUserRole={profile?.role}
                   onDelete={deleteAd}
