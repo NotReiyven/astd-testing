@@ -7,7 +7,7 @@ import {
   UserCircle, Edit2, Check, X, ShieldAlert, Shield, Star, 
   MessageSquare, Package, Megaphone, Activity, Settings,
   Gamepad2, Clock, ArrowRight, Copy, Share2, ArrowLeft,
-  Palette, MousePointer2, Maximize, ArrowRightLeft
+  Palette, MousePointer2, Maximize, ArrowRightLeft, LogIn
 } from "lucide-react";
 import { useProfileStore } from "../../store/useProfileStore";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -103,7 +103,7 @@ function AdItemGrid({ items, ALL_UNITS, label, labelColor }: { items: TradeCard[
 
 export function ProfileChannel() {
   const { viewingProfileId, fetchProfile, saveProfileUpdates, returnChannel, setViewingProfile } = useProfileStore();
-  const { profile: currentUser } = useAuthStore();
+  const { profile: currentUser, loginWithDiscord } = useAuthStore();
   const setViewingUser = useInventoryStore(s => s.setViewingUser);
   const { theme, setTheme, globalCompactMode, setGlobalCompactMode, bootChannel, setBootChannel } = useLayoutStore();
 
@@ -211,12 +211,90 @@ export function ProfileChannel() {
     setTimeout(() => setCopiedDiscordId(false), 2000);
   };
 
+  // UNAUTHENTICATED LOCAL PREFERENCES FALLBACK
   if (!targetId) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-background p-6">
-        <UserCircle className="w-16 h-16 text-muted-foreground mb-4 opacity-50" />
-        <h2 className="text-[20px] font-black text-foreground">No Profile Selected</h2>
-        <p className="text-[13px] text-muted-foreground mt-2">Login or select a user to view their profile.</p>
+      <div className="flex-1 w-full h-full font-sans overflow-y-auto custom-scrollbar p-6 md:p-12 bg-background flex flex-col items-center">
+        <div className="max-w-2xl w-full flex flex-col gap-6">
+          
+          <div className="bg-card border border-border rounded-[8px] p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex flex-col text-center sm:text-left">
+              <h2 className="text-[18px] font-black text-foreground tracking-tight">Preferences & Personalization</h2>
+              <p className="text-[13px] text-muted-foreground mt-1">Configure your local interface settings. Log in with Discord to unlock your public profile and trading board.</p>
+            </div>
+            <button
+              onClick={() => { triggerHaptic('medium'); loginWithDiscord(); }}
+              className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[12px] uppercase tracking-wider rounded-[4px] flex items-center gap-2 transition-colors shrink-0 shadow-sm cursor-pointer focus-visible:outline-none border border-primary"
+            >
+              <LogIn className="w-4 h-4" /> Login with Discord
+            </button>
+          </div>
+
+          {/* Theme Mode */}
+          <div className="bg-card border border-border rounded-[8px] p-6 shadow-sm">
+            <h3 className="text-[13px] font-bold uppercase tracking-wider text-foreground mb-4 flex items-center gap-2">
+              <Palette className="w-4 h-4 text-primary" /> Application Theme
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { id: 'dark', label: "Deep Dark", desc: "High contrast data." },
+                { id: 'discord', label: "Blurple", desc: "Matches Discord." },
+                { id: 'light', label: "Crisp Light", desc: "Daytime traders." },
+              ].map(t => (
+                <button 
+                  key={t.id}
+                  onClick={() => { triggerHaptic('light'); setTheme(t.id as ThemeMode); }}
+                  className={`p-4 rounded-[6px] border text-left flex flex-col gap-1.5 focus-visible:outline-none cursor-pointer transition-colors ${theme === t.id ? 'bg-popover border-primary ring-1 ring-primary/30 shadow-md' : 'bg-muted border-border hover:bg-popover'}`}
+                >
+                  <span className="text-[14px] font-bold text-foreground">{t.label}</span>
+                  <span className="text-[12px] text-muted-foreground font-medium">{t.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Boot Channel */}
+          <div className="bg-card border border-border rounded-[8px] p-6 shadow-sm">
+            <h3 className="text-[13px] font-bold uppercase tracking-wider text-foreground mb-4 flex items-center gap-2">
+              <MousePointer2 className="w-4 h-4 text-primary" /> Default Boot Channel
+            </h3>
+            <p className="text-[13px] text-muted-foreground mb-4">Choose where the application routes you immediately after the loading screen finishes.</p>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { id: 'last-used', label: "Last Used", desc: "Open where you left off" },
+                { id: 'home', label: "Home", desc: "Check patch notes" },
+                { id: 'value-list', label: "Value List", desc: "Immediate market data" },
+                { id: 'trading-ads', label: "Trading Ads", desc: "Live trading board" }
+              ].map((opt) => (
+                <button 
+                  key={opt.id}
+                  onClick={() => { triggerHaptic('light'); setBootChannel(opt.id as BootChannel); }}
+                  className={`p-3 rounded-[6px] border text-left flex flex-col gap-1 focus-visible:outline-none cursor-pointer transition-colors ${bootChannel === opt.id ? 'bg-popover border-primary shadow-sm' : 'bg-muted border-border hover:bg-popover'}`}
+                >
+                  <span className="text-[13px] font-bold text-foreground">{opt.label}</span>
+                  <span className="text-[11px] text-muted-foreground font-medium truncate">{opt.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Global Compact Mode */}
+          <div className="bg-card border border-border rounded-[8px] p-6 shadow-sm flex items-center justify-between">
+            <div className="flex flex-col pr-4">
+              <h3 className="text-[13px] font-bold uppercase tracking-wider text-foreground mb-1.5 flex items-center gap-2">
+                <Maximize className="w-4 h-4 text-primary" /> Global Compact Mode
+              </h3>
+              <p className="text-[13px] text-muted-foreground">Shrinks padding globally to fit more data on screen.</p>
+            </div>
+            <button 
+              onClick={() => { triggerHaptic('medium'); setGlobalCompactMode(!globalCompactMode); }}
+              className={`relative w-12 h-6 rounded-full transition-colors focus-visible:outline-none shrink-0 cursor-pointer ${globalCompactMode ? 'bg-primary' : 'bg-muted border border-border'}`}
+            >
+              <div className={`absolute top-0.5 left-0.5 bg-background w-5 h-5 rounded-full transition-transform shadow-sm ${globalCompactMode ? 'translate-x-6' : 'translate-x-0'}`} />
+            </button>
+          </div>
+
+        </div>
       </div>
     );
   }
@@ -233,7 +311,6 @@ export function ProfileChannel() {
   const activeAds = ads.filter(a => a.user_id === targetId);
   const safeRep = profileData.global_rep ?? 0;
   const repRank = getReputationRank(safeRep);
-  const repProgress = repRank.next > repRank.min ? Math.min(100, Math.max(0, ((safeRep - repRank.min) / (repRank.next - repRank.min)) * 100)) : 100;
   const roleCfg = getRoleConfig(profileData.role);
   const RoleIcon = roleCfg.icon;
 
@@ -425,7 +502,6 @@ export function ProfileChannel() {
 
             <div className="flex-1 min-h-[400px]">
 
-              {/* SETTINGS TAB */}
               {activeTab === "settings" && isOwner && (
                 <div className="flex flex-col gap-6 animate-fade-in">
                   
@@ -544,10 +620,6 @@ export function ProfileChannel() {
                                   Total Value: <strong className="text-foreground">{totalGiveVal.toLocaleString()}</strong>
                                 </span>
                               </div>
-                              <div className="flex items-center gap-1.5 text-muted-foreground text-[12px] font-medium font-mono">
-                                <Clock className="w-3.5 h-3.5" />
-                                <span>{getTimeAgo(ad.created_at)}</span>
-                              </div>
                             </div>
 
                             {ad.note && (
@@ -573,21 +645,6 @@ export function ProfileChannel() {
                                 <AdItemGrid items={ad.get_items} ALL_UNITS={ALL_UNITS} label="Requesting" labelColor="var(--primary)" />
                               </div>
                             )}
-
-                            <div className="flex items-center justify-end gap-2 pt-3 border-t border-border mt-1">
-                              <button 
-                                onClick={handleContact}
-                                className="px-3 py-1.5 bg-muted hover:bg-card border border-border rounded-[4px] text-[12px] font-bold text-foreground transition-colors flex items-center gap-1.5 focus-visible:outline-none cursor-pointer"
-                              >
-                                <Copy className="w-3.5 h-3.5 text-muted-foreground" /> Copy Discord
-                              </button>
-                              <button 
-                                onClick={handleContact}
-                                className="px-4 py-1.5 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-[4px] text-[12px] font-bold transition-colors flex items-center gap-1.5 shadow-sm focus-visible:outline-none cursor-pointer border border-[#5865F2]"
-                              >
-                                <MessageSquare className="w-3.5 h-3.5" /> Make Offer
-                              </button>
-                            </div>
                           </div>
                         );
                       })}
@@ -711,12 +768,4 @@ export function ProfileChannel() {
 
     </div>
   );
-}
-
-function getTimeAgo(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  if (hours < 1) return "Just now";
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
 }

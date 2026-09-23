@@ -12,6 +12,7 @@ import { SyncBanner } from "./components/layout/SyncBanner";
 import { WelcomeModal } from "./components/WelcomeModal";
 import { ExternalLinkModal } from "./components/layout/ExternalLinkModal";
 import { MiniProfilePopout } from "./components/layout/MiniProfilePopout";
+import { LoginRecommendationModal } from "./components/layout/LoginRecommendationModal";
 import { useTradeStore } from "../store/useTradeStore";
 import { useLayoutStore } from "../store/useLayoutStore";
 import { HistoryModal } from "./components/MainCanvas/HistoryModal";
@@ -62,6 +63,7 @@ export default function App() {
   const [scrollToSection, setScrollToSection] = useState<{ tier: string; sectionId: string } | null>(null);
   const [isRosterOpen, setIsRosterOpen] = useStickyState(window.innerWidth >= 768, "astd_roster", isBoolean);
   const [isAnalyzerOpen, setIsAnalyzerOpen] = useStickyState(false, "astd_analyzer", isBoolean);
+  const [loginModalChannel, setLoginModalChannel] = useState<string | null>(null);
 
   const { bootStage, isMobile } = useAppBoot();
   const hasRoutedBootChannel = useRef(false);
@@ -92,6 +94,13 @@ export default function App() {
       }
     }
   }, [bootStage, bootChannel, activeChannel, setActiveChannel]);
+
+  // Trigger login recommendation modal if unauthenticated user hits inventory or trading-ads
+  useEffect(() => {
+    if (!profile && (activeChannel === "inventory" || activeChannel === "trading-ads")) {
+      setLoginModalChannel(activeChannel);
+    }
+  }, [activeChannel, profile]);
 
   // Guest Tour listener triggered from WelcomeModal
   useEffect(() => {
@@ -240,7 +249,12 @@ export default function App() {
           <WelcomeModal />
           <HistoryModal />
           <ExternalLinkModal />
-          
+          <LoginRecommendationModal 
+            isOpen={!!loginModalChannel} 
+            onClose={() => setLoginModalChannel(null)} 
+            channelName={loginModalChannel || ""} 
+          />
+           
           <AquaGuideOverlay 
             guideState={guideState} 
             onNext={nextStep}
