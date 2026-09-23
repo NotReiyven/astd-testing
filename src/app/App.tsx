@@ -38,11 +38,11 @@ const ProfileChannel = lazy(() => import("./components/ProfileChannel").then(mod
 
 const CHANNEL_INFO: Record<string, { title: string; subtitle: string }> = {
   "home": { title: "home", subtitle: "Welcome to the ASTD Value List! Important information and update logs are posted here." },
-  "value-list": { title: "value-list", subtitle: "ASTD unit values • Being Observed Live by Fire Zio" },
-  "trading-ads": { title: "trading-ads", subtitle: "Live community trade listings • Direct Discord messaging" },
+  "value-list": { title: "value-list", subtitle: "ASTD unit values - Being Observed Live by Fire Zio" },
+  "trading-ads": { title: "trading-ads", subtitle: "Live community trade listings - Direct Discord messaging" },
   "tutorial": { title: "tutorial", subtitle: "Learn how to use the ASTD trading calculator and value list." },
   "inventory": { title: "my-inventory", subtitle: "Manage your personal unit collection and vault." },
-  "profile": { title: "user-profile", subtitle: "Trader Identity & Public Records" },
+  "profile": { title: "user-profile", subtitle: "Trader Identity and Public Records" },
   "extra-notices": { title: "extra-notices", subtitle: "Additional rules, exceptions, and community notes." },
   "terms-of-service": { title: "terms-of-service", subtitle: "Rules and guidelines for using the ASTD Value List." },
   "privacy-policy": { title: "privacy-policy", subtitle: "How we handle and protect your data." },
@@ -53,7 +53,7 @@ export default function App() {
   const giveItems = useTradeStore((s) => s.giveItems);
   const getItems = useTradeStore((s) => s.getItems);
   const pinnedIds = useTradeStore((s) => s.pinnedIds);
-  const { profile } = useAuthStore();
+  const { profile, isLoading: isAuthLoading } = useAuthStore();
 
   const { globalSearchQuery, setGlobalSearchQuery, bootChannel } = useLayoutStore();
 
@@ -95,12 +95,14 @@ export default function App() {
     }
   }, [bootStage, bootChannel, activeChannel, setActiveChannel]);
 
-  // Trigger login recommendation modal if unauthenticated user hits inventory or trading-ads
+  // Trigger login recommendation modal only after auth is loaded and user is guest
   useEffect(() => {
-    if (!profile && (activeChannel === "inventory" || activeChannel === "trading-ads")) {
+    if (!isAuthLoading && !profile && (activeChannel === "inventory" || activeChannel === "trading-ads")) {
       setLoginModalChannel(activeChannel);
+    } else {
+      setLoginModalChannel(null);
     }
-  }, [activeChannel, profile]);
+  }, [activeChannel, profile, isAuthLoading]);
 
   // Guest Tour listener triggered from WelcomeModal
   useEffect(() => {
