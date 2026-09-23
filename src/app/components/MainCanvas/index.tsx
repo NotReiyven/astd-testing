@@ -322,10 +322,9 @@ export const MainCanvas = memo(function MainCanvas({
                           This is the value list. Tap any unit card to instantly throw it into You Give or You Get. Check your stats before you open your mouth in trade chat.
                         </p>
                         <div className="flex flex-wrap items-center gap-2 md:gap-3 text-[10px] md:text-[11px] font-bold text-muted-foreground">
-                          <span className="bg-popover px-2.5 py-1 rounded border border-border">R = Rarity (/20)</span>
-                          <span className="bg-popover px-2.5 py-1 rounded border border-border">S = Supply (/5)</span>
-                          <span className="bg-popover px-2.5 py-1 rounded border border-border">D = Demand (/5)</span>
-                        </div>
+                      <span className="bg-popover px-2.5 py-1 rounded border border-border">R = Rarity (/20)</span>
+                      <span className="bg-popover px-2.5 py-1 rounded border border-border">L = Liquidity (Low/Avg/High)</span>
+                    </div>
                       </div>
                       <button onClick={dismissWelcome} className="hidden md:block ml-auto self-start text-muted-foreground hover:text-foreground p-2 cursor-pointer focus-visible:outline-none"><X className="w-5 h-5" /></button>
                     </div>
