@@ -184,7 +184,6 @@ export function AquaGuideOverlay({
     });
   };
 
-  // Keep widget above bottom nav on mobile, move it higher if analyzer is open
   const mobilePosClass = isAnalyzerOpen ? "bottom-[100px]" : "bottom-[90px]";
 
   return (
@@ -217,11 +216,13 @@ export function AquaGuideOverlay({
           /* Minimized State */
           <div className="bg-card border border-border p-3 rounded-[8px] flex items-center justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
             <div className="flex items-center gap-3">
-              <img 
-                src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" 
-                alt="Aqua"
-                className="w-8 h-8 rounded-full border border-border object-cover bg-popover shadow-sm shrink-0" 
-              />
+              <div className="relative w-9 h-9 rounded-full border border-border overflow-hidden bg-popover shadow-sm shrink-0">
+                <img 
+                  src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" 
+                  alt="Aqua"
+                  className="w-full h-full object-cover object-top" 
+                />
+              </div>
               <div className="flex flex-col">
                 <span className="text-[12px] font-bold text-foreground leading-none">Goddess Aqua</span>
                 <span className="text-[10px] text-muted-foreground mt-0.5">Step {guideState.step} of {totalSteps}</span>
@@ -242,14 +243,14 @@ export function AquaGuideOverlay({
             
             {/* Header */}
             <div className="px-4 py-3 bg-popover border-b border-border flex items-center justify-between relative z-20">
-              <div className="flex items-center gap-2.5">
-                <div className="relative">
+              <div className="flex items-center gap-3">
+                <div className="relative w-9 h-9 rounded-full border border-border overflow-hidden bg-popover shadow-sm shrink-0">
                   <img 
                     src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" 
                     alt="Aqua"
-                    className="w-8 h-8 rounded-full border border-border object-cover bg-card shadow-sm shrink-0" 
+                    className="w-full h-full object-cover object-top" 
                   />
-                  <span className="w-2.5 h-2.5 bg-[#23a559] border border-popover rounded-full absolute bottom-0 right-0" />
+                  <span className="w-2.5 h-2.5 bg-[#23a559] border border-popover rounded-full absolute bottom-0 right-0 z-10" />
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[13px] font-black text-foreground leading-tight">Goddess Aqua</span>
@@ -275,64 +276,52 @@ export function AquaGuideOverlay({
             </div>
 
             {/* Content Body */}
-            <div className="flex flex-col md:flex-row items-stretch relative z-10 bg-card">
-              {/* Character Art (Left side, hidden on small mobile) */}
-              <div className="hidden md:flex w-[120px] shrink-0 border-r border-border/50 items-end justify-center bg-popover/30 relative">
-                <img 
-                   src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" 
-                   className="w-[140px] max-w-none object-contain absolute bottom-0 -left-4 pointer-events-none drop-shadow-md"
-                   alt="Aqua"
-                />
+            <div className="p-4 md:p-5 flex flex-col gap-3.5 bg-card relative z-10">
+              <div className="flex flex-col gap-1">
+                <h4 className="text-[14px] font-black text-foreground tracking-tight flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" /> {currentStepData.title}
+                </h4>
+                <p className="text-[13px] text-muted-foreground leading-relaxed font-medium pt-0.5 min-h-[60px]">
+                  {renderDialogue(displayedText)}
+                  {isTyping && <span className="inline-block w-1.5 h-3.5 bg-primary animate-pulse ml-1 align-middle" />}
+                </p>
               </div>
 
-              {/* Text & Controls (Right side) */}
-              <div className="flex-1 p-4 md:p-5 flex flex-col gap-3 min-w-0">
-                <div className="flex flex-col gap-1">
-                  <h4 className="text-[14px] font-black text-foreground tracking-tight flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-primary" /> {currentStepData.title}
-                  </h4>
-                  <p className="text-[13px] text-muted-foreground leading-relaxed font-medium pt-0.5 min-h-[60px]">
-                    {renderDialogue(displayedText)}
-                    {isTyping && <span className="inline-block w-1.5 h-3.5 bg-primary animate-pulse ml-1 align-middle" />}
-                  </p>
-                </div>
-
-                {/* Quick Action Button */}
-                <div className="w-full mt-1">
-                  {currentStepData.actionLabel && !isTyping && (
-                    <button
-                      onClick={handleAction}
-                      className="w-full py-2.5 px-3 rounded-[6px] bg-muted hover:bg-popover border border-border text-foreground text-[11px] font-bold uppercase tracking-wider flex items-center justify-between transition-colors cursor-pointer shadow-sm focus-visible:outline-none"
-                    >
-                      <span>{currentStepData.actionLabel}</span>
-                      <ArrowUpRight className="w-3.5 h-3.5 text-primary" />
-                    </button>
-                  )}
-                  {isTyping && (
-                    <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5 animate-pulse cursor-pointer h-[38px]">
-                      <Zap className="w-3.5 h-3.5 text-primary" /> Click anywhere to skip typing...
-                    </span>
-                  )}
-                </div>
-
-                {/* Navigation Controls */}
-                <div className="flex items-center justify-between pt-3 border-t border-border mt-1">
+              {/* Quick Action Button */}
+              <div className="w-full mt-1">
+                {currentStepData.actionLabel && !isTyping && (
                   <button
-                    onClick={handlePrev}
-                    disabled={guideState.step <= 1}
-                    className="px-3 py-1.5 rounded-[4px] text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer focus-visible:outline-none flex items-center gap-1"
+                    onClick={handleAction}
+                    className="w-full py-2.5 px-3 rounded-[6px] bg-muted hover:bg-popover border border-border text-foreground text-[11px] font-bold uppercase tracking-wider flex items-center justify-between transition-colors cursor-pointer shadow-sm focus-visible:outline-none"
                   >
-                    <ChevronLeft className="w-3.5 h-3.5" /> Back
+                    <span>{currentStepData.actionLabel}</span>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-primary" />
                   </button>
+                )}
+                {isTyping && (
+                  <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5 animate-pulse cursor-pointer h-[38px]">
+                    <Zap className="w-3.5 h-3.5 text-primary" /> Click anywhere to skip typing...
+                  </span>
+                )}
+              </div>
 
-                  <button
-                    onClick={handleNext}
-                    className="px-4 py-1.5 rounded-[4px] bg-primary text-primary-foreground hover:bg-primary/90 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm transition-colors cursor-pointer focus-visible:outline-none active:scale-95"
-                  >
-                    <span>{isLastStep ? "Finish" : "Next"}</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+              {/* Navigation Controls */}
+              <div className="flex items-center justify-between pt-3 border-t border-border mt-1">
+                <button
+                  onClick={handlePrev}
+                  disabled={guideState.step <= 1}
+                  className="px-3 py-1.5 rounded-[4px] text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer focus-visible:outline-none flex items-center gap-1"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" /> Back
+                </button>
+
+                <button
+                  onClick={handleNext}
+                  className="px-4 py-1.5 rounded-[4px] bg-primary text-primary-foreground hover:bg-primary/90 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer focus-visible:outline-none active:scale-95"
+                >
+                  <span>{isLastStep ? "Finish" : "Next"}</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
 

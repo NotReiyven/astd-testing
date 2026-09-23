@@ -112,6 +112,8 @@ export function AdComposer() {
       
       if (result?.error) throw result.error;
       
+      window.dispatchEvent(new Event("academy-posted-ad"));
+      
       setComposerOpen(false);
       window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'trading-ads' }));
     } catch (err: any) {

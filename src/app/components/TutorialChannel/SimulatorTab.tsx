@@ -7,7 +7,7 @@ import { ArrowRight, Sparkles, Activity, RotateCcw, BookOpen, List, Timer, Check
 import { StaticStatusBadge } from "./TutorialUI";
 import { useUnits } from "../../../context/UnitContext";
 import { MasterUnit } from "../../../types";
-import { getProxyImage } from "../../../data";
+import { getProxyImage, handleImageError } from "../../../data";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { buildScenariosList, Scenario } from "./simulatorEngine";
@@ -15,27 +15,28 @@ import { buildScenariosList, Scenario } from "./simulatorEngine";
 const SECONDS_PER_SCENARIO = 20;
 
 const ScenarioUnitDisplay = ({ unit, qty }: { unit: MasterUnit; qty: number }) => {
-  const proxyUrl = getProxyImage(unit.id);
+  const proxyUrl = getProxyImage(unit.id, unit.imageUrl);
   const totalVal = (unit.value as number) * qty;
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 w-full">
       <div className="flex items-center gap-4 flex-1 min-w-0">
-        <div className="relative w-16 h-16 rounded-[8px] bg-background border border-border flex items-center justify-center shrink-0 shadow-sm">
+        <div className="relative w-16 h-16 rounded-[8px] bg-background border border-border flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
           {qty > 1 && (
-            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[12px] font-black px-2 py-0.5 rounded-full z-20 border-[3px] border-popover shadow-sm">
+            <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[12px] font-black px-2 py-0.5 rounded-full z-30 border-[3px] border-popover shadow-sm">
               x{qty}
             </div>
           )}
-          <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-[18px] z-0 rounded-[8px] overflow-hidden" style={getAvatarStyle(unit.name)}>
+          <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-[18px] z-0" style={getAvatarStyle(unit.name)}>
             {getInitials(unit.name)}
           </div>
           {proxyUrl && (
             <img 
               src={proxyUrl} 
               alt={unit.name} 
-              className="absolute inset-0 w-full h-full object-cover z-10 bg-background rounded-[8px]" 
-              onError={(e) => { e.currentTarget.style.opacity = '0'; }}
+              className="absolute inset-0 w-full h-full object-cover z-10 bg-background" 
+              style={{ objectPosition: "center 15%" }}
+              onError={(e) => handleImageError(e, unit.id)}
             />
           )}
         </div>
@@ -91,6 +92,13 @@ export function SimulatorTab() {
 
     return () => clearInterval(timerId);
   }, [isSimulatorRunning, isAssessmentComplete, guessResult, timeLeft]);
+
+  // Dispatch event on completion
+  useEffect(() => {
+    if (isAssessmentComplete && simScore > 0) {
+      window.dispatchEvent(new Event("academy-passed-sim"));
+    }
+  }, [isAssessmentComplete, simScore]);
 
   const startSimulator = () => {
     const freshScenarios = buildScenariosList(ALL_UNITS);
@@ -202,9 +210,10 @@ export function SimulatorTab() {
         <div className="flex-1 flex flex-col justify-center">
           <div className="bg-card border border-border rounded-[12px] p-8 md:p-10 shadow-lg flex flex-col gap-8 w-full my-auto max-w-2xl mx-auto">
             
-            {/* AQUA INTRO RESTORED */}
             <div className="flex items-center gap-4 border-b border-border pb-6">
-               <img src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" className="w-16 h-16 rounded-full border border-border object-cover bg-popover shadow-sm" alt="Aqua"/>
+               <div className="relative w-16 h-16 rounded-full border border-border overflow-hidden bg-popover shadow-sm shrink-0">
+                 <img src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" className="w-full h-full object-cover object-top" alt="Aqua"/>
+               </div>
                <div className="flex flex-col">
                   <h2 className="text-[24px] md:text-[28px] font-black text-foreground tracking-tight leading-none mb-1.5">Certification Assessment</h2>
                   <span className="text-[12px] font-bold uppercase tracking-widest text-primary mt-0.5">Assessor: Goddess Aqua</span>
@@ -248,7 +257,6 @@ export function SimulatorTab() {
       ) : (
         <div className="flex flex-col gap-6 flex-1">
           
-          {/* Top Info Bar */}
           <div className="flex items-center justify-between px-6 py-4 bg-card border border-border rounded-[12px] shadow-sm">
             <div className="flex items-center gap-8">
               <div className="flex flex-col">
@@ -274,7 +282,6 @@ export function SimulatorTab() {
             </div>
           </div>
 
-          {/* Main Question Area */}
           <div className="bg-card rounded-[12px] border border-border relative overflow-hidden shadow-lg flex flex-col flex-1">
             <div className="h-1.5 w-full bg-primary/20">
               <div className="h-full bg-primary transition-all duration-1000 ease-linear" style={{ width: `${(timeLeft / SECONDS_PER_SCENARIO) * 100}%` }} />
@@ -288,7 +295,6 @@ export function SimulatorTab() {
 
               <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6 items-center mb-10">
                 
-                {/* Give Box */}
                 <div className="bg-popover border border-border rounded-[8px] p-6 flex flex-col gap-6 shadow-sm min-h-[160px]">
                   <div className="flex items-center justify-between border-b border-border pb-3">
                      <span className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground">You Give</span>
@@ -301,7 +307,6 @@ export function SimulatorTab() {
                   <ArrowDown className="w-6 h-6 md:hidden opacity-50" />
                 </div>
 
-                {/* Get Box */}
                 <div className="bg-popover border border-border rounded-[8px] p-6 flex flex-col gap-6 shadow-sm min-h-[160px]">
                   <div className="flex items-center justify-between border-b border-border pb-3">
                      <span className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground">You Get</span>
@@ -311,7 +316,6 @@ export function SimulatorTab() {
 
               </div>
 
-              {/* Action Area */}
               <div className="mt-auto min-h-[140px] flex flex-col justify-end">
                 {guessResult === "none" ? (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full animate-fade-in">

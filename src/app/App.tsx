@@ -3,7 +3,7 @@
 // ================================================
 
 import { useState, useEffect, Suspense, lazy, useCallback, useRef } from "react";
-import { Hash, Check, GraduationCap, Ban, ExternalLink } from "lucide-react";
+import { Hash, Check, Ban, ExternalLink } from "lucide-react";
 import { FilterKey } from "../types";
 import { useStickyState, isBoolean, isNonEmptyString } from "../hooks/useStickyState";
 import { AquaGuideOverlay } from "./components/guides/AquaGuideOverlay";
@@ -130,7 +130,7 @@ export default function App() {
     }
   }, [profile]);
 
-  const { toast, academyToast } = useGlobalEvents({ 
+  const { toast } = useGlobalEvents({ 
     giveItems, getItems, pinnedIds, completedGuides, setCompletedGuides, 
     setActiveChannel, setIsRosterOpen, setIsAnalyzerOpen, setTutorialTab, setGuideState 
   });
@@ -256,17 +256,6 @@ export default function App() {
           <div 
             className="fixed bottom-[140px] md:bottom-8 left-1/2 -translate-x-1/2 pointer-events-none transition-all flex flex-col gap-2 items-center z-[9999]"
           >
-            {academyToast && (
-              <div className="flex items-center gap-3 px-5 py-3.5 rounded-[4px] border border-border bg-card shadow-sm">
-                 <div className="w-6 h-6 rounded-[4px] flex items-center justify-center flex-shrink-0 bg-primary">
-                   <GraduationCap className="w-4 h-4 text-primary-foreground" />
-                 </div>
-                 <span className="text-foreground text-[13px] font-bold tracking-wide whitespace-nowrap">
-                   Academy Task Complete! <strong className="font-black text-primary">({academyToast.step}/4)</strong>
-                 </span>
-              </div>
-            )}
-
             <div className={`transition-all duration-150 ${toast ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-2 scale-95"}`}>
               {toast && (
                 <div className="flex items-center gap-3 px-5 py-3.5 rounded-[4px] border border-border bg-card shadow-sm">
@@ -284,7 +273,7 @@ export default function App() {
           </div>
 
           <div 
-            className={`fixed md:relative top-0 bottom-0 left-0 flex-shrink-0 overflow-hidden transition-transform shadow-2xl md:shadow-none bg-card ${isRosterOpen ? 'w-[85vw] max-w-[260px] md:w-[240px] translate-x-0' : 'w-0 -translate-x-full md:translate-x-0'} ${sidebarZ}`}
+            className={`fixed md:relative top-0 bottom-0 left-0 flex-shrink-0 overflow-hidden transition-transform shadow-2xl md:shadow-none bg-card z-30 ${isRosterOpen ? 'w-[85vw] max-w-[260px] md:w-[240px] translate-x-0' : 'w-0 -translate-x-full md:translate-x-0'} ${sidebarZ}`}
           >
             <div className="w-[85vw] max-w-[260px] md:w-[240px] h-full">
               <Sidebar activeChannel={activeChannel} setActiveChannel={handleChannelChange} onThreadClick={handleThreadClick} guideState={guideState} />

@@ -62,7 +62,6 @@ export function TutorialChannel({
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 relative z-10 bg-transparent">
         {activeTab === "sandbox" && (
             <SandboxTab 
-                startGuide={startGuide}
                 completedGuides={completedGuides}
             />
         )}
