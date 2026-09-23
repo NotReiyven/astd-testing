@@ -151,13 +151,15 @@ export default function App() {
   const activeItemsCount = giveItems.reduce((acc, c) => acc + c.qty, 0) + getItems.reduce((acc, c) => acc + c.qty, 0);
   const isDictionaryActive = activeChannel === "tutorial" && tutorialTab === "dictionary";
 
+  // Fixed: Removed activeChannel from dependencies so typing in search switches to value list,
+  // but changing channels manually later does NOT trigger a forced redirect back.
   useEffect(() => {
     if (globalSearchQuery.trim().length > 0) {
       if (activeChannel !== "value-list") setActiveChannel("value-list");
       if (activeTierFilter !== "All") setActiveTierFilter("All");
       if (window.innerWidth < 768 && isRosterOpen) setIsRosterOpen(false);
     }
-  }, [globalSearchQuery, activeChannel, activeTierFilter, setActiveChannel, setActiveTierFilter, isRosterOpen, setIsRosterOpen]);
+  }, [globalSearchQuery, activeTierFilter, setActiveTierFilter, isRosterOpen, setIsRosterOpen, setActiveChannel]);
 
   useEffect(() => {
     if (window.innerWidth < 768) setIsRosterOpen(false);
@@ -165,11 +167,12 @@ export default function App() {
 
   const handleChannelChange = useCallback((id: string) => {
     setActiveChannel(id);
+    setGlobalSearchQuery(""); // Clear search when switching channels manually
     if (id === "value-list" && guideState.type === "guest_tour" && guideState.step === 1) {
       setGuideState(prev => ({ ...prev, step: 2 }));
       if (window.innerWidth < 768) setIsRosterOpen(false);
     }
-  }, [setActiveChannel, guideState, setIsRosterOpen, setGuideState]);
+  }, [setActiveChannel, setGlobalSearchQuery, guideState, setIsRosterOpen, setGuideState]);
 
   const handleThreadClick = useCallback((tier: FilterKey, sectionId: string) => {
     setActiveChannel("value-list");
