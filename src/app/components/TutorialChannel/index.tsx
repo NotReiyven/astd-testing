@@ -29,22 +29,7 @@ export function TutorialChannel({
   };
 
   return (
-    <div 
-      className="flex-1 flex flex-col overflow-hidden h-full select-none font-sans relative"
-      style={{
-        backgroundColor: "#16181c",
-        backgroundImage: `
-          linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
-          linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
-          linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
-          linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
-          linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025),
-          linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025)
-        `,
-        backgroundSize: "80px 140px",
-        backgroundPosition: "0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px"
-      }}
-    >
+    <div className="flex-1 flex flex-col overflow-hidden h-full select-none font-sans relative bg-background text-foreground">
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }

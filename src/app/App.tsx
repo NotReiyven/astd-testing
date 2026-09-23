@@ -2,7 +2,7 @@
 // FILE: src/app/App.tsx
 // ================================================
 
-import { useState, useEffect, Suspense, lazy, useCallback } from "react";
+import { useState, useEffect, Suspense, lazy, useCallback, useRef } from "react";
 import { Hash, Check, GraduationCap, Ban, ExternalLink } from "lucide-react";
 import { FilterKey } from "../types";
 import { useStickyState, isBoolean, isNonEmptyString } from "../hooks/useStickyState";
@@ -54,7 +54,7 @@ export default function App() {
   const pinnedIds = useTradeStore((s) => s.pinnedIds);
   const { profile } = useAuthStore();
 
-  const { globalSearchQuery, setGlobalSearchQuery } = useLayoutStore();
+  const { globalSearchQuery, setGlobalSearchQuery, bootChannel } = useLayoutStore();
 
   const [activeChannel, setActiveChannel] = useStickyState("home", "astd_channel", isNonEmptyString);
   const [tutorialTab, setTutorialTab] = useState<"sandbox" | "simulator" | "theory" | "dictionary">("sandbox");
@@ -64,6 +64,17 @@ export default function App() {
   const [isAnalyzerOpen, setIsAnalyzerOpen] = useStickyState(false, "astd_analyzer", isBoolean);
 
   const { bootStage, isMobile } = useAppBoot();
+  const hasRoutedBootChannel = useRef(false);
+
+  // Custom Boot Channel Routing
+  useEffect(() => {
+    if (bootStage === 'complete' && !hasRoutedBootChannel.current) {
+      hasRoutedBootChannel.current = true;
+      if (bootChannel !== 'last-used' && activeChannel !== bootChannel) {
+        setActiveChannel(bootChannel);
+      }
+    }
+  }, [bootStage, bootChannel, activeChannel, setActiveChannel]);
 
   useEffect(() => {
     if (window.innerWidth < 768) {

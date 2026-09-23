@@ -9,6 +9,7 @@ import { FilterKey, MasterUnit } from "../../../types";
 import { TIER_CONFIG } from "../../../data"; 
 import { useUnits } from "../../../context/UnitContext"; 
 import { useTradeStore } from "../../../store/useTradeStore";
+import { useLayoutStore } from "../../../store/useLayoutStore";
 
 import { TierGridCard } from "./UnitGrid";
 import { UnitListRow, ListHeaderRow } from "./UnitListTable";
@@ -19,7 +20,6 @@ import { GuideType } from "../guides/AquaGuideOverlay";
 import { useCanvasVirtualization } from "./useCanvasVirtualization";
 import { useCanvasScroll } from "../../../hooks/useCanvasScroll";
 
-const STICKY_HEADER_CLASS = "bg-background pt-2 md:pt-3 pb-3 -mx-4 px-4 md:-mx-10 md:px-10";
 const FIRE_ZIO_AVATAR = "/units/firezio.webp";
 
 export const MainCanvas = memo(function MainCanvas({
@@ -34,6 +34,9 @@ export const MainCanvas = memo(function MainCanvas({
 }) {
   const { units: ALL_UNITS, isLoading } = useUnits(); 
   const addCard = useTradeStore(s => s.addCard);
+  const { globalCompactMode } = useLayoutStore();
+
+  const getStickyHeaderClass = (compact: boolean) => compact ? "bg-background pt-1.5 md:pt-2 pb-2 -mx-2 px-2 md:-mx-4 md:px-4" : "bg-background pt-2 md:pt-3 pb-3 -mx-4 px-4 md:-mx-10 md:px-10";
 
   const [showWelcome, setShowWelcome] = useState(() => {
     try { return localStorage.getItem("astd_welcome_dismissed") !== "true"; } 
@@ -231,7 +234,7 @@ export const MainCanvas = memo(function MainCanvas({
         />
 
         {(viewMode === "list" || viewMode === "compact") && !isLoading && (
-          <div className="hidden md:block w-full border-b border-border bg-popover px-4 md:px-10">
+          <div className={`hidden md:block w-full border-b border-border bg-popover ${globalCompactMode ? 'px-4 md:px-4' : 'px-4 md:px-10'}`}>
             <ListHeaderRow sortMode={sortMode} setSortMode={setSortMode} viewMode={viewMode} />
           </div>
         )}
@@ -271,7 +274,7 @@ export const MainCanvas = memo(function MainCanvas({
       <div 
         id="main-scroll-container"
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 md:px-10 custom-scrollbar relative z-0 h-full" 
+        className={`flex-1 overflow-y-auto custom-scrollbar relative z-0 h-full ${globalCompactMode ? 'px-2 md:px-4' : 'px-4 md:px-10'}`} 
         style={{ 
           paddingTop: headerHeight + 16,
           overflowAnchor: "none",
@@ -280,7 +283,7 @@ export const MainCanvas = memo(function MainCanvas({
       >
         {isLoading ? (
           <div className="pt-4 md:pt-6">
-            <div className={`${STICKY_HEADER_CLASS} relative z-20 mb-6 shadow-sm`}>
+            <div className={`${getStickyHeaderClass(globalCompactMode)} relative z-20 mb-6 shadow-sm`}>
               <TierBanner tier={TIER_CONFIG[activeTierFilter] ?? TIER_CONFIG["S"]} />
             </div>
             <CanvasSkeleton viewMode={viewMode} />
@@ -352,7 +355,7 @@ export const MainCanvas = memo(function MainCanvas({
                   )}
 
                   {item.type === 'tier-banner' && (
-                    <div className={`${STICKY_HEADER_CLASS} relative z-20 mb-6`}>
+                    <div className={`${getStickyHeaderClass(globalCompactMode)} relative z-20 mb-6`}>
                       <TierBanner tier={item.tier} />
                     </div>
                   )}
@@ -364,7 +367,7 @@ export const MainCanvas = memo(function MainCanvas({
                   )}
 
                   {item.type === 'grid-row' && (
-                    <div className="grid gap-4 sm:gap-6 w-full pb-4 sm:pb-6" style={{ gridTemplateColumns: `repeat(${item.cols || 4}, minmax(0, 1fr))` }}>
+                    <div className={`grid ${globalCompactMode ? 'gap-2 sm:gap-3 pb-2 sm:pb-3' : 'gap-4 sm:gap-6 pb-4 sm:pb-6'} w-full`} style={{ gridTemplateColumns: `repeat(${item.cols || 4}, minmax(0, 1fr))` }}>
                       {item.units.map((u, i) => (
                         <TierGridCard 
                           key={u.id} 

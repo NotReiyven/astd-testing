@@ -92,40 +92,25 @@ export function AdminChannel() {
   };
 
   return (
-    <div 
-      className="flex-1 flex flex-col overflow-hidden h-full select-none font-sans relative text-foreground"
-      style={{
-        backgroundColor: "#16181c",
-        backgroundImage: `
-          linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
-          linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
-          linear-gradient(30deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
-          linear-gradient(150deg, #1b1d22 12%, transparent 12.5%, transparent 87%, #1b1d22 87.5%, #1b1d22),
-          linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025),
-          linear-gradient(60deg, #1e2025 25%, transparent 25.5%, transparent 75%, #1e2025 75.5%, #1e2025)
-        `,
-        backgroundSize: "80px 140px",
-        backgroundPosition: "0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px"
-      }}
-    >
+    <div className="flex-1 flex flex-col overflow-hidden h-full select-none font-sans relative text-foreground bg-background">
       
       {/* Top Header */}
-      <div className="flex-shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4 px-6 py-4 bg-black/40 backdrop-blur-md border-b border-white/10 shadow-sm z-20">
+      <div className="flex-shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4 px-6 py-4 bg-card/60 backdrop-blur-md border-b border-border shadow-sm z-20">
         <h2 className="text-[16px] font-black text-foreground tracking-tight uppercase flex items-center gap-2.5">
-          <ShieldAlert className="w-5 h-5 text-[#7289da]" /> Tel Aviv Center
+          <ShieldAlert className="w-5 h-5 text-primary" /> Tel Aviv Center
         </h2>
         <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar">
-          <div className="flex items-center gap-2 bg-black/40 border border-white/10 px-3.5 py-2 rounded-md shrink-0 shadow-inner">
-            <Users className="w-3.5 h-3.5 text-[#7289da]" />
+          <div className="flex items-center gap-2 bg-muted border border-border px-3.5 py-2 rounded-md shrink-0 shadow-inner">
+            <Users className="w-3.5 h-3.5 text-primary" />
             <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Registered</span>
             <span className="text-[12px] font-mono font-black text-foreground ml-1">{metrics.totalUsers.toLocaleString()}</span>
           </div>
-          <div className="flex items-center gap-2 bg-black/40 border border-white/10 px-3.5 py-2 rounded-md shrink-0 shadow-inner">
+          <div className="flex items-center gap-2 bg-muted border border-border px-3.5 py-2 rounded-md shrink-0 shadow-inner">
             <Megaphone className="w-3.5 h-3.5 text-[#23a559]" />
             <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Active Ads</span>
             <span className="text-[12px] font-mono font-black text-foreground ml-1">{metrics.activeAds.toLocaleString()}</span>
           </div>
-          <div className="flex items-center gap-2 bg-black/40 border border-white/10 px-3.5 py-2 rounded-md shrink-0 shadow-inner">
+          <div className="flex items-center gap-2 bg-muted border border-border px-3.5 py-2 rounded-md shrink-0 shadow-inner">
             <Ban className="w-3.5 h-3.5 text-destructive" />
             <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Banned</span>
             <span className="text-[12px] font-mono font-black text-foreground ml-1">{metrics.bannedUsers.toLocaleString()}</span>
@@ -135,16 +120,16 @@ export function AdminChannel() {
 
       {/* Master Tabs */}
       {isMaster && (
-        <div className="flex-shrink-0 bg-black/30 backdrop-blur-sm border-b border-white/10 px-6 py-2.5 flex gap-2 shadow-sm z-10">
+        <div className="flex-shrink-0 bg-muted/30 backdrop-blur-sm border-b border-border px-6 py-2.5 flex gap-2 shadow-sm z-10">
           <button 
             onClick={() => setAdminTab("users")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-[12px] font-bold uppercase tracking-wider transition-all cursor-pointer focus-visible:outline-none ${adminTab === "users" ? "bg-[#7289da] text-white shadow-sm" : "bg-black/30 text-muted-foreground hover:text-foreground border border-white/10"}`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-[12px] font-bold uppercase tracking-wider transition-all cursor-pointer focus-visible:outline-none ${adminTab === "users" ? "bg-primary text-primary-foreground shadow-sm" : "bg-card text-muted-foreground hover:text-foreground border border-border"}`}
           >
             <UsersRound className="w-4 h-4" /> User Management
           </button>
           <button 
             onClick={() => setAdminTab("roles")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-[12px] font-bold uppercase tracking-wider transition-all cursor-pointer focus-visible:outline-none ${adminTab === "roles" ? "bg-[#7289da] text-white shadow-sm" : "bg-black/30 text-muted-foreground hover:text-foreground border border-white/10"}`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-[12px] font-bold uppercase tracking-wider transition-all cursor-pointer focus-visible:outline-none ${adminTab === "roles" ? "bg-primary text-primary-foreground shadow-sm" : "bg-card text-muted-foreground hover:text-foreground border border-border"}`}
           >
             <Settings2 className="w-4 h-4" /> Role Management
           </button>
@@ -156,8 +141,8 @@ export function AdminChannel() {
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 animate-fade-in bg-transparent z-10">
           <div className="max-w-3xl mx-auto flex flex-col gap-6">
             <div className="flex items-center gap-3.5 mb-2">
-              <div className="w-12 h-12 rounded-lg bg-[#7289da]/15 border border-[#7289da]/30 flex items-center justify-center shadow-sm">
-                <Settings2 className="w-6 h-6 text-[#7289da]" />
+              <div className="w-12 h-12 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center shadow-sm">
+                <Settings2 className="w-6 h-6 text-primary" />
               </div>
               <div>
                 <h2 className="text-[20px] font-black text-foreground uppercase tracking-tight">Role Management</h2>
@@ -165,8 +150,8 @@ export function AdminChannel() {
               </div>
             </div>
 
-            <form onSubmit={handleCreateRole} className="bg-black/40 backdrop-blur-sm border border-white/10 rounded-lg p-5 flex flex-col gap-4 shadow-md">
-              <h3 className="text-[12px] font-bold text-foreground uppercase tracking-wider border-b border-white/10 pb-2.5">Create New Role</h3>
+            <form onSubmit={handleCreateRole} className="bg-card backdrop-blur-sm border border-border rounded-lg p-5 flex flex-col gap-4 shadow-md">
+              <h3 className="text-[12px] font-bold text-foreground uppercase tracking-wider border-b border-border pb-2.5">Create New Role</h3>
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 flex flex-col gap-1.5">
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Role Name</label>
@@ -175,14 +160,14 @@ export function AdminChannel() {
                     value={newRoleName}
                     onChange={(e) => setNewRoleName(e.target.value)}
                     placeholder="e.g. contributor"
-                    className="bg-black/50 border border-white/10 rounded-md px-3.5 py-2.5 text-[13px] text-foreground focus:border-[#7289da] outline-none transition-colors w-full shadow-inner"
+                    className="bg-input border border-border rounded-md px-3.5 py-2.5 text-[13px] text-foreground focus:border-primary outline-none transition-colors w-full shadow-inner"
                     maxLength={20}
                     required
                   />
                 </div>
                 <div className="w-full sm:w-[130px] flex flex-col gap-1.5">
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Color (Hex)</label>
-                  <div className="flex items-center gap-2 bg-black/50 border border-white/10 rounded-md p-1.5 h-[42px] shadow-inner">
+                  <div className="flex items-center gap-2 bg-input border border-border rounded-md p-1.5 h-[42px] shadow-inner">
                     <input 
                       type="color" 
                       value={newRoleColor}
@@ -199,7 +184,7 @@ export function AdminChannel() {
                     value={newRoleRank}
                     onChange={(e) => setNewRoleRank(parseInt(e.target.value) || 10)}
                     min={3} max={98}
-                    className="bg-black/50 border border-white/10 rounded-md px-3 py-2.5 text-[13px] text-foreground font-mono focus:border-[#7289da] outline-none transition-colors w-full h-[42px] shadow-inner"
+                    className="bg-input border border-border rounded-md px-3 py-2.5 text-[13px] text-foreground font-mono focus:border-primary outline-none transition-colors w-full h-[42px] shadow-inner"
                   />
                 </div>
               </div>
@@ -210,15 +195,15 @@ export function AdminChannel() {
               </div>
             </form>
 
-            <div className="bg-black/40 backdrop-blur-sm border border-white/10 rounded-lg flex flex-col overflow-hidden shadow-md">
-              <div className="bg-black/30 px-5 py-3.5 border-b border-white/10">
+            <div className="bg-card backdrop-blur-sm border border-border rounded-lg flex flex-col overflow-hidden shadow-md">
+              <div className="bg-muted px-5 py-3.5 border-b border-border">
                 <h3 className="text-[12px] font-bold text-foreground uppercase tracking-wider">Active Roles</h3>
               </div>
               <div className="flex flex-col p-3 gap-2">
                 {availableRoles?.map(role => {
                   const isCore = ['master', 'admin', 'mod', 'user', 'banned'].includes(role.name);
                   return (
-                    <div key={role.name} className="flex items-center justify-between p-3.5 bg-black/30 border border-white/10 rounded-md hover:border-[#7289da]/50 transition-all shadow-sm">
+                    <div key={role.name} className="flex items-center justify-between p-3.5 bg-muted/50 border border-border rounded-md hover:border-primary/50 transition-all shadow-sm">
                       <div className="flex items-center gap-4">
                         <span 
                           className="px-3 py-1.5 rounded-md text-[11px] font-black uppercase tracking-wider min-w-[90px] text-center border shadow-sm"
@@ -253,8 +238,8 @@ export function AdminChannel() {
         <div className="flex-1 flex overflow-hidden animate-fade-in bg-transparent z-10">
           
           {/* User List Sidebar */}
-          <div className={`flex flex-col w-full ${selectedUser ? 'hidden md:flex md:w-[360px]' : 'flex'} shrink-0 border-r border-white/10 bg-black/30 backdrop-blur-sm shadow-md z-10`}>
-            <div className="p-3.5 border-b border-white/10 bg-black/40 flex flex-col gap-2.5">
+          <div className={`flex flex-col w-full ${selectedUser ? 'hidden md:flex md:w-[360px]' : 'flex'} shrink-0 border-r border-border bg-card/60 backdrop-blur-sm shadow-md z-10`}>
+            <div className="p-3.5 border-b border-border bg-muted/30 flex flex-col gap-2.5">
               <form onSubmit={handleSearch} className="relative w-full">
                 <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -262,12 +247,12 @@ export function AdminChannel() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search by username or ID..."
-                  className="w-full bg-black/40 text-foreground text-[13px] pl-9 pr-3.5 py-2.5 rounded-md outline-none border border-white/10 focus:border-[#7289da] transition-colors font-medium shadow-inner"
+                  className="w-full bg-input text-foreground text-[13px] pl-9 pr-3.5 py-2.5 rounded-md outline-none border border-border focus:border-primary transition-colors font-medium shadow-inner"
                 />
               </form>
               <button 
                 onClick={() => setShowBannedOnly(!showBannedOnly)}
-                className={`w-full py-2 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all border cursor-pointer ${showBannedOnly ? 'bg-destructive/20 text-destructive border-destructive/50 shadow-sm' : 'bg-black/30 text-muted-foreground border-white/10 hover:bg-black/50 hover:text-foreground'}`}
+                className={`w-full py-2 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all border cursor-pointer ${showBannedOnly ? 'bg-destructive/20 text-destructive border-destructive/50 shadow-sm' : 'bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground'}`}
               >
                 {showBannedOnly ? "Showing Banned Users Only" : "Filter: Banned Users"}
               </button>
@@ -276,7 +261,7 @@ export function AdminChannel() {
             <div className="flex-1 overflow-y-auto custom-scrollbar p-2.5">
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center h-40 gap-3">
-                  <Activity className="w-6 h-6 text-[#7289da] animate-pulse" />
+                  <Activity className="w-6 h-6 text-primary animate-pulse" />
                   <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Querying records...</span>
                 </div>
               ) : users.length === 0 ? (
@@ -292,12 +277,12 @@ export function AdminChannel() {
                       <button
                         key={u.id}
                         onClick={() => { setSelectedUser(u); triggerHaptic('light'); }}
-                        className={`flex items-center gap-3 w-full p-3 rounded-md transition-all cursor-pointer focus-visible:outline-none text-left border ${isSelected ? 'bg-[#7289da]/20 text-white border-[#7289da]/60 shadow-sm' : 'hover:bg-white/5 text-muted-foreground border-transparent'} ${isBanned && !isSelected ? 'opacity-60' : ''}`}
+                        className={`flex items-center gap-3 w-full p-3 rounded-md transition-all cursor-pointer focus-visible:outline-none text-left border ${isSelected ? 'bg-primary/20 text-foreground border-primary/60 shadow-sm' : 'hover:bg-muted text-muted-foreground border-transparent'} ${isBanned && !isSelected ? 'opacity-60' : ''}`}
                       >
                         <div className="relative shrink-0">
-                          <img src={u.avatar_url || "/units/firezio.webp"} className="w-10 h-10 rounded-full bg-black/40 object-cover border border-white/10 shadow-inner" alt="" />
+                          <img src={u.avatar_url || "/units/firezio.webp"} className="w-10 h-10 rounded-full bg-muted object-cover border border-border shadow-inner" alt="" />
                           <div 
-                            className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-black shadow-sm" 
+                            className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-card shadow-sm" 
                             style={{ backgroundColor: primaryColor }}
                           />
                         </div>
@@ -346,16 +331,16 @@ export function AdminChannel() {
               <div className="flex-1 overflow-y-auto custom-scrollbar animate-fade-in pb-12">
                 
                 {/* Mobile Back Button */}
-                <div className="md:hidden p-3 border-b border-white/10 bg-black/40">
+                <div className="md:hidden p-3 border-b border-border bg-card/40">
                   <button onClick={() => setSelectedUser(null)} className="flex items-center gap-1.5 text-[12px] font-bold text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none">
                     <ArrowRight className="w-4 h-4 rotate-180" /> Back to Directory
                   </button>
                 </div>
 
                 {/* Banner & Avatar Header */}
-                <div className={`relative h-[130px] border-b border-white/10 ${selectedUser.assigned_roles?.includes('banned') ? 'bg-destructive/20' : 'bg-black/30'}`}>
+                <div className={`relative h-[130px] border-b border-border ${selectedUser.assigned_roles?.includes('banned') ? 'bg-destructive/20' : 'bg-muted'}`}>
                   <div className="absolute -bottom-10 left-6">
-                    <img src={selectedUser.avatar_url || "/units/firezio.webp"} className="w-[96px] h-[96px] rounded-full object-cover border-[5px] border-[#16181c] bg-black/40 shadow-md" alt="" />
+                    <img src={selectedUser.avatar_url || "/units/firezio.webp"} className="w-[96px] h-[96px] rounded-full object-cover border-[5px] border-background bg-card shadow-md" alt="" />
                   </div>
                 </div>
 
@@ -394,46 +379,46 @@ export function AdminChannel() {
                   
                   {/* Left Column: Intel & Roles */}
                   <div className="flex flex-col gap-6 w-full xl:w-[320px] shrink-0">
-                    <div className="bg-black/40 backdrop-blur-sm rounded-lg p-4.5 flex flex-col border border-white/10 shadow-md">
+                    <div className="bg-card backdrop-blur-sm rounded-lg p-4.5 flex flex-col border border-border shadow-md">
                       <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-3.5 flex items-center gap-2">
-                        <Activity className="w-3.5 h-3.5 text-[#7289da]" /> Account Intel
+                        <Activity className="w-3.5 h-3.5 text-primary" /> Account Intel
                       </h3>
                       {userIntel.isLoading ? (
                         <div className="h-[60px] flex items-center gap-3 text-muted-foreground text-[13px] font-medium animate-pulse">
-                           <Activity className="w-4 h-4 text-[#7289da]" /> Fetching vault records...
+                           <Activity className="w-4 h-4 text-primary" /> Fetching vault records...
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-black/50 p-3 rounded-md border border-white/10 shadow-inner">
+                          <div className="bg-input p-3 rounded-md border border-border shadow-inner">
                             <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Vault Value</span>
                             <span className="text-[15px] font-mono font-black text-foreground">{userIntel.netWorth.toLocaleString()}</span>
                           </div>
-                          <div className="bg-black/50 p-3 rounded-md border border-white/10 shadow-inner">
+                          <div className="bg-input p-3 rounded-md border border-border shadow-inner">
                             <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Active Ads</span>
                             <span className="text-[15px] font-mono font-black text-foreground">{userIntel.adCount}</span>
                           </div>
                         </div>
                       )}
                       
-                      <div className="mt-4 pt-4 border-t border-white/10 flex flex-col gap-2">
+                      <div className="mt-4 pt-4 border-t border-border flex flex-col gap-2">
                         <button 
                           onClick={handleInspectProfile}
-                          className="w-full flex items-center justify-between px-3.5 py-2.5 bg-black/40 hover:bg-white/5 border border-white/10 text-muted-foreground hover:text-foreground text-[12px] font-bold rounded-md transition-all cursor-pointer focus-visible:outline-none shadow-sm"
+                          className="w-full flex items-center justify-between px-3.5 py-2.5 bg-muted hover:bg-muted/80 border border-border text-muted-foreground hover:text-foreground text-[12px] font-bold rounded-md transition-all cursor-pointer focus-visible:outline-none shadow-sm"
                         >
-                          <span className="flex items-center gap-2.5"><UserCircle2 className="w-4 h-4 text-[#7289da]" /> Inspect Profile</span>
+                          <span className="flex items-center gap-2.5"><UserCircle2 className="w-4 h-4 text-primary" /> Inspect Profile</span>
                           <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
                         </button>
                         <button 
                           onClick={handleInspectVault}
-                          className="w-full flex items-center justify-between px-3.5 py-2.5 bg-black/40 hover:bg-white/5 border border-white/10 text-muted-foreground hover:text-foreground text-[12px] font-bold rounded-md transition-all cursor-pointer focus-visible:outline-none shadow-sm"
+                          className="w-full flex items-center justify-between px-3.5 py-2.5 bg-muted hover:bg-muted/80 border border-border text-muted-foreground hover:text-foreground text-[12px] font-bold rounded-md transition-all cursor-pointer focus-visible:outline-none shadow-sm"
                         >
-                          <span className="flex items-center gap-2.5"><Package className="w-4 h-4 text-[#7289da]" /> Inspect Vault</span>
+                          <span className="flex items-center gap-2.5"><Package className="w-4 h-4 text-primary" /> Inspect Vault</span>
                           <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
                         </button>
                       </div>
                     </div>
 
-                    <div className="bg-black/40 backdrop-blur-sm rounded-lg p-4.5 flex flex-col border border-white/10 shadow-md gap-3">
+                    <div className="bg-card backdrop-blur-sm rounded-lg p-4.5 flex flex-col border border-border shadow-md gap-3">
                       <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Toggle Access Roles</h3>
                       <div className="flex flex-wrap gap-2">
                         {availableRoles?.filter(role => role.name !== 'banned' && role.name !== 'master').map((r) => {
@@ -450,10 +435,10 @@ export function AdminChannel() {
                               key={r.name}
                               disabled={disabled}
                               onClick={() => setModActionData({ type: "role", payload: r.name, label: `${isAssigned ? 'Revoke' : 'Assign'} ${r.name.toUpperCase()} role`, isDestructive: isAssigned })}
-                              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-md border text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer focus-visible:outline-none shadow-2xs ${disabled ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white/5'}`}
+                              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-md border text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer focus-visible:outline-none shadow-2xs ${disabled ? 'opacity-30 cursor-not-allowed' : 'hover:opacity-80'}`}
                               style={{
-                                backgroundColor: isAssigned ? `${r.color}20` : 'rgba(0,0,0,0.4)',
-                                borderColor: isAssigned ? `${r.color}50` : 'rgba(255,255,255,0.1)',
+                                backgroundColor: isAssigned ? `${r.color}20` : 'var(--muted)',
+                                borderColor: isAssigned ? `${r.color}50` : 'var(--border)',
                                 color: isAssigned ? r.color : 'var(--muted-foreground)'
                               }}
                               title={isBanned ? "Cannot modify roles of a banned user. Revoke ban first." : ""}
@@ -469,45 +454,45 @@ export function AdminChannel() {
                   {/* Right Column: Moderation Toolkit & History */}
                   {selectedUser.id !== profile?.id && (
                     <div className="flex flex-col gap-6 w-full flex-1">
-                      <div className="bg-black/40 backdrop-blur-sm rounded-lg p-5 border border-white/10 shadow-md flex flex-col gap-4">
+                      <div className="bg-card backdrop-blur-sm rounded-lg p-5 border border-border shadow-md flex flex-col gap-4">
                         <h3 className="text-[11px] font-bold text-destructive uppercase tracking-widest flex items-center gap-2">
                           <AlertTriangle className="w-4 h-4" /> Moderation Toolkit
                         </h3>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                          <div className="flex flex-col gap-2.5 bg-black/40 p-3.5 rounded-md border border-white/10">
+                          <div className="flex flex-col gap-2.5 bg-muted p-3.5 rounded-md border border-border">
                             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Content Controls</span>
                             <button 
                               onClick={() => setModActionData({ type: "purge_ads", label: "Purge Active Ads", isDestructive: true })}
-                              className="flex items-center gap-2.5 w-full p-2.5 bg-black/30 border border-white/10 hover:border-destructive/60 text-muted-foreground hover:text-destructive rounded-md transition-all cursor-pointer focus-visible:outline-none shadow-sm"
+                              className="flex items-center gap-2.5 w-full p-2.5 bg-card border border-border hover:border-destructive/60 text-muted-foreground hover:text-destructive rounded-md transition-all cursor-pointer focus-visible:outline-none shadow-sm"
                             >
                               <Trash2 className="w-4 h-4" /> <span className="text-[12px] font-bold">Purge Active Ads</span>
                             </button>
                             <button 
                               onClick={() => setModActionData({ type: "reset_profile", label: "Reset Profile Info", isDestructive: false })}
-                              className="flex items-center gap-2.5 w-full p-2.5 bg-black/30 border border-white/10 hover:border-[#FAA61A]/60 text-muted-foreground hover:text-[#FAA61A] rounded-md transition-all cursor-pointer focus-visible:outline-none shadow-sm"
+                              className="flex items-center gap-2.5 w-full p-2.5 bg-card border border-border hover:border-[#FAA61A]/60 text-muted-foreground hover:text-[#FAA61A] rounded-md transition-all cursor-pointer focus-visible:outline-none shadow-sm"
                             >
                               <RefreshCw className="w-4 h-4" /> <span className="text-[12px] font-bold">Reset Profile Info</span>
                             </button>
                             <button 
                               onClick={() => setModActionData({ type: "purge_comments", label: "Purge All Comments", isDestructive: true })}
-                              className="flex items-center gap-2.5 w-full p-2.5 bg-black/30 border border-white/10 hover:border-destructive/60 text-muted-foreground hover:text-destructive rounded-md transition-all cursor-pointer focus-visible:outline-none shadow-sm"
+                              className="flex items-center gap-2.5 w-full p-2.5 bg-card border border-border hover:border-destructive/60 text-muted-foreground hover:text-destructive rounded-md transition-all cursor-pointer focus-visible:outline-none shadow-sm"
                             >
                               <MessageSquareOff className="w-4 h-4" /> <span className="text-[12px] font-bold">Purge All Comments</span>
                             </button>
                           </div>
 
-                          <div className="flex flex-col gap-2.5 bg-black/40 p-3.5 rounded-md border border-white/10">
+                          <div className="flex flex-col gap-2.5 bg-muted p-3.5 rounded-md border border-border">
                             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Asset Wipes</span>
                             <button 
                               onClick={() => setModActionData({ type: "wipe_inv", label: "Wipe Inventory", isDestructive: true })}
-                              className="flex items-center gap-2.5 w-full p-2.5 bg-black/30 border border-white/10 hover:border-destructive/60 text-muted-foreground hover:text-destructive rounded-md transition-all cursor-pointer focus-visible:outline-none shadow-sm"
+                              className="flex items-center gap-2.5 w-full p-2.5 bg-card border border-border hover:border-destructive/60 text-muted-foreground hover:text-destructive rounded-md transition-all cursor-pointer focus-visible:outline-none shadow-sm"
                             >
                               <Eraser className="w-4 h-4" /> <span className="text-[12px] font-bold">Wipe Inventory</span>
                             </button>
                             <button 
                               onClick={() => setModActionData({ type: "wipe_wishlist", label: "Wipe Wishlist", isDestructive: true })}
-                              className="flex items-center gap-2.5 w-full p-2.5 bg-black/30 border border-white/10 hover:border-destructive/60 text-muted-foreground hover:text-destructive rounded-md transition-all cursor-pointer focus-visible:outline-none shadow-sm"
+                              className="flex items-center gap-2.5 w-full p-2.5 bg-card border border-border hover:border-destructive/60 text-muted-foreground hover:text-destructive rounded-md transition-all cursor-pointer focus-visible:outline-none shadow-sm"
                             >
                               <Eraser className="w-4 h-4" /> <span className="text-[12px] font-bold">Wipe Wishlist</span>
                             </button>
@@ -518,7 +503,7 @@ export function AdminChannel() {
                           {!selectedUser.assigned_roles?.includes('banned') ? (
                             <button 
                               onClick={() => setModActionData({ type: "nuke", label: "Nuke & Ban Account", isDestructive: true })}
-                              className="w-full flex items-center justify-center gap-2.5 p-3.5 bg-transparent border-2 border-destructive hover:bg-destructive text-destructive hover:text-white rounded-md transition-all cursor-pointer focus-visible:outline-none shadow-sm font-black uppercase tracking-wider"
+                              className="w-full flex items-center justify-center gap-2.5 p-3.5 bg-transparent border-2 border-destructive hover:bg-destructive text-destructive hover:text-destructive-foreground rounded-md transition-all cursor-pointer focus-visible:outline-none shadow-sm font-black uppercase tracking-wider"
                             >
                               <Ban className="w-4 h-4" />
                               <span className="text-[13px]">Nuke & Ban Account</span>
@@ -535,18 +520,18 @@ export function AdminChannel() {
                         </div>
                       </div>
 
-                      <div className="bg-black/40 backdrop-blur-sm rounded-lg p-5 border border-white/10 shadow-md flex flex-col gap-3">
+                      <div className="bg-card backdrop-blur-sm rounded-lg p-5 border border-border shadow-md flex flex-col gap-3">
                         <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                          <History className="w-3.5 h-3.5 text-[#7289da]" /> Moderation History
+                          <History className="w-3.5 h-3.5 text-primary" /> Moderation History
                         </h3>
                         {modLogs.length === 0 ? (
-                          <div className="text-[12px] text-muted-foreground italic p-4 bg-black/40 rounded-md border border-white/10">
+                          <div className="text-[12px] text-muted-foreground italic p-4 bg-muted rounded-md border border-border">
                             No moderation actions have been recorded for this user.
                           </div>
                         ) : (
                           <div className="flex flex-col gap-2.5 max-h-[320px] overflow-y-auto custom-scrollbar pr-1">
                             {modLogs.map(log => (
-                              <div key={log.id} className="bg-black/50 p-3.5 rounded-md border border-white/10 flex flex-col gap-1.5 shadow-2xs animate-fade-in">
+                              <div key={log.id} className="bg-input p-3.5 rounded-md border border-border flex flex-col gap-1.5 shadow-2xs animate-fade-in">
                                 <div className="flex items-center justify-between">
                                   <span className="text-[11px] font-bold uppercase tracking-wider text-destructive">{log.action_type}</span>
                                   <span className="text-[10px] font-mono text-muted-foreground">{new Date(log.created_at).toLocaleString()}</span>
@@ -572,8 +557,8 @@ export function AdminChannel() {
       {/* Confirmation Modal */}
       {modActionData && (
         <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#1e2124] border border-white/15 rounded-lg p-6 max-w-md w-full shadow-2xl flex flex-col animate-slide-up">
-            <h3 className="text-[16px] font-black text-foreground uppercase tracking-wide border-b border-white/10 pb-3.5 mb-4 flex items-center gap-2.5">
+          <div className="bg-card border border-border rounded-lg p-6 max-w-md w-full shadow-2xl flex flex-col animate-slide-up">
+            <h3 className="text-[16px] font-black text-foreground uppercase tracking-wide border-b border-border pb-3.5 mb-4 flex items-center gap-2.5">
               <AlertTriangle className={`w-5 h-5 ${modActionData.isDestructive ? 'text-destructive' : 'text-[#FAA61A]'}`} />
               Confirm: {modActionData.label}
             </h3>
@@ -585,14 +570,14 @@ export function AdminChannel() {
               value={modReason}
               onChange={(e) => setModReason(e.target.value)}
               placeholder="Provide a mandatory audit log reason..."
-              className="bg-black/50 text-foreground text-[13px] p-3.5 rounded-md border border-white/10 focus:border-[#7289da] outline-none resize-none h-24 mb-5 shadow-inner"
+              className="bg-input text-foreground text-[13px] p-3.5 rounded-md border border-border focus:border-primary outline-none resize-none h-24 mb-5 shadow-inner"
               required
             />
             
             <div className="flex gap-3">
               <button 
                 onClick={() => { setModActionData(null); setModReason(""); }}
-                className="flex-1 py-2.5 rounded-md bg-black/40 hover:bg-black/60 border border-white/10 text-foreground text-[13px] font-bold transition-colors cursor-pointer focus-visible:outline-none shadow-sm"
+                className="flex-1 py-2.5 rounded-md bg-muted hover:bg-muted/80 border border-border text-foreground text-[13px] font-bold transition-colors cursor-pointer focus-visible:outline-none shadow-sm"
               >
                 Cancel
               </button>
@@ -611,7 +596,7 @@ export function AdminChannel() {
       {/* Toast Notification */}
       {toast && (
         <div className="absolute bottom-6 right-6 z-[100000] animate-slide-up">
-          <div className={`px-4.5 py-3 rounded-lg shadow-2xl flex items-center gap-3 border ${toast.type === 'error' ? 'bg-[#1e2124] border-destructive/50 text-destructive' : 'bg-[#1e2124] border-[#23a559]/50 text-[#23a559]'}`}>
+          <div className={`px-4.5 py-3 rounded-lg shadow-2xl flex items-center gap-3 border ${toast.type === 'error' ? 'bg-popover border-destructive/50 text-destructive' : 'bg-popover border-[#23a559]/50 text-[#23a559]'}`}>
             {toast.type === 'error' ? <AlertTriangle className="w-4 h-4 shrink-0" /> : <Check className="w-4 h-4 shrink-0" />}
             <span className="text-[13px] font-bold">{toast.text}</span>
             <button onClick={() => setToast(null)} className="ml-2 text-muted-foreground hover:text-foreground cursor-pointer focus-visible:outline-none"><X className="w-3.5 h-3.5" /></button>

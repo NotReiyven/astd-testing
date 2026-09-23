@@ -1,7 +1,12 @@
+// ================================================
+// FILE: src/app/components/HomeChannel.tsx
+// ================================================
+
 import React, { useState, useMemo, useEffect } from "react";
 import { ExternalLink, Users, Wrench, ChevronRight, Code2, Check, Terminal, MessageSquarePlus, BookOpen, FileSpreadsheet, Info, Award, FileClock, Home } from "lucide-react";
 import { useUnits } from "../../context/UnitContext";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
+import { useLayoutStore } from "../../store/useLayoutStore";
 
 const FIRE_ZIO_AVATAR = "/units/firezio.webp";
 
@@ -36,6 +41,7 @@ function CreditBadge({ name, color }: { name: string; color: string }) {
 export function HomeChannel({ guideState }: { guideState?: { type: string | null; step: number } }) {
   const [activeSection, setActiveSection] = useState<string>("info");
   const { changelog } = useUnits();
+  const { globalCompactMode } = useLayoutStore();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -118,7 +124,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
 
   return (
     <div className="flex-1 w-full h-full font-sans relative overflow-hidden flex flex-col bg-background">
-      <div className="flex flex-col md:flex-row gap-8 max-w-6xl mx-auto w-full h-full p-6 md:p-8 overflow-hidden">
+      <div className={`flex flex-col md:flex-row ${globalCompactMode ? 'gap-4 p-3 md:p-4' : 'gap-8 p-6 md:p-8'} max-w-6xl mx-auto w-full h-full overflow-hidden`}>
 
         <nav className="hidden md:flex flex-col w-56 shrink-0 sticky top-0 self-start pt-2 z-10">
           <div className="flex items-center justify-between mb-6 text-foreground">
@@ -163,7 +169,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
         <div id="home-content" className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-16 flex flex-col gap-12 z-10">
 
           <div className="flex flex-col gap-3">
-            <h1 className="text-[28px] md:text-[32px] font-black text-foreground tracking-tight">ASTD Value List</h1>
+            <h1 className={`${globalCompactMode ? 'text-[20px] md:text-[24px]' : 'text-[28px] md:text-[32px]'} font-black text-foreground tracking-tight`}>ASTD Value List</h1>
             <p className="text-[15px] text-muted-foreground leading-relaxed max-w-3xl font-medium">
               Stop getting scammed. These are live market estimates based on actual trading data. Verify the tags and momentum before you accept an offer.
             </p>
@@ -175,8 +181,8 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
               <h2 className="text-[20px] font-black text-foreground">General Info</h2>
             </div>
 
-            <div className="bg-card border border-border rounded-[8px] p-5 flex items-start gap-4 shadow-sm">
-              <img src={FIRE_ZIO_AVATAR} className="w-10 h-10 rounded-full object-cover shrink-0 border border-border" alt="Fire Zio" />
+            <div className={`bg-card border border-border rounded-[8px] flex items-start shadow-sm ${globalCompactMode ? 'p-3 gap-3' : 'p-5 gap-4'}`}>
+              <img src={FIRE_ZIO_AVATAR} className={`${globalCompactMode ? 'w-7 h-7' : 'w-10 h-10'} rounded-full object-cover shrink-0 border border-border`} alt="Fire Zio" />
               <div className="flex flex-col gap-1">
                 <span className="text-[12px] font-bold text-foreground uppercase tracking-widest">Fire Zio's Briefing</span>
                 <p className="text-muted-foreground text-[14px] leading-relaxed italic">
@@ -319,9 +325,11 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
               </div>
             </div>
 
-            <div className="mt-4 rounded-[8px] border border-border bg-card overflow-hidden shadow-sm">
-              <img src={creditsBottomImage} alt="ASTD Value List" draggable={false} className="w-full h-auto object-contain block opacity-90 hover:opacity-100 transition-opacity" loading="lazy" />
-            </div>
+            {!globalCompactMode && (
+              <div className="mt-4 rounded-[8px] border border-border bg-card overflow-hidden shadow-sm">
+                <img src={creditsBottomImage} alt="ASTD Value List" draggable={false} className="w-full h-auto object-contain block opacity-90 hover:opacity-100 transition-opacity" loading="lazy" />
+              </div>
+            )}
           </section>
 
         </div>

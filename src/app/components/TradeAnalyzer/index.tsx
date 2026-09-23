@@ -3,7 +3,7 @@
 // ================================================
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Calculator, RotateCcw, Share2, Check, ArrowUpDown, Wand2, X, Megaphone, ArrowLeft } from "lucide-react";
+import { Calculator, RotateCcw, Share2, Check, ArrowUpDown, Wand2, X, Megaphone, ArrowLeft, Bookmark, Trash2 } from "lucide-react";
 import { TradeSectionPanel } from "./TradeSectionPanel";
 import { TradeNotices } from "./TradeNotices";
 import { SmartParserMenu } from "./SmartParserMenu";
@@ -47,12 +47,19 @@ export function TradeAnalyzerPanel({
     pinnedIds, 
     togglePin, 
     isComposerOpen,
-    setComposerOpen
+    setComposerOpen,
+    presets,
+    savePreset,
+    deletePreset,
+    loadPreset
   } = useTradeStore();
 
   const [copied, setCopied] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
+  
+  const [isPresetsOpen, setIsPresetsOpen] = useState(false);
+  const [newPresetName, setNewPresetName] = useState("");
 
   const { panelWidth, startResize, panelRef } = usePanelResize(480, 420, 800);
 
@@ -79,6 +86,10 @@ export function TradeAnalyzerPanel({
           setSmartMenuOpen(false);
           return;
         }
+        if (isPresetsOpen) {
+          setIsPresetsOpen(false);
+          return;
+        }
         if (isOpen && onClose && document.activeElement?.tagName !== 'INPUT') {
           closeSheet();
         }
@@ -86,7 +97,7 @@ export function TradeAnalyzerPanel({
     };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
-  }, [isOpen, onClose, smartMenuOpen]);
+  }, [isOpen, onClose, smartMenuOpen, isPresetsOpen]);
 
   const { giveTotal, getTotal, givePercent, getPercent } = useMemo(() => {
     const gTotal = giveItems.reduce((s, c) => s + c.value * c.qty, 0);
@@ -126,6 +137,13 @@ export function TradeAnalyzerPanel({
       return;
     }
     setComposerOpen(true, getItems.length === 0 ? "lf_offers" : "standard");
+  };
+
+  const handleSavePreset = () => {
+    if (!newPresetName.trim() || (giveItems.length === 0 && getItems.length === 0)) return;
+    triggerHaptic('medium');
+    savePreset(newPresetName.trim());
+    setNewPresetName("");
   };
 
   const openSheet = () => {
@@ -198,16 +216,16 @@ export function TradeAnalyzerPanel({
 
   const renderCalculatorContent = () => (
     <>
-      <div className="flex-shrink-0 flex items-center gap-2 px-3 md:px-4 py-3 md:py-4 border-b border-border relative z-20 bg-popover">
+      <div className="flex-shrink-0 flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-3 md:py-4 border-b border-border relative z-20 bg-popover overflow-hidden">
         <div className="w-7 h-7 flex-shrink-0 rounded-[4px] flex items-center justify-center bg-card border border-border">
           <Calculator className="w-3.5 h-3.5 text-foreground" />
         </div>
 
         {isComposerOpen ? (
-          <span className="text-[14px] md:text-[15px] font-bold flex-1 text-foreground truncate select-none">Create Listing</span>
+          <span className="text-[14px] md:text-[15px] font-bold flex-1 text-foreground truncate whitespace-nowrap select-none pr-1">Create Listing</span>
         ) : (
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <span className="hidden md:inline text-[15px] font-bold text-foreground select-none">Trade Analyzer</span>
+          <div className="flex items-center flex-1 min-w-0 pr-1 md:pr-2">
+            <span className="hidden md:block text-[14px] lg:text-[15px] font-bold text-foreground select-none whitespace-nowrap truncate">Trade Analyzer</span>
             <div className="flex-1 md:hidden" />
           </div>
         )}
@@ -232,7 +250,7 @@ export function TradeAnalyzerPanel({
             )}
 
             <button 
-              onClick={() => { triggerHaptic('light'); setSmartMenuOpen(!smartMenuOpen); startGuide("dictionary"); }} 
+              onClick={() => { triggerHaptic('light'); setSmartMenuOpen(!smartMenuOpen); setIsPresetsOpen(false); startGuide("dictionary"); }} 
               className={`flex-shrink-0 w-11 h-11 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
                 isWandTarget 
                   ? "bg-primary text-primary-foreground border-primary z-[100005] animate-pulse" 
@@ -244,6 +262,19 @@ export function TradeAnalyzerPanel({
             >
               <Wand2 className="w-5 h-5 md:w-4 md:h-4" />
             </button>
+            
+            <button 
+              onClick={() => { triggerHaptic('light'); setIsPresetsOpen(!isPresetsOpen); setSmartMenuOpen(false); }} 
+              className={`flex-shrink-0 w-11 h-11 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
+                isPresetsOpen 
+                  ? "bg-primary text-primary-foreground border-primary" 
+                  : "bg-muted border-border text-muted-foreground hover:bg-card hover:text-foreground"
+              }`} 
+              title="Trade Presets"
+            >
+              <Bookmark className="w-5 h-5 md:w-4 md:h-4" />
+            </button>
+
             <button 
               onClick={() => { triggerHaptic('medium'); handleSafeClear(); }} 
               className={`flex-shrink-0 w-11 h-11 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
@@ -259,20 +290,20 @@ export function TradeAnalyzerPanel({
             </button>
             <button 
               onClick={handleShare} 
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-2.5 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-colors active:scale-95 text-foreground focus-visible:outline-none relative z-35 pointer-events-auto min-h-[44px] md:min-h-0 cursor-pointer" 
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-2 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-colors active:scale-95 text-foreground focus-visible:outline-none relative z-35 pointer-events-auto min-h-[44px] md:min-h-0 cursor-pointer" 
               style={{ background: copied ? "#23a559" : "var(--muted)", border: "1px solid var(--border)", fontFamily: "var(--font-sans)" }}
               title="Share formatted trade string"
             >
               {copied ? <Check className="w-4 h-4 md:w-3.5 md:h-3.5 text-white" /> : <Share2 className="w-4 h-4 md:w-3.5 md:h-3.5 text-muted-foreground" />}
-              <span className="hidden sm:inline">{copied ? "Copied!" : "Share"}</span>
+              <span className="hidden xl:inline">{copied ? "Copied!" : "Share"}</span>
             </button>
             <button 
               onClick={handleAdvertise} 
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-3 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-colors active:scale-95 text-primary-foreground bg-primary hover:bg-primary/90 focus-visible:outline-none border border-primary relative z-35 pointer-events-auto shadow-sm min-h-[44px] md:min-h-0 cursor-pointer" 
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-2.5 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-colors active:scale-95 text-primary-foreground bg-primary hover:bg-primary/90 focus-visible:outline-none border border-primary relative z-35 pointer-events-auto shadow-sm min-h-[44px] md:min-h-0 cursor-pointer" 
               title="Post this trade as an advertisement"
             >
               <Megaphone className="w-4 h-4 md:w-3.5 md:h-3.5" />
-              <span>Advertise</span>
+              <span className="hidden sm:inline">Advertise</span>
             </button>
           </>
         )}
@@ -299,6 +330,67 @@ export function TradeAnalyzerPanel({
               onSaveUndo={saveUndoState}
               initialText={initialParserText}
             />
+          )}
+
+          {isPresetsOpen && (
+            <div className="relative z-50 mx-3 md:mx-4 mt-3 p-4 bg-card border border-border rounded-[8px] animate-fade-in shadow-lg flex flex-col gap-4">
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <span className="text-[12px] font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Bookmark className="w-4 h-4 text-primary"/> Saved Loadouts
+                </span>
+                <button onClick={() => setIsPresetsOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none rounded-[3px] p-1 -m-1 cursor-pointer">
+                   <X className="w-4 h-4" />
+                </button>
+              </div>
+              
+              <div className="flex gap-2">
+                <input 
+                  value={newPresetName} 
+                  onChange={e => setNewPresetName(e.target.value)} 
+                  onKeyDown={e => e.key === "Enter" && handleSavePreset()}
+                  placeholder="Name this loadout..." 
+                  className="flex-1 bg-input border border-border rounded-[4px] px-3 py-2 text-[13px] text-foreground outline-none placeholder-muted-foreground focus:ring-1 focus:ring-primary transition-all" 
+                  maxLength={30}
+                />
+                <button 
+                  onClick={handleSavePreset} 
+                  disabled={!newPresetName.trim() || (giveItems.length === 0 && getItems.length === 0)}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-[4px] text-[13px] font-bold transition-colors active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none shadow-sm"
+                >
+                  Save
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto custom-scrollbar pr-1">
+                 {presets.length === 0 ? (
+                   <p className="text-[12px] text-muted-foreground italic text-center py-4 bg-muted rounded-[6px] border border-border">No saved loadouts.</p>
+                 ) : (
+                   presets.map(p => (
+                     <div key={p.id} className="flex items-center justify-between bg-popover p-2.5 rounded-[6px] border border-border group hover:border-primary/50 transition-colors">
+                        <div className="flex flex-col min-w-0 pr-2">
+                          <span className="text-[13px] font-bold text-foreground truncate">{p.name}</span>
+                          <span className="text-[10px] font-medium text-muted-foreground truncate">{p.give.length} Give • {p.get.length} Get</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button 
+                            onClick={() => { triggerHaptic('medium'); loadPreset(p.id); setIsPresetsOpen(false); }}
+                            className="px-3 py-1.5 bg-muted hover:bg-primary hover:text-primary-foreground text-foreground text-[11px] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer border border-border hover:border-primary"
+                          >
+                            Load
+                          </button>
+                          <button 
+                            onClick={() => { triggerHaptic('light'); deletePreset(p.id); }}
+                            className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
+                            title="Delete Preset"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                     </div>
+                   ))
+                 )}
+              </div>
+            </div>
           )}
 
           <TradeSummaryBox 

@@ -8,6 +8,7 @@ import { FilterKey } from "../../../types";
 import { FILTERS } from "../../../data";
 import { CustomDropdown } from "./CustomDropdown";
 import { triggerHaptic } from "../../../data/helpers";
+import { useLayoutStore } from "../../../store/useLayoutStore";
 
 const SORT_OPTIONS = {
   "value-desc": "Value: High to Low", "value-asc": "Value: Low to High",
@@ -44,6 +45,7 @@ export function CanvasControls({
   viewMode, setViewMode, isSelectMode, setIsSelectMode
 }: CanvasControlsProps) {
   const [isControlsCollapsed, setIsControlsCollapsed] = useState(false);
+  const { globalCompactMode } = useLayoutStore();
   
   const renderBulkAndResetButtons = () => (
     <>
@@ -103,7 +105,7 @@ export function CanvasControls({
   );
 
   return (
-    <div className="flex-shrink-0 flex flex-col px-4 md:px-10 py-4 z-40 relative gap-3.5 bg-card border-b border-border shadow-sm">
+    <div className={`flex-shrink-0 flex flex-col z-40 relative bg-card border-b border-border shadow-sm ${globalCompactMode ? 'px-2 md:px-4 py-2 gap-2' : 'px-4 md:px-10 py-4 gap-3.5'}`}>
       
       {/* MOBILE COLLAPSE HEADER */}
       <div className="flex md:hidden items-center justify-between pb-1">
@@ -140,10 +142,10 @@ export function CanvasControls({
       </div>
 
       {/* COLLAPSIBLE CONTAINER FOR DROPDOWNS & ACTIONS */}
-      <div className={`flex flex-col gap-3 transition-all duration-300 overflow-hidden ${isControlsCollapsed ? 'max-h-0 opacity-0 md:max-h-none md:opacity-100 py-0 md:py-0' : 'max-h-[400px] opacity-100'}`}>
+      <div className={`flex flex-col transition-all duration-300 overflow-hidden ${isControlsCollapsed ? 'max-h-0 opacity-0 md:max-h-none md:opacity-100 py-0 gap-0 md:gap-3' : 'max-h-[400px] opacity-100 gap-3'}`}>
         
         {/* DESKTOP LAYOUT */}
-        <div className="hidden md:flex flex-row items-center justify-between gap-3 w-full pt-3 border-t border-border/60">
+        <div className={`hidden md:flex flex-row items-center justify-between gap-3 w-full border-t border-border/60 ${globalCompactMode ? 'pt-2' : 'pt-3'}`}>
           <div className="flex items-center gap-3">
             {renderBulkAndResetButtons()}
           </div>
@@ -161,7 +163,7 @@ export function CanvasControls({
         </div>
 
         {/* MOBILE LAYOUT */}
-        <div className="flex md:hidden flex-col gap-3 w-full pt-3 border-t border-border/60">
+        <div className={`flex md:hidden flex-col gap-3 w-full border-t border-border/60 ${globalCompactMode ? 'pt-2' : 'pt-3'}`}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full">
             <CustomDropdown icon={Filter} value={statusFilter} options={FILTER_OPTIONS} onChange={(s: string) => { triggerHaptic('light'); setStatusFilter(s); if (s !== "all") window.dispatchEvent(new Event("academy-used-filter")); }} defaultLabel="All Statuses" />
             <CustomDropdown icon={ArrowUpDown} value={sortMode} options={SORT_OPTIONS} onChange={(s: string) => { triggerHaptic('light'); setSortMode(s); }} />

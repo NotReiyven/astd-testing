@@ -6,6 +6,23 @@
     <title>ASTD Value List Website</title>
     <meta name="description" content="Calculate and analyze Roblox item trades with real-time value comparisons, demand insights, and customizable unit management for savvy traders." />
 
+    <!-- Anti-Flashbang Theme Script: Runs BEFORE the DOM paints -->
+    <script>
+      try {
+        let theme = 'dark'; // Default
+        const stored = localStorage.getItem('astd_layout_storage');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.state && parsed.state.theme) {
+            theme = parsed.state.theme;
+          }
+        }
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {
+        console.error("Failed to load theme preference", e);
+      }
+    </script>
+
     <!-- Bypass Fandom/Wikia hotlink protection (403 Forbidden) -->
     <meta name="referrer" content="no-referrer" />
 
@@ -35,7 +52,8 @@
     <!-- Premium Technical Typography: Geist and Geist Mono (Vercel's Typefaces) -->
     <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
-    <style>html, body { height: 100%; margin: 0; background-color: #000000; } #root { height: 100%; }</style>
+    <!-- Updated to use the CSS variable so the background matches the injected theme instantly -->
+    <style>html, body { height: 100%; margin: 0; background-color: var(--background, #000000); } #root { height: 100%; }</style>
   </head>
   <body>
     <div id="root"></div>

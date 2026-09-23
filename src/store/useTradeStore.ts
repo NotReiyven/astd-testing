@@ -1,6 +1,17 @@
+// ================================================
+// FILE: src/store/useTradeStore.ts
+// ================================================
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { TradeCard } from '../types';
+
+export interface TradePreset {
+  id: string;
+  name: string;
+  give: TradeCard[];
+  get: TradeCard[];
+}
 
 interface TradeState {
   giveItems: TradeCard[];
@@ -8,6 +19,8 @@ interface TradeState {
   pinnedIds: string[];
   isComposerOpen: boolean;
   composerMode: "standard" | "lf_offers" | "inventory";
+  presets: TradePreset[];
+  
   addCard: (col: "give" | "get", card: TradeCard) => void;
   changeQty: (col: "give" | "get", id: string, qty: number) => void;
   removeCard: (col: "give" | "get", id: string) => void;
@@ -17,6 +30,10 @@ interface TradeState {
   overwrite: (giveCards: TradeCard[], getCards: TradeCard[]) => void;
   togglePin: (col: "give" | "get", id: string) => void;
   setComposerOpen: (isOpen: boolean, mode?: "standard" | "lf_offers" | "inventory") => void;
+  
+  savePreset: (name: string) => void;
+  deletePreset: (id: string) => void;
+  loadPreset: (id: string) => void;
 }
 
 export const useTradeStore = create<TradeState>()(
@@ -27,6 +44,7 @@ export const useTradeStore = create<TradeState>()(
       pinnedIds: [],
       isComposerOpen: false,
       composerMode: "standard",
+      presets: [],
 
       setComposerOpen: (isOpen, mode = "standard") => set({ isComposerOpen: isOpen, composerMode: mode }),
 
@@ -85,18 +103,42 @@ export const useTradeStore = create<TradeState>()(
             ? state.pinnedIds.filter(p => p !== pinKey)
             : [...state.pinnedIds, pinKey]
         };
+      }),
+      
+      savePreset: (name) => set((state) => {
+        const newPreset: TradePreset = {
+          id: Date.now().toString(),
+          name,
+          give: [...state.giveItems],
+          get: [...state.getItems]
+        };
+        // Insert at the beginning so newest presets are at the top
+        return { presets: [newPreset, ...state.presets] };
+      }),
+
+      deletePreset: (id) => set((state) => ({
+        presets: state.presets.filter(p => p.id !== id)
+      })),
+
+      loadPreset: (id) => set((state) => {
+        const preset = state.presets.find(p => p.id === id);
+        if (!preset) return {};
+        // Overwrite the current calculator state with the preset
+        return { giveItems: [...preset.give], getItems: [...preset.get] };
       })
     }),
     {
       name: 'astd_trade_storage',
-      version: 2,
+      version: 3,
       migrate: (persistedState: any, version: number) => {
-        if (version < 2) {
+        // Safe migration fallback if local storage schemas drift
+        if (version < 3) {
           persistedState.giveItems = Array.isArray(persistedState.giveItems) ? persistedState.giveItems : [];
           persistedState.getItems = Array.isArray(persistedState.getItems) ? persistedState.getItems : [];
           persistedState.pinnedIds = Array.isArray(persistedState.pinnedIds) ? persistedState.pinnedIds : [];
           persistedState.isComposerOpen = false;
           persistedState.composerMode = "standard";
+          persistedState.presets = Array.isArray(persistedState.presets) ? persistedState.presets : [];
         }
         return persistedState as TradeState;
       },

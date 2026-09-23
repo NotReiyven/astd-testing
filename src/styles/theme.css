@@ -1,49 +1,108 @@
 @custom-variant dark (&:is(.dark *));
 
-:root {
-  /* Typography - Vercel Geist */
+:root, [data-theme="dark"] {
+  /* Default Deep Dark */
   --font-size: 14px;
   --font-sans: 'Geist', sans-serif;
   --font-mono: 'Geist Mono', monospace;
 
-  /* Deep, high-contrast backgrounds */
   --background: #000000;
   --foreground: #ededed;
-
-  /* Elevated panels - Very subtle gray steps */
+  
   --card: #0a0a0a;
   --card-foreground: #ededed;
-
+  
   --popover: #111111;
   --popover-foreground: #ededed;
-
-  /* Premium Monochrome Primary (Inverted) */
+  
   --primary: #ededed;
   --primary-foreground: #000000;
-
-  /* Secondary & Muted Elements (GitHub/Vercel standard grays) */
+  
   --secondary: #1a1a1a;
   --secondary-foreground: #ededed;
-
+  
   --muted: #1a1a1a;
   --muted-foreground: #888888;
-
+  
   --accent: #222222;
   --accent-foreground: #ededed;
-
-  /* Alerts - Keeping a sharp functional red */
+  
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-
-  /* Structural - Sharp, visible borders */
+  
   --border: #222222;
   --input: #0a0a0a;
   --input-background: #0a0a0a;
   --switch-background: #222222;
   --ring: #ededed;
 
-  /* Tight, technical border radius */
   --radius: 6px;
+}
+
+[data-theme="light"] {
+  /* Crisp Light Mode */
+  --background: #ffffff;
+  --foreground: #09090b;
+  
+  --card: #f4f4f5;
+  --card-foreground: #09090b;
+  
+  --popover: #ffffff;
+  --popover-foreground: #09090b;
+  
+  --primary: #09090b;
+  --primary-foreground: #ffffff;
+  
+  --secondary: #e4e4e7;
+  --secondary-foreground: #09090b;
+  
+  --muted: #e4e4e7;
+  --muted-foreground: #71717a;
+  
+  --accent: #d4d4d8;
+  --accent-foreground: #09090b;
+  
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  
+  --border: #d4d4d8;
+  --input: #f4f4f5;
+  --input-background: #f4f4f5;
+  --switch-background: #d4d4d8;
+  --ring: #09090b;
+}
+
+[data-theme="discord"] {
+  /* Native Discord Palette */
+  --background: #313338;
+  --foreground: #F2F3F5;
+  
+  --card: #2B2D31;
+  --card-foreground: #F2F3F5;
+  
+  --popover: #1E1F22;
+  --popover-foreground: #F2F3F5;
+  
+  --primary: #5865F2; /* Blurple */
+  --primary-foreground: #ffffff;
+  
+  --secondary: #3F4147;
+  --secondary-foreground: #F2F3F5;
+  
+  --muted: #3F4147;
+  --muted-foreground: #B5BAC1;
+  
+  --accent: #4752C4;
+  --accent-foreground: #ffffff;
+  
+  --destructive: #DA373C;
+  --destructive-foreground: #ffffff;
+  
+  --border: #1E1F22;
+  --input: #1E1F22;
+  --input-background: #1E1F22;
+  --switch-background: #1E1F22;
+  --ring: #5865F2;
 }
 
 @theme inline {
@@ -63,7 +122,7 @@
   --color-secondary-foreground: var(--secondary-foreground);
 
   --color-muted: var(--muted);
-  --color-muted-foreground: var(--color-muted-foreground);
+  --color-muted-foreground: var(--muted-foreground);
 
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);

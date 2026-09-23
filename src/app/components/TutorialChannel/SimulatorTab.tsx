@@ -180,13 +180,13 @@ export function SimulatorTab() {
               </button>
               <button 
                 onClick={() => handleNavigate("theory")} 
-                className="w-full sm:w-auto px-8 py-4 rounded-[8px] bg-[#3f3f46] text-white font-bold text-[14px] transition-all hover:brightness-110 active:scale-95 focus-visible:outline-none flex items-center justify-center gap-2 shadow-sm"
+                className="w-full sm:w-auto px-8 py-4 rounded-[8px] bg-muted text-foreground font-bold text-[14px] transition-all hover:brightness-110 active:scale-95 focus-visible:outline-none flex items-center justify-center gap-2 shadow-sm"
               >
                 <BookOpen className="w-4 h-4" /> Review Theory
               </button>
               <button 
                 onClick={() => handleNavigate("value-list")} 
-                className="w-full sm:w-auto px-8 py-4 rounded-[8px] bg-[#3f3f46] text-white font-bold text-[14px] transition-all hover:brightness-110 active:scale-95 focus-visible:outline-none flex items-center justify-center gap-2 shadow-sm"
+                className="w-full sm:w-auto px-8 py-4 rounded-[8px] bg-muted text-foreground font-bold text-[14px] transition-all hover:brightness-110 active:scale-95 focus-visible:outline-none flex items-center justify-center gap-2 shadow-sm"
               >
                 <List className="w-4 h-4" /> Return to Market
               </button>
@@ -317,21 +317,21 @@ export function SimulatorTab() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full animate-fade-in">
                     <button 
                       onClick={() => handleGuess("WIN")} 
-                      className="group flex flex-col items-center justify-center gap-1.5 py-4 sm:py-5 rounded-[8px] bg-[#22c55e] text-white transition-all hover:brightness-110 active:scale-95 shadow-md focus-visible:outline-none"
+                      className="group flex flex-col items-center justify-center gap-1.5 py-4 sm:py-5 rounded-[8px] bg-[#22c55e] text-white transition-all hover:brightness-110 active:scale-95 shadow-md focus-visible:outline-none cursor-pointer"
                     >
                       <span className="font-black text-[16px] uppercase tracking-wider">Accept</span>
                       <span className="text-[12px] text-white/90 font-medium">Winning Trade</span>
                     </button>
                     <button 
                       onClick={() => handleGuess("LOSS")} 
-                      className="group flex flex-col items-center justify-center gap-1.5 py-4 sm:py-5 rounded-[8px] bg-[#3f3f46] text-white transition-all hover:brightness-110 active:scale-95 shadow-md focus-visible:outline-none"
+                      className="group flex flex-col items-center justify-center gap-1.5 py-4 sm:py-5 rounded-[8px] bg-muted text-foreground transition-all hover:bg-muted/80 active:scale-95 shadow-md focus-visible:outline-none cursor-pointer border border-border"
                     >
                       <span className="font-black text-[16px] uppercase tracking-wider">Decline</span>
-                      <span className="text-[12px] text-white/80 font-medium">Losing Trade</span>
+                      <span className="text-[12px] text-muted-foreground font-medium">Losing Trade</span>
                     </button>
                     <button 
                       onClick={() => handleGuess("SCAM")} 
-                      className="group flex flex-col items-center justify-center gap-1.5 py-4 sm:py-5 rounded-[8px] bg-[#ef4444] text-white transition-all hover:brightness-110 active:scale-95 shadow-md focus-visible:outline-none"
+                      className="group flex flex-col items-center justify-center gap-1.5 py-4 sm:py-5 rounded-[8px] bg-[#ef4444] text-white transition-all hover:brightness-110 active:scale-95 shadow-md focus-visible:outline-none cursor-pointer"
                     >
                       <span className="font-black text-[16px] uppercase tracking-wider">Scam</span>
                       <span className="text-[12px] text-white/90 font-medium">Unreasonable Ask</span>
@@ -341,8 +341,8 @@ export function SimulatorTab() {
                   <div 
                     className="flex flex-col md:flex-row items-center gap-6 p-6 rounded-[8px] border transition-all animate-slide-up shadow-sm"
                     style={{ 
-                      backgroundColor: guessResult === "correct" ? "rgba(34, 197, 94, 0.05)" : guessResult === "scam" ? "rgba(239, 68, 68, 0.05)" : "rgba(63, 63, 70, 0.05)",
-                      borderColor: guessResult === "correct" ? "rgba(34, 197, 94, 0.2)" : guessResult === "scam" ? "rgba(239, 68, 68, 0.2)" : "rgba(63, 63, 70, 0.2)" 
+                      backgroundColor: guessResult === "correct" ? "rgba(34, 197, 94, 0.05)" : guessResult === "scam" ? "rgba(239, 68, 68, 0.05)" : "var(--muted)",
+                      borderColor: guessResult === "correct" ? "rgba(34, 197, 94, 0.2)" : guessResult === "scam" ? "rgba(239, 68, 68, 0.2)" : "var(--border)" 
                     }}
                   >
                     <div className="shrink-0">
@@ -351,11 +351,11 @@ export function SimulatorTab() {
                       ) : guessResult === "scam" ? (
                         <AlertTriangle className="w-14 h-14 text-[#ef4444]" />
                       ) : (
-                        <XCircle className="w-14 h-14 text-[#3f3f46]" />
+                        <XCircle className="w-14 h-14 text-muted-foreground" />
                       )}
                     </div>
                     <div className="flex flex-col flex-1 text-center md:text-left">
-                      <span className="text-[16px] font-black uppercase tracking-wider mb-2" style={{ color: guessResult === "correct" ? "#22c55e" : guessResult === "scam" ? "#ef4444" : "#ffffff" }}>
+                      <span className="text-[16px] font-black uppercase tracking-wider mb-2" style={{ color: guessResult === "correct" ? "#22c55e" : guessResult === "scam" ? "#ef4444" : "var(--foreground)" }}>
                         {guessResult === "correct" ? "Correct Assessment" : guessResult === "scam" ? "Trade Avoided" : guessResult === "timeout" ? "Time Expired" : "Incorrect Assessment"}
                       </span>
                       <p className="text-[14px] text-foreground leading-relaxed mb-6">
@@ -365,7 +365,7 @@ export function SimulatorTab() {
                       </p>
                       <button 
                         onClick={nextScenario} 
-                        className="self-center md:self-start px-8 py-3 bg-card hover:brightness-110 text-foreground text-[13px] font-black uppercase tracking-wider rounded-[6px] transition-all shadow-sm focus-visible:outline-none active:scale-95 border border-border"
+                        className="self-center md:self-start px-8 py-3 bg-popover hover:bg-card text-foreground text-[13px] font-black uppercase tracking-wider rounded-[6px] transition-all shadow-sm focus-visible:outline-none active:scale-95 border border-border cursor-pointer"
                       >
                         {currentScenario >= scenarios.length - 1 ? "Complete Assessment" : "Next Scenario"}
                       </button>

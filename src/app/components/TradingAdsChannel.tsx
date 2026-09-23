@@ -14,6 +14,7 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { useTradeStore } from "../../store/useTradeStore";
 import { useInventoryStore } from "../../store/useInventoryStore";
 import { useProfileStore } from "../../store/useProfileStore";
+import { useLayoutStore } from "../../store/useLayoutStore";
 import { useUnits } from "../../context/UnitContext";
 import { useHistoryModalStore } from "../../store/useHistoryModalStore";
 import { TradeCard, MasterUnit } from "../../types";
@@ -164,6 +165,7 @@ const FixedSlotGrid = ({ items, ALL_UNITS, onInspectUnit, isOfferTile, limit = 8
 };
 
 const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL_UNITS, onInspectUnit, onSendToCalculator }: { ad: TradingAd; currentUserId?: string; currentUserRole?: string; onDelete: (id: string) => void; ALL_UNITS: MasterUnit[]; onInspectUnit: (unitId: string) => void; onSendToCalculator: (give: TradeCard[], get: TradeCard[]) => void; }) => {
+    const { globalCompactMode } = useLayoutStore();
     const [isContacting, setIsContacting] = useState(false);
     const [votes, setVotes] = useState({ up: 0, down: 0, userVote: 0 });
     const [isNewAd, setIsNewAd] = useState(() => Date.now() - new Date(ad.created_at).getTime() < 5000);
@@ -270,11 +272,11 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
 
     return (
       <div 
-        className={`relative rounded-[8px] p-4 sm:p-5 flex flex-col h-full transition-all duration-200 will-change-transform specular-card ${
-          isNewAd ? 'border-primary ring-1 ring-primary' : ''
-        }`}
+        className={`relative rounded-[8px] flex flex-col h-full transition-all duration-200 will-change-transform specular-card ${
+          globalCompactMode ? 'p-2.5 sm:p-3' : 'p-4 sm:p-5'
+        } ${isNewAd ? 'border-primary ring-1 ring-primary' : ''}`}
       >
-        <div className="flex items-start justify-between mb-4 h-[40px] relative z-10">
+        <div className={`flex items-start justify-between ${globalCompactMode ? 'mb-2.5 h-[32px]' : 'mb-4 h-[40px]'} relative z-10`}>
           <div className="flex items-center gap-3 min-w-0">
             <div 
               className="relative shrink-0 cursor-pointer hover:opacity-80 transition-opacity active:scale-95"
@@ -287,17 +289,17 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
             >
               <img 
                 src={ad.profiles?.avatar_url || "/units/firezio.webp"} 
-                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-muted object-cover border border-border" 
+                className={`${globalCompactMode ? 'w-7 h-7 sm:w-8 sm:h-8' : 'w-10 h-10 sm:w-11 sm:h-11'} rounded-full bg-muted object-cover border border-border`} 
                 alt=""
               />
               <div 
-                className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-2 border-card z-10"
+                className={`absolute -bottom-0.5 -right-0.5 ${globalCompactMode ? 'w-2.5 h-2.5 sm:w-3 sm:h-3' : 'w-3 h-3 sm:w-3.5 sm:h-3.5'} rounded-full border-2 border-card z-10`}
                 style={{ backgroundColor: STATUS_COLORS[ad.profiles?.status || 'offline'] }}
               />
             </div>
             <div className="flex flex-col min-w-0 pt-0.5">
                <span 
-                 className="text-[14px] sm:text-[15px] font-bold text-foreground tracking-tight leading-none mb-1.5 truncate cursor-pointer hover:underline"
+                 className={`${globalCompactMode ? 'text-[13px] sm:text-[14px]' : 'text-[14px] sm:text-[15px]'} font-bold text-foreground tracking-tight leading-none mb-1.5 truncate cursor-pointer hover:underline`}
                  onClick={(e) => {
                    triggerHaptic('light');
                    const rect = e.currentTarget.getBoundingClientRect();
@@ -316,14 +318,16 @@ const VanguardAdCard = memo(({ ad, currentUserId, currentUserRole, onDelete, ALL
           </span>
         </div>
 
-        <div className="mb-5 bg-muted/30 border border-border border-l-2 border-l-primary rounded-[4px] p-3 shadow-inner">
-          <div 
-            className="text-[12px] text-foreground font-medium leading-relaxed break-words overflow-hidden"
-            style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
-          >
-            {ad.note || <span className="italic text-muted-foreground">No notes provided.</span>}
+        {ad.note && (
+          <div className="mb-5 bg-muted/30 border border-border border-l-2 border-l-primary rounded-[4px] p-3 shadow-inner">
+            <div 
+              className="text-[12px] text-foreground font-medium leading-relaxed break-words overflow-hidden"
+              style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
+            >
+              {ad.note}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="flex flex-col w-full flex-1 relative z-10 gap-5">
           {isInventory ? (
@@ -407,6 +411,7 @@ export function TradingAdsChannel() {
   const { overwrite, setComposerOpen } = useTradeStore();
   const { units: ALL_UNITS } = useUnits();
   const openHistoryModal = useHistoryModalStore((state) => state.openModal);
+  const { globalCompactMode } = useLayoutStore();
 
   const [searchFilter, setSearchFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -528,7 +533,7 @@ export function TradingAdsChannel() {
                   value={searchFilter}
                   onChange={(e) => setSearchFilter(e.target.value)}
                   placeholder="Search board by unit name..."
-                  className="w-full bg-input text-foreground text-[13px] pl-9 pr-4 py-2 rounded-[4px] outline-none border border-border focus:border-foreground transition-colors font-medium h-[36px] shadow-inner"
+                  className="w-full bg-input text-foreground text-[13px] pl-9 pr-4 py-2 rounded-[4px] outline-none border border-border focus:border-primary transition-colors font-medium h-[36px] shadow-inner"
                 />
               </div>
 
@@ -541,7 +546,7 @@ export function TradingAdsChannel() {
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col bg-transparent relative z-10">
-        <div className="w-full h-full max-w-[1400px] mx-auto p-4 md:p-6 lg:p-8 pb-24">
+        <div className={`w-full h-full max-w-[1400px] mx-auto pb-24 ${globalCompactMode ? 'p-2 md:p-3 lg:p-4' : 'p-4 md:p-6 lg:p-8'}`}>
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
               <Activity className="w-8 h-8 animate-pulse text-primary" /> 
@@ -565,7 +570,7 @@ export function TradingAdsChannel() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 w-full animate-fade-in">
+            <div className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 w-full animate-fade-in ${globalCompactMode ? 'gap-2 sm:gap-3' : 'gap-4 sm:gap-6'}`}>
               {filteredAndSortedAds.map((ad) => (
                 <VanguardAdCard
                   key={ad.id}
