@@ -2,7 +2,7 @@
 // FILE: src/app/components/AdInteractionModal.tsx
 // ================================================
 
-import { useState, useEffect, useRef, memo } from "react";
+import { useState, useEffect, useRef, memo, useMemo } from "react";
 import { 
   X, MessageSquare, ArrowBigUp, ArrowBigDown, Send, Trash2, 
   ShieldAlert, Clock, Reply, Calculator, Share2, Copy, Check, 
@@ -17,7 +17,7 @@ import { useUnits } from "../../context/UnitContext";
 import { getProxyImage, handleImageError } from "../../data";
 import { triggerHaptic } from "../../data/helpers";
 import { getUnitConservativeValue } from "./InventoryChannel/inventoryUtils";
-import { getAvatarStyle, getInitials } from "./TradeAnalyzer/summaryUtils";
+import { getAvatarStyle, getInitials, getTradeForecast, avgStat } from "./TradeAnalyzer/summaryUtils";
 import { TradeCard, MasterUnit } from "../../types";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
 
@@ -91,7 +91,7 @@ export function AdInteractionModal() {
   const activeAd = ads.find(a => a.id === activeAdId);
 
   const [newComment, setNewComment] = useState("");
-  const [replyingTo, setReplyingTo] = useState<{ id: string, username: string } | null>(null);
+  const [repTo, setRepTo] = useState<{ id: string, username: string } | null>(null);
   const [collapsedThreads, setCollapsedThreads] = useState<Record<string, boolean>>({});
   const [mobileTab, setMobileTab] = useState<"listing" | "comments">("listing");
   const [copiedLink, setCopiedLink] = useState(false);
@@ -115,6 +115,21 @@ export function AdInteractionModal() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [closeAdContext]);
 
+  const forecast = useMemo(() => {
+    if (!activeAd) return { calculable: false, st: 0, lt: 0 };
+    return getTradeForecast(activeAd.give_items, activeAd.get_items, ALL_UNITS);
+  }, [activeAd, ALL_UNITS]);
+
+  const giveRarity = useMemo(() => {
+    if (!activeAd) return "—";
+    return avgStat(activeAd.give_items, "rarity", ALL_UNITS);
+  }, [activeAd, ALL_UNITS]);
+
+  const getRarity = useMemo(() => {
+    if (!activeAd) return "—";
+    return avgStat(activeAd.get_items, "rarity", ALL_UNITS);
+  }, [activeAd, ALL_UNITS]);
+
   if (!activeAdId || !activeAd) return null;
 
   const handlePost = async (e?: React.FormEvent) => {
@@ -122,10 +137,10 @@ export function AdInteractionModal() {
     if (!newComment.trim() || !profile) return;
 
     triggerHaptic('light');
-    const success = await postComment(activeAdId, profile, newComment, replyingTo?.id || null);
+    const success = await postComment(activeAdId, profile, newComment, repTo?.id || null);
     if (success) {
       setNewComment("");
-      setReplyingTo(null);
+      setRepTo(null);
       if (textareaRef.current) textareaRef.current.style.height = "auto";
     }
   };
@@ -141,6 +156,7 @@ export function AdInteractionModal() {
     triggerHaptic('medium');
     overwrite(activeAd.get_items, activeAd.give_items);
     window.dispatchEvent(new Event("open-analyzer"));
+    closeAdContext(); // Automatically close modal so calculator is immediately visible
   };
 
   const handleShareLink = () => {
@@ -266,7 +282,7 @@ export function AdInteractionModal() {
                 </div>
 
                 <button 
-                  onClick={() => { triggerHaptic('light'); setReplyingTo({ id: comment.id, username: comment.profiles.username }); }}
+                  onClick={() => { triggerHaptic('light'); setRepTo({ id: comment.id, username: comment.profiles.username }); }}
                   className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
                 >
                   <Reply className="w-3 h-3 text-primary" /> Reply
@@ -338,7 +354,7 @@ export function AdInteractionModal() {
 
   return (
     <div 
-      className="fixed inset-0 z-[99999] flex items-center justify-center p-0 md:p-6 bg-black/80 animate-fade-in" 
+      className="fixed inset-0 z-[99999] flex items-end md:items-center justify-center p-0 md:p-6 bg-black/80 animate-fade-in" 
       role="dialog" 
       aria-modal="true"
       onClick={(e) => {
@@ -348,7 +364,8 @@ export function AdInteractionModal() {
         }
       }}
     >
-      <div className="bg-card w-full h-[100dvh] md:h-[85vh] md:max-w-6xl md:rounded-[6px] shadow-2xl border-0 md:border border-border flex flex-col overflow-hidden">
+      {/* Container offset on desktop so Sidebar and Calculator remain visible/accessible */}
+      <div className="bg-card w-full h-[90dvh] md:h-[82vh] md:max-w-4xl md:ml-[240px] md:mr-[420px] md:rounded-[6px] shadow-2xl border-0 md:border border-border flex flex-col overflow-hidden">
 
         <div className="flex items-center justify-between px-4 md:px-6 py-3 bg-popover border-b border-border shrink-0 z-20">
           <div className="flex items-center gap-3">
@@ -396,7 +413,7 @@ export function AdInteractionModal() {
 
         <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
 
-          <div className={`w-full md:w-[480px] lg:w-[540px] bg-card border-r border-border flex flex-col shrink-0 min-h-0 ${mobileTab === 'comments' ? 'hidden md:flex' : 'flex'}`}>
+          <div className={`w-full md:w-[380px] lg:w-[420px] bg-card border-r border-border flex flex-col shrink-0 min-h-0 ${mobileTab === 'comments' ? 'hidden md:flex' : 'flex'}`}>
 
             <div className="p-4 md:p-6 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-5">
 
@@ -434,7 +451,7 @@ export function AdInteractionModal() {
                   className="px-3 py-2 bg-card hover:bg-muted border border-border rounded-[4px] text-[12px] font-bold text-foreground flex items-center gap-1.5 transition-colors shadow-sm focus-visible:outline-none shrink-0 cursor-pointer"
                 >
                   {copiedDiscord ? <Check className="w-3.5 h-3.5 text-[#23a559]" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}
-                  <span>{copiedDiscord ? "Copied" : "Copy Discord"}</span>
+                  <span>{copiedDiscord ? "Copied" : "Discord"}</span>
                 </button>
               </div>
 
@@ -452,7 +469,7 @@ export function AdInteractionModal() {
                       <span>Showcase Assets</span>
                       <span className="font-mono text-foreground font-black">Value: {totalGiveVal.toLocaleString()}</span>
                     </div>
-                    <div className="grid gap-2 pt-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))' }}>
+                    <div className="grid gap-2 pt-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(56px, 1fr))' }}>
                       {activeAd.give_items.map((item, i) => (
                         <ItemTile key={i} item={item} ALL_UNITS={ALL_UNITS} />
                       ))}
@@ -465,7 +482,7 @@ export function AdInteractionModal() {
                         <span>Offering</span>
                         <span className="font-mono font-black text-foreground">{totalGiveVal.toLocaleString()}</span>
                       </div>
-                      <div className="grid gap-2 pt-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))' }}>
+                      <div className="grid gap-2 pt-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(56px, 1fr))' }}>
                         {activeAd.give_items.map((item, i) => (
                           <ItemTile key={i} item={item} ALL_UNITS={ALL_UNITS} />
                         ))}
@@ -474,29 +491,28 @@ export function AdInteractionModal() {
 
                     <div className="flex flex-col gap-2 pt-2 border-t border-border">
                       <span className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">Requesting</span>
-                      <div className="bg-card border border-dashed border-border rounded-[4px] p-6 flex flex-col items-center justify-center text-center gap-2">
-                        <Search className="w-8 h-8 text-muted-foreground" />
-                        <span className="text-[13px] font-black text-foreground uppercase tracking-wider">Open to offers</span>
-                        <span className="text-[11px] text-muted-foreground">The trader is looking for general offers for their items.</span>
+                      <div className="bg-card border border-dashed border-border rounded-[4px] p-5 flex flex-col items-center justify-center text-center gap-2">
+                        <Search className="w-7 h-7 text-muted-foreground" />
+                        <span className="text-[12px] font-black text-foreground uppercase tracking-wider">Open to offers</span>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-5">
+                  <div className="flex flex-col gap-4">
                     <div className="flex flex-col gap-2">
                       <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
                         <span>Offering</span>
                         <span className="font-mono font-black text-foreground">{totalGiveVal.toLocaleString()}</span>
                       </div>
-                      <div className="grid gap-2 pt-1" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))' }}>
+                      <div className="grid gap-2 pt-1" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(56px, 1fr))' }}>
                         {activeAd.give_items.map((item, i) => (
                           <ItemTile key={i} item={item} ALL_UNITS={ALL_UNITS} />
                         ))}
                       </div>
                     </div>
 
-                    <div className="flex justify-center text-muted-foreground bg-card py-1.5 rounded-[4px] border border-border">
-                      <ArrowRightLeft className="w-4 h-4" />
+                    <div className="flex justify-center text-muted-foreground bg-card py-1 rounded-[4px] border border-border">
+                      <ArrowRightLeft className="w-3.5 h-3.5" />
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -504,7 +520,7 @@ export function AdInteractionModal() {
                         <span>Requesting</span>
                         <span className="font-mono font-black text-foreground">{totalGetVal > 0 ? totalGetVal.toLocaleString() : 'Negotiable'}</span>
                       </div>
-                      <div className="grid gap-2 pt-1" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))' }}>
+                      <div className="grid gap-2 pt-1" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(56px, 1fr))' }}>
                         {activeAd.get_items.map((item, i) => (
                           <ItemTile key={i} item={item} ALL_UNITS={ALL_UNITS} />
                         ))}
@@ -514,11 +530,23 @@ export function AdInteractionModal() {
                 )}
 
                 {!isTakingOffers && !isInventory && totalGetVal > 0 && (
-                  <div className="mt-2 pt-3 border-t border-border flex items-center justify-between text-[12px] font-mono">
-                    <span className="text-muted-foreground font-bold uppercase">Value Balance</span>
-                    <span className={`font-black ${valDiff > 0 ? 'text-[#23a559]' : valDiff < 0 ? 'text-rose-400' : 'text-foreground'}`}>
-                      {valDiff > 0 ? `+${valDiff.toLocaleString()} (Advantage)` : valDiff < 0 ? `${valDiff.toLocaleString()} (Deficit)` : 'Even Trade'}
-                    </span>
+                  <div className="mt-2 pt-3 border-t border-border flex flex-col gap-2">
+                    <div className="flex items-center justify-between text-[11px] font-mono">
+                      <span className="text-muted-foreground font-bold uppercase">Value Balance</span>
+                      <span className={`font-black ${valDiff > 0 ? 'text-[#23a559]' : valDiff < 0 ? 'text-rose-400' : 'text-foreground'}`}>
+                        {valDiff > 0 ? `+${valDiff.toLocaleString()} (Advantage)` : valDiff < 0 ? `${valDiff.toLocaleString()} (Deficit)` : 'Even Trade'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] font-mono pt-1">
+                      <span className="text-muted-foreground font-bold uppercase">Market Forecast</span>
+                      <span className={forecast.st > 0 ? 'text-[#23a559] font-black' : forecast.st < 0 ? 'text-rose-400 font-black' : 'text-foreground font-black'}>
+                        {forecast.calculable ? `ST: ${forecast.st > 0 ? '+' : ''}${forecast.st.toFixed(1)} | LT: ${forecast.lt > 0 ? '+' : ''}${forecast.lt.toFixed(1)}` : 'Unavailable'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] font-mono">
+                      <span className="text-muted-foreground font-bold uppercase">Rarity Shift</span>
+                      <span className="text-foreground font-bold">{giveRarity} ➔ {getRarity}</span>
+                    </div>
                   </div>
                 )}
 
@@ -529,16 +557,16 @@ export function AdInteractionModal() {
             <div className="p-4 bg-popover border-t border-border shrink-0 flex flex-col sm:flex-row items-center gap-3">
               <button
                 onClick={handleLoadIntoCalculator}
-                className="w-full sm:flex-1 py-3 bg-primary hover:bg-primary/90 text-primary-foreground text-[13px] font-black uppercase tracking-wider rounded-[4px] transition-colors shadow-sm focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2 border border-primary"
+                className="w-full sm:flex-1 py-3 bg-primary hover:bg-primary/90 text-primary-foreground text-[12px] font-black uppercase tracking-wider rounded-[4px] transition-colors shadow-sm focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2 border border-primary"
               >
                 <Calculator className="w-4 h-4" /> Load into Calculator
               </button>
 
               <button
                 onClick={handleContact}
-                className="w-full sm:w-auto px-5 py-3 bg-[#5865F2] hover:bg-[#4752C4] text-white text-[13px] font-bold rounded-[4px] transition-colors shadow-sm focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-4 py-3 bg-[#5865F2] hover:bg-[#4752C4] text-white text-[12px] font-bold rounded-[4px] transition-colors shadow-sm focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2"
               >
-                <MessageSquare className="w-4 h-4" /> Message on Discord
+                <MessageSquare className="w-4 h-4" /> Message
               </button>
             </div>
 
@@ -593,12 +621,12 @@ export function AdInteractionModal() {
             </div>
 
             <div className="p-4 bg-popover border-t border-border shrink-0 flex flex-col gap-2">
-              {replyingTo && (
+              {repTo && (
                 <div className="flex items-center justify-between bg-card px-3 py-1.5 rounded-[4px] border border-primary/40 animate-fade-in">
                   <span className="text-[12px] font-bold text-foreground flex items-center gap-1.5">
-                    <Reply className="w-3.5 h-3.5 text-primary" /> Replying to @{replyingTo.username}
+                    <Reply className="w-3.5 h-3.5 text-primary" /> Replying to @{repTo.username}
                   </span>
-                  <button onClick={() => { triggerHaptic('light'); setReplyingTo(null); }} className="text-muted-foreground hover:text-destructive focus-visible:outline-none cursor-pointer">
+                  <button onClick={() => { triggerHaptic('light'); setRepTo(null); }} className="text-muted-foreground hover:text-destructive focus-visible:outline-none cursor-pointer">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -620,7 +648,7 @@ export function AdInteractionModal() {
                         e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
                       }}
                       onKeyDown={handleKeyDownTextarea}
-                      placeholder={replyingTo ? `Write a reply...` : `Type a message...`}
+                      placeholder={repTo ? `Write a reply...` : `Type a message...`}
                       maxLength={500}
                       rows={1}
                       disabled={isActionPending}
@@ -634,7 +662,7 @@ export function AdInteractionModal() {
                   <button 
                     type="submit"
                     disabled={!newComment.trim() || isActionPending}
-                    className="h-10 px-4 flex items-center justify-center rounded-[4px] bg-primary hover:bg-primary/85 text-primary-foreground disabled:opacity-40 transition-colors focus-visible:outline-none cursor-pointer shrink-0 border border-primary"
+                    className="h-10 px-4 flex items-center justify-center rounded-[4px] bg-primary hover:bg-primary/85 text-primary-foreground disabled:opacity-45 transition-colors focus-visible:outline-none cursor-pointer shrink-0 border border-primary"
                     aria-label="Send message"
                   >
                     <Send className="w-4 h-4" />
