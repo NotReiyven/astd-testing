@@ -4,6 +4,9 @@
 
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import DOMPurify from 'dompurify';
+import { get as getIdb, set as setIdb } from 'idb-keyval';
+import { useToastStore } from './useToastStore';
 
 export interface UserProfileData {
   id: string;
@@ -109,9 +112,31 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   },
 
   saveProfileUpdates: async (userId, updates) => {
-    const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
+    const cleanUpdates = { ...updates };
+    
+    if (typeof cleanUpdates.bio === 'string') {
+      cleanUpdates.bio = DOMPurify.sanitize(cleanUpdates.bio.trim(), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+    }
+    
+    if (typeof cleanUpdates.roblox_username === 'string') {
+      cleanUpdates.roblox_username = DOMPurify.sanitize(cleanUpdates.roblox_username.trim(), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+    }
+
+    // OFFLINE QUEUE INTERCEPTION
+    if (!navigator.onLine) {
+      const queue: any[] = (await getIdb('astd_offline_profile')) || [];
+      queue.push({ userId, updates: cleanUpdates });
+      await setIdb('astd_offline_profile', queue);
+      
+      // Optimistic update locally
+      get().updateLocalProfile(userId, cleanUpdates);
+      useToastStore.getState().addToast("Offline. Profile changes queued locally.", "info");
+      return { error: null };
+    }
+
+    const { error } = await supabase.from('profiles').update(cleanUpdates).eq('id', userId);
     if (!error) {
-      get().updateLocalProfile(userId, updates);
+      get().updateLocalProfile(userId, cleanUpdates);
     }
     return { error };
   }

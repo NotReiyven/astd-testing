@@ -9,7 +9,7 @@ import {
   Gamepad2, Clock, ArrowRight, Copy, Share2, ArrowLeft,
   Palette, MousePointer2, Maximize, ArrowRightLeft, LogIn
 } from "lucide-react";
-import { useProfileStore } from "../../store/useProfileStore";
+import { useProfileStore, UserProfileData } from "../../store/useProfileStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useTradingAdsStore } from "../../store/useTradingAdsStore";
 import { useInventoryStore } from "../../store/useInventoryStore";
@@ -22,26 +22,27 @@ import { triggerHaptic } from "../../data/helpers";
 import { StatusIcon } from "./shared/Formatters";
 import { TradeCard, MasterUnit } from "../../types";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
+import { UnitAvatar } from "./shared/UnitAvatar";
 
 const getRoleConfig = (role: string) => {
   switch (role) {
     case 'master':
     case 'admin':
-      return { icon: ShieldAlert, color: '#f59e0b', bg: 'bg-amber-500/10 border-amber-500/30 text-amber-400', label: role === 'master' ? 'Master' : 'Admin' };
+      return { icon: ShieldAlert, color: 'var(--warning)', bg: 'bg-warning/10 border-warning/30 text-warning', label: role === 'master' ? 'Master' : 'Admin' };
     case 'mod':
-      return { icon: Shield, color: '#5865F2', bg: 'bg-primary/10 border-primary/30 text-primary', label: 'Moderator' };
+      return { icon: Shield, color: 'var(--primary)', bg: 'bg-primary/10 border-primary/30 text-primary', label: 'Moderator' };
     default:
-      return { icon: UserCircle, color: '#888888', bg: 'bg-muted border-border text-muted-foreground', label: 'Trader' };
+      return { icon: UserCircle, color: 'var(--muted-foreground)', bg: 'bg-muted border-border text-muted-foreground', label: 'Trader' };
   }
 };
 
 const getReputationRank = (rep: number) => {
-  if (rep < 0) return { label: "Exiled", color: "#ed4245", border: "border-destructive/40", bg: "bg-destructive/15", next: 0, min: -100, icon: ShieldAlert };
-  if (rep < 10) return { label: "Unranked", color: "#888888", border: "border-border", bg: "bg-muted", next: 10, min: 0, icon: Star };
+  if (rep < 0) return { label: "Exiled", color: "var(--destructive)", border: "border-destructive/40", bg: "bg-destructive/15", next: 0, min: -100, icon: ShieldAlert };
+  if (rep < 10) return { label: "Unranked", color: "var(--muted-foreground)", border: "border-border", bg: "bg-muted", next: 10, min: 0, icon: Star };
   if (rep < 50) return { label: "Apprentice", color: "#cd7f32", border: "border-[#cd7f32]/40", bg: "bg-[#cd7f32]/15", next: 50, min: 10, icon: Star };
   if (rep < 150) return { label: "Recognized", color: "#c0c0c0", border: "border-[#c0c0c0]/40", bg: "bg-[#c0c0c0]/15", next: 150, min: 50, icon: Star };
   if (rep < 300) return { label: "Trusted Merchant", color: "#ffd700", border: "border-[#ffd700]/50", bg: "bg-[#ffd700]/15", next: 300, min: 150, icon: Star };
-  if (rep < 500) return { label: "Elite Broker", color: "#00ffff", border: "border-[#00ffff]/60", bg: "bg-[#00ffff]/15", next: 500, min: 300, icon: Star };
+  if (rep < 500) return { label: "Elite Broker", color: "var(--info)", border: "border-info/60", bg: "bg-info/15", next: 500, min: 300, icon: Star };
   if (rep < 1000) return { label: "Vanguard", color: "#3A7CE6", border: "border-[#3A7CE6]/60", bg: "bg-[#3A7CE6]/15", next: 1000, min: 500, icon: Star };
   return { label: "Legend", color: "#a855f7", border: "border-[#a855f7]/60", bg: "bg-[#a855f7]/15", next: 1000, min: 1000, icon: Star };
 };
@@ -49,7 +50,6 @@ const getReputationRank = (rep: number) => {
 const AdItemTile = memo(({ item, ALL_UNITS }: { item: TradeCard, ALL_UNITS: MasterUnit[] }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const master = ALL_UNITS.find(u => u.id === item.id);
-  const proxyUrl = master ? getProxyImage(master.id, master.imageUrl) : null;
   const conservativeVal = master ? getUnitConservativeValue(master) * item.qty : item.value * item.qty;
   const rarity = master?.rarity ?? "N/A";
 
@@ -60,12 +60,13 @@ const AdItemTile = memo(({ item, ALL_UNITS }: { item: TradeCard, ALL_UNITS: Mast
       onMouseLeave={() => setShowTooltip(false)}
     >
       <div className="relative aspect-square rounded-[4px] bg-muted border border-border flex items-center justify-center overflow-hidden shadow-sm group-hover:border-foreground transition-colors min-w-[56px] w-full">
-        <div className="absolute inset-0 flex items-center justify-center text-white font-black text-[12px] z-0" style={getAvatarStyle(item.name)}>
-          {getInitials(item.name)}
-        </div>
-        {proxyUrl && (
-          <img src={proxyUrl} alt={item.name} className="absolute inset-0 w-full h-full object-cover z-10 bg-muted transition-transform group-hover:scale-105" onError={(e) => handleImageError(e, item.id)} />
-        )}
+         <UnitAvatar
+           unitId={item.id}
+           unitName={item.name}
+           imageUrl={master?.imageUrl}
+           fallbackClassName="absolute inset-0 flex items-center justify-center text-white font-black text-[12px] z-0"
+           imageClassName="absolute inset-0 w-full h-full object-cover z-10 bg-muted transition-transform group-hover:scale-105"
+         />
         {item.qty > 1 && (
           <div className="absolute bottom-0 right-0 bg-popover text-foreground text-[10px] font-black px-1.5 py-0.5 rounded-tl-[4px] z-20 border-t border-l border-border leading-none font-mono">
             x{item.qty}
@@ -110,7 +111,7 @@ export function ProfileChannel() {
   const targetId = viewingProfileId || currentUser?.id;
   const isOwner = currentUser?.id === targetId;
 
-  const [profileData, setProfileData] = useState<any>(null);
+  const [profileData, setProfileData] = useState<UserProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"board" | "wishlist" | "settings">("board");
 
@@ -172,7 +173,7 @@ export function ProfileChannel() {
 
     const { error } = await saveProfileUpdates(targetId, updates);
     if (!error) {
-      setProfileData((prev: any) => ({ ...prev, ...updates }));
+      setProfileData((prev) => prev ? { ...prev, ...updates } : null);
       setIsEditModalOpen(false);
       triggerHaptic('success');
       window.dispatchEvent(new CustomEvent("toast-message", { detail: { message: "Profile saved successfully", type: "success" }}));
@@ -375,7 +376,7 @@ export function ProfileChannel() {
                 onClick={handleCopyProfileLink}
                 className="px-4 py-2 rounded-[4px] bg-muted hover:bg-card border border-border text-foreground text-[12px] font-bold flex items-center gap-2 transition-colors shadow-sm focus-visible:outline-none cursor-pointer"
               >
-                {copiedProfileLink ? <Check className="w-4 h-4 text-[#23a559]" /> : <Share2 className="w-4 h-4 text-muted-foreground" />}
+                {copiedProfileLink ? <Check className="w-4 h-4 text-success" /> : <Share2 className="w-4 h-4 text-muted-foreground" />}
                 <span>Share</span>
               </button>
 
@@ -452,7 +453,7 @@ export function ProfileChannel() {
                     className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-foreground bg-muted px-2.5 py-1 rounded-[4px] border border-border hover:border-foreground transition-colors cursor-pointer"
                   >
                     <span>{profileData.discord_id}</span>
-                    {copiedDiscordId ? <Check className="w-3 h-3 text-[#23a559]" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
+                    {copiedDiscordId ? <Check className="w-3 h-3 text-success" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
                   </button>
                 </div>
 
@@ -600,7 +601,7 @@ export function ProfileChannel() {
                           statusColor = "bg-muted border-border text-foreground";
                         } else if (isTakingOffers) {
                           statusLabel = "Taking Offers";
-                          statusColor = "bg-primary/10 border-primary/30 text-primary";
+                          statusColor = "bg-warning/10 border-warning/30 text-warning";
                         }
 
                         const totalGiveVal = ad.give_items.reduce((acc, i) => {
@@ -634,11 +635,11 @@ export function ProfileChannel() {
                               </div>
                             ) : isTakingOffers ? (
                               <div className="pt-2">
-                                <AdItemGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} label="Offering" labelColor="#FAA61A" />
+                                <AdItemGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} label="Offering" labelColor="var(--warning)" />
                               </div>
                             ) : (
                               <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center pt-2">
-                                <AdItemGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} label="Offering" labelColor="#FAA61A" />
+                                <AdItemGrid items={ad.give_items} ALL_UNITS={ALL_UNITS} label="Offering" labelColor="var(--warning)" />
                                 <div className="flex justify-center text-muted-foreground bg-muted p-2 rounded-[4px] border border-border mx-auto md:mx-0">
                                   <ArrowRightLeft className="w-4 h-4" />
                                 </div>
@@ -666,18 +667,18 @@ export function ProfileChannel() {
                       {viewedWishlist.map((item) => {
                         const master = ALL_UNITS.find(u => u.id === item.unit_id);
                         if (!master) return null;
-                        const proxyUrl = getProxyImage(master.id, master.imageUrl);
                         const cfg = master.status ? GRID_STATUS_CFG[master.status as keyof typeof GRID_STATUS_CFG] : null;
 
                         return (
                           <div key={item.id} className="bg-muted border border-border rounded-[6px] flex flex-col overflow-hidden shadow-inner hover:border-foreground transition-all group">
                             <div className="w-full aspect-square bg-background relative flex items-center justify-center border-b border-border overflow-hidden">
-                              <div className="absolute inset-0 flex items-center justify-center text-white font-black text-2xl z-0" style={getAvatarStyle(master.name)}>
-                                {getInitials(master.name)}
-                              </div>
-                              {proxyUrl && (
-                                <img src={proxyUrl} alt={master.name} className="absolute inset-0 w-full h-full object-cover z-10 bg-background group-hover:scale-105 transition-transform duration-300" onError={(e) => handleImageError(e, master.id)} />
-                              )}
+                              <UnitAvatar
+                                unitId={master.id}
+                                unitName={master.name}
+                                imageUrl={master.imageUrl}
+                                fallbackClassName="absolute inset-0 flex items-center justify-center text-white font-black text-2xl z-0"
+                                imageClassName="absolute inset-0 w-full h-full object-cover z-10 bg-background group-hover:scale-105 transition-transform duration-300"
+                              />
                               {cfg && (
                                 <div className="absolute top-2 right-2 z-20">
                                   <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-[2px] border shadow-sm inline-flex items-center gap-1" style={{ backgroundColor: cfg.bg, color: cfg.color, borderColor: cfg.border }}>

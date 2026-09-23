@@ -78,12 +78,17 @@ export function CommandPalette() {
   if (!commandPaletteOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[1000000] flex justify-center items-start pt-[10vh] px-4 animate-fade-in">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setCommandPaletteOpen(false)} />
+    <div 
+      className="fixed inset-0 z-[200] flex justify-center items-start pt-[10vh] px-4 animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Command Palette"
+    >
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setCommandPaletteOpen(false)} aria-hidden="true" />
       
       <div className="bg-card w-full max-w-[600px] rounded-[12px] border border-border shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col relative z-10 overflow-hidden animate-slide-up">
         <div className="flex items-center px-4 py-4 border-b border-border gap-3">
-          <Search className="w-5 h-5 text-muted-foreground" />
+          <Search className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
           <input
             ref={inputRef}
             type="text"
@@ -91,13 +96,17 @@ export function CommandPalette() {
             onChange={e => setQuery(e.target.value)}
             placeholder="Search commands or pages..."
             className="flex-1 bg-transparent border-none outline-none text-[16px] text-foreground placeholder-muted-foreground"
+            role="combobox"
+            aria-expanded="true"
+            aria-controls="command-options"
+            aria-activedescendant={filtered[selectedIndex] ? `cmd-${filtered[selectedIndex].id}` : undefined}
           />
-          <span className="text-[10px] font-mono text-muted-foreground bg-popover px-1.5 py-0.5 rounded border border-border">ESC</span>
+          <span className="text-[10px] font-mono text-muted-foreground bg-popover px-1.5 py-0.5 rounded border border-border pointer-events-none">ESC</span>
         </div>
 
-        <div className="max-h-[350px] overflow-y-auto custom-scrollbar p-2">
+        <div id="command-options" role="listbox" className="max-h-[350px] overflow-y-auto custom-scrollbar p-2">
           {filtered.length === 0 ? (
-            <div className="p-6 text-center text-muted-foreground text-[13px]">
+            <div className="p-6 text-center text-muted-foreground text-[13px]" role="option" aria-selected="false">
               No matching commands found.
             </div>
           ) : (
@@ -106,11 +115,14 @@ export function CommandPalette() {
               return (
                 <button
                   key={cmd.id}
+                  id={`cmd-${cmd.id}`}
+                  role="option"
+                  aria-selected={isSelected}
                   onClick={() => executeCommand(cmd)}
                   onMouseEnter={() => setSelectedIndex(idx)}
                   className={`w-full flex items-center gap-3 px-3 py-3 rounded-[8px] transition-colors text-left focus-visible:outline-none ${isSelected ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-popover hover:text-foreground'}`}
                 >
-                  <cmd.icon className={`w-5 h-5 ${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
+                  <cmd.icon className={`w-5 h-5 ${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`} aria-hidden="true" />
                   <div className="flex flex-col flex-1 min-w-0">
                     <span className={`text-[14px] font-bold ${isSelected ? 'text-primary-foreground' : 'text-foreground'}`}>{cmd.label}</span>
                     <span className={`text-[11px] truncate ${isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>{cmd.desc}</span>

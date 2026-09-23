@@ -5,12 +5,12 @@
 import { useCallback, useMemo, memo } from "react";
 import { X, Pin } from "lucide-react";
 import { TradeCard } from "../../../types";
-import { GRID_STATUS_CFG, getProxyImage, handleImageError } from "../../../data";
+import { GRID_STATUS_CFG } from "../../../data";
 import { useUnits } from "../../../context/UnitContext";
-import { getAvatarStyle, getInitials } from "./summaryUtils";
 import { StatusIcon, JargonWrap } from "../MainCanvas/UnitGrid";
 import { QuantitySelector } from "../ui/QuantitySelector";
 import { triggerHaptic } from "../../../data/helpers";
+import { UnitAvatar } from "../shared/UnitAvatar";
 
 export const ActiveCardRow = memo(function ActiveCardRow({
   card,
@@ -30,7 +30,6 @@ export const ActiveCardRow = memo(function ActiveCardRow({
   const masterData = useMemo(() => units.find(u => u.id === card.id), [units, card.id]);
 
   const dropCfg = masterData?.status ? GRID_STATUS_CFG[masterData.status as keyof typeof GRID_STATUS_CFG] : null;
-  const proxyUrl = getProxyImage(card.id, masterData?.imageUrl);
 
   const handleQtyInput = useCallback((newQty: number) => {
     onQtyChange(card.id, newQty);
@@ -54,14 +53,13 @@ export const ActiveCardRow = memo(function ActiveCardRow({
     >
       <div className="flex items-center gap-2.5 w-full min-w-0">
         <div className={`relative w-11 h-11 md:w-10 md:h-10 flex-shrink-0 rounded-[4px] bg-muted overflow-hidden flex items-center justify-center border ${isPinned ? "border-primary/50" : "border-border"}`}>
-           <div className="absolute inset-0 flex items-center justify-center text-white font-black text-[13px] z-0" style={getAvatarStyle(card.name)}>
-             {getInitials(card.name)}
-           </div>
-           <img 
-             src={proxyUrl || undefined} 
-             alt={card.name} 
-             onError={(e) => handleImageError(e, card.id)}
-             className="absolute inset-0 w-full h-full object-cover object-[center_15%] z-10 bg-muted transition-opacity duration-300" 
+           <UnitAvatar
+             unitId={card.id}
+             unitName={card.name}
+             imageUrl={masterData?.imageUrl}
+             isOpaqueFallback
+             fallbackClassName="absolute inset-0 flex items-center justify-center text-white font-black text-[13px] z-0"
+             imageClassName="absolute inset-0 w-full h-full object-cover object-[center_15%] z-10 bg-muted"
            />
         </div>
 

@@ -11,6 +11,17 @@ export const getAvatarStyle = (name: string) => {
 
 export const getInitials = (name: string) => name.substring(0, 2).toUpperCase();
 
+// Performance Optimization: Global Map Cache
+let cachedMap: Map<string, MasterUnit> | null = null;
+let cachedArrayRef: MasterUnit[] | null = null;
+
+const getUnitMap = (units: MasterUnit[]) => {
+  if (cachedArrayRef === units && cachedMap) return cachedMap;
+  cachedMap = new Map(units.map(u => [u.id, u]));
+  cachedArrayRef = units;
+  return cachedMap;
+};
+
 const getItemWeight = (c: TradeCard, master: MasterUnit | undefined) => {
   if (!master) return 1 * c.qty;
   let val = 1;
@@ -24,9 +35,10 @@ export const avgStat = (items: TradeCard[], key: "rarity" | "supply" | "demand",
   if (items.length === 0) return "—";
   let weightedSum = 0;
   let totalWeight = 0;
+  const unitMap = getUnitMap(ALL_UNITS);
 
   items.forEach(c => {
-    const master = ALL_UNITS.find(u => u.id === c.id);
+    const master = unitMap.get(c.id);
     if (master && typeof master[key] === "number") {
       const weight = getItemWeight(c, master);
       weightedSum += (master[key] as number) * weight;
@@ -59,9 +71,10 @@ export const getLiquidityScore = (items: TradeCard[], ALL_UNITS: MasterUnit[]) =
   if (items.length === 0) return 1.0;
   let weightedSum = 0;
   let totalWeight = 0;
+  const unitMap = getUnitMap(ALL_UNITS);
 
   items.forEach(c => {
-    const master = ALL_UNITS.find(u => u.id === c.id);
+    const master = unitMap.get(c.id);
     const liq = (master?.liquidity || "Average").toLowerCase();
     const weight = getItemWeight(c, master);
     weightedSum += (LIQUIDITY_MULTIPLIERS[liq] || 1.0) * weight;
@@ -73,9 +86,10 @@ export const getLiquidityScore = (items: TradeCard[], ALL_UNITS: MasterUnit[]) =
 
 export const getTradeForecast = (giveItems: TradeCard[], getItems: TradeCard[], ALL_UNITS: MasterUnit[]) => {
   if (giveItems.length === 0 || getItems.length === 0) return { calculable: false, st: 0, lt: 0 };
+  const unitMap = getUnitMap(ALL_UNITS);
   
   const isOC = (id: string) => {
-    const u = ALL_UNITS.find(unit => unit.id === id);
+    const u = unitMap.get(id);
     return u?.value === "owner" || u?.valueDisplay === "Owner's Choice";
   };
   if (giveItems.some(i => isOC(i.id)) || getItems.some(i => isOC(i.id))) return { calculable: false, st: 0, lt: 0 };
@@ -90,7 +104,7 @@ export const getTradeForecast = (giveItems: TradeCard[], getItems: TradeCard[], 
     let weightedSum = 0;
     let totalWeight = 0;
     items.forEach(c => {
-      const master = ALL_UNITS.find(u => u.id === c.id);
+      const master = unitMap.get(c.id);
       const weight = c.value * c.qty; 
       let status = master?.status || "stable";
       if (!TAG_WEIGHTS[status]) status = "stable";

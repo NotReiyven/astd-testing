@@ -2,10 +2,10 @@ import React, { memo } from "react";
 import { Plus, Minus, Check, Lock as LockIcon, Search, Package } from "lucide-react";
 import { InventoryItem } from "../../../store/useInventoryStore";
 import { MasterUnit } from "../../../types";
-import { TIER_CONFIG, getTier, GRID_STATUS_CFG, getProxyImage, handleImageError } from "../../../data";
-import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
+import { TIER_CONFIG, getTier, GRID_STATUS_CFG } from "../../../data";
 import { getUnitConservativeValue } from "./inventoryUtils";
 import { StatusIcon, JargonWrap } from "../shared/Formatters";
+import { UnitAvatar } from "../shared/UnitAvatar";
 
 interface TradingCardSlotProps {
   item: InventoryItem;
@@ -46,7 +46,6 @@ export const TradingCardSlot = memo(({
 }: TradingCardSlotProps) => {
   const tierKey = getTier(master);
   const tierColor = TIER_CONFIG[tierKey]?.badgeColor || "var(--primary)";
-  const proxyUrl = getProxyImage(master.id, master.imageUrl);
   const dropCfg = master.status ? GRID_STATUS_CFG[master.status as keyof typeof GRID_STATUS_CFG] : null;
 
   const totalStaged = stagedGiveQty + stagedGetQty;
@@ -142,16 +141,12 @@ export const TradingCardSlot = memo(({
           )}
         </div>
 
-        <div className="absolute inset-0 flex items-center justify-center text-white font-black text-4xl opacity-20 select-none pointer-events-none" style={getAvatarStyle(master.name)}>
-          {getInitials(master.name)}
-        </div>
-        
-        <img 
-          src={proxyUrl || undefined} 
-          alt={master.name} 
-          className="absolute inset-0 w-full h-full object-cover z-10 bg-transparent" 
-          style={{ objectPosition: "center 15%" }}
-          onError={(e) => handleImageError(e, master.id)} 
+        <UnitAvatar
+          unitId={master.id}
+          unitName={master.name}
+          imageUrl={master.imageUrl}
+          fallbackClassName="absolute inset-0 flex items-center justify-center text-white font-black text-4xl z-0"
+          imageClassName="absolute inset-0 w-full h-full object-cover z-10 bg-transparent"
         />
 
         <div className="absolute inset-0 pointer-events-none z-20 shadow-[inset_0_0_24px_rgba(0,0,0,0.4)]" />

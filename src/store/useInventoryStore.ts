@@ -4,6 +4,8 @@
 
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { get as getIdb, set as setIdb } from 'idb-keyval';
+import { useToastStore } from './useToastStore';
 
 export interface InventoryItem {
   id: string;
@@ -134,6 +136,15 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     try {
       if (existingItem) {
         set({ items: previousItems.map(i => i.unit_id === unitId ? { ...i, quantity: newQuantity } : i) });
+        
+        if (!navigator.onLine) {
+          const queue = await getIdb('astd_offline_inventory') || [];
+          queue.push({ action: 'UPSERT', userId, unitId, quantity: newQuantity });
+          await setIdb('astd_offline_inventory', queue);
+          useToastStore.getState().addToast("Offline. Vault updated locally.", "info");
+          return;
+        }
+
         const { error } = await supabase
           .from('user_inventory')
           .update({ quantity: newQuantity })
@@ -144,6 +155,15 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
         const newItemForDb = { user_id: userId, unit_id: unitId, quantity: newQuantity, is_pinned: false };
         const optimisticItem: InventoryItem = { id: safeGenerateId(), created_at: new Date().toISOString(), ...newItemForDb };
         set({ items: [optimisticItem, ...previousItems] });
+        
+        if (!navigator.onLine) {
+          const queue = await getIdb('astd_offline_inventory') || [];
+          queue.push({ action: 'UPSERT', userId, unitId, quantity: newQuantity });
+          await setIdb('astd_offline_inventory', queue);
+          useToastStore.getState().addToast("Offline. Vault updated locally.", "info");
+          return;
+        }
+
         const { error } = await supabase.from('user_inventory').insert(newItemForDb);
         if (error) throw error;
       }
@@ -157,7 +177,16 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     if (get().viewingUserId) return;
     const previousItems = get().items;
     set({ items: previousItems.filter(i => i.unit_id !== unitId) });
+    
     try {
+      if (!navigator.onLine) {
+        const queue = await getIdb('astd_offline_inventory') || [];
+        queue.push({ action: 'REMOVE', userId, unitId });
+        await setIdb('astd_offline_inventory', queue);
+        useToastStore.getState().addToast("Offline. Vault updated locally.", "info");
+        return;
+      }
+
       const { error } = await supabase.from('user_inventory').delete().eq('user_id', userId).eq('unit_id', unitId);
       if (error) throw error;
     } catch (error) {
@@ -170,8 +199,18 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     if (get().viewingUserId) return;
     const previousItems = get().items;
     set({ items: [item, ...previousItems] });
+    
     try {
       const { id, ...itemForDb } = item;
+      
+      if (!navigator.onLine) {
+        const queue = await getIdb('astd_offline_inventory') || [];
+        queue.push({ action: 'RESTORE', item: itemForDb });
+        await setIdb('astd_offline_inventory', queue);
+        useToastStore.getState().addToast("Offline. Item restored locally.", "info");
+        return;
+      }
+
       const { error } = await supabase.from('user_inventory').insert(itemForDb);
       if (error) throw error;
     } catch (error) {
@@ -185,7 +224,16 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     const previousItems = get().items;
     const nextStatus = !currentPinStatus;
     set({ items: previousItems.map(i => i.unit_id === unitId ? { ...i, is_pinned: nextStatus } : i) });
+    
     try {
+      if (!navigator.onLine) {
+        const queue = await getIdb('astd_offline_inventory') || [];
+        queue.push({ action: 'TOGGLE_PIN', userId, unitId, status: nextStatus });
+        await setIdb('astd_offline_inventory', queue);
+        useToastStore.getState().addToast("Offline. Pin status updated locally.", "info");
+        return;
+      }
+
       const { error } = await supabase.from('user_inventory').update({ is_pinned: nextStatus }).eq('user_id', userId).eq('unit_id', unitId);
       if (error) throw error;
     } catch (error) {
@@ -198,7 +246,16 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     if (get().viewingUserId) return;
     const previousItems = get().items;
     set({ items: [] });
+    
     try {
+      if (!navigator.onLine) {
+        const queue = await getIdb('astd_offline_inventory') || [];
+        queue.push({ action: 'CLEAR_ALL', userId });
+        await setIdb('astd_offline_inventory', queue);
+        useToastStore.getState().addToast("Offline. Vault cleared locally.", "info");
+        return;
+      }
+
       const { error } = await supabase.from('user_inventory').delete().eq('user_id', userId);
       if (error) throw error;
     } catch (error) {
@@ -211,7 +268,16 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     if (get().viewingUserId) return;
     const previousItems = get().items;
     set({ items: previousItems.filter(i => i.is_pinned) });
+    
     try {
+      if (!navigator.onLine) {
+        const queue = await getIdb('astd_offline_inventory') || [];
+        queue.push({ action: 'CLEAR_UNPINNED', userId });
+        await setIdb('astd_offline_inventory', queue);
+        useToastStore.getState().addToast("Offline. Unpinned units cleared locally.", "info");
+        return;
+      }
+
       const { error } = await supabase.from('user_inventory').delete().eq('user_id', userId).eq('is_pinned', false);
       if (error) throw error;
     } catch (error) {
@@ -227,6 +293,23 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     const existing = previousItems.find(i => i.unit_id === unitId);
 
     try {
+      if (!navigator.onLine) {
+        const queue = await getIdb('astd_offline_wishlist') || [];
+        queue.push({ action: existing ? 'REMOVE' : 'ADD', userId, unitId });
+        await setIdb('astd_offline_wishlist', queue);
+        
+        if (existing) {
+          set({ wishlistItems: previousItems.filter(i => i.unit_id !== unitId) });
+        } else {
+          const newItem = { user_id: userId, unit_id: unitId };
+          const optimisticItem: WishlistItem = { id: safeGenerateId(), created_at: new Date().toISOString(), ...newItem };
+          set({ wishlistItems: [optimisticItem, ...previousItems] });
+        }
+        
+        useToastStore.getState().addToast("Offline. Wishlist updated locally.", "info");
+        return;
+      }
+
       if (existing) {
         set({ wishlistItems: previousItems.filter(i => i.unit_id !== unitId) });
         const { error } = await supabase.from('user_wishlist').delete().eq('user_id', userId).eq('unit_id', unitId);

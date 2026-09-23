@@ -17,6 +17,8 @@ const getEditDistance = (a: string, b: string): number => {
     const lenB = b.length;
     if (lenA === 0) return lenB;
     if (lenB === 0) return lenA;
+    // Optimization: Circuit breaker for vast length differences to prevent CPU lockup
+    if (Math.abs(lenA - lenB) > 15) return 99; 
     if (lenA >= 50 || lenB >= 50) return 99;
 
     let prevRow = new Uint8Array(lenB + 1);
@@ -158,8 +160,22 @@ const matchTokenToUnit = (unitText: string, ALL_UNITS: MasterUnit[], slangCache:
 
 self.onmessage = (e) => {
     const { id, text, units, slangCache } = e.data;
-    const currentUnitIds = units.map((u: MasterUnit) => u.id).join(",");
 
+    // --- HARD LIMITER / CIRCUIT BREAKER ---
+    if (!text || text.length > 5000) {
+        self.postMessage({
+            id,
+            result: {
+                giveCards: [],
+                getCards: [],
+                ambiguous: [],
+                error: "Input too large (max 5000 characters). Please paste a smaller trade block to prevent browser lockup."
+            }
+        });
+        return;
+    }
+
+    const currentUnitIds = units.map((u: MasterUnit) => u.id).join(",");
     if (DICTIONARY.length === 0 || cachedUnitIds !== currentUnitIds) {
         buildLexicon(units);
     }

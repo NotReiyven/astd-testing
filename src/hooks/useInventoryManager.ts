@@ -9,7 +9,7 @@ import { useTradeStore } from "../store/useTradeStore";
 import { MasterUnit, FilterKey, TradeCard } from "../types";
 import { getTier } from "../data";
 import { getUnitConservativeValue, TIER_ORDER } from "../app/components/InventoryChannel/inventoryUtils";
-import { parseSmartTradeAsync, getSlangCache } from "../app/components/TradeAnalyzer/smartParser";
+import { parseSmartTradeAsync } from "../app/components/TradeAnalyzer/smartParser";
 import { useStickyState } from "./useStickyState";
 import { triggerHaptic } from "../data/helpers";
 import { useToastStore } from "../store/useToastStore";
@@ -60,6 +60,9 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
   const [toast, setToast] = useState<{ id: number, message: string, isError: boolean, itemToRestore?: InventoryItem } | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
+  // Performance: O(1) Cache Map
+  const unitMap = useMemo(() => new Map(ALL_UNITS.map(u => [u.id, u])), [ALL_UNITS]);
+
   const showToast = useCallback((message: string, isError = false, itemToRestore?: InventoryItem) => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToast({ id: Date.now(), message, isError, itemToRestore });
@@ -151,7 +154,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     let liqVal = 0;
     const sourceItems = isReadOnly ? viewedItems : myItems;
     sourceItems.forEach(item => {
-      const master = ALL_UNITS.find(u => u.id === item.unit_id);
+      const master = unitMap.get(item.unit_id);
       if (master) {
         const liq = (master.liquidity || "Average").toLowerCase();
         if (liq === "high" || liq === "average") {
@@ -160,7 +163,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
       }
     });
     return liqVal;
-  }, [myItems, viewedItems, isReadOnly, ALL_UNITS]);
+  }, [myItems, viewedItems, isReadOnly, unitMap]);
 
   const metrics = useMemo(() => {
     let estVal = 0, liqVal = 0, totQty = 0, unpinned = 0;
@@ -168,7 +171,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     let highLiq = 0, avgLiq = 0, lowLiq = 0;
 
     const resolved = activeItems.map(item => {
-      const master = ALL_UNITS.find(u => u.id === item.unit_id);
+      const master = unitMap.get(item.unit_id);
       if (master) {
         totQty += item.quantity;
         const conservativeVal = getUnitConservativeValue(master) * item.quantity;
@@ -213,7 +216,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
       avgPct: (avgLiq / totalVal) * 100,
       lowPct: (lowLiq / totalVal) * 100
     };
-  }, [activeItems, ALL_UNITS]);
+  }, [activeItems, unitMap]);
 
   const isSandbox = !isReadOnly && vaultView !== "wishlist" && metrics.uniqueCount === 0 && !sandboxDismissed;
   
@@ -225,9 +228,9 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
       { unit_id: "death", quantity: 1, is_pinned: true }
     ].map(item => ({
       ...item, id: `sandbox-${item.unit_id}`, user_id: "sandbox", created_at: new Date().toISOString(),
-      master: ALL_UNITS.find(u => u.id === item.unit_id)!
+      master: unitMap.get(item.unit_id)!
     })).filter(i => i.master) as (InventoryItem & { master: MasterUnit })[];
-  }, [isSandbox, ALL_UNITS]);
+  }, [isSandbox, unitMap]);
 
   const displayInventory = isSandbox ? sandboxMockItems : metrics.resolvedInventory;
 

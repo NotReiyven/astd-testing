@@ -70,7 +70,7 @@ export const HighlightText = memo(({ text, query }: { text: string; query?: stri
     <>
       {parts.map((part, i) => 
         part.toLowerCase() === query.toLowerCase() 
-          ? <span key={i} className="bg-[#FAA61A]/30 text-[#FAA61A] rounded-[2px]">{part}</span> 
+          ? <span key={i} className="bg-warning/30 text-warning rounded-[2px]">{part}</span> 
           : <span key={i}>{part}</span>
       )}
     </>

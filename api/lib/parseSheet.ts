@@ -11,6 +11,29 @@ export interface SheetProperties { title?: string; }
 export interface Sheet { properties?: SheetProperties; data?: { rowData?: RowData[] }[]; }
 export interface SpreadsheetData { properties?: SheetProperties; sheets?: Sheet[]; }
 
+export interface ParsedNotice {
+  title: string;
+  date: string | null;
+  content: string;
+}
+
+export interface ParsedUnit {
+  id: string;
+  name: string;
+  subtitle: string;
+  value: number | "owner" | "range";
+  valueMin?: number;
+  valueDisplay?: string;
+  rarity: number;
+  liquidity: string;
+  notice: string;
+  status: string;
+  secondaryTags: string[];
+  tier: string;
+  subCategory: string;
+  subCategoryRange: string;
+}
+
 const COLOR_TARGETS = [
   { tag: "dropping", r: 255, g: 0, b: 0 },
   { tag: "rising", r: 0, g: 255, b: 0 },
@@ -61,9 +84,9 @@ export function cleanText(input: string | undefined): string {
 }
 
 export function parseSpreadsheet(data: SpreadsheetData) {
-  const parsedUnits: any[] = [];
+  const parsedUnits: ParsedUnit[] = [];
   const changelog: string[] = [];
-  const notices: any[] = [];
+  const notices: ParsedNotice[] = [];
   const idTracker = new Map<string, number>(); 
   const sheetTitle = data.properties?.title || "ASTD Official Value List";
 

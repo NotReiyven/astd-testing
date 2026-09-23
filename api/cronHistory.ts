@@ -3,11 +3,25 @@
 // ================================================
 
 import { createClient } from "@supabase/supabase-js";
-import { parseSpreadsheet, SpreadsheetData } from "./lib/parseSheet";
+import { parseSpreadsheet, SpreadsheetData, ParsedUnit } from "./lib/parseSheet";
 
 export const config = {
   runtime: 'edge'
 };
+
+interface UnitStateRow {
+  unit_id: string;
+  value: number | null;
+  value_type: string;
+  value_display: string | null;
+  value_min: number | null;
+  rarity: number;
+  liquidity: string;
+  status: string;
+  notice: string | null;
+  tier: string;
+  recorded_at?: string;
+}
 
 async function sendDiscordEmbed(embedData: { title: string; description: string; color: number; fields?: any[] }) {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
@@ -98,7 +112,7 @@ export async function GET(request: Request) {
     const { units } = parseSpreadsheet(data);
     if (!units || units.length === 0) return new Response(JSON.stringify({ message: "No units parsed" }), { status: 200, headers: { "Content-Type": "application/json" } });
 
-    let allRows: any[] = [];
+    let allRows: UnitStateRow[] = [];
     let from = 0;
     let to = 999;
     while (true) {
@@ -108,7 +122,7 @@ export async function GET(request: Request) {
         .range(from, to);
       if (fetchError) throw fetchError;
       if (chunk && chunk.length > 0) {
-        allRows.push(...chunk);
+        allRows.push(...(chunk as UnitStateRow[]));
         if (chunk.length < 1000) break;
         from += 1000;
         to += 1000;
@@ -117,20 +131,20 @@ export async function GET(request: Request) {
       }
     }
 
-    const currentMap = new Map();
+    const currentMap = new Map<string, UnitStateRow>();
     allRows.forEach(row => currentMap.set(row.unit_id, row));
 
     const timestamp = new Date().toISOString();
-    const snapshotsToInsert: any[] = [];
-    const statesToUpsert: any[] = [];
+    const snapshotsToInsert: UnitStateRow[] = [];
+    const statesToUpsert: UnitStateRow[] = [];
     const valueShifts: string[] = [];
 
-    units.forEach((u: any) => {
+    units.forEach((u: ParsedUnit) => {
       const dbValue = typeof u.value === 'number' ? u.value : null;
       const dbValueType = typeof u.value === 'number' ? 'number' : typeof u.value === 'string' ? u.value : 'unknown';
       const dbValueMin = u.valueMin || null;
 
-      const newState = {
+      const newState: UnitStateRow = {
         unit_id: u.id,
         value: dbValue,
         value_type: dbValueType,
@@ -146,7 +160,6 @@ export async function GET(request: Request) {
       const oldState = currentMap.get(u.id);
 
       let hasChanged = false;
-      let valueChanged = false;
       if (!oldState) {
         hasChanged = true;
       } else {
@@ -154,7 +167,6 @@ export async function GET(request: Request) {
         const newValSafe = String(dbValue);
 
         if (oldValSafe !== newValSafe) {
-          valueChanged = true;
           if (valueShifts.length < 5) {
             valueShifts.push(`**${u.name}**: \`${oldValSafe}\` ➔ \`${newValSafe}\``);
           }
@@ -220,8 +232,8 @@ export async function GET(request: Request) {
     });
 
     return new Response(JSON.stringify({ message: "OK" }), { status: 200, headers: { "Content-Type": "application/json" } });
-  } catch (error: any) {
-    const errorDetails = error.message || String(error);
+  } catch (error: unknown) {
+    const errorDetails = error instanceof Error ? error.message : String(error);
     console.error("Cron crash error:", errorDetails);
     await sendDiscordEmbed({
       title: "🚨 ASTD Value List Critical Crash",

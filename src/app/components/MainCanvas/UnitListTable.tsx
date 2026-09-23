@@ -1,9 +1,8 @@
-import { memo, useState, useRef, useEffect } from "react";
+import { memo, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, ArrowUpCircle, ArrowDownCircle, History, ArrowDown, ArrowUp, Loader2, Package, Check } from "lucide-react";
 import { PopupUnit, MasterUnit } from "../../../types";
-import { GRID_STATUS_CFG, getTier, TIER_CONFIG, getProxyImage, handleImageError } from "../../../data";
-import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils"; 
+import { GRID_STATUS_CFG } from "../../../data";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 import { triggerHaptic } from "../../../data/helpers";
@@ -11,6 +10,7 @@ import { HighlightText, StatusIcon, JargonWrap } from "./UnitGrid";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useInventoryStore } from "../../../store/useInventoryStore";
 import { getUnitConservativeValue } from "../InventoryChannel/inventoryUtils";
+import { UnitAvatar } from "../shared/UnitAvatar";
 
 export const getStatColor = (label: string, value: number | string) => {
   if (label === "R") {
@@ -106,7 +106,6 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast, searchQuery
   };
 
   const sCfg = unit.status ? GRID_STATUS_CFG[unit.status] : null;
-  const proxyUrl = getProxyImage(unit.id, unit.imageUrl);
   const isCompact = viewMode === "compact";
 
   const obtainability = (() => {
@@ -181,16 +180,12 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast, searchQuery
           {!isCompact && (
             <div className="hidden md:flex px-3 py-2 items-center justify-center border-r border-border bg-card">
               <div className="relative w-8 h-8 rounded-[2px] overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
-                <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-[10px] z-0" style={getAvatarStyle(unit.name)}>
-                  {getInitials(unit.name)}
-                </div>
-                <img 
-                  src={proxyUrl || undefined} 
-                  alt={unit.name} 
-                  loading="lazy" 
-                  decoding="async" 
-                  onError={(e) => { e.currentTarget.style.opacity = '0'; }}
-                  className="absolute inset-0 w-full h-full object-cover z-10 bg-transparent" 
+                <UnitAvatar 
+                  unitId={unit.id} 
+                  unitName={unit.name} 
+                  imageUrl={unit.imageUrl} 
+                  fallbackClassName="absolute inset-0 flex items-center justify-center text-white font-bold text-[10px] z-0" 
+                  imageClassName="absolute inset-0 w-full h-full object-cover z-10 bg-transparent" 
                 />
               </div>
             </div>
@@ -200,16 +195,12 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast, searchQuery
           <div className="flex md:hidden items-center justify-between w-full px-4 py-3">
             <div className="flex items-center gap-3 min-w-0 pr-2">
               <div className="relative w-10 h-10 rounded-[2px] overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
-                <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-[12px] z-0" style={getAvatarStyle(unit.name)}>
-                  {getInitials(unit.name)}
-                </div>
-                <img 
-                  src={proxyUrl || undefined} 
-                  alt={unit.name} 
-                  loading="lazy" 
-                  decoding="async" 
-                  onError={(e) => { e.currentTarget.style.opacity = '0'; }}
-                  className="absolute inset-0 w-full h-full object-cover z-10 bg-transparent" 
+                <UnitAvatar 
+                  unitId={unit.id} 
+                  unitName={unit.name} 
+                  imageUrl={unit.imageUrl} 
+                  fallbackClassName="absolute inset-0 flex items-center justify-center text-white font-bold text-[12px] z-0" 
+                  imageClassName="absolute inset-0 w-full h-full object-cover z-10 bg-transparent" 
                 />
               </div>
               <div className="flex flex-col min-w-0 flex-1">
@@ -302,10 +293,13 @@ export const UnitListRow = memo(function UnitListRow({ unit, isLast, searchQuery
             <div className="flex items-center justify-between mb-5 mt-2 md:mt-0">
               <div className="flex items-center gap-3 min-w-0 pr-4">
                 <div className="w-12 h-12 rounded-[4px] overflow-hidden bg-muted border border-border shrink-0 relative">
-                  <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-[14px] z-0" style={getAvatarStyle(unit.name)}>
-                    {getInitials(unit.name)}
-                  </div>
-                  <img src={proxyUrl || undefined} alt={unit.name} className="absolute inset-0 w-full h-full object-cover z-10 bg-transparent" onError={(e) => handleImageError(e, unit.id)} />
+                  <UnitAvatar 
+                    unitId={unit.id} 
+                    unitName={unit.name} 
+                    imageUrl={unit.imageUrl} 
+                    fallbackClassName="absolute inset-0 flex items-center justify-center text-white font-bold text-[14px] z-0" 
+                    imageClassName="absolute inset-0 w-full h-full object-cover z-10 bg-transparent" 
+                  />
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="text-[16px] font-black text-foreground tracking-tight truncate">{unit.name}</span>

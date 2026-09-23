@@ -3,8 +3,7 @@
 // ================================================
 
 import { useState, useEffect, useRef } from "react";
-import { X, TrendingUp, History, BarChart2, Sparkles, AlertCircle, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, ReferenceLine } from 'recharts';
+import { X, TrendingUp, History, BarChart2, Sparkles, AlertCircle, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react";
 import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 import { useUnitHistory, HistorySnapshot } from "../../../hooks/useUnitHistory";
 import { useUnits } from "../../../context/UnitContext";
@@ -20,7 +19,15 @@ export function HistoryModal() {
 
   const [activeMetric, setActiveMetric] = useState<'value' | 'rarity' | 'liquidity'>('value');
   const [isScrolled, setIsScrolled] = useState(false);
+  const [RechartsLib, setRechartsLib] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Lazy load Recharts only when the modal opens to save massive bundle size
+  useEffect(() => {
+    if (isOpen && !RechartsLib) {
+      import('recharts').then(mod => setRechartsLib(mod)).catch(err => console.error("Failed to load recharts", err));
+    }
+  }, [isOpen, RechartsLib]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -187,8 +194,8 @@ export function HistoryModal() {
     if (isMin) {
       return (
         <g>
-          <circle cx={cx} cy={cy} r={5} fill="var(--rose-400)" stroke="#111214" strokeWidth={2} />
-          <circle cx={cx} cy={cy} r={10} fill="none" stroke="var(--rose-400)" strokeWidth={1} opacity={0.6} />
+          <circle cx={cx} cy={cy} r={5} fill="var(--destructive)" stroke="#111214" strokeWidth={2} />
+          <circle cx={cx} cy={cy} r={10} fill="none" stroke="var(--destructive)" strokeWidth={1} opacity={0.6} />
         </g>
       );
     }
@@ -274,7 +281,7 @@ export function HistoryModal() {
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">Current Value</span>
                     {displayHistory.length > 1 && oldestSnapVal && oldestSnapVal > 0 && (
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[3px] flex items-center gap-0.5 ${pctChange >= 0 ? 'bg-[#23a559]/10 text-[#23a559]' : 'bg-rose-400/10 text-rose-400'}`}>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[3px] flex items-center gap-0.5 ${pctChange >= 0 ? 'bg-[#23a559]/10 text-[#23a559]' : 'bg-destructive/10 text-destructive'}`}>
                         {pctChange >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                         {pctChange >= 0 ? `+${pctChange.toFixed(1)}%` : `${pctChange.toFixed(1)}%`}
                       </span>
@@ -338,7 +345,7 @@ export function HistoryModal() {
                   Syncing historical snapshots...
                 </div>
               ) : error ? (
-                <div className="text-rose-400 text-sm text-center py-8 bg-popover rounded-[8px] border border-rose-400/20">Failed to load history: {error}</div>
+                <div className="text-destructive text-sm text-center py-8 bg-popover rounded-[8px] border border-destructive/20">Failed to load history: {error}</div>
               ) : displayHistory.length <= 1 ? (
                 <div className="flex flex-col items-center justify-center h-[280px] text-center bg-popover border border-border rounded-[8px]">
                   <TrendingUp className="w-10 h-10 text-muted-foreground mb-3 opacity-50" />
@@ -354,7 +361,7 @@ export function HistoryModal() {
                     <div className="flex items-center gap-3">
                       <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase">
                         <span className="w-2 h-2 rounded-[2px] bg-[#23a559] inline-block" /> Peak
-                        <span className="w-2 h-2 rounded-[2px] bg-rose-400 inline-block ml-1" /> Low
+                        <span className="w-2 h-2 rounded-[2px] bg-destructive inline-block ml-1" /> Low
                       </div>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-[4px] bg-black/20 text-muted-foreground font-mono border border-border uppercase tracking-wider">
                         {displayHistory.length} Snapshots
@@ -362,43 +369,53 @@ export function HistoryModal() {
                     </div>
                   </div>
 
-                  <div className="h-[240px] sm:h-[260px] w-full bg-black/20 p-2 rounded-[6px] border border-border">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id={currentConfig.gradientId} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={currentConfig.color} stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor={currentConfig.color} stopOpacity={0.0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="2 4" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                        <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={10} tickLine={false} axisLine={false} tickMargin={8} />
-                        <YAxis 
-                          stroke="var(--muted-foreground)" fontSize={10} tickLine={false} axisLine={false} width={45} 
-                          tickFormatter={(v) => activeMetric === 'liquidity' ? (v === 3 ? 'HIGH' : v === 2 ? 'AVG' : v === 1 ? 'LOW' : '') : (activeMetric === 'value' && v >= 1000 ? `${(v/1000).toFixed(0)}k` : v)}
-                          domain={activeMetric === 'liquidity' ? [0, 4] : ['auto', 'auto']}
-                        />
-                        <Tooltip 
-                          contentStyle={{ backgroundColor: 'var(--background)', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px 12px' }}
-                          labelStyle={{ color: 'var(--muted-foreground)', fontSize: '10px', marginBottom: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}
-                          formatter={(value: any, name: any, props: any) => [props.payload.label, currentConfig.unitLabel]}
-                          labelFormatter={(label, payload) => payload.length > 0 ? payload[0].payload.fullDate : label}
-                        />
-                        {timeline.map((t, idx) => {
-                          const hasMajorShift = t.changed.includes("Rarity") || t.changed.includes("Liquidity") || t.changed.includes("Status");
-                          if (!hasMajorShift) return null;
-                          return (
-                            <ReferenceLine 
-                              key={`ref-${idx}`} 
-                              x={t.chartX} 
-                              stroke="rgba(255,255,255,0.15)" 
-                              strokeDasharray="3 3" 
+                  <div className="h-[240px] sm:h-[260px] w-full bg-black/20 p-2 rounded-[6px] border border-border flex items-center justify-center">
+                    {RechartsLib ? (() => {
+                      const { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } = RechartsLib;
+                      return (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                            <defs>
+                              <linearGradient id={currentConfig.gradientId} x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor={currentConfig.color} stopOpacity={0.2}/>
+                                <stop offset="95%" stopColor={currentConfig.color} stopOpacity={0.0}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="2 4" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                            <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={10} tickLine={false} axisLine={false} tickMargin={8} />
+                            <YAxis 
+                              stroke="var(--muted-foreground)" fontSize={10} tickLine={false} axisLine={false} width={45} 
+                              tickFormatter={(v: any) => activeMetric === 'liquidity' ? (v === 3 ? 'HIGH' : v === 2 ? 'AVG' : v === 1 ? 'LOW' : '') : (activeMetric === 'value' && v >= 1000 ? `${(v/1000).toFixed(0)}k` : v)}
+                              domain={activeMetric === 'liquidity' ? [0, 4] : ['auto', 'auto']}
                             />
-                          );
-                        })}
-                        <Area type="monotone" dataKey="value" stroke={currentConfig.color} strokeWidth={2} fillOpacity={1} fill={`url(#${currentConfig.gradientId})`} dot={<CustomizedDot />} activeDot={{ r: 6, fill: currentConfig.color, stroke: '#111214', strokeWidth: 2 }} />
-                      </AreaChart>
-                    </ResponsiveContainer>
+                            <Tooltip 
+                              contentStyle={{ backgroundColor: 'var(--background)', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px 12px' }}
+                              labelStyle={{ color: 'var(--muted-foreground)', fontSize: '10px', marginBottom: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}
+                              formatter={(value: any, name: any, props: any) => [props.payload.label, currentConfig.unitLabel]}
+                              labelFormatter={(label: any, payload: any) => payload.length > 0 ? payload[0].payload.fullDate : label}
+                            />
+                            {timeline.map((t, idx) => {
+                              const hasMajorShift = t.changed.includes("Rarity") || t.changed.includes("Liquidity") || t.changed.includes("Status");
+                              if (!hasMajorShift) return null;
+                              return (
+                                <ReferenceLine 
+                                  key={`ref-${idx}`} 
+                                  x={t.chartX} 
+                                  stroke="rgba(255,255,255,0.15)" 
+                                  strokeDasharray="3 3" 
+                                />
+                              );
+                            })}
+                            <Area type="monotone" dataKey="value" stroke={currentConfig.color} strokeWidth={2} fillOpacity={1} fill={`url(#${currentConfig.gradientId})`} dot={<CustomizedDot />} activeDot={{ r: 6, fill: currentConfig.color, stroke: '#111214', strokeWidth: 2 }} />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      );
+                    })() : (
+                      <div className="flex flex-col items-center justify-center text-muted-foreground gap-3">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                        <span className="text-[12px] font-bold uppercase tracking-widest">Rendering Chart...</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -435,7 +452,7 @@ export function HistoryModal() {
                                 <div className="flex items-center justify-between bg-black/20 px-3 py-2 rounded-[6px] border border-border flex-wrap gap-2">
                                   <span className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">Value Shift</span>
                                   <div className="flex items-center gap-3 font-mono text-[12px] font-bold">
-                                    <span className="text-muted-foreground line-through decoration-rose-400">{t.prev.value_display || (t.prev.value ?? 0).toLocaleString()}</span>
+                                    <span className="text-muted-foreground line-through decoration-destructive">{t.prev.value_display || (t.prev.value ?? 0).toLocaleString()}</span>
                                     <span className="text-primary">➔</span>
                                     <span className="text-foreground">{t.snap.value_display || (t.snap.value ?? 0).toLocaleString()}</span>
                                   </div>

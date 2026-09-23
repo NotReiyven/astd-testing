@@ -6,8 +6,8 @@ import React, { useState, memo, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { ArrowUpCircle, ArrowDownCircle, History, Package, X, Loader2, Check } from "lucide-react";
 import { PopupUnit, GridUnit, MasterUnit } from "../../../../types";
-import { getTier, TIER_CONFIG, getProxyImage, getObtainability, handleImageError, GRID_STATUS_CFG } from "../../../../data";
-import { getAvatarStyle, getInitials } from "../../TradeAnalyzer/summaryUtils"; 
+import { getTier, TIER_CONFIG, getObtainability, GRID_STATUS_CFG } from "../../../../data";
+import { UnitAvatar } from "../../shared/UnitAvatar";
 import { useTradeStore } from "../../../../store/useTradeStore";
 import { useHistoryModalStore } from "../../../../store/useHistoryModalStore";
 import { triggerHaptic } from "../../../../data/helpers";
@@ -111,7 +111,6 @@ export const TierGridCard = memo(function TierGridCard({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [imgLoaded, setImgLoaded] = useState(false);
 
   const addCard = useTradeStore(state => state.addCard);
   const openModal = useHistoryModalStore(state => state.openModal);
@@ -171,7 +170,6 @@ export const TierGridCard = memo(function TierGridCard({
 
   const tierKey = getTier(unit as MasterUnit);
   const tierColor = TIER_CONFIG[tierKey]?.badgeColor || "var(--primary)";
-  const proxyUrl = getProxyImage(unit.id, unit.imageUrl);
 
   return (
     <>
@@ -191,22 +189,13 @@ export const TierGridCard = memo(function TierGridCard({
           } as React.CSSProperties}
         >
           <div className="relative w-full overflow-hidden flex-shrink-0 border-b border-border bg-[#0b0c0e]" style={{ aspectRatio: "1/1", transform: "translateZ(0)" }}>
-
-            {/* Fallback Initials Layer */}
-            <div className="absolute inset-0 flex items-center justify-center text-white font-black text-4xl md:text-6xl tracking-tight z-0 opacity-20 select-none pointer-events-none" style={{ ...getAvatarStyle(unit.name) }}>
-              {getInitials(unit.name)}
-            </div>
-
-            {/* Main Asset Image */}
-            <img 
-              src={proxyUrl || undefined} 
-              alt={unit.name} 
-              loading="lazy" 
-              decoding="async"
-              onLoad={() => setImgLoaded(true)}
-              onError={(e) => handleImageError(e, unit.id)}
-              className={`absolute inset-0 w-full h-full object-cover z-10 bg-transparent transition-opacity duration-500 ease-out ${imgLoaded ? 'opacity-100' : 'opacity-0'}`} 
-              style={{ objectPosition: "center 15%" }} 
+            
+            <UnitAvatar
+              unitId={unit.id}
+              unitName={unit.name}
+              imageUrl={unit.imageUrl}
+              fallbackClassName="absolute inset-0 flex items-center justify-center text-white font-black text-4xl md:text-6xl tracking-tight z-0"
+              imageClassName="absolute inset-0 w-full h-full object-cover z-10 bg-transparent"
             />
 
             {/* Subtle Studio Vignette & Dynamic Bottom Gradient Fade */}
@@ -229,12 +218,12 @@ export const TierGridCard = memo(function TierGridCard({
           <div className="flex flex-col flex-1 px-3 md:px-4 pt-3 md:pt-4 pb-3 md:pb-4 relative z-10 bg-card">
             <div className="flex flex-col">
               <div className="flex items-start gap-2">
-                <h3 className="text-[13px] md:text-[15px] font-extrabold tracking-tight leading-snug flex-1 min-w-0 line-clamp-2 text-foreground">
+                <h3 className="text-[13px] md:text-[15px] font-extrabold tracking-tight leading-snug flex-1 min-w-0 line-clamp-2 text-foreground min-h-[38px] md:min-h-[44px]">
                   <HighlightText query={searchQuery} text={unit.name} />
                 </h3>
                 {unit.notice && <div className="mt-0.5 md:mt-1"><NoticeTooltip notice={unit.notice} /></div>}
               </div>
-              <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-wider leading-none mt-1 md:mt-1.5 truncate text-muted-foreground">
+              <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-wider leading-none mt-1 md:mt-1.5 truncate text-muted-foreground min-h-[14px] md:min-h-[16px]">
                 <HighlightText text={unit.subtitle || ""} query={searchQuery} />
               </p>
               <div className="flex mt-1.5 md:mt-2">
@@ -271,10 +260,7 @@ export const TierGridCard = memo(function TierGridCard({
             <div className="flex items-center justify-between mb-5 mt-2 md:mt-0">
               <div className="flex items-center gap-3 min-w-0 pr-4">
                 <div className="w-12 h-12 rounded-[4px] overflow-hidden bg-muted border border-border shrink-0 relative">
-                  <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-[14px] z-0" style={getAvatarStyle(unit.name)}>
-                    {getInitials(unit.name)}
-                  </div>
-                  <img src={proxyUrl || undefined} alt={unit.name} className="absolute inset-0 w-full h-full object-cover z-10 bg-transparent" onError={(e) => handleImageError(e, unit.id)} />
+                  <UnitAvatar unitId={unit.id} unitName={unit.name} imageUrl={unit.imageUrl} />
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="text-[16px] font-black text-foreground tracking-tight truncate">{unit.name}</span>

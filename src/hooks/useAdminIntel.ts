@@ -4,18 +4,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { useAuthStore } from '../store/useAuthStore';
+import { useAuthStore, UserProfile as AuthUserProfile } from '../store/useAuthStore';
 import { useUnits } from '../context/UnitContext';
 import { triggerHaptic } from '../data/helpers';
 
-export interface UserProfile {
-  id: string;
-  discord_id: string;
-  username: string;
-  avatar_url: string;
-  role: string;
+export interface UserProfile extends AuthUserProfile {
   assigned_roles: string[];
-  created_at: string;
 }
 
 export interface SystemMetrics {
@@ -33,6 +27,10 @@ export interface ModLog {
   profiles: { username: string };
 }
 
+interface SupabaseProfile extends AuthUserProfile {
+  user_roles?: { roles?: { name: string } }[];
+}
+
 const ROLE_PRIORITY: Record<string, number> = {
   master: 0, admin: 1, mod: 2, user: 3, banned: 4
 };
@@ -42,6 +40,7 @@ export function useAdminIntel() {
   const { units: ALL_UNITS } = useUnits();
   
   const isMaster = profile?.role?.toLowerCase() === 'master';
+  const canModerate = profile?.role === 'master' || profile?.role === 'admin' || profile?.role === 'mod';
 
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
@@ -60,6 +59,7 @@ export function useAdminIntel() {
   }, []);
 
   const loadMetrics = useCallback(async () => {
+    if (!canModerate) return;
     const now = new Date().toISOString();
     const [usersRes, adsRes, bannedRes, rolesRes] = await Promise.all([
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
@@ -77,9 +77,10 @@ export function useAdminIntel() {
     if (rolesRes.data) {
       setAvailableRoles(rolesRes.data);
     }
-  }, []);
+  }, [canModerate]);
 
   const fetchUsers = useCallback(async (query = "", bannedOnly = showBannedOnly) => {
+    if (!canModerate) return;
     setIsLoading(true);
     let request = supabase.from('profiles').select('*, user_roles(roles(name))').limit(100);
     
@@ -97,10 +98,10 @@ export function useAdminIntel() {
 
     const { data, error } = await request;
     if (!error && data) {
-      const mappedUsers = data.map((u: any) => {
+      const mappedUsers = data.map((u: SupabaseProfile) => {
         const rolesList = u.user_roles?.map((ur: any) => ur.roles?.name).filter(Boolean) || [];
         if (rolesList.length === 0 && u.role) rolesList.push(u.role);
-        return { ...u, assigned_roles: rolesList };
+        return { ...u, assigned_roles: rolesList } as UserProfile;
       });
 
       const sorted = [...mappedUsers].sort((a, b) => {
@@ -110,19 +111,19 @@ export function useAdminIntel() {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
 
-      setUsers(sorted as UserProfile[]);
-      if (sorted.length === 1 && query) setSelectedUser(sorted[0] as UserProfile);
+      setUsers(sorted);
+      if (sorted.length === 1 && query) setSelectedUser(sorted[0]);
     }
     setIsLoading(false);
-  }, [showBannedOnly]);
+  }, [showBannedOnly, canModerate]);
 
   useEffect(() => {
     loadMetrics();
     fetchUsers(searchQuery, showBannedOnly);
-  }, [loadMetrics, fetchUsers, showBannedOnly]);
+  }, [loadMetrics, fetchUsers, showBannedOnly, searchQuery]);
 
   useEffect(() => {
-    if (!selectedUser) return;
+    if (!selectedUser || !canModerate) return;
     
     const loadUserIntel = async () => {
       setUserIntel(prev => ({ ...prev, isLoading: true }));
@@ -160,12 +161,11 @@ export function useAdminIntel() {
     };
 
     loadUserIntel();
-  }, [selectedUser?.id, ALL_UNITS]);
+  }, [selectedUser?.id, ALL_UNITS, canModerate]);
 
   const logModAction = async (targetUserId: string, actionType: string, reason: string) => {
-    if (!profile) return;
+    if (!profile || !canModerate) return;
     
-    // Create an optimistic local log so the UI updates instantly
     const optimisticLog: ModLog = {
       id: Math.random().toString(),
       action_type: actionType,
@@ -177,7 +177,6 @@ export function useAdminIntel() {
     
     setModLogs(prev => [optimisticLog, ...prev]);
 
-    // Strip the .select() chain to guarantee the insert processes without failing on foreign key relation hints
     const { error } = await supabase.from('moderation_logs').insert({
       target_user_id: targetUserId,
       moderator_id: profile.id,
@@ -188,14 +187,12 @@ export function useAdminIntel() {
     if (error) {
       console.error("🚨 DB Insert Error for Moderation Log:", error.message);
       showToast(`Audit log failed to save: ${error.message}`, "error");
-      
-      // Rollback the optimistic UI update if the DB rejects it
       setModLogs(prev => prev.filter(log => log.id !== optimisticLog.id));
     }
   };
 
   const updateUserRole = async (targetUserId: string, newRole: string, reason?: string) => {
-    if (!profile) return false;
+    if (!canModerate) return false;
 
     const { error } = await supabase.rpc('admin_assign_role', { target_user_id: targetUserId, role_name: newRole });
     
@@ -209,7 +206,7 @@ export function useAdminIntel() {
         const currentRoles = selectedUser.assigned_roles || [];
         const hasRole = currentRoles.includes(newRole);
         const nextRoles = hasRole ? currentRoles.filter(r => r !== newRole) : [...currentRoles, newRole];
-        setSelectedUser({ ...selectedUser, assigned_roles: nextRoles, role: nextRoles[0] || 'user' });
+        setSelectedUser({ ...selectedUser, assigned_roles: nextRoles, role: (nextRoles[0] as UserProfile['role']) || 'user' });
       }
       fetchUsers(searchQuery, showBannedOnly);
       showToast(`Toggled role: ${newRole.toUpperCase()}`);
@@ -256,6 +253,10 @@ export function useAdminIntel() {
   };
 
   const executeModAction = async (targetUserId: string, actionType: string, reason: string, actionPromise: PromiseLike<any>, onSuccess?: () => void) => {
+    if (!canModerate) {
+        showToast("Unauthorized: You lack moderation privileges.", "error");
+        return;
+    }
     await logModAction(targetUserId, actionType, reason);
     
     const { error } = await actionPromise;
@@ -314,7 +315,7 @@ export function useAdminIntel() {
   };
 
   const handleTotalAccountNuke = async (reason: string) => {
-    if (!selectedUser) return;
+    if (!selectedUser || !canModerate) return;
     triggerHaptic('heavy');
     
     await logModAction(selectedUser.id, "ACCOUNT NUKED & BANNED", reason);
