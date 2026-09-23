@@ -5,7 +5,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import DOMPurify from 'dompurify';
 import { get as getIdb, set as setIdb } from 'idb-keyval';
 import { useToastStore } from './useToastStore';
 
@@ -158,11 +157,7 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
       return false;
     }
 
-    const cleanContent = DOMPurify.sanitize(content.trim(), {
-      ALLOWED_TAGS: [], // Strip all HTML tags entirely
-      ALLOWED_ATTR: []
-    });
-
+    const cleanContent = content.trim();
     if (!cleanContent) return false;
 
     // OFFLINE QUEUE INTERCEPTION

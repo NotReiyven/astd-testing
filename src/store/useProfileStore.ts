@@ -4,7 +4,6 @@
 
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-import DOMPurify from 'dompurify';
 import { get as getIdb, set as setIdb } from 'idb-keyval';
 import { useToastStore } from './useToastStore';
 
@@ -115,11 +114,11 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     const cleanUpdates = { ...updates };
     
     if (typeof cleanUpdates.bio === 'string') {
-      cleanUpdates.bio = DOMPurify.sanitize(cleanUpdates.bio.trim(), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+      cleanUpdates.bio = cleanUpdates.bio.trim();
     }
     
     if (typeof cleanUpdates.roblox_username === 'string') {
-      cleanUpdates.roblox_username = DOMPurify.sanitize(cleanUpdates.roblox_username.trim(), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+      cleanUpdates.roblox_username = cleanUpdates.roblox_username.trim();
     }
 
     // OFFLINE QUEUE INTERCEPTION

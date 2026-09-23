@@ -1,3 +1,6 @@
+/* ================================================
+// FILE: src/styles/globals.css
+// ================================================ */
 @import "tailwindcss";
 
 /* Force dark color scheme so browsers respect dark scrollbars natively */
@@ -81,15 +84,7 @@ html, body {
   }
 
   button, a {
-    transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-  }
-
-  button:active, a:active {
-    transform: scale(0.96);
-  }
-
-  button.bg-primary {
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2); 
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
 }
 
@@ -122,17 +117,4 @@ html, body {
     );
     animation: shimmer 1.5s infinite;
   }
-}
-
-.specular-card {
-  background-color: var(--card);
-  border: 1px solid var(--border);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 2px 4px rgba(0, 0, 0, 0.5);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.specular-card:hover {
-  border-color: var(--hover-glow, #444444);
-  transform: translateY(-2px);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 12px 24px -4px rgba(0, 0, 0, 0.8);
 }

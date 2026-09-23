@@ -170,6 +170,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
             <button
               className="text-[11px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none rounded-[4px] px-3 py-2 md:px-2 md:py-1 bg-muted border border-border hover:bg-destructive hover:text-destructive-foreground hover:border-destructive text-muted-foreground active:scale-95 cursor-pointer"
               onClick={onClear}
+              aria-label={`Clear ${label} Section`}
             >
               Clear {isGive ? "Give" : "Get"}
             </button>
@@ -228,6 +229,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
             <button
               className="flex-shrink-0 focus-visible:outline-none rounded-[2px] p-2 -m-2 md:p-0.5 md:-m-0 hover:bg-muted transition-colors text-muted-foreground cursor-pointer"
               onMouseDown={(e) => { e.preventDefault(); setQuery(""); }}
+              aria-label={`Clear search input for ${label}`}
             >
               <X className="w-3.5 h-3.5" />
             </button>
