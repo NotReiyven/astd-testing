@@ -7,7 +7,11 @@ import { createPortal } from "react-dom";
 import { Check, ChevronDown } from "lucide-react";
 import { triggerHaptic } from "../../../data/helpers";
 
-export function useClickOutside<T extends HTMLElement>(ref: React.RefObject<T | null>, handler: () => void) {
+export function useClickOutside(
+  ref: React.RefObject<HTMLElement | null>,
+  portalRef: React.RefObject<HTMLElement | null>,
+  handler: () => void
+) {
   const handlerRef = useRef(handler);
   useEffect(() => {
     handlerRef.current = handler;
@@ -15,7 +19,11 @@ export function useClickOutside<T extends HTMLElement>(ref: React.RefObject<T | 
 
   useEffect(() => {
     const listener = (event: MouseEvent | TouchEvent) => {
-      if (!ref.current || ref.current.contains(event.target as Node)) return;
+      const target = event.target as Node;
+      // If the click is inside the trigger button OR inside the absolute portal, do nothing.
+      if (ref.current && ref.current.contains(target)) return;
+      if (portalRef.current && portalRef.current.contains(target)) return;
+      
       handlerRef.current();
     };
     document.addEventListener("mousedown", listener);
@@ -24,14 +32,16 @@ export function useClickOutside<T extends HTMLElement>(ref: React.RefObject<T | 
       document.removeEventListener("mousedown", listener);
       document.removeEventListener("touchstart", listener);
     };
-  }, [ref]);
+  }, [ref, portalRef]);
 }
 
 export function CustomDropdown({ icon: Icon, value, options, onChange, defaultLabel }: any) {
   const [isOpen, setIsOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
   const ref = useRef<HTMLDivElement>(null);
-  useClickOutside(ref, () => setIsOpen(false));
+  const portalRef = useRef<HTMLDivElement>(null);
+  
+  useClickOutside(ref, portalRef, () => setIsOpen(false));
 
   const handleToggle = () => {
     triggerHaptic('light');
@@ -63,6 +73,7 @@ export function CustomDropdown({ icon: Icon, value, options, onChange, defaultLa
 
       {isOpen && createPortal(
         <div 
+          ref={portalRef}
           className="absolute bg-popover border border-border rounded-[6px] shadow-[0_10px_30px_rgba(0,0,0,0.6)] z-[99999] py-1.5 flex flex-col animate-slide-up"
           style={{ top: coords.top, left: coords.left, width: coords.width }}
         >

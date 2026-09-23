@@ -9,7 +9,7 @@ import { TrendingUp, Clock, AlertTriangle } from "lucide-react";
 import { RollingNumber } from "../shared/Formatters";
 
 interface TradeSummaryBoxProps {
-  isMainStep4: boolean;
+  isAnalyzerTarget: boolean;
   giveTotal: number;
   getTotal: number;
   givePercent: number;
@@ -21,9 +21,9 @@ interface TradeSummaryBoxProps {
 }
 
 export function TradeSummaryBox({
-  isMainStep4, giveTotal, getTotal, givePercent, getPercent, giveItems, getItems, ALL_UNITS, isCompact = false
+  isAnalyzerTarget, giveTotal, getTotal, givePercent, getPercent, giveItems, getItems, ALL_UNITS, isCompact = false
 }: TradeSummaryBoxProps) {
-  const [activeTip, setActiveTip] = useState<string | null>(null);
+  const [activeTip, currentTip] = useState<string | null>(null);
   const forecast = getTradeForecast(giveItems, getItems, ALL_UNITS);
 
   const getLiqLabel = (items: TradeCard[]) => {
@@ -35,10 +35,10 @@ export function TradeSummaryBox({
   };
 
   const handleEnter = (tip: string) => {
-    if (window.matchMedia('(hover: hover)').matches) setActiveTip(tip);
+    if (window.matchMedia('(hover: hover)').matches) currentTip(tip);
   };
 
-  const handleLeave = () => setActiveTip(null);
+  const handleLeave = () => currentTip(null);
   const valDiff = getTotal - giveTotal;
 
   if (isCompact) {
@@ -62,7 +62,7 @@ export function TradeSummaryBox({
   }
 
   return (
-    <div className={`flex-shrink-0 mx-3 md:mx-4 mt-3 rounded-[8px] p-3.5 md:p-5 relative bg-card border transition-all duration-300 z-20 shadow-sm ${isMainStep4 ? 'border-primary shadow-[0_0_20px_var(--primary)] ring-4 ring-primary/30' : 'border-border'}`}>
+    <div className={`flex-shrink-0 mx-3 md:mx-4 mt-3 rounded-[8px] p-3.5 md:p-5 relative bg-card border transition-all duration-300 z-20 shadow-sm ${isAnalyzerTarget ? 'border-primary shadow-[0_0_20px_var(--primary)] ring-4 ring-primary/30 z-[100005]' : 'border-border'}`}>
       
       {/* MOBILE COMPACT VIEW */}
       <div className="flex md:hidden flex-col gap-2.5">

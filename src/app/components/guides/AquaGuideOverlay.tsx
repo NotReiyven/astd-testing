@@ -3,51 +3,104 @@
 // ================================================
 
 import { useState, useEffect, useRef } from "react";
-import { Sparkles, ChevronRight, Zap, MousePointer2 } from "lucide-react";
+import { Sparkles, ChevronRight, ChevronLeft, X, ArrowUpRight, Zap } from "lucide-react";
+import { GuideType } from "../../../hooks/useGuideSystem";
+import { triggerHaptic } from "../../../data/helpers";
 
-export type GuideType = "main" | "academy_grad" | "channels" | "advanced" | "developer" | "filters" | "dictionary" | "stats" | "management" | "annoyed" | null;
+export type { GuideType };
 
-const AQUA_DIALOGUES: Record<string, string[]> = {
-  main: [
-    "",
-    "Listen up, you shut-in NEET! I, the beautiful and wise Goddess Aqua, have descended to save you from getting completely scammed! First, click the ^^Value List^^ channel in the sidebar so we can begin!",
-    "Hmph, even someone with your pitiful intelligence stat can do this part. Let's build a mock trade. ^^Click or tap^^ any unit card to open its menu, then toss it into your *Give* or *Get* side! Don't mess this up!",
-    "W-Wait! Don't just accept a trade blindly! Are you trying to lose all your value?! Use the divine tool I've graciously bestowed upon you! Click that glowing ^^Calculator^^ button up top to open the Analyzer!",
-    "See?! It instantly breaks down the value differences and market momentum! But wait—you're not done! I've enrolled you in the Academy to finish your training. Go complete your Graduation Checklist!"
-  ],
-  academy_grad: [
-    "",
-    "Oh ho? You actually completed the Graduation Checklist?! I didn't think a NEET like you had the attention span!",
-    "I guess my divine guidance is just *that* good! You're officially a certified trader now. Go post an Ad on the live board! ^^Praise Aqua!^^"
-  ]
-};
+interface GuideStep {
+  title: string;
+  body: string;
+  actionLabel?: string;
+  actionChannel?: string;
+  actionEvent?: string;
+}
+
+const GUEST_STEPS: GuideStep[] = [
+  {
+    title: "Market Tags & Momentum",
+    body: "Listen up, you shut-in NEET! Raw numbers don't tell the whole story. Look at the status tags. A 100k unit marked with !!Dropping!! or !!Black Market!! is a trap. Always check trajectory before offering!",
+    actionLabel: "View Value List",
+    actionChannel: "value-list"
+  },
+  {
+    title: "The Smart Parser",
+    body: "Don't manually search for every single unit like a peasant. Open the Analyzer and click the ^^Wand^^ (or press Ctrl+V anywhere) to paste raw Discord trade text. The parser builds the offer for you!",
+    actionLabel: "Open Calculator",
+    actionEvent: "open-analyzer"
+  },
+  {
+    title: "Algorithmic Forecasting",
+    body: "Inside the Analyzer, check the Short-Term and Long-Term flip scores. It mathematically weights unit demand and liquidity so you know if you are winning or getting completely scammed!",
+    actionLabel: "Open Calculator",
+    actionEvent: "open-analyzer"
+  },
+  {
+    title: "Academy & Mock Simulator",
+    body: "Want to test your trade judgment without risking real units? Go to the Academy to practice against real market scenarios! Don't come crying to me when you make a bad trade!",
+    actionLabel: "Go to Academy",
+    actionChannel: "tutorial"
+  }
+];
+
+const AUTH_STEPS: GuideStep[] = [
+  {
+    title: "Your Vault & Wishlist",
+    body: "You're officially registered! Head over to ^^My Inventory^^ to record your collection. Use the Pin icon to lock high-value units so you don't accidentally clear them in trades.",
+    actionLabel: "Open My Inventory",
+    actionChannel: "inventory"
+  },
+  {
+    title: "Post Live Trading Ads",
+    body: "Hit ^^Create Ad^^ on the Trading Board. You can list specific trades, take open offers, or showcase your entire public vault. Ads auto-expire so dead trades don't clutter the board.",
+    actionLabel: "Go to Trading Board",
+    actionChannel: "trading-ads"
+  },
+  {
+    title: "Trader Reputation & Rank",
+    body: "Your profile tracks your public reputation. Traders can upvote or downvote your listings based on fair pricing and communication. Don't be a scammer, or you'll get exiled! ^^Praise Aqua!^^",
+    actionLabel: "View My Profile",
+    actionChannel: "profile"
+  }
+];
 
 export function AquaGuideOverlay({ 
   guideState, 
-  onEndGuide 
+  onNext, 
+  onPrev, 
+  onEndGuide,
+  isAnalyzerOpen = false
 }: { 
   guideState: { type: GuideType; step: number }; 
-  onEndGuide: () => void 
+  onNext: (maxSteps: number) => void;
+  onPrev: () => void;
+  onEndGuide: () => void;
+  isAnalyzerOpen?: boolean;
 }) {
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   const [boxShake, setBoxShake] = useState(false);
 
   const fullTextRef = useRef("");
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    setIsMinimized(false);
+  }, [guideState.type, guideState.step]);
+
+  useEffect(() => {
     if (!guideState.type || guideState.step === 0) return;
 
-    if (guideState.type === "main" && guideState.step === 3) {
-      setBoxShake(true);
-      setTimeout(() => setBoxShake(false), 500);
-    }
-
-    const fullText = AQUA_DIALOGUES[guideState.type]?.[guideState.step] || "";
+    const steps = guideState.type === "guest_tour" ? GUEST_STEPS : AUTH_STEPS;
+    const fullText = steps[guideState.step - 1]?.body || "";
+    
     fullTextRef.current = fullText;
     setDisplayedText("");
     setIsTyping(true);
+    setBoxShake(true);
+    setTimeout(() => setBoxShake(false), 400);
 
     if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
 
@@ -66,7 +119,17 @@ export function AquaGuideOverlay({
     };
   }, [guideState]);
 
-  const handleSkipOrFastForward = () => {
+  if (!guideState.type || (guideState.type !== "guest_tour" && guideState.type !== "auth_tour")) {
+    return null;
+  }
+
+  const steps = guideState.type === "guest_tour" ? GUEST_STEPS : AUTH_STEPS;
+  const currentStepData = steps[guideState.step - 1] || steps[0];
+  const totalSteps = steps.length;
+  const isLastStep = guideState.step >= totalSteps;
+
+  const handleSkipTyping = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (isTyping) {
       if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
       setDisplayedText(fullTextRef.current);
@@ -74,11 +137,31 @@ export function AquaGuideOverlay({
     }
   };
 
-  const handleEndMainGuide = () => {
-    if (guideState.type === "main" && guideState.step === 4) {
-      window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'tutorial' }));
-      window.dispatchEvent(new CustomEvent("set-tutorial-tab", { detail: "sandbox" }));
+  const handleAction = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    triggerHaptic('light');
+    if (currentStepData.actionChannel) {
+      window.document.dispatchEvent(new CustomEvent('navigate', { detail: currentStepData.actionChannel }));
+    } else if (currentStepData.actionEvent) {
+      window.dispatchEvent(new Event(currentStepData.actionEvent));
     }
+  };
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    triggerHaptic('light');
+    onNext(totalSteps);
+  };
+
+  const handlePrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    triggerHaptic('light');
+    onPrev();
+  };
+
+  const handleDismiss = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    triggerHaptic('light');
     onEndGuide();
   };
 
@@ -101,28 +184,8 @@ export function AquaGuideOverlay({
     });
   };
 
-  if (!guideState.type) return null;
-
-  const isMainStep4 = guideState.type === "main" && guideState.step === 4;
-
-  let actionPrompt = "";
-  if (!isTyping && guideState.type === "main") {
-    if (guideState.step === 1) actionPrompt = "Click 'Value List' in the sidebar";
-    if (guideState.step === 2) actionPrompt = "Click a unit card to add it";
-    if (guideState.step === 3) actionPrompt = "Open the Analyzer";
-  }
-  const needsInteraction = !!actionPrompt;
-
-  let dynamicAlignment = "items-center md:items-end pb-0 md:pb-12";
-  if (guideState.type === "main") {
-    if (guideState.step === 1) {
-      dynamicAlignment = "items-start pt-14 md:items-end md:pb-12";
-    } else if (guideState.step === 2) {
-      dynamicAlignment = "items-end pb-[90px] md:pb-12";
-    } else {
-      dynamicAlignment = "items-center md:items-end md:pb-12";
-    }
-  }
+  // Keep widget above bottom nav on mobile, move it higher if analyzer is open
+  const mobilePosClass = isAnalyzerOpen ? "bottom-[100px]" : "bottom-[90px]";
 
   return (
     <>
@@ -135,12 +198,6 @@ export function AquaGuideOverlay({
         }
         .animate-text-shake { display: inline-block; animation: textShake 0.15s infinite; }
 
-        @keyframes aquaFloat {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-6px) rotate(1deg); }
-        }
-        .animate-aqua-float { animation: aquaFloat 4s ease-in-out infinite; }
-
         @keyframes boxShake {
           0%, 100% { transform: translateX(0); }
           20% { transform: translateX(-4px); }
@@ -151,92 +208,137 @@ export function AquaGuideOverlay({
         .animate-box-shake { animation: boxShake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
       `}</style>
 
-      {/* Screen Dimming Overlay */}
-      <div 
-        className={`fixed inset-0 z-[99998] transition-all duration-300 ${
-          needsInteraction 
-            ? 'pointer-events-none bg-black/40 backdrop-blur-sm' 
-            : 'pointer-events-auto bg-black/60 backdrop-blur-sm'
-        }`} 
-        onClick={handleSkipOrFastForward} 
-      />
-
-      <div className={`fixed inset-0 z-[100005] pointer-events-none flex justify-center px-3 sm:px-4 md:px-8 transition-all duration-300 ease-out ${dynamicAlignment}`}>
-        <div className={`relative w-full max-w-[700px] flex items-center md:items-end drop-shadow-2xl animate-fade-in ${needsInteraction ? 'pointer-events-none' : 'pointer-events-auto'}`} onClick={handleSkipOrFastForward}>
-
-           <div className="hidden md:block relative z-20 pointer-events-none animate-aqua-float shrink-0 -mr-6 -mb-2">
+      {/* Floating Corner Widget */}
+      <aside 
+        aria-label="Aqua Companion Guide"
+        className={`fixed ${mobilePosClass} md:bottom-6 right-3 md:right-6 z-[100010] max-w-[420px] w-[calc(100vw-24px)] md:w-[420px] transition-all duration-300 ease-out animate-slide-up pointer-events-auto`}
+      >
+        {isMinimized ? (
+          /* Minimized State */
+          <div className="bg-card border border-border p-3 rounded-[8px] flex items-center justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+            <div className="flex items-center gap-3">
               <img 
-                 src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" 
-                 className="w-[220px] object-contain drop-shadow-[10px_10px_20px_rgba(0,0,0,0.5)]"
-                 alt="Aqua"
+                src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" 
+                alt="Aqua"
+                className="w-8 h-8 rounded-full border border-border object-cover bg-popover shadow-sm shrink-0" 
               />
-           </div>
-
-           <div 
-             className={`bg-card border border-border p-4 sm:p-5 md:p-8 rounded-[8px] flex-1 relative z-10 w-full min-h-[140px] flex flex-col transition-all duration-150 pointer-events-auto shadow-[0_20px_60px_rgba(0,0,0,0.8)] ${boxShake ? 'animate-box-shake ring-2 ring-destructive/50' : ''}`}
-           >
-              <div className="absolute -top-3.5 left-5 md:left-6 bg-popover border border-border px-3 py-1 rounded-[4px] shadow-lg flex items-center gap-2 z-20">
-                <span className={`font-bold text-[13px] md:text-[14px] tracking-wide ${boxShake ? 'text-destructive' : 'text-foreground'}`}>
-                  Goddess Aqua
-                </span>
-                <span className="bg-primary text-primary-foreground text-[9px] px-1.5 py-0.5 rounded-[2px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                  <Sparkles className="w-2.5 h-2.5" /> SYSTEM
-                </span>
+              <div className="flex flex-col">
+                <span className="text-[12px] font-bold text-foreground leading-none">Goddess Aqua</span>
+                <span className="text-[10px] text-muted-foreground mt-0.5">Step {guideState.step} of {totalSteps}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button onClick={() => setIsMinimized(false)} className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-[11px] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer">
+                Expand
+              </button>
+              <button onClick={handleDismiss} className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Expanded State */
+          <div className={`bg-card border border-border rounded-[10px] shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col relative overflow-hidden ${boxShake ? 'animate-box-shake ring-1 ring-primary' : ''}`} onClick={handleSkipTyping}>
+            
+            {/* Header */}
+            <div className="px-4 py-3 bg-popover border-b border-border flex items-center justify-between relative z-20">
+              <div className="flex items-center gap-2.5">
+                <div className="relative">
+                  <img 
+                    src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" 
+                    alt="Aqua"
+                    className="w-8 h-8 rounded-full border border-border object-cover bg-card shadow-sm shrink-0" 
+                  />
+                  <span className="w-2.5 h-2.5 bg-[#23a559] border border-popover rounded-full absolute bottom-0 right-0" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[13px] font-black text-foreground leading-tight">Goddess Aqua</span>
+                  <span className="text-[10px] font-mono text-muted-foreground">Step {guideState.step} / {totalSteps}</span>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2.5 mb-2 md:hidden pt-1">
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setIsMinimized(true); }}
+                  className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground hover:text-foreground rounded-[4px] hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none"
+                >
+                  Collapse
+                </button>
+                <button
+                  onClick={handleDismiss}
+                  className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[4px] transition-colors cursor-pointer focus-visible:outline-none"
+                  title="End Tour"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content Body */}
+            <div className="flex flex-col md:flex-row items-stretch relative z-10 bg-card">
+              {/* Character Art (Left side, hidden on small mobile) */}
+              <div className="hidden md:flex w-[120px] shrink-0 border-r border-border/50 items-end justify-center bg-popover/30 relative">
                 <img 
-                  src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" 
-                  className="w-8 h-8 rounded-full border border-border object-cover bg-popover shadow-sm"
-                  alt="Aqua"
+                   src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" 
+                   className="w-[140px] max-w-none object-contain absolute bottom-0 -left-4 pointer-events-none drop-shadow-md"
+                   alt="Aqua"
                 />
-                <span className="text-[11px] font-bold text-foreground uppercase tracking-widest">Goddess Aqua</span>
               </div>
 
-              <p className="text-foreground/90 text-[13px] sm:text-[14px] md:text-[15px] leading-[1.6] md:leading-[1.7] min-h-[60px] pt-1 select-none font-medium">
-                {renderDialogue(displayedText)}
-                {isTyping && <span className="inline-block w-1.5 h-3.5 md:h-4 bg-primary animate-pulse ml-1 align-middle" />}
-              </p>
+              {/* Text & Controls (Right side) */}
+              <div className="flex-1 p-4 md:p-5 flex flex-col gap-3 min-w-0">
+                <div className="flex flex-col gap-1">
+                  <h4 className="text-[14px] font-black text-foreground tracking-tight flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-primary" /> {currentStepData.title}
+                  </h4>
+                  <p className="text-[13px] text-muted-foreground leading-relaxed font-medium pt-0.5 min-h-[60px]">
+                    {renderDialogue(displayedText)}
+                    {isTyping && <span className="inline-block w-1.5 h-3.5 bg-primary animate-pulse ml-1 align-middle" />}
+                  </p>
+                </div>
 
-              <div className="mt-4 pt-3 border-t border-border flex items-center justify-between gap-2">
-                <div className="flex-1 flex items-center gap-2 min-w-0">
-
-                  {isTyping && (
-                    <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5 animate-pulse cursor-pointer truncate">
-                      <Zap className="w-3.5 h-3.5 text-primary shrink-0" /> 
-                      <span className="truncate">Click to skip...</span>
-                    </span>
-                  )}
-
-                  {needsInteraction && !isTyping && (
-                    <div className="flex items-center gap-1.5 text-[#FAA61A] text-[11px] sm:text-[12.5px] font-bold tracking-wide animate-pulse truncate">
-                      <MousePointer2 className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">{actionPrompt}...</span>
-                    </div>
-                  )}
-
-                  {!needsInteraction && !isTyping && (
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleEndMainGuide(); }} 
-                      className="group flex items-center gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 px-4 rounded-[4px] transition-all duration-150 active:scale-95 shadow-sm border border-transparent focus-visible:outline-none animate-fade-in shrink-0"
+                {/* Quick Action Button */}
+                <div className="w-full mt-1">
+                  {currentStepData.actionLabel && !isTyping && (
+                    <button
+                      onClick={handleAction}
+                      className="w-full py-2.5 px-3 rounded-[6px] bg-muted hover:bg-popover border border-border text-foreground text-[11px] font-bold uppercase tracking-wider flex items-center justify-between transition-colors cursor-pointer shadow-sm focus-visible:outline-none"
                     >
-                      <span className="text-[12.5px] sm:text-[14px]">{isMainStep4 || guideState.type === "academy_grad" ? "Got it!" : "Continue"}</span>
-                      <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      <span>{currentStepData.actionLabel}</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 text-primary" />
                     </button>
+                  )}
+                  {isTyping && (
+                    <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5 animate-pulse cursor-pointer h-[38px]">
+                      <Zap className="w-3.5 h-3.5 text-primary" /> Click anywhere to skip typing...
+                    </span>
                   )}
                 </div>
 
-                <button 
-                  onClick={(e) => { e.stopPropagation(); onEndGuide(); }} 
-                  className="text-muted-foreground hover:text-foreground text-[10px] sm:text-[11.5px] font-bold uppercase tracking-wider transition-colors px-2.5 py-1 rounded-[4px] hover:bg-muted focus-visible:outline-none shrink-0"
-                >
-                  Skip
-                </button>
-              </div>
+                {/* Navigation Controls */}
+                <div className="flex items-center justify-between pt-3 border-t border-border mt-1">
+                  <button
+                    onClick={handlePrev}
+                    disabled={guideState.step <= 1}
+                    className="px-3 py-1.5 rounded-[4px] text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer focus-visible:outline-none flex items-center gap-1"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" /> Back
+                  </button>
 
-           </div>
-        </div>
-      </div>
+                  <button
+                    onClick={handleNext}
+                    className="px-4 py-1.5 rounded-[4px] bg-primary text-primary-foreground hover:bg-primary/90 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm transition-colors cursor-pointer focus-visible:outline-none active:scale-95"
+                  >
+                    <span>{isLastStep ? "Finish" : "Next"}</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        )}
+      </aside>
     </>
   );
 }

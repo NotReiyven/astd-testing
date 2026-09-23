@@ -208,11 +208,13 @@ export function TradeAnalyzerPanel({
     touchStartYRef.current = null;
   };
 
-  const isMainStep3 = guideState?.type === "main" && guideState?.step === 3;
-  const isMainStep4 = guideState?.type === "main" && guideState?.step === 4;
-  const isWandTarget = guideState?.type === "dictionary" || guideState?.type === "advanced";
-  const isClearTarget = guideState?.type === "management";
-  const isElevated = isMainStep4 || guideState?.type === "advanced" || guideState?.type === "dictionary" || guideState?.type === "management";
+  // Explicitly tie the visual pulses to the Guest Tour steps
+  const isGuestStep2 = guideState?.type === "guest_tour" && guideState?.step === 2; // Smart Parser Wand
+  const isGuestStep3 = guideState?.type === "guest_tour" && guideState?.step === 3; // Analyzer Box
+  
+  const isWandTarget = isGuestStep2;
+  const isClearTarget = false; // We can re-enable this later if we add a reset step
+  const isElevated = isGuestStep2 || isGuestStep3;
 
   const renderCalculatorContent = () => (
     <>
@@ -250,10 +252,14 @@ export function TradeAnalyzerPanel({
             )}
 
             <button 
-              onClick={() => { triggerHaptic('light'); setSmartMenuOpen(!smartMenuOpen); setIsPresetsOpen(false); startGuide("dictionary"); }} 
+              onClick={() => { 
+                triggerHaptic('light'); 
+                setSmartMenuOpen(!smartMenuOpen); 
+                setIsPresetsOpen(false); 
+              }} 
               className={`flex-shrink-0 w-11 h-11 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
                 isWandTarget 
-                  ? "bg-primary text-primary-foreground border-primary z-[100005] animate-pulse" 
+                  ? "bg-primary text-primary-foreground border-primary z-[100005] animate-pulse shadow-[0_0_15px_var(--primary)]" 
                   : smartMenuOpen 
                     ? "bg-primary text-primary-foreground border-primary" 
                     : "bg-muted border-border text-muted-foreground hover:bg-card hover:text-foreground"
@@ -290,7 +296,7 @@ export function TradeAnalyzerPanel({
             </button>
             <button 
               onClick={handleShare} 
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-2 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-colors active:scale-95 text-foreground focus-visible:outline-none relative z-35 pointer-events-auto min-h-[44px] md:min-h-0 cursor-pointer" 
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-2.5 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-colors active:scale-95 text-foreground focus-visible:outline-none relative z-35 pointer-events-auto min-h-[44px] md:min-h-0 cursor-pointer" 
               style={{ background: copied ? "#23a559" : "var(--muted)", border: "1px solid var(--border)", fontFamily: "var(--font-sans)" }}
               title="Share formatted trade string"
             >
@@ -299,7 +305,7 @@ export function TradeAnalyzerPanel({
             </button>
             <button 
               onClick={handleAdvertise} 
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-2.5 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-colors active:scale-95 text-primary-foreground bg-primary hover:bg-primary/90 focus-visible:outline-none border border-primary relative z-35 pointer-events-auto shadow-sm min-h-[44px] md:min-h-0 cursor-pointer" 
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-3 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-colors active:scale-95 text-primary-foreground bg-primary hover:bg-primary/90 focus-visible:outline-none border border-primary relative z-35 pointer-events-auto shadow-sm min-h-[44px] md:min-h-0 cursor-pointer" 
               title="Post this trade as an advertisement"
             >
               <Megaphone className="w-4 h-4 md:w-3.5 md:h-3.5" />
@@ -394,7 +400,7 @@ export function TradeAnalyzerPanel({
           )}
 
           <TradeSummaryBox 
-            isMainStep4={isMainStep4}
+            isAnalyzerTarget={isGuestStep3}
             giveTotal={giveTotal}
             getTotal={getTotal}
             givePercent={givePercent}
@@ -426,7 +432,7 @@ export function TradeAnalyzerPanel({
                   window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: card.name, type: "give" } }));
                 }} 
                 pinnedIds={new Set(pinnedIds)}
-                onTogglePin={(id) => { togglePin("give", id); startGuide("management"); }}
+                onTogglePin={(id) => { togglePin("give", id); }}
                 onInputFocus={() => setIsInputFocused(true)}
                 onInputBlur={() => setIsInputFocused(false)}
               />
@@ -458,7 +464,7 @@ export function TradeAnalyzerPanel({
                 window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: card.name, type: "get" } }));
               }} 
               pinnedIds={new Set(pinnedIds)}
-              onTogglePin={(id) => { togglePin("get", id); startGuide("management"); }}
+              onTogglePin={(id) => { togglePin("get", id); }}
               onInputFocus={() => setIsInputFocused(true)}
               onInputBlur={() => setIsInputFocused(false)}
             />
@@ -484,7 +490,7 @@ export function TradeAnalyzerPanel({
         <div 
           className={`fixed left-0 right-0 bottom-0 bg-card border-t border-border transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer pb-safe
           ${isOpen ? 'translate-y-[100%] opacity-0 pointer-events-none z-[80]' : 'bottom-0 translate-y-0 opacity-100'} 
-          ${isMainStep3 && !isOpen ? '!z-[100005] ring-2 ring-primary shadow-lg' : 'z-[80]'}`}
+          ${isElevated && !isOpen ? '!z-[100005] ring-2 ring-primary shadow-lg' : 'z-[80]'}`}
           onClick={openSheet}
         >
           <div className="flex items-center justify-between px-4 py-3 pb-safe">

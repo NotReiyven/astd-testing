@@ -66,6 +66,23 @@ export default function App() {
   const { bootStage, isMobile } = useAppBoot();
   const hasRoutedBootChannel = useRef(false);
 
+  const { 
+    guideState, 
+    setGuideState, 
+    completedGuides, 
+    setCompletedGuides, 
+    startGuide, 
+    nextStep,
+    prevStep,
+    endGuide 
+  } = useGuideSystem({ 
+    setActiveChannel, 
+    setIsRosterOpen, 
+    setIsAnalyzerOpen, 
+    setTutorialTab, 
+    bootStage 
+  });
+
   // Custom Boot Channel Routing
   useEffect(() => {
     if (bootStage === 'complete' && !hasRoutedBootChannel.current) {
@@ -75,6 +92,15 @@ export default function App() {
       }
     }
   }, [bootStage, bootChannel, activeChannel, setActiveChannel]);
+
+  // Guest Tour listener triggered from WelcomeModal
+  useEffect(() => {
+    const handleStartGuest = () => {
+      startGuide("guest_tour", true);
+    };
+    window.addEventListener("start-guest-tour", handleStartGuest);
+    return () => window.removeEventListener("start-guest-tour", handleStartGuest);
+  }, [startGuide]);
 
   useEffect(() => {
     if (window.innerWidth < 768) {
@@ -104,10 +130,6 @@ export default function App() {
     }
   }, [profile]);
 
-  const { guideState, setGuideState, completedGuides, setCompletedGuides, startGuide, endGuide } = useGuideSystem({ 
-    setActiveChannel, setIsRosterOpen, setIsAnalyzerOpen, setTutorialTab, bootStage 
-  });
-
   const { toast, academyToast } = useGlobalEvents({ 
     giveItems, getItems, pinnedIds, completedGuides, setCompletedGuides, 
     setActiveChannel, setIsRosterOpen, setIsAnalyzerOpen, setTutorialTab, setGuideState 
@@ -132,7 +154,7 @@ export default function App() {
 
   const handleChannelChange = useCallback((id: string) => {
     setActiveChannel(id);
-    if (id === "value-list" && guideState.type === "main" && guideState.step === 1) {
+    if (id === "value-list" && guideState.type === "guest_tour" && guideState.step === 1) {
       setGuideState(prev => ({ ...prev, step: 2 }));
       if (window.innerWidth < 768) setIsRosterOpen(false);
     }
@@ -149,20 +171,22 @@ export default function App() {
 
   const handleToggleAnalyzer = useCallback(() => {
     setIsAnalyzerOpen(prev => !prev);
-    if (guideState.type === "main" && guideState.step === 3) setGuideState(prev => ({ ...prev, step: 4 }));
+    if (guideState.type === "guest_tour" && guideState.step === 2) {
+      setGuideState(prev => ({ ...prev, step: 3 }));
+    }
   }, [setIsAnalyzerOpen, guideState, setGuideState]);
 
   const currentChannelInfo = CHANNEL_INFO[activeChannel] || { title: activeChannel, subtitle: "" };
 
-  const isMainStep1 = guideState.type === "main" && guideState.step === 1;
-  const isMainStep2 = guideState.type === "main" && guideState.step === 2;
-  const isMainStep3 = guideState.type === "main" && guideState.step === 3;
-  const isMainStep4 = guideState.type === "main" && guideState.step === 4;
+  const isGuestStep1 = guideState.type === "guest_tour" && guideState.step === 1;
+  const isGuestStep2 = guideState.type === "guest_tour" && guideState.step === 2;
+  const isGuestStep3 = guideState.type === "guest_tour" && guideState.step === 3;
+  const isGuestStep4 = guideState.type === "guest_tour" && guideState.step === 4;
 
-  const sidebarZ = isMainStep1 ? "!z-[100000] shadow-[15px_0_50px_rgba(0,0,0,0.8)] relative" : "z-50";
-  const mainContentZ = isMainStep2 ? "!z-[100000] relative shadow-[0_0_50px_rgba(0,0,0,0.8)]" : "z-auto";
-  const calcHeaderZ = isMainStep3 ? "!z-[99999] shadow-[0_0_50px_rgba(0,0,0,0.8)] relative" : "z-50";
-  const analyzerZ = isMainStep4 ? "!z-[100000] shadow-[-20px_0_50px_rgba(0,0,0,0.8)]" : "z-50";
+  const sidebarZ = isGuestStep1 ? "!z-[100000] shadow-[15px_0_50px_rgba(0,0,0,0.8)] relative" : "z-50";
+  const mainContentZ = isGuestStep2 ? "!z-[100000] relative shadow-[0_0_50px_rgba(0,0,0,0.8)]" : "z-auto";
+  const calcHeaderZ = isGuestStep3 ? "!z-[99999] shadow-[0_0_50px_rgba(0,0,0,0.8)] relative" : "z-50";
+  const analyzerZ = isGuestStep4 ? "!z-[100000] shadow-[-20px_0_50px_rgba(0,0,0,0.8)]" : "z-50";
 
   if (bootStage === 'complete' && profile?.role === 'banned') {
     return (
@@ -216,13 +240,21 @@ export default function App() {
           <WelcomeModal />
           <HistoryModal />
           <ExternalLinkModal />
-          <AquaGuideOverlay guideState={guideState} onEndGuide={endGuide} />
+          
+          <AquaGuideOverlay 
+            guideState={guideState} 
+            onNext={nextStep}
+            onPrev={prevStep}
+            onEndGuide={endGuide} 
+            isAnalyzerOpen={isAnalyzerOpen}
+          />
+
           <MiniProfilePopout />
 
           {isRosterOpen && <div className="md:hidden fixed inset-0 bg-black/80 z-40" onClick={() => setIsRosterOpen(false)} />}
 
           <div 
-            className={`fixed bottom-[140px] md:bottom-8 left-1/2 -translate-x-1/2 pointer-events-none transition-all flex flex-col gap-2 items-center ${guideState.type ? 'z-[100002]' : 'z-[9999]'}`}
+            className="fixed bottom-[140px] md:bottom-8 left-1/2 -translate-x-1/2 pointer-events-none transition-all flex flex-col gap-2 items-center z-[9999]"
           >
             {academyToast && (
               <div className="flex items-center gap-3 px-5 py-3.5 rounded-[4px] border border-border bg-card shadow-sm">
@@ -259,7 +291,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className={`flex-1 flex flex-col min-w-0 bg-background md:pb-0 pb-[84px] ${mainContentZ}`}>
+          <div className={`flex-1 flex flex-col min-w-0 bg-background md:pb-0 pb-[84px] z-10 ${mainContentZ}`}>
             <div className={`relative ${calcHeaderZ}`}>
               <SyncBanner />
               <TopBar 
@@ -270,7 +302,7 @@ export default function App() {
                 startGuide={(type) => startGuide(type, true)}
                 handleToggleAnalyzer={handleToggleAnalyzer}
                 isAnalyzerOpen={isAnalyzerOpen}
-                isMainStep3={isMainStep3}
+                isMainStep3={isGuestStep2}
                 activeItemsCount={activeItemsCount}
                 isDictionaryActive={isDictionaryActive}
               />
