@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/data/units.ts
+// ================================================
+
 import { MasterUnit } from "../types";
 
 export interface UnitMeta {
@@ -11,8 +15,8 @@ export interface UnitMeta {
 export const UNIT_METADATA: Record<string, UnitMeta> = {
   // ── Top S Tier ──
   "demise": { subtitle: "Rem Shinigami", aliases: ["rem shinigami"], notice: "Obtainable from winning the VOTW contest. 3 Copies exist.", obtainability: "UNOB" },
-  "galaxy-girl": { subtitle: "Sasaki Miyo", aliases: ["sasaki miyo", "fem gojo", "female gojo"], notice: "Female Gojo reskin, GAME contributor unit.", obtainability: "UNOB" },
-  "beardcutter": { subtitle: "Goblin Slayer", aliases: ["goblin slayer", "brick slayer", "gob", "gob slayer"], notice: "Given out during Pucci update for Wiki workers.", obtainability: "UNOB" },
+  "galaxy-girl": { subtitle: "Sasaki Miyo", aliases: ["sasaki miyo", "fem gojo", "female gojo", "gg"], notice: "Female Gojo reskin, GAME contributor unit.", obtainability: "UNOB" },
+  "beardcutter": { subtitle: "Goblin Slayer", aliases: ["goblin slayer", "brick slayer", "gob", "gob slayer", "goblin"], notice: "Given out during Pucci update for Wiki workers.", obtainability: "UNOB" },
   "ultra-legendary-borul-alternative": { name: "Ultra Legendary Borul (Alternative)", subtitle: "Ultra DBZ Broly", aliases: ["ultra legendary borul", "ultra dbz broly", "ultra broly", "udbz", "ultra dbz", "LSSJ Broly", "ul-borul-alt"], obtainability: "UNOB" },
   "death": { subtitle: "Ryuk", aliases: ["ryuk"], notice: "Obtainable from winning the VOTW contest.", obtainability: "UNOB" },
   "two-hands": { subtitle: "Revy", aliases: ["revy"], notice: "Obtainable by being level 150 in main server.", obtainability: "UNOB" },
@@ -72,7 +76,7 @@ export const UNIT_METADATA: Record<string, UnitMeta> = {
   "martial-artist": { subtitle: "Jin Mori", aliases: ["jin mori", "jinmori", "mori"], obtainability: "UNOB" },
   "spade-dark": { subtitle: "Dark Ace", aliases: ["dark ace", "dace"], obtainability: "UNOB" },
   "heaven-zio": { subtitle: "Heaven DIO", aliases: ["heaven dio", "hdio", "h dio"], obtainability: "UNOB" },
-  "oni-princess-5": { name: "Oni Princess (5*)", subtitle: "Yamato 5*", aliases: ["yamato 5*", "yamato 5 star", "yama 5"], obtainability: "UNOB" },
+  "oni-princess-5": { name: "Oni Princess (5*)", subtitle: "Yamato 5*", aliases: ["yamato 5*", "yamato 5 star", "yama 5", "yamato 5"], obtainability: "UNOB" },
 
   // ── Mid A Tier ──
   "ghost-girl": { subtitle: "Perona", aliases: ["perona"], obtainability: "UNOB" },
@@ -408,8 +412,8 @@ export const UNIT_METADATA: Record<string, UnitMeta> = {
   "5-pure": { name: "5 (Pure)", subtitle: "Capsule", aliases: [], obtainability: "UNOB" },
 
  // ── Gamepasses & Mounts ──
-  "3x-gamepass": { name: "3x GamePass", subtitle: "Gamepass", aliases: ["3x", "speed gamepass", "3x speed"], obtainability: "OBT" },
-  "star-pass": { name: "Star Pass", subtitle: "Gamepass", aliases: ["starpass"], obtainability: "OBT" },
+  "3x-gamepass": { name: "3x GamePass", subtitle: "Gamepass", aliases: ["3x", "speed gamepass", "3x speed", "speed"], obtainability: "OBT" },
+  "star-pass": { name: "Star Pass", subtitle: "Gamepass", aliases: ["starpass", "star pass"], obtainability: "OBT" },
   "v-i-p-gamepass": { name: "V.I.P GamePass", subtitle: "Gamepass", aliases: ["vip"], obtainability: "OBT" },
   "nimbus-unit-mount-gamepass": { name: "Nimbus Unit Mount GamePass", subtitle: "Gamepass", aliases: ["cloud mount", "nimbus"], obtainability: "OBT" },
   "frieza-pod-unit-mount-gamepass": { name: "Frieza Pod Unit Mount GamePass", subtitle: "Gamepass", aliases: ["pod mount", "frieza pod"], obtainability: "OBT" },
@@ -429,7 +433,6 @@ export const UNIT_METADATA: Record<string, UnitMeta> = {
   "50-gems-bundle": { name: "50 Gems Bundle", subtitle: "Bundle", aliases: ["50 gems"], obtainability: "UNOB" },
 };
 
-// Generates an initial lightweight fallback list so child components never break on mount
 export const ALL_UNITS: MasterUnit[] = Object.entries(UNIT_METADATA).map(([id, meta]) => ({
   id,
   name: meta.name || id.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase()),

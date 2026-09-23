@@ -15,6 +15,7 @@ import { useAuthStore } from "../../../../store/useAuthStore";
 import { useInventoryStore } from "../../../../store/useInventoryStore";
 import { HighlightText, NoticeTooltip, JargonWrap, StatusIcon } from "../../shared/Formatters";
 import { GridValueDisplay } from "./GridValueDisplay";
+import { useToastStore } from "../../../../store/useToastStore";
 
 export function GridStatusBadge({ status }: { status: string }) {
   const c = GRID_STATUS_CFG[status as keyof typeof GRID_STATUS_CFG];
@@ -110,6 +111,7 @@ export const TierGridCard = memo(function TierGridCard({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   const addCard = useTradeStore(state => state.addCard);
   const openModal = useHistoryModalStore(state => state.openModal);
@@ -119,12 +121,13 @@ export const TierGridCard = memo(function TierGridCard({
 
   const handleSaveToInventory = async () => {
     if (!profile) {
-      alert("Please log in with Discord first to save items to your inventory.");
+      useToastStore.getState().addToast("Please log in with Discord first to save items to your inventory.", "warning");
       return;
     }
     setIsSaving(true);
     try {
       await addOrUpdateUnit(profile.id, unit.id, 1);
+      useToastStore.getState().addToast(`Added ${unit.name} to Vault`, "success");
     } finally {
       setIsSaving(false);
       setMenuOpen(false);
@@ -200,8 +203,9 @@ export const TierGridCard = memo(function TierGridCard({
               alt={unit.name} 
               loading="lazy" 
               decoding="async"
+              onLoad={() => setImgLoaded(true)}
               onError={(e) => handleImageError(e, unit.id)}
-              className="absolute inset-0 w-full h-full object-cover z-10 bg-transparent" 
+              className={`absolute inset-0 w-full h-full object-cover z-10 bg-transparent transition-opacity duration-500 ease-out ${imgLoaded ? 'opacity-100' : 'opacity-0'}`} 
               style={{ objectPosition: "center 15%" }} 
             />
 
@@ -217,7 +221,7 @@ export const TierGridCard = memo(function TierGridCard({
 
             {isSelected && (
               <div className="absolute top-2 right-2 z-50 bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center shadow-md">
-                <Check className="w-4 h-4 stroke-[3]" />
+                <Check className="w-4 h-4 stroke-[3]"/>
               </div>
             )}
           </div>
@@ -226,7 +230,7 @@ export const TierGridCard = memo(function TierGridCard({
             <div className="flex flex-col">
               <div className="flex items-start gap-2">
                 <h3 className="text-[13px] md:text-[15px] font-extrabold tracking-tight leading-snug flex-1 min-w-0 line-clamp-2 text-foreground">
-                  <HighlightText text={unit.name} query={searchQuery} />
+                  <HighlightText query={searchQuery} text={unit.name} />
                 </h3>
                 {unit.notice && <div className="mt-0.5 md:mt-1"><NoticeTooltip notice={unit.notice} /></div>}
               </div>
@@ -248,7 +252,7 @@ export const TierGridCard = memo(function TierGridCard({
 
             <div className="flex flex-col mt-auto pt-3 md:pt-4 w-full">
               <div className="pl-2 border-l-[3px] w-full min-w-0 mb-1" style={{ borderColor: tierColor }}>
-                <GridValueDisplay unit={unit} />
+                <GridValueDisplay unit={unit as GridUnit} />
               </div>
 
               <GridStatFooter rarity={unit.rarity} liquidity={unit.liquidity || "Average"} />
@@ -278,23 +282,23 @@ export const TierGridCard = memo(function TierGridCard({
                 </div>
               </div>
               <button onClick={() => setMenuOpen(false)} className="w-11 h-11 md:w-8 md:h-8 rounded-[4px] border border-transparent hover:border-border hover:bg-muted flex items-center justify-center text-muted-foreground shrink-0 focus-visible:outline-none">
-                <X className="w-6 h-6 md:w-4 md:h-4" />
+                <X className="w-6 h-6 md:w-4 md:h-4"/>
               </button>
             </div>
 
             <div className="flex flex-col gap-2">
               <button onClick={() => handleAdd("give")} className="w-full flex items-center justify-center gap-2 bg-[#FAA61A] hover:bg-[#d98b14] transition-colors text-white text-[13px] font-bold h-[44px] rounded-[4px] focus-visible:outline-none">
-                <ArrowUpCircle className="w-4 h-4" /> Add to 'You Give'
+                <ArrowUpCircle className="w-4 h-4"/> Add to 'You Give'
               </button>
               <button onClick={() => handleAdd("get")} className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/80 transition-colors text-primary-foreground text-[13px] font-bold h-[44px] rounded-[4px] focus-visible:outline-none">
-                <ArrowDownCircle className="w-4 h-4" /> Add to 'You Get'
+                <ArrowDownCircle className="w-4 h-4"/> Add to 'You Get'
               </button>
               <button onClick={handleSaveToInventory} disabled={isSaving} className="w-full flex items-center justify-center gap-2 bg-[#23a559] hover:bg-[#1f914e] disabled:opacity-50 transition-colors text-white text-[13px] font-bold h-[44px] rounded-[4px] focus-visible:outline-none">
-                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Package className="w-4 h-4" />} 
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Package className="w-4 h-4"/>} 
                 {isSaving ? "Saving..." : "Save to My Inventory"}
               </button>
               <button onClick={() => { setMenuOpen(false); openModal(unit.id); }} className="w-full flex items-center justify-center gap-2 bg-card hover:bg-muted transition-colors text-foreground border border-border text-[13px] font-bold h-[44px] rounded-[4px] mt-0.5 focus-visible:outline-none">
-                <History className="w-4 h-4" /> View Market History
+                <History className="w-4 h-4"/> View Market History
               </button>
             </div>
 

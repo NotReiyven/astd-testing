@@ -5,6 +5,9 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { TradeCard } from '../types';
+import DOMPurify from 'dompurify';
+import { get as getIdb, set as setIdb } from 'idb-keyval';
+import { useToastStore } from './useToastStore';
 
 export interface TradingAd {
   id: string;
@@ -62,7 +65,6 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
   },
 
   subscribeToAds: () => {
-    // 1. Subscribe to Trading Ads changes
     const adsChannel = supabase.channel('public:trading_ads')
       .on(
         'postgres_changes',
@@ -94,13 +96,11 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
         }
       ).subscribe();
 
-    // 2. Subscribe to Profile Status changes
     const profilesChannel = supabase.channel('public:profiles_status')
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'profiles' },
         (payload) => {
-          // Patch the status of the specific user across all their active ads
           set((state) => ({
             ads: state.ads.map(ad => 
               ad.user_id === payload.new.id 
@@ -111,7 +111,6 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
         }
       ).subscribe();
 
-    // Return cleanup function to unsubscribe from both
     return () => {
       supabase.removeChannel(adsChannel);
       supabase.removeChannel(profilesChannel);
@@ -129,7 +128,11 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
     payload.ad_type = adData.ad_type || adData.adType || 'standard';
     payload.give_items = adData.give_items || adData.giveItems || [];
     payload.get_items = adData.get_items || adData.getItems || [];
-    payload.note = adData.note || '';
+    
+    payload.note = DOMPurify.sanitize(adData.note || '', {
+      ALLOWED_TAGS: [], // Strip all HTML tags entirely
+      ALLOWED_ATTR: []
+    });
 
     const rawExpires = adData.expires_at || adData.expiresAt;
     if (rawExpires) {
@@ -139,6 +142,15 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
       const exp = new Date();
       exp.setHours(exp.getHours() + hours);
       payload.expires_at = exp.toISOString();
+    }
+
+    // OFFLINE QUEUE INTERCEPTION
+    if (!navigator.onLine) {
+      const queue: any[] = (await getIdb('astd_offline_ads')) || [];
+      queue.push(payload);
+      await setIdb('astd_offline_ads', queue);
+      useToastStore.getState().addToast("You're offline. Ad queued to post when connection is restored.", "warning");
+      return { error: null };
     }
 
     const { error } = await supabase.from('trading_ads').insert(payload);
@@ -156,6 +168,7 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
     if (error) {
       console.error("🚨 Error deleting ad:", error.message);
       set({ ads: currentAds });
+      useToastStore.getState().addToast("Failed to delete ad. Rate limit or DB error.", "error");
     }
   }
 }));

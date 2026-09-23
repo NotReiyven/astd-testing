@@ -5,6 +5,9 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
+import DOMPurify from 'dompurify';
+import { get as getIdb, set as setIdb } from 'idb-keyval';
+import { useToastStore } from './useToastStore';
 
 export interface AdComment {
   id: string;
@@ -151,19 +154,34 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
 
   postComment: async (adId, userProfile, content, parentId = null) => {
     if (containsPhishingOrLink(content)) {
-      alert("ACTION BLOCKED: External links, domains, and invite URLs are strictly prohibited to prevent phishing and scams.");
+      useToastStore.getState().addToast("External links and invite URLs are strictly prohibited to prevent scams.", "error");
       return false;
+    }
+
+    const cleanContent = DOMPurify.sanitize(content.trim(), {
+      ALLOWED_TAGS: [], // Strip all HTML tags entirely
+      ALLOWED_ATTR: []
+    });
+
+    if (!cleanContent) return false;
+
+    // OFFLINE QUEUE INTERCEPTION
+    if (!navigator.onLine) {
+      const queue: any[] = (await getIdb('astd_offline_comments')) || [];
+      queue.push({ adId, userProfile, content: cleanContent, parentId });
+      await setIdb('astd_offline_comments', queue);
+      useToastStore.getState().addToast("You're offline. Comment queued to post when connection is restored.", "info");
+      return true;
     }
 
     set({ isActionPending: true });
 
-    // 1. Create fake optimistic comment
     const fakeId = `temp-${Date.now()}`;
     const optimisticComment: AdComment = {
       id: fakeId,
       ad_id: adId,
       user_id: userProfile.id,
-      content: content.trim(),
+      content: cleanContent,
       created_at: new Date().toISOString(),
       parent_id: parentId,
       profiles: {
@@ -174,29 +192,24 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
       }
     };
 
-    // 2. Inject immediately
     set(state => ({ comments: [...state.comments, optimisticComment] }));
 
-    // 3. Sync with DB
     const { data, error } = await supabase.from('ad_comments').insert({
       ad_id: adId,
       user_id: userProfile.id,
-      content: content.trim(),
+      content: cleanContent,
       parent_id: parentId
     }).select('id').single();
     
     if (error) {
-      // Rollback on fail
       set(state => ({ 
         comments: state.comments.filter(c => c.id !== fakeId),
         isActionPending: false
       }));
-      console.error("🚨 POST COMMENT FAILED:", error.message);
-      alert(`FAILED TO POST COMMENT:\n${error.message}`);
+      useToastStore.getState().addToast(error.message, "error");
       return false;
     }
 
-    // Replace fake ID with real DB ID silently
     set(state => ({
       comments: state.comments.map(c => c.id === fakeId ? { ...c, id: data.id } : c),
       isActionPending: false
@@ -208,15 +221,13 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
   deleteComment: async (commentId) => {
     set({ isActionPending: true });
     const currentComments = get().comments;
-    // Optimistic delete
     set({ comments: currentComments.filter(c => c.id !== commentId) });
 
     const { error } = await supabase.from('ad_comments').delete().eq('id', commentId);
     
     if (error) {
-      // Rollback
-      console.error("🚨 Delete failed", error);
       set({ comments: currentComments, isActionPending: false });
+      useToastStore.getState().addToast("Failed to delete comment.", "error");
       return false;
     }
     
@@ -230,7 +241,6 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
     const isRemoving = currentVote === value;
     const newValue = isRemoving ? 0 : value;
 
-    // Optimistically calculate new totals
     let up = adVotes.upvotes;
     let down = adVotes.downvotes;
 
@@ -255,7 +265,6 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
     const isRemoving = currentVote === value;
     const newValue = isRemoving ? 0 : value;
 
-    // Optimistically calculate new totals
     let up = currentData.upvotes;
     let down = currentData.downvotes;
 

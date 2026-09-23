@@ -208,12 +208,11 @@ export function TradeAnalyzerPanel({
     touchStartYRef.current = null;
   };
 
-  // Explicitly tie the visual pulses to the Guest Tour steps
-  const isGuestStep2 = guideState?.type === "guest_tour" && guideState?.step === 2; // Smart Parser Wand
-  const isGuestStep3 = guideState?.type === "guest_tour" && guideState?.step === 3; // Analyzer Box
+  const isGuestStep2 = guideState?.type === "guest_tour" && guideState?.step === 2; 
+  const isGuestStep3 = guideState?.type === "guest_tour" && guideState?.step === 3; 
   
   const isWandTarget = isGuestStep2;
-  const isClearTarget = false; // We can re-enable this later if we add a reset step
+  const isClearTarget = false; 
   const isElevated = isGuestStep2 || isGuestStep3;
 
   const renderCalculatorContent = () => (
@@ -328,7 +327,7 @@ export function TradeAnalyzerPanel({
       {isComposerOpen ? (
         <AdComposer />
       ) : (
-        <>
+        <div className="flex-1 min-h-0 flex flex-col relative">
           {smartMenuOpen && (
             <SmartParserMenu 
               ALL_UNITS={ALL_UNITS} 
@@ -339,7 +338,7 @@ export function TradeAnalyzerPanel({
           )}
 
           {isPresetsOpen && (
-            <div className="relative z-50 mx-3 md:mx-4 mt-3 p-4 bg-card border border-border rounded-[8px] animate-fade-in shadow-lg flex flex-col gap-4">
+            <div className="absolute top-3 left-0 right-0 z-50 mx-3 md:mx-4 p-4 bg-card border border-border rounded-[8px] animate-fade-in shadow-[0_15px_40px_rgba(0,0,0,0.6)] flex flex-col gap-4 max-h-[calc(100vh-160px)] overflow-y-auto custom-scrollbar">
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <span className="text-[12px] font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <Bookmark className="w-4 h-4 text-primary"/> Saved Loadouts
@@ -355,7 +354,7 @@ export function TradeAnalyzerPanel({
                   onChange={e => setNewPresetName(e.target.value)} 
                   onKeyDown={e => e.key === "Enter" && handleSavePreset()}
                   placeholder="Name this loadout..." 
-                  className="flex-1 bg-input border border-border rounded-[4px] px-3 py-2 text-[13px] text-foreground outline-none placeholder-muted-foreground focus:ring-1 focus:ring-primary transition-all" 
+                  className="flex-1 bg-input border border-border rounded-[4px] px-3 py-2 text-[13px] text-foreground outline-none placeholder-muted-foreground focus:ring-1 focus:ring-primary transition-all shadow-inner" 
                   maxLength={30}
                 />
                 <button 
@@ -367,12 +366,12 @@ export function TradeAnalyzerPanel({
                 </button>
               </div>
 
-              <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto custom-scrollbar pr-1">
+              <div className="flex flex-col gap-2 flex-1 overflow-y-auto custom-scrollbar pr-1">
                  {presets.length === 0 ? (
                    <p className="text-[12px] text-muted-foreground italic text-center py-4 bg-muted rounded-[6px] border border-border">No saved loadouts.</p>
                  ) : (
                    presets.map(p => (
-                     <div key={p.id} className="flex items-center justify-between bg-popover p-2.5 rounded-[6px] border border-border group hover:border-primary/50 transition-colors">
+                     <div key={p.id} className="flex items-center justify-between bg-popover p-2.5 rounded-[6px] border border-border group hover:border-primary/50 transition-colors shadow-sm">
                         <div className="flex flex-col min-w-0 pr-2">
                           <span className="text-[13px] font-bold text-foreground truncate">{p.name}</span>
                           <span className="text-[10px] font-medium text-muted-foreground truncate">{p.give.length} Give • {p.get.length} Get</span>
@@ -411,7 +410,7 @@ export function TradeAnalyzerPanel({
             isCompact={isMobile && isInputFocused}
           />
 
-          <div className="flex-1 overflow-y-auto py-1 custom-scrollbar overscroll-y-contain pb-safe">
+          <div className="flex-1 min-h-0 overflow-y-auto py-1 custom-scrollbar overscroll-y-contain pb-safe flex flex-col">
             <div className={`relative transition-all duration-300 ${isClearTarget ? "ring-2 ring-primary rounded-[8px] bg-primary/5 shadow-lg z-[100005]" : ""}`}>
               <TradeSectionPanel 
                 label="You Give" 
@@ -471,7 +470,7 @@ export function TradeAnalyzerPanel({
 
             <TradeNotices giveItems={giveItems} getItems={getItems} ALL_UNITS={ALL_UNITS} />
           </div>
-        </>
+        </div>
       )}
     </>
   );

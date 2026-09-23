@@ -24,6 +24,11 @@ import { useMobileSwipe } from "../hooks/useMobileSwipe";
 import { useAuthStore } from "../store/useAuthStore";
 import { supabase } from "../lib/supabase";
 
+// NEW INJECTIONS
+import { useNetworkSync } from "../hooks/useNetworkSync";
+import { GlobalToastContainer } from "./components/layout/GlobalToastContainer";
+import { GranularErrorBoundary } from "./components/shared/GranularErrorBoundary";
+
 const TradeAnalyzerPanel = lazy(() => import("./components/TradeAnalyzer").then(module => ({ default: module.TradeAnalyzerPanel })));
 const Sidebar = lazy(() => import("./components/Sidebar").then(module => ({ default: module.Sidebar })));
 const MainCanvas = lazy(() => import("./components/MainCanvas").then(module => ({ default: module.MainCanvas })));
@@ -68,6 +73,9 @@ export default function App() {
   const { bootStage, isMobile } = useAppBoot();
   const hasRoutedBootChannel = useRef(false);
 
+  // Activate Offline Queue Sync System
+  useNetworkSync();
+
   const { 
     guideState, 
     setGuideState, 
@@ -85,7 +93,6 @@ export default function App() {
     bootStage 
   });
 
-  // Custom Boot Channel Routing
   useEffect(() => {
     if (bootStage === 'complete' && !hasRoutedBootChannel.current) {
       hasRoutedBootChannel.current = true;
@@ -95,7 +102,6 @@ export default function App() {
     }
   }, [bootStage, bootChannel, activeChannel, setActiveChannel]);
 
-  // Trigger login recommendation modal only after auth is loaded and user is guest
   useEffect(() => {
     if (!isAuthLoading && !profile && (activeChannel === "inventory" || activeChannel === "trading-ads")) {
       setLoginModalChannel(activeChannel);
@@ -104,7 +110,6 @@ export default function App() {
     }
   }, [activeChannel, profile, isAuthLoading]);
 
-  // Guest Tour listener triggered from WelcomeModal
   useEffect(() => {
     const handleStartGuest = () => {
       startGuide("guest_tour", true);
@@ -151,8 +156,6 @@ export default function App() {
   const activeItemsCount = giveItems.reduce((acc, c) => acc + c.qty, 0) + getItems.reduce((acc, c) => acc + c.qty, 0);
   const isDictionaryActive = activeChannel === "tutorial" && tutorialTab === "dictionary";
 
-  // Fixed: Removed activeChannel from dependencies so typing in search switches to value list,
-  // but changing channels manually later does NOT trigger a forced redirect back.
   useEffect(() => {
     if (globalSearchQuery.trim().length > 0) {
       if (activeChannel !== "value-list") setActiveChannel("value-list");
@@ -167,7 +170,7 @@ export default function App() {
 
   const handleChannelChange = useCallback((id: string) => {
     setActiveChannel(id);
-    setGlobalSearchQuery(""); // Clear search when switching channels manually
+    setGlobalSearchQuery("");
     if (id === "value-list" && guideState.type === "guest_tour" && guideState.step === 1) {
       setGuideState(prev => ({ ...prev, step: 2 }));
       if (window.innerWidth < 768) setIsRosterOpen(false);
@@ -251,6 +254,7 @@ export default function App() {
         onTouchEnd={handleTouchEnd}
       >
         <Suspense fallback={null}>
+          <GlobalToastContainer />
           <WelcomeModal />
           <HistoryModal />
           <ExternalLinkModal />
@@ -259,7 +263,7 @@ export default function App() {
             onClose={() => setLoginModalChannel(null)} 
             channelName={loginModalChannel || ""} 
           />
-           
+            
           <AquaGuideOverlay 
             guideState={guideState} 
             onNext={nextStep}
@@ -272,6 +276,7 @@ export default function App() {
 
           {isRosterOpen && <div className="md:hidden fixed inset-0 bg-black/80 z-40" onClick={() => setIsRosterOpen(false)} />}
 
+          {/* Legacy local toast overlay (for adding units quickly) */}
           <div 
             className="fixed bottom-[140px] md:bottom-8 left-1/2 -translate-x-1/2 pointer-events-none transition-all flex flex-col gap-2 items-center z-[9999]"
           >
@@ -326,19 +331,27 @@ export default function App() {
                   setActiveTab={setTutorialTab}
                 /> 
               ) : activeChannel === "value-list" ? ( 
-                <MainCanvas 
-                  activeTierFilter={activeTierFilter} 
-                  setActiveTierFilter={setActiveTierFilter} 
-                  searchQuery={globalSearchQuery} 
-                  setSearchQuery={setGlobalSearchQuery} 
-                  scrollToSection={scrollToSection}
-                  startGuide={startGuide}
-                  guideState={guideState}
-                  isMobile={isMobile}
-                />
-              ) : activeChannel === "inventory" ? ( <InventoryChannel />
+                <GranularErrorBoundary fallbackName="Live Value List">
+                  <MainCanvas 
+                    activeTierFilter={activeTierFilter} 
+                    setActiveTierFilter={setActiveTierFilter} 
+                    searchQuery={globalSearchQuery} 
+                    setSearchQuery={setGlobalSearchQuery} 
+                    scrollToSection={scrollToSection}
+                    startGuide={startGuide}
+                    guideState={guideState}
+                    isMobile={isMobile}
+                  />
+                </GranularErrorBoundary>
+              ) : activeChannel === "inventory" ? ( 
+                <GranularErrorBoundary fallbackName="Inventory & Vault">
+                  <InventoryChannel />
+                </GranularErrorBoundary>
               ) : activeChannel === "profile" ? ( <ProfileChannel />
-              ) : activeChannel === "trading-ads" ? ( <TradingAdsChannel />
+              ) : activeChannel === "trading-ads" ? ( 
+                <GranularErrorBoundary fallbackName="Live Trading Board">
+                  <TradingAdsChannel />
+                </GranularErrorBoundary>
               ) : activeChannel === "extra-notices" ? ( <ExtraNoticesChannel />
               ) : activeChannel === "terms-of-service" ? ( <LegalChannel type="tos" />
               ) : activeChannel === "privacy-policy" ? ( <LegalChannel type="privacy" />
@@ -351,13 +364,15 @@ export default function App() {
             </div>
           </div>
 
-          <TradeAnalyzerPanel 
-            isOpen={isAnalyzerOpen}
-            onClose={() => setIsAnalyzerOpen(false)}
-            guideState={guideState}
-            startGuide={startGuide}
-            analyzerZ={analyzerZ}
-          />
+          <GranularErrorBoundary fallbackName="Trade Analyzer">
+            <TradeAnalyzerPanel 
+              isOpen={isAnalyzerOpen}
+              onClose={() => setIsAnalyzerOpen(false)}
+              guideState={guideState}
+              startGuide={startGuide}
+              analyzerZ={analyzerZ}
+            />
+          </GranularErrorBoundary>
 
         </Suspense>
       </div>

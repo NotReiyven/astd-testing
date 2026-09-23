@@ -2,16 +2,17 @@
 // FILE: src/hooks/useInventoryManager.ts
 // ================================================
 
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { useInventoryStore, InventoryItem } from "../store/useInventoryStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { useTradeStore } from "../store/useTradeStore";
 import { MasterUnit, FilterKey, TradeCard } from "../types";
 import { getTier } from "../data";
 import { getUnitConservativeValue, TIER_ORDER } from "../app/components/InventoryChannel/inventoryUtils";
-import { parseSmartTrade } from "../app/components/TradeAnalyzer/smartParser";
+import { parseSmartTradeAsync, getSlangCache } from "../app/components/TradeAnalyzer/smartParser";
 import { useStickyState } from "./useStickyState";
 import { triggerHaptic } from "../data/helpers";
+import { useToastStore } from "../store/useToastStore";
 
 export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
   const { 
@@ -52,6 +53,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
   const [inspectTarget, setInspectTarget] = useState<{ item: InventoryItem; master: MasterUnit } | null>(null);
 
   const [importText, setImportText] = useState("");
+  const [parsedImportItems, setParsedImportItems] = useState<TradeCard[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const [confirmClear, setConfirmClear] = useState<"unpinned" | "all" | null>(null);
 
@@ -63,6 +65,16 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     setToast({ id: Date.now(), message, isError, itemToRestore });
     toastTimerRef.current = setTimeout(() => setToast(null), 4000);
   }, []);
+
+  useEffect(() => {
+    if (!importText.trim()) {
+      setParsedImportItems([]);
+      return;
+    }
+    parseSmartTradeAsync(importText, ALL_UNITS).then(res => {
+      setParsedImportItems(res.giveCards);
+    });
+  }, [importText, ALL_UNITS]);
 
   const handleCloseVault = useCallback(() => {
     triggerHaptic('light');
@@ -280,11 +292,6 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     }).slice(0, 10);
   }, [searchQuery, activeItems, ALL_UNITS, isReadOnly]);
 
-  const parsedImportItems = useMemo(() => {
-    if (!importText.trim()) return [];
-    return parseSmartTrade(importText, ALL_UNITS).giveCards;
-  }, [importText, ALL_UNITS]);
-
   const handleClearAction = useCallback(async () => {
     if (!profile || !confirmClear || isReadOnly) return;
     try {
@@ -304,8 +311,8 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     const text = `${header} (Total: ${metrics.estimatedValue.toLocaleString()} | Liquid: ${vaultLiquidValue.toLocaleString()} | UNOB: ${metrics.unobPercentage.toFixed(0)}%):\n` +
       displayInventory.map(i => `- ${i.quantity > 1 ? `${i.quantity}x ` : ''}${i.master.name}`).join('\n');
     navigator.clipboard.writeText(text);
-    showToast(`${vaultView === "wishlist" ? "Wishlist" : "Vault"} summary copied to clipboard!`);
-  }, [displayInventory, metrics.estimatedValue, vaultLiquidValue, metrics.unobPercentage, showToast, isReadOnly, viewingUsername, vaultView]);
+    useToastStore.getState().addToast(`${vaultView === "wishlist" ? "Wishlist" : "Vault"} summary copied to clipboard!`, "success");
+  }, [displayInventory, metrics.estimatedValue, vaultLiquidValue, metrics.unobPercentage, isReadOnly, viewingUsername, vaultView]);
 
   const handleSendToAnalyzer = (type: "give" | "get", targetMaster?: MasterUnit) => {
     triggerHaptic('medium');
@@ -319,7 +326,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
           count++;
         }
       });
-      showToast(`Added ${count} units to You ${type === "give" ? "Give" : "Get"}`);
+      useToastStore.getState().addToast(`Added ${count} units to You ${type === "give" ? "Give" : "Get"}`);
       setSelectedUnits(new Set());
       setIsSelectMode(false);
       return;
@@ -331,7 +338,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     const qty = targetMaster ? 1 : (inspectTarget?.item.quantity || 1);
     const numericValue = getUnitConservativeValue(master);
     addCard(type, { id: master.id, name: master.name, subtitle: master.subtitle, value: numericValue, qty });
-    showToast(`Added ${master.name} to You ${type === "give" ? "Give" : "Get"}!`);
+    useToastStore.getState().addToast(`Added ${master.name} to You ${type === "give" ? "Give" : "Get"}!`);
     window.dispatchEvent(new CustomEvent("trade-added", { detail: { name: master.name, type } }));
     if (!targetMaster) setInspectTarget(null);
   };
@@ -407,7 +414,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     setImportText("");
     if (successCount > 0) {
       triggerHaptic('success');
-      showToast(`Imported ${successCount} items successfully.`, false);
+      useToastStore.getState().addToast(`Imported ${successCount} items successfully.`, "success");
     }
   };
 

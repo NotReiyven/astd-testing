@@ -1,10 +1,24 @@
+// ================================================
+// FILE: src/main.tsx
+// ================================================
 import React, { Component, ErrorInfo, ReactNode } from 'react'
 import ReactDOM from 'react-dom/client'
 import App from "./app/App.tsx";
 import './styles/index.css'
 import { UnitProvider } from './context/UnitContext'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-// --- NEW: Global Error Boundary ---
+// Establish global caching and retry strategies for TanStack Query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 2, // 2 minutes default staleness
+    },
+  },
+});
+
 interface ErrorBoundaryProps {
   children: ReactNode;
 }
@@ -29,16 +43,15 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
   handleReset = () => {
     if (window.confirm("This will clear all your saved trade data and reload the app. Are you sure you want to proceed?")) {
-      localStorage.removeItem("astd_trade_storage"); // Zustand global state
-      localStorage.removeItem("astd_cache_version"); // IndexedDB version check
-      localStorage.removeItem("astd_give");          // Legacy state
-      localStorage.removeItem("astd_get");           // Legacy state
+      localStorage.removeItem("astd_trade_storage"); 
+      localStorage.removeItem("astd_cache_version"); 
+      localStorage.removeItem("astd_give");          
+      localStorage.removeItem("astd_get");           
       window.location.reload();
     }
   }
 
   handleSoftReload = () => {
-    // Attempt a soft reload without wiping local storage
     window.location.reload();
   }
 
@@ -75,9 +88,11 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <UnitProvider>
-        <App />
-      </UnitProvider>
+      <QueryClientProvider client={queryClient}>
+        <UnitProvider>
+          <App />
+        </UnitProvider>
+      </QueryClientProvider>
     </ErrorBoundary>
   </React.StrictMode>,
 )

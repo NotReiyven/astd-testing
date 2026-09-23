@@ -1,7 +1,11 @@
+// ================================================
+// FILE: src/app/components/TradeAnalyzer/SmartParserMenu.tsx
+// ================================================
+
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { Wand2, X, Book, HelpCircle, TriangleAlert, Trash2, Search, Check } from "lucide-react";
+import { Wand2, X, Book, HelpCircle, TriangleAlert, Trash2, Search, Check, Loader2 } from "lucide-react";
 import { TradeCard, MasterUnit } from "../../../types";
-import { parseSmartTrade, AmbiguousToken, getSlangCache, removeSlang, learnSlang } from "./smartParser";
+import { parseSmartTradeAsync, AmbiguousToken, getSlangCache, removeSlang, learnSlang } from "./smartParser";
 import { getAvatarStyle, getInitials } from "./summaryUtils";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { getProxyImage, handleImageError } from "../../../data";
@@ -21,6 +25,7 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
   const [smartInput, setSmartInput] = useState("");
   const [smartInputError, setSmartInputError] = useState("");
   const [ambiguousItems, setAmbiguousItems] = useState<AmbiguousToken[]>([]);
+  const [isParsing, setIsParsing] = useState(false);
 
   const [stagedGive, setStagedGive] = useState<TradeCard[]>([]);
   const [stagedGet, setStagedGet] = useState<TradeCard[]>([]);
@@ -63,8 +68,9 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
     ).slice(0, 30);
   }, [searchQuery, ALL_UNITS]);
 
-  const processImport = useCallback((textToParse: string) => {
-    const result = parseSmartTrade(textToParse, ALL_UNITS); 
+  const processImport = useCallback(async (textToParse: string) => {
+    setIsParsing(true);
+    const result = await parseSmartTradeAsync(textToParse, ALL_UNITS); 
     if (result.error) {
       setSmartInputError(result.error);
       setTimeout(() => setSmartInputError(""), 3000);
@@ -74,6 +80,7 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
       setAmbiguousItems(result.ambiguous);
       setSmartInput("");
     }
+    setIsParsing(false);
   }, [ALL_UNITS]);
 
   const handleConfirmReview = () => {
@@ -158,26 +165,26 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
   };
 
   return (
-    <div className="relative z-50 mx-3 md:mx-4 mt-3 p-4 bg-card border border-border rounded-[8px] animate-fade-in shadow-lg flex flex-col gap-4 max-h-[calc(92vh-140px)] overflow-y-auto custom-scrollbar">
+    <div className="absolute top-3 left-0 right-0 z-50 mx-3 md:mx-4 p-4 bg-card border border-border rounded-[8px] animate-fade-in shadow-[0_15px_40px_rgba(0,0,0,0.6)] flex flex-col gap-4 max-h-[calc(100vh-160px)] overflow-y-auto custom-scrollbar">
       <div className="flex items-center justify-between">
         <span className="text-[12px] font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
           <Wand2 className="w-4 h-4 text-primary"/> Smart Parser
         </span>
         <button onClick={onClose} className="p-2 -m-2 md:p-1 md:-m-1 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[3px]">
-           <X className="w-4 h-4 md:w-3.5 md:h-3.5" />
+           <X className="w-4 h-4 md:w-3.5 md:h-3.5"/>
         </button>
       </div>
 
       <div className="flex bg-black/20 p-1 rounded-[6px] border border-border">
         <button onClick={() => setActiveMenuTab("import")} className={`flex-1 text-[11px] font-bold uppercase tracking-wider py-2.5 md:py-1.5 rounded-[4px] transition-colors ${activeMenuTab === "import" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Import Trade</button>
-        <button onClick={() => setActiveMenuTab("dictionary")} className={`flex-1 text-[11px] font-bold uppercase tracking-wider py-2.5 md:py-1.5 rounded-[4px] transition-colors flex items-center justify-center gap-1.5 ${activeMenuTab === "dictionary" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Book className="w-3 h-3" /> Dictionary</button>
+        <button onClick={() => setActiveMenuTab("dictionary")} className={`flex-1 text-[11px] font-bold uppercase tracking-wider py-2.5 md:py-1.5 rounded-[4px] transition-colors flex items-center justify-center gap-1.5 ${activeMenuTab === "dictionary" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Book className="w-3 h-3"/> Dictionary</button>
       </div>
 
       {activeMenuTab === "import" ? (
         ambiguousItems.length > 0 ? (
           <div className="flex flex-col gap-3 animate-fade-in">
             <div className="flex items-start gap-3 bg-[#FAA61A]/10 p-3 rounded-[6px] border border-[#FAA61A]/20">
-              <TriangleAlert className="w-5 h-5 text-[#FAA61A] shrink-0 mt-0.5" />
+              <TriangleAlert className="w-5 h-5 text-[#FAA61A] shrink-0 mt-0.5"/>
               <div className="flex flex-col gap-0.5">
                 <span className="text-[14px] font-bold text-[#FAA61A]">Clarification Needed</span>
                 <span className="text-[13px] text-foreground leading-snug">Multiple units match your input. Please select the correct one below.</span>
@@ -250,7 +257,7 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
                              <span className="text-[10px] text-muted-foreground font-medium tracking-wide bg-black/20 px-1.5 py-0.5 rounded border border-border">x{card.qty}</span>
                            </div>
                            <button onClick={() => setStagedGive(prev => prev.filter((_, idx) => idx !== i))} className="p-2.5 md:p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none">
-                             <Trash2 className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                             <Trash2 className="w-4 h-4 md:w-3.5 md:h-3.5"/>
                            </button>
                         </div>
                      ))}
@@ -267,7 +274,7 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
                              <span className="text-[10px] text-muted-foreground font-medium tracking-wide bg-black/20 px-1.5 py-0.5 rounded border border-border">x{card.qty}</span>
                            </div>
                            <button onClick={() => setStagedGet(prev => prev.filter((_, idx) => idx !== i))} className="p-2.5 md:p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none">
-                             <Trash2 className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                             <Trash2 className="w-4 h-4 md:w-3.5 md:h-3.5"/>
                            </button>
                         </div>
                      ))}
@@ -284,14 +291,14 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
                disabled={stagedGive.length === 0 && stagedGet.length === 0}
                className="w-full mt-2 py-3 bg-[#23a559] hover:bg-[#1f914e] disabled:bg-popover disabled:text-muted-foreground text-white text-[14px] font-bold rounded-[6px] transition-colors shadow-md flex items-center justify-center gap-2 focus-visible:outline-none"
              >
-                <Check className="w-4 h-4" /> Confirm & Add to Trade
+                <Check className="w-4 h-4"/> Confirm & Add to Trade
              </button>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-2.5 bg-black/20 border border-border rounded-[6px] p-3 shadow-inner">
                <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                 <HelpCircle className="w-3.5 h-3.5" /> How to format your trade
+                 <HelpCircle className="w-3.5 h-3.5"/> How to format your trade
                </div>
                <ul className="text-[12px] text-muted-foreground flex flex-col gap-1.5 list-disc pl-4 marker:text-primary leading-snug">
                  <li>Use <strong className="text-foreground font-semibold">"for"</strong> or <strong className="text-foreground font-semibold">"want"</strong> to separate your items from theirs.</li>
@@ -306,14 +313,19 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
                 onKeyDown={e => e.key === "Enter" && handleSmartImport()} 
                 placeholder="Paste offer here..." 
                 maxLength={500} 
-                className="flex-1 bg-input border-border border rounded-[4px] px-3 py-3 md:py-2.5 text-[14px] text-foreground outline-none placeholder-muted-foreground focus:ring-2 focus:ring-primary transition-all" 
+                disabled={isParsing}
+                className="flex-1 bg-input border-border border rounded-[4px] px-3 py-3 md:py-2.5 text-[14px] text-foreground outline-none placeholder-muted-foreground focus:ring-2 focus:ring-primary transition-all disabled:opacity-50" 
                 autoFocus 
               />
-              <button onClick={handleSmartImport} className="bg-primary hover:bg-primary/80 text-primary-foreground px-5 py-3 md:py-2.5 rounded-[4px] text-[14px] font-medium transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
-                Import
+              <button 
+                onClick={handleSmartImport} 
+                disabled={isParsing}
+                className="bg-primary hover:bg-primary/80 text-primary-foreground px-5 py-3 md:py-2.5 rounded-[4px] text-[14px] font-medium transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white flex items-center justify-center min-w-[90px] disabled:opacity-50 cursor-pointer"
+              >
+                {isParsing ? <Loader2 className="w-5 h-5 animate-spin"/> : "Import"}
               </button>
             </div>
-            {smartInputError && <p className="text-[12px] text-destructive mt-1 font-medium animate-fade-in flex items-center gap-1.5"><TriangleAlert className="w-3.5 h-3.5" /> {smartInputError}</p>}
+            {smartInputError && <p className="text-[12px] text-destructive mt-1 font-medium animate-fade-in flex items-center gap-1.5"><TriangleAlert className="w-3.5 h-3.5"/> {smartInputError}</p>}
           </div>
         )
       ) : (
@@ -330,7 +342,7 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
 
                 <div className="relative flex-1" ref={dropdownRef}>
                   <div className={`flex items-center bg-input rounded-[4px] px-3 py-3 md:py-2 transition-all border ${isDropdownOpen ? 'border-primary ring-1 ring-primary' : 'border-border'}`}>
-                    <Search className="w-4 h-4 text-muted-foreground mr-2 shrink-0" />
+                    <Search className="w-4 h-4 text-muted-foreground mr-2 shrink-0"/>
                     <input
                       type="text"
                       value={searchQuery}
@@ -343,7 +355,7 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
                       placeholder="Search target unit..."
                       className="bg-transparent text-[14px] md:text-[13px] text-foreground w-full outline-none placeholder-muted-foreground"
                     />
-                    {newSlangTargetId && <Check className="w-4 h-4 text-[#23a559] ml-2 shrink-0" />}
+                    {newSlangTargetId && <Check className="w-4 h-4 text-[#23a559] ml-2 shrink-0"/>}
                   </div>
 
                   {isDropdownOpen && (
@@ -362,7 +374,7 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
                                           setSearchQuery(u.name);
                                           setIsDropdownOpen(false);
                                       }}
-                                      className="flex items-center gap-3 w-full p-2.5 md:p-2 hover:bg-white/5 rounded-[4px] transition-colors text-left group"
+                                      className="flex items-center gap-3 w-full p-2.5 md:p-2 hover:bg-white/5 rounded-[4px] transition-colors text-left group cursor-pointer focus-visible:outline-none"
                                   >
                                       <div className="w-8 h-8 rounded-[4px] bg-black/20 overflow-hidden shrink-0 flex items-center justify-center border border-border">
                                           {proxyUrl ? (
@@ -388,7 +400,7 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
 
                 <button 
                   onClick={handleAddSlang} 
-                  className={`shrink-0 px-4 py-3 md:py-2 rounded-[4px] text-[14px] md:text-[13px] font-bold transition-colors ${newSlangKey.trim() && newSlangTargetId ? "bg-[#23a559] hover:bg-[#1f914e] text-white" : "bg-popover text-muted-foreground cursor-not-allowed"}`}
+                  className={`shrink-0 px-4 py-3 md:py-2 rounded-[4px] text-[14px] md:text-[13px] font-bold transition-colors cursor-pointer focus-visible:outline-none ${newSlangKey.trim() && newSlangTargetId ? "bg-[#23a559] hover:bg-[#1f914e] text-white" : "bg-popover text-muted-foreground cursor-not-allowed"}`}
                   disabled={!newSlangKey.trim() || !newSlangTargetId}
                 >
                   Add
@@ -405,7 +417,6 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
                  {Object.entries(slangDict).map(([key, targetId]) => {
                    const targetUnit = ALL_UNITS.find(u => u.id === targetId);
                    const targetName = targetUnit?.name || targetId;
-                   const proxyUrl = targetUnit ? getProxyImage(targetUnit.id, targetUnit.imageUrl) : null;
 
                    return (
                      <div key={key} className="flex items-center justify-between bg-popover p-2.5 rounded-[6px] border border-border hover:border-border transition-colors">
@@ -414,8 +425,8 @@ export function SmartParserMenu({ ALL_UNITS, onClose, onSaveUndo, initialText }:
                           <span className="text-muted-foreground text-[12px]">➔</span>
                           <span className="text-[12.5px] text-foreground truncate">{targetName}</span>
                         </div>
-                        <button onClick={() => handleRemoveSlang(key)} className="text-muted-foreground hover:text-destructive p-2 md:p-1.5 transition-colors rounded-[4px] md:rounded-[3px] focus-visible:ring-2 focus-visible:ring-destructive bg-white/5 hover:bg-destructive/10 shrink-0 ml-2" title="Remove slang">
-                          <Trash2 className="w-4 h-4 md:w-3.5 h-3.5" />
+                        <button onClick={() => handleRemoveSlang(key)} className="text-muted-foreground hover:text-destructive p-2 md:p-1.5 transition-colors rounded-[4px] md:rounded-[3px] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive bg-white/5 hover:bg-destructive/10 shrink-0 ml-2" title="Remove slang">
+                          <Trash2 className="w-4 h-4 md:w-3.5 h-3.5"/>
                         </button>
                      </div>
                    )

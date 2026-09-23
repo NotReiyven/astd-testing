@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/MainCanvas/useCanvasVirtualization.ts
+// ================================================
+
 import { useMemo } from "react";
 import { FilterKey, MasterUnit } from "../../../types";
 import { TIER_CONFIG, getTier } from "../../../data";
@@ -39,7 +43,8 @@ export function useCanvasVirtualization({
   const isDefaultView = sortMode === "value-desc" && statusFilter === "all" && deferredSearchQuery === "";
 
   const UNITS_BY_TIER = useMemo(() => {
-    const map: Record<string, MasterUnit[]> = { S: [], A: [], B: [], C: [], Pure: [], Oddities: [], Untiered: [] };
+    const map: Record<string, MasterUnit[]> = {};
+    Object.keys(TIER_CONFIG).forEach(t => map[t] = []);
     ALL_UNITS.forEach(u => {
       const t = getTier(u);
       if (map[t]) map[t].push(u);
@@ -65,6 +70,9 @@ export function useCanvasVirtualization({
        items.push({ type: 'welcome', id: 'welcome' });
     }
 
+    // Dynamic extraction of tier order from global config
+    const TIER_ORDER = Object.keys(TIER_CONFIG).filter(k => k !== "All") as FilterKey[];
+
     if (deferredSearchQuery) {
        items.push({ type: 'search-stats', id: 'search-stats', count: filteredAllUnits.length });
        if (filteredAllUnits.length === 0) {
@@ -72,7 +80,7 @@ export function useCanvasVirtualization({
           return items;
        }
 
-       ["S", "A", "B", "C", "Pure", "Oddities", "Untiered"].forEach(tKey => {
+       TIER_ORDER.forEach(tKey => {
           const unitsInTier = filteredAllUnits.filter(u => getTier(u) === tKey);
           if (unitsInTier.length === 0) return;
 
@@ -89,7 +97,7 @@ export function useCanvasVirtualization({
           }
        });
     } else {
-       const tiersToRender = activeTierFilter === "All" ? ["S", "A", "B", "C", "Pure", "Oddities", "Untiered"] : [activeTierFilter];
+       const tiersToRender = activeTierFilter === "All" ? TIER_ORDER : [activeTierFilter];
 
        tiersToRender.forEach(tKey => {
           const rawUnits = UNITS_BY_TIER[tKey] || [];
