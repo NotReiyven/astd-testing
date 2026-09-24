@@ -112,8 +112,9 @@ const extractQuantityAndClean = (rawToken: string): { qty: number; cleanText: st
             qty = parseInt(backXMatch[2] || backXMatch[3], 10);
             text = backXMatch[1];
         } else {
-            const frontNumMatch = text.match(/^(\d+)\s+(.+)$/);
-            if (frontNumMatch && !frontNumMatch[2].startsWith("%") && !frontNumMatch[2].startsWith("k")) {
+            // Negative lookahead protects units like "12 Lab Bot", "100% Egg", "5 Star Yamato"
+            const frontNumMatch = text.match(/^(\d+)\s+(?!(?:lab|star|\*|eye|k|%|stardust|gems?|egg)\b)(.+)$/i);
+            if (frontNumMatch) {
                 qty = parseInt(frontNumMatch[1], 10);
                 text = frontNumMatch[2];
             }

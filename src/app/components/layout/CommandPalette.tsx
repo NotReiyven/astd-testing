@@ -79,7 +79,7 @@ export function CommandPalette() {
 
   return createPortal(
     <div 
-      className="fixed inset-0 z-[200] flex justify-center items-start pt-[10vh] px-4 animate-fade-in"
+      className="fixed inset-0 z-[100010] flex justify-center items-start pt-[10vh] px-4 animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-label="Command Palette"

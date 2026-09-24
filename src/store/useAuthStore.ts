@@ -97,8 +97,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     if (data) {
-      // Removed the auto-logout for banned users here so the app can mount and show the Banned UI overlay
-      
       const savedManualStatus = localStorage.getItem('astd_manual_status');
       let targetStatus = data.status;
 
@@ -126,7 +124,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           'postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
           async (payload) => {
-            set({ profile: payload.new as UserProfile });
+            const updatedProfile = payload.new as UserProfile;
+            if (updatedProfile.role === 'banned') {
+              get().logout();
+            } else {
+              set({ profile: updatedProfile });
+            }
           }
         )
         .subscribe();

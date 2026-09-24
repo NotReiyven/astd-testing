@@ -111,31 +111,26 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   },
 
   saveProfileUpdates: async (userId, updates) => {
-    const cleanUpdates = { ...updates };
-    
-    if (typeof cleanUpdates.bio === 'string') {
-      cleanUpdates.bio = cleanUpdates.bio.trim();
-    }
-    
-    if (typeof cleanUpdates.roblox_username === 'string') {
-      cleanUpdates.roblox_username = cleanUpdates.roblox_username.trim();
-    }
+    // SECURITY FIX: Explicitly sanitize allowed update fields
+    const allowedUpdates: Partial<UserProfileData> = {};
+    if (typeof updates.bio === 'string') allowedUpdates.bio = updates.bio.trim().substring(0, 190);
+    if (typeof updates.roblox_username === 'string') allowedUpdates.roblox_username = updates.roblox_username.trim().substring(0, 50);
+    if (typeof updates.banner_color === 'string') allowedUpdates.banner_color = updates.banner_color.trim().substring(0, 7);
 
     // OFFLINE QUEUE INTERCEPTION
     if (!navigator.onLine) {
       const queue: any[] = (await getIdb('astd_offline_profile')) || [];
-      queue.push({ userId, updates: cleanUpdates });
+      queue.push({ userId, updates: allowedUpdates });
       await setIdb('astd_offline_profile', queue);
       
-      // Optimistic update locally
-      get().updateLocalProfile(userId, cleanUpdates);
+      get().updateLocalProfile(userId, allowedUpdates);
       useToastStore.getState().addToast("Offline. Profile changes queued locally.", "info");
       return { error: null };
     }
 
-    const { error } = await supabase.from('profiles').update(cleanUpdates).eq('id', userId);
+    const { error } = await supabase.from('profiles').update(allowedUpdates).eq('id', userId);
     if (!error) {
-      get().updateLocalProfile(userId, cleanUpdates);
+      get().updateLocalProfile(userId, allowedUpdates);
     }
     return { error };
   }

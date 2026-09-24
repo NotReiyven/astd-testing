@@ -91,11 +91,11 @@ export function MiniProfilePopout() {
   return createPortal(
     <>
       {/* Bulletproof transparent backdrop overlay handles outside clicks without event race conditions */}
-      <div className="fixed inset-0 z-[999999]" onClick={closePopout} />
+      <div className="fixed inset-0 z-[100015]" onClick={closePopout} />
 
       <div 
         ref={popoutRef}
-        className="fixed z-[1000000] w-[320px] bg-popover rounded-[6px] shadow-2xl border border-border flex flex-col overflow-hidden animate-fade-in"
+        className="fixed z-[100020] w-[320px] bg-popover rounded-[6px] shadow-2xl border border-border flex flex-col overflow-hidden animate-fade-in"
         style={{ left: bounds.left, top: bounds.top }}
       >
         {!profile ? (

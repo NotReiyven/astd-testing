@@ -52,6 +52,7 @@ export function handleImageError(e: React.SyntheticEvent<HTMLImageElement, Event
   const stage = target.getAttribute('data-fallback-stage');
 
   if (!stage) {
+    // Stage 1: Try to load the uncompressed Fandom source
     target.setAttribute('data-fallback-stage', '1');
     const rawUrl = UNIT_IMAGES[id];
     
@@ -62,6 +63,8 @@ export function handleImageError(e: React.SyntheticEvent<HTMLImageElement, Event
     }
   }
 
+  // Stage 2: Ultimate fallback to prevent infinite error loops if the Fandom source is also 404
+  target.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
   target.style.opacity = '0';
 }
 

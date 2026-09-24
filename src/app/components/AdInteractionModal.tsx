@@ -354,7 +354,7 @@ export function AdInteractionModal() {
 
   return (
     <div 
-      className="fixed inset-0 z-[99999] flex items-end md:items-center justify-center p-0 md:p-6 bg-black/80 animate-fade-in" 
+      className="fixed inset-0 z-[100000] flex items-end md:items-center justify-center p-0 md:p-6 bg-black/80 animate-fade-in" 
       role="dialog" 
       aria-modal="true"
       onClick={(e) => {

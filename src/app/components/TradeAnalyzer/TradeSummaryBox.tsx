@@ -2,7 +2,7 @@
 // FILE: src/app/components/TradeAnalyzer/TradeSummaryBox.tsx
 // ================================================
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { avgStat, getTradeForecast, getLiquidityScore } from "./summaryUtils";
 import { TradeCard, MasterUnit } from "../../../types";
 import { TrendingUp, Clock, AlertTriangle } from "lucide-react"; 
@@ -25,6 +25,13 @@ export function TradeSummaryBox({
 }: TradeSummaryBoxProps) {
   const [activeTip, currentTip] = useState<string | null>(null);
   const forecast = getTradeForecast(giveItems, getItems, ALL_UNITS);
+
+  const isOcPresent = useMemo(() => {
+    return [...giveItems, ...getItems].some(c => {
+      const master = ALL_UNITS.find(u => u.id === c.id);
+      return master?.value === "owner" || master?.valueDisplay === "Owner's Choice" || master?.valueDisplay === "O/C";
+    });
+  }, [giveItems, getItems, ALL_UNITS]);
 
   const getLiqLabel = (items: TradeCard[]) => {
     if (items.length === 0) return "—";
@@ -49,9 +56,13 @@ export function TradeSummaryBox({
           <span className="text-[12px] font-black font-mono text-[#FAA61A]"><RollingNumber value={giveTotal} /></span>
         </div>
         <div className="flex items-center gap-1 font-mono text-[11px] font-black">
-          <span className={valDiff > 0 ? 'text-[#23a559]' : valDiff < 0 ? 'text-rose-400' : 'text-foreground'}>
-            {valDiff > 0 ? '+' : ''}<RollingNumber value={valDiff} />
-          </span>
+          {isOcPresent ? (
+             <span className="text-muted-foreground">N/A (O/C)</span>
+          ) : (
+             <span className={valDiff > 0 ? 'text-[#23a559]' : valDiff < 0 ? 'text-rose-400' : 'text-foreground'}>
+               {valDiff > 0 ? '+' : ''}<RollingNumber value={valDiff} />
+             </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-bold text-muted-foreground uppercase">Get:</span>
@@ -69,22 +80,36 @@ export function TradeSummaryBox({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] font-bold text-muted-foreground uppercase">Give:</span>
-            <span className="text-[13px] font-black font-mono text-[#FAA61A]"><RollingNumber value={giveTotal} /></span>
+            <span className="text-[13px] font-black font-mono text-[#FAA61A]">
+              {isOcPresent && giveTotal === 0 ? "O/C" : <RollingNumber value={giveTotal} />}
+            </span>
           </div>
           <div className="flex items-center gap-1 font-mono text-[11px] font-black">
-            <span className={valDiff > 0 ? 'text-[#23a559]' : valDiff < 0 ? 'text-rose-400' : 'text-foreground'}>
-              {valDiff > 0 ? '+' : ''}<RollingNumber value={valDiff} />
-            </span>
+            {isOcPresent ? (
+               <span className="text-muted-foreground">N/A</span>
+            ) : (
+               <span className={valDiff > 0 ? 'text-[#23a559]' : valDiff < 0 ? 'text-rose-400' : 'text-foreground'}>
+                 {valDiff > 0 ? '+' : ''}<RollingNumber value={valDiff} />
+               </span>
+            )}
           </div>
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] font-bold text-muted-foreground uppercase">Get:</span>
-            <span className="text-[13px] font-black font-mono text-primary"><RollingNumber value={getTotal} /></span>
+            <span className="text-[13px] font-black font-mono text-primary">
+              {isOcPresent && getTotal === 0 ? "O/C" : <RollingNumber value={getTotal} />}
+            </span>
           </div>
         </div>
 
         <div className="flex w-full h-[4px] bg-popover rounded-full overflow-hidden">
-          {giveTotal > 0 && <div className="bg-[#FAA61A] transition-all duration-500" style={{ width: `${givePercent}%` }} />}
-          {getTotal > 0 && <div className="bg-primary transition-all duration-500" style={{ width: `${getPercent}%` }} />}
+          {isOcPresent ? (
+             <div className="w-full h-full bg-muted transition-all duration-500" />
+          ) : (
+             <>
+               {giveTotal > 0 && <div className="bg-[#FAA61A] transition-all duration-500" style={{ width: `${givePercent}%` }} />}
+               {getTotal > 0 && <div className="bg-primary transition-all duration-500" style={{ width: `${getPercent}%` }} />}
+             </>
+          )}
         </div>
 
         <div className="flex items-center justify-between pt-2 border-t border-border/60 text-[11px] font-mono">
@@ -113,10 +138,12 @@ export function TradeSummaryBox({
           <div className="flex items-center justify-between mb-4 gap-4">
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Total Give</p>
-              <p className="text-[18px] font-black text-foreground font-mono truncate" title={giveTotal.toLocaleString()}><RollingNumber value={giveTotal} /></p>
+              <p className="text-[18px] font-black text-foreground font-mono truncate" title={giveTotal.toLocaleString()}>
+                {isOcPresent && giveTotal === 0 ? "O/C" : <RollingNumber value={giveTotal} />}
+              </p>
             </div>
             
-            {giveTotal > 0 && getTotal > 0 && (
+            {giveTotal > 0 && getTotal > 0 && !isOcPresent && (
                <div className="flex flex-col items-center flex-shrink-0 px-3">
                   <span className={`text-[14px] font-black font-mono flex items-center ${getTotal > giveTotal ? 'text-[#23a559]' : getTotal < giveTotal ? 'text-rose-400' : 'text-foreground'}`}>
                     {getTotal > giveTotal ? '+' : ''}<RollingNumber value={getTotal - giveTotal} />
@@ -125,16 +152,31 @@ export function TradeSummaryBox({
                </div>
             )}
 
+            {isOcPresent && (
+               <div className="flex flex-col items-center flex-shrink-0 px-3">
+                  <span className="text-[14px] font-black font-mono text-muted-foreground">N/A</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-0.5">O/C Present</span>
+               </div>
+            )}
+
             <div className="min-w-0 flex-1 text-right">
               <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Total Get</p>
-              <p className="text-[18px] font-black text-foreground font-mono truncate" title={getTotal.toLocaleString()}><RollingNumber value={getTotal} /></p>
+              <p className="text-[18px] font-black text-foreground font-mono truncate" title={getTotal.toLocaleString()}>
+                {isOcPresent && getTotal === 0 ? "O/C" : <RollingNumber value={getTotal} />}
+              </p>
             </div>
           </div>
 
           <div className="flex w-full h-[6px] gap-1.5 mb-5">
-            {giveTotal > 0 && <div className="rounded-full bg-[#FAA61A]" style={{ width: `${givePercent}%`, transition: "width 0.8s cubic-bezier(0.16, 1, 0.3, 1)" }} />}
-            {getTotal > 0 && <div className="rounded-full bg-primary" style={{ width: `${getPercent}%`, transition: "width 0.8s cubic-bezier(0.16, 1, 0.3, 1)" }} />}
-            {giveTotal === 0 && getTotal === 0 && <div className="w-full h-full rounded-full bg-popover transition-all duration-500" />}
+            {isOcPresent ? (
+               <div className="w-full h-full rounded-full bg-muted transition-all duration-500" />
+            ) : (
+               <>
+                 {giveTotal > 0 && <div className="rounded-full bg-[#FAA61A]" style={{ width: `${givePercent}%`, transition: "width 0.8s cubic-bezier(0.16, 1, 0.3, 1)" }} />}
+                 {getTotal > 0 && <div className="rounded-full bg-primary" style={{ width: `${getPercent}%`, transition: "width 0.8s cubic-bezier(0.16, 1, 0.3, 1)" }} />}
+                 {giveTotal === 0 && getTotal === 0 && <div className="w-full h-full rounded-full bg-popover transition-all duration-500" />}
+               </>
+            )}
           </div>
 
           <div className="bg-black/20 rounded-[6px] p-3.5">

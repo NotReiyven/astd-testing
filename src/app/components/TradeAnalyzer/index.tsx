@@ -2,7 +2,7 @@
 // FILE: src/app/components/TradeAnalyzer/index.tsx
 // ================================================
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Calculator, RotateCcw, Share2, Check, ArrowUpDown, Wand2, X, Megaphone, ArrowLeft, Bookmark, Trash2 } from "lucide-react";
 import { TradeSectionPanel } from "./TradeSectionPanel";
 import { TradeNotices } from "./TradeNotices";
@@ -10,7 +10,7 @@ import { SmartParserMenu } from "./SmartParserMenu";
 import { TradeSummaryBox } from "./TradeSummaryBox";
 import { AdComposer } from "./AdComposer";
 import { usePanelResize } from "../../../hooks/usePanelResize";
-import { getShareText, getTradeForecast } from "./summaryUtils";
+import { getShareText } from "./summaryUtils";
 import { useUnits } from "../../../context/UnitContext";
 import { GuideType } from "../guides/AquaGuideOverlay";
 import { useTradeStore } from "../../../store/useTradeStore";
@@ -19,13 +19,14 @@ import { useAuthStore } from "../../../store/useAuthStore";
 import { useTradeUndo } from "../../../hooks/useTradeUndo";
 import { useTradeGlobalInput } from "../../../hooks/useTradeGlobalInput";
 import { RollingNumber } from "../shared/Formatters";
+import { useBottomSheet } from "../../../hooks/useBottomSheet";
 
 export function TradeAnalyzerPanel({
   isOpen = true,
   onClose,
   guideState,
   startGuide,
-  analyzerZ = "z-50"
+  analyzerZ = "z-[60]"
 }: {
   isOpen?: boolean;
   onClose?: () => void;
@@ -62,15 +63,8 @@ export function TradeAnalyzerPanel({
   const [newPresetName, setNewPresetName] = useState("");
 
   const { panelWidth, startResize, panelRef } = usePanelResize(480, 420, 800);
-
   const { undoCache, confirmClear, saveUndoState, handleSafeClear, handleUndo } = useTradeUndo();
   const { isGlobalDragging, smartMenuOpen, setSmartMenuOpen, initialParserText, setInitialParserText } = useTradeGlobalInput();
-
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const touchStartYRef = useRef<number | null>(null);
-  const lastYRef = useRef<number>(0);
-  const lastTimeRef = useRef<number>(0);
-  const velocityRef = useRef<number>(0);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -78,6 +72,13 @@ export function TradeAnalyzerPanel({
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  const closeSheet = useCallback(() => {
+    triggerHaptic('light');
+    if (onClose) onClose();
+  }, [onClose]);
+
+  const { sheetRef, onTouchStart, onTouchMove, onTouchEnd, backdropOpacity } = useBottomSheet(isOpen, closeSheet, isMobile);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -97,7 +98,7 @@ export function TradeAnalyzerPanel({
     };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
-  }, [isOpen, onClose, smartMenuOpen, isPresetsOpen]);
+  }, [isOpen, onClose, smartMenuOpen, isPresetsOpen, closeSheet]);
 
   const { giveTotal, getTotal, givePercent, getPercent } = useMemo(() => {
     const gTotal = giveItems.reduce((s, c) => s + c.value * c.qty, 0);
@@ -149,63 +150,6 @@ export function TradeAnalyzerPanel({
   const openSheet = () => {
     triggerHaptic('medium');
     window.dispatchEvent(new Event("open-analyzer")); 
-  };
-
-  const closeSheet = () => {
-    triggerHaptic('light');
-    if (onClose) onClose();
-  };
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    if (!isMobile || !isOpen) return;
-    touchStartYRef.current = e.touches[0].clientY;
-    lastYRef.current = e.touches[0].clientY;
-    lastTimeRef.current = Date.now();
-    velocityRef.current = 0;
-
-    if (sheetRef.current) {
-      sheetRef.current.style.transition = 'none';
-    }
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!isMobile || !isOpen || touchStartYRef.current === null) return;
-
-    const currentY = e.touches[0].clientY;
-    const dy = currentY - touchStartYRef.current;
-
-    const currentTime = Date.now();
-    const dt = currentTime - lastTimeRef.current;
-    if (dt > 0) {
-      velocityRef.current = (currentY - lastYRef.current) / dt;
-    }
-    lastYRef.current = currentY;
-    lastTimeRef.current = currentTime;
-
-    if (dy > 0) {
-      if (sheetRef.current) {
-        sheetRef.current.style.transform = `translateY(${dy}px)`;
-      }
-    }
-  };
-
-  const onTouchEnd = () => {
-    if (!isMobile || !isOpen || touchStartYRef.current === null) return;
-
-    const dy = lastYRef.current - touchStartYRef.current;
-
-    if (sheetRef.current) {
-      sheetRef.current.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
-
-      if (dy > window.innerHeight * 0.25 || velocityRef.current > 0.4) {
-        closeSheet();
-        sheetRef.current.style.transform = 'translateY(100%)';
-      } else {
-        sheetRef.current.style.transform = 'translateY(0px)';
-      }
-    }
-
-    touchStartYRef.current = null;
   };
 
   const isGuestStep2 = guideState?.type === "guest_tour" && guideState?.step === 2; 
@@ -481,6 +425,7 @@ export function TradeAnalyzerPanel({
         {isOpen && (
           <div 
             className="fixed inset-0 bg-black/80 z-[90] transition-opacity" 
+            style={{ opacity: backdropOpacity }}
             onClick={closeSheet}
             aria-hidden="true"
           />
@@ -531,7 +476,6 @@ export function TradeAnalyzerPanel({
   // DESKTOP RETURN
   return (
     <>
-      {/* Overlay backdrop for md & lg screens. Hidden on xl because it's side-by-side. */}
       {isOpen && (
         <div 
           className="hidden md:block xl:hidden fixed inset-0 bg-black/60 z-[55] transition-opacity" 

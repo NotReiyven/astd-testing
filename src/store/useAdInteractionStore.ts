@@ -48,9 +48,17 @@ interface AdInteractionState {
 
 const containsPhishingOrLink = (text: string) => {
   const normalized = text.normalize('NFKD').toLowerCase();
-  const stripped = normalized.replace(/[\u200B-\u200D\uFEFF]/g, '');
-  const urlPattern = /(https?:\/\/|www\.|[a-zA-Z0-9-]+\.(com|net|org|gg|ru|io|me|co|xyz|to|link|tk)|discord\.gg|t\.me|bit\.ly)/i;
-  return urlPattern.test(stripped);
+  const stripped = normalized
+    .replace(/[\u200B-\u200D\uFEFF\u200E\u200F\u202A-\u202E]/g, '') // Zero-width / directional
+    .replace(/(\s|\[|\]|\(|\)|\{|\}|\*|_|-|~|`|\||\\|\/)+/g, '')   // Common separators to catch "discord . gg"
+    .replace(/[аа]/g, 'a') // Cyrillic homoglyphs
+    .replace(/[оо]/g, 'o')
+    .replace(/[ее]/g, 'e')
+    .replace(/[сс]/g, 'c')
+    .replace(/dot/g, '.');
+
+  const aggressivePattern = /(https?:|www\.|[a-z0-9]+\.(com|net|org|gg|ru|io|me|co|xyz|to|link|tk)|discord\.gg|discordgg|t\.me|bit\.ly)/i;
+  return aggressivePattern.test(stripped);
 };
 
 let activeInteractionChannel: RealtimeChannel | null = null;
