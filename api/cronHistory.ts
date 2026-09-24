@@ -3,7 +3,7 @@
 // ================================================
 
 import { createClient } from "@supabase/supabase-js";
-import { parseSpreadsheet, SpreadsheetData, ParsedUnit } from "./lib/parseSheet";
+import { parseSpreadsheet, SpreadsheetData, ParsedUnit } from "./lib/parseSheet.js";
 
 // Removed runtime: 'edge' - This function requires Node.js memory limits 
 // to safely process large Google Sheets JSON payloads without OOM crashes.
@@ -40,7 +40,7 @@ async function sendDiscordEmbed(embedData: { title: string; description: string;
       })
     });
   } catch (err) {
-    console.error("Failed to send Discord embed webhook:", err);
+    console.error("Failed to send Discord webhook embed:", err);
   }
 }
 

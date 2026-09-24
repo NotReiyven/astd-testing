@@ -4,7 +4,7 @@
 
 import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
-import { parseSpreadsheet, SpreadsheetData } from "./lib/parseSheet";
+import { parseSpreadsheet, SpreadsheetData } from "./lib/parseSheet.js";
 
 let ratelimit: Ratelimit | null = null;
 
