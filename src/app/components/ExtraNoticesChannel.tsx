@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/ExtraNoticesChannel.tsx
+// ================================================
+
 import React, { useState, useMemo } from "react";
 import { Info, BookOpen, ShieldAlert, LucideIcon, Inbox, Search, Pin, Megaphone, Filter } from "lucide-react";
 import { useUnits } from "../../context/UnitContext";
@@ -55,8 +59,8 @@ export function ExtraNoticesChannel() {
 
       <div className="flex flex-col md:flex-row gap-8 max-w-6xl mx-auto w-full h-full p-6 md:p-8 overflow-hidden">
 
-        {/* Sidebar Navigation */}
-        <nav className="hidden md:flex flex-col w-64 shrink-0 sticky top-0 self-start pt-2 z-10">
+        {/* Sidebar Navigation now hides on lg (1024px) to make room for calculator overlay */}
+        <nav className="hidden lg:flex flex-col w-64 shrink-0 sticky top-0 self-start pt-2 z-10">
           <div className="flex items-center gap-2.5 mb-6 text-foreground">
             <Megaphone className="w-5 h-5 text-primary" />
             <h2 className="text-[15px] font-black uppercase tracking-wider">Intelligence</h2>
@@ -93,8 +97,8 @@ export function ExtraNoticesChannel() {
           </div>
         </nav>
 
-        {/* Main Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-16 flex flex-col gap-8 z-10">
+        {/* Added min-w-0 to prevent flexbox crushing */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-16 flex flex-col gap-8 z-10 min-w-0">
 
           {/* Intro */}
           <div className="flex flex-col gap-3">

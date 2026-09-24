@@ -237,8 +237,8 @@ export function AdminChannel() {
         /* Tab Content: Users */
         <div className="flex-1 flex overflow-hidden animate-fade-in bg-transparent z-10">
           
-          {/* User List Sidebar */}
-          <div className={`flex flex-col w-full ${selectedUser ? 'hidden md:flex md:w-[360px]' : 'flex'} shrink-0 border-r border-border bg-card/60 backdrop-blur-sm shadow-md z-10`}>
+          {/* User List Sidebar - Hidden on lg when user is selected */}
+          <div className={`flex flex-col w-full ${selectedUser ? 'hidden lg:flex lg:w-[320px] xl:w-[360px]' : 'flex'} shrink-0 border-r border-border bg-card/60 backdrop-blur-sm shadow-md z-10`}>
             <div className="p-3.5 border-b border-border bg-muted/30 flex flex-col gap-2.5">
               <form onSubmit={handleSearch} className="relative w-full">
                 <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
@@ -320,7 +320,8 @@ export function AdminChannel() {
           </div>
 
           {/* User Details & Mod Panel */}
-          <div className={`flex-1 flex flex-col bg-transparent relative overflow-hidden ${!selectedUser ? 'hidden md:flex' : 'flex'}`}>
+          {/* Added min-w-0 to prevent flex crushing */}
+          <div className={`flex-1 flex flex-col bg-transparent relative overflow-hidden min-w-0 ${!selectedUser ? 'hidden lg:flex' : 'flex'}`}>
             {!selectedUser ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
                 <UserCircle2 className="w-16 h-16 text-muted-foreground mb-4 opacity-40" />
@@ -330,8 +331,8 @@ export function AdminChannel() {
             ) : (
               <div className="flex-1 overflow-y-auto custom-scrollbar animate-fade-in pb-12">
                 
-                {/* Mobile Back Button */}
-                <div className="md:hidden p-3 border-b border-border bg-card/40">
+                {/* Mobile Back Button - Shows on < lg screens when looking at details */}
+                <div className="lg:hidden p-3 border-b border-border bg-card/40">
                   <button onClick={() => setSelectedUser(null)} className="flex items-center gap-1.5 text-[12px] font-bold text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none">
                     <ArrowRight className="w-4 h-4 rotate-180" /> Back to Directory
                   </button>

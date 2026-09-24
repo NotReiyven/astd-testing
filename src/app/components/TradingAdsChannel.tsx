@@ -570,7 +570,7 @@ export function TradingAdsChannel() {
               </button>
             </div>
           ) : (
-            <div className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 w-full animate-fade-in ${globalCompactMode ? 'gap-2 sm:gap-3' : 'gap-4 sm:gap-6'}`}>
+            <div className={`grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 w-full animate-fade-in ${globalCompactMode ? 'gap-2 sm:gap-3' : 'gap-4 sm:gap-6'}`}>
               {filteredAndSortedAds.map((ad) => (
                 <VanguardAdCard
                   key={ad.id}

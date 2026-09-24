@@ -5,9 +5,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { parseSpreadsheet, SpreadsheetData, ParsedUnit } from "./lib/parseSheet";
 
-export const config = {
-  runtime: 'edge'
-};
+// Removed runtime: 'edge' - This function requires Node.js memory limits 
+// to safely process large Google Sheets JSON payloads without OOM crashes.
 
 interface UnitStateRow {
   unit_id: string;
@@ -73,23 +72,27 @@ export async function GET(request: Request) {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    // --- AUTONOMOUS CLEANUP ROUTINE ---
     const nowIso = new Date().toISOString();
-    
-    const { error: adPurgeErr } = await supabase
-      .from('trading_ads')
-      .delete()
-      .lt('expires_at', nowIso);
-    if (adPurgeErr) console.error("Error purging expired ads:", adPurgeErr);
 
-    const { data: bannedUsers, error: bannedErr } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('role', 'banned');
+    // 1. RUN CLEANUP AND SHEET FETCH CONCURRENTLY TO SLASH EXECUTION TIME
+    const ranges = [
+      "S Tier!A:I", "A Tier!A:I", "B Tier!A:I", "C Tier!A:I", 
+      "Pure Tier!A:I", "Oddities!A:I", "Untiered!A:I"
+    ];
+    const batchRanges = ranges.map(r => `ranges=${encodeURIComponent(r)}`).join("&");
+    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batchRanges}&includeGridData=true&key=${API_KEY}`;
 
-    if (!bannedErr && bannedUsers && bannedUsers.length > 0) {
-      const bannedIds = bannedUsers.map(b => b.id);
+    const [adPurgeResult, bannedUsersResult, sheetsResponse] = await Promise.all([
+      supabase.from('trading_ads').delete().lt('expires_at', nowIso),
+      supabase.from('profiles').select('id').eq('role', 'banned'),
+      fetch(sheetsUrl)
+    ]);
+
+    if (adPurgeResult.error) console.error("Error purging expired ads:", adPurgeResult.error);
+
+    // If there are banned users, purge their assets
+    if (!bannedUsersResult.error && bannedUsersResult.data && bannedUsersResult.data.length > 0) {
+      const bannedIds = bannedUsersResult.data.map(b => b.id);
       await Promise.all([
         supabase.from('trading_ads').delete().in('user_id', bannedIds),
         supabase.from('ad_comments').delete().in('user_id', bannedIds),
@@ -97,48 +100,34 @@ export async function GET(request: Request) {
         supabase.from('user_wishlist').delete().in('user_id', bannedIds)
       ]);
     }
-    // ---------------------------------
 
-    const ranges = [
-      "S Tier!A:I", "A Tier!A:I", "B Tier!A:I", "C Tier!A:I", 
-      "Pure Tier!A:I", "Oddities!A:I", "Untiered!A:I"
-    ];
-    const batchRanges = ranges.map(r => `ranges=${encodeURIComponent(r)}`).join("&");
-
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batchRanges}&includeGridData=true&key=${API_KEY}`);
-    const data = (await response.json()) as SpreadsheetData;
+    // 2. PARSE GOOGLE SHEETS DATA
+    if (!sheetsResponse.ok) {
+      throw new Error(`Google Sheets API failed with status ${sheetsResponse.status}`);
+    }
+    const data = (await sheetsResponse.json()) as SpreadsheetData;
     if (!data.sheets) throw new Error("No grid data returned from Google Sheets API");
 
     const { units } = parseSpreadsheet(data);
     if (!units || units.length === 0) return new Response(JSON.stringify({ message: "No units parsed" }), { status: 200, headers: { "Content-Type": "application/json" } });
 
-    let allRows: UnitStateRow[] = [];
-    let from = 0;
-    let to = 999;
-    while (true) {
-      const { data: chunk, error: fetchError } = await supabase
-        .from('unit_current_state')
-        .select('*')
-        .range(from, to);
-      if (fetchError) throw fetchError;
-      if (chunk && chunk.length > 0) {
-        allRows.push(...(chunk as UnitStateRow[]));
-        if (chunk.length < 1000) break;
-        from += 1000;
-        to += 1000;
-      } else {
-        break;
-      }
-    }
+    // 3. FETCH EXISTING DB STATE (Single query, pagination is overkill for < 500 units)
+    const { data: currentDbState, error: fetchError } = await supabase
+      .from('unit_current_state')
+      .select('*')
+      .limit(1000); // Failsafe limit
+
+    if (fetchError) throw fetchError;
 
     const currentMap = new Map<string, UnitStateRow>();
-    allRows.forEach(row => currentMap.set(row.unit_id, row));
+    (currentDbState || []).forEach(row => currentMap.set(row.unit_id, row));
 
     const timestamp = new Date().toISOString();
     const snapshotsToInsert: UnitStateRow[] = [];
     const statesToUpsert: UnitStateRow[] = [];
     const valueShifts: string[] = [];
 
+    // 4. CALCULATE DIFFS
     units.forEach((u: ParsedUnit) => {
       const dbValue = typeof u.value === 'number' ? u.value : null;
       const dbValueType = typeof u.value === 'number' ? 'number' : typeof u.value === 'string' ? u.value : 'unknown';
@@ -193,7 +182,7 @@ export async function GET(request: Request) {
       }
     });
 
-    // CHUNKED DATABASE WRITES TO PREVENT PAYLOAD CRASHES
+    // 5. CHUNKED DATABASE WRITES TO PREVENT PAYLOAD CRASHES
     if (snapshotsToInsert.length > 0) {
       const CHUNK_SIZE = 500;
       

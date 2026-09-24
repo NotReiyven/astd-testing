@@ -8,6 +8,10 @@ import { useToastStore } from '../store/useToastStore';
 
 export function useNetworkSync() {
   useEffect(() => {
+    const handleOffline = () => {
+      useToastStore.getState().addToast("Network connection lost. Operating in offline mode.", "warning");
+    };
+
     const handleOnline = async () => {
       const offlineAds = await get('astd_offline_ads') || [];
       const offlineComments = await get('astd_offline_comments') || [];
@@ -88,6 +92,11 @@ export function useNetworkSync() {
     };
 
     window.addEventListener('online', handleOnline);
-    return () => window.removeEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 }

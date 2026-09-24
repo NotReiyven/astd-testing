@@ -38,8 +38,8 @@ export function TheoryTab() {
   return (
     <div className="flex flex-col md:flex-row gap-8 max-w-6xl mx-auto h-full font-sans">
       
-      {/* Sidebar Navigation */}
-      <nav className="hidden md:flex flex-col w-56 shrink-0 sticky top-0 self-start pt-2">
+      {/* Sidebar Navigation - Hidden on lg to make room for calculator overlay */}
+      <nav className="hidden lg:flex flex-col w-56 shrink-0 sticky top-0 self-start pt-2">
         <div className="flex items-center gap-2.5 mb-6 text-foreground">
           <BookOpen className="w-5 h-5" />
           <h2 className="text-[15px] font-black uppercase tracking-wider">Documentation</h2>
@@ -66,8 +66,8 @@ export function TheoryTab() {
         </div>
       </nav>
 
-      {/* Main Content */}
-      <div id="theory-content" className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-16 flex flex-col gap-12">
+      {/* Added min-w-0 to prevent flexbox crushing */}
+      <div id="theory-content" className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-16 flex flex-col gap-12 min-w-0">
         
         {/* Intro */}
         <div className="flex flex-col gap-3">

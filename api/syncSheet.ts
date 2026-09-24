@@ -6,9 +6,8 @@ import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
 import { parseSpreadsheet, SpreadsheetData } from "./lib/parseSheet";
 
-export const config = {
-  runtime: 'edge'
-};
+// Removed runtime: 'edge'. Allowing Node.js to handle the memory 
+// allocation for the Google Sheets payload.
 
 let ratelimit: Ratelimit | null = null;
 
@@ -61,6 +60,7 @@ export async function GET(request: Request) {
     return jsonResponse(400, { error: "Query parameters are not allowed." });
   }
 
+  // Rate Limiting
   if (ratelimit) {
     const ip = request.headers.get("x-forwarded-for") || "anonymous";
     const { success } = await ratelimit.limit(`sync_${ip}`);
@@ -84,7 +84,21 @@ export async function GET(request: Request) {
   }
 
   try {
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batchRanges}&includeGridData=true&key=${API_KEY}`);
+    // Implementing an abort controller to prevent the function from hanging indefinitely
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second strict timeout
+
+    const response = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batchRanges}&includeGridData=true&key=${API_KEY}`,
+      { signal: controller.signal }
+    );
+    
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+        throw new Error(`Google Sheets responded with status ${response.status}`);
+    }
+
     const data = (await response.json()) as SpreadsheetData;
 
     if (!data.sheets) throw new Error("No grid data found in spreadsheet");
@@ -99,7 +113,12 @@ export async function GET(request: Request) {
     );
   } catch (error: any) {
     console.error("syncSheet error:", error);
-    await sendDiscordAlert(`Sheet sync endpoint failed: ${error.message || error}`);
+    
+    // Distinguish between timeouts and actual crashes
+    const isTimeout = error.name === 'AbortError';
+    const message = isTimeout ? "Google Sheets API timed out" : (error.message || error);
+    
+    await sendDiscordAlert(`Sheet sync endpoint failed: ${message}`);
     return jsonResponse(500, { error: "Failed to sync sheet data." });
   }
 }

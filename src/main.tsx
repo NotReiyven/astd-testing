@@ -9,12 +9,22 @@ import './styles/index.css'
 import { UnitProvider } from './context/UnitContext'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
+// Safely register Service Worker for PWA offline caching
+try {
+  import('virtual:pwa-register').then(({ registerSW }) => {
+    if ('serviceWorker' in navigator) {
+      registerSW({ immediate: true });
+    }
+  }).catch(() => {});
+} catch (e) {}
+
+// Establish global caching and retry strategies for TanStack Query
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 2,
       refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 2,
+      staleTime: 1000 * 60 * 2, // 2 minutes default staleness
     },
   },
 });

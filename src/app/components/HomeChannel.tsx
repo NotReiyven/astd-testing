@@ -126,7 +126,8 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
     <div className="flex-1 w-full h-full font-sans relative overflow-hidden flex flex-col bg-background">
       <div className={`flex flex-col md:flex-row ${globalCompactMode ? 'gap-4 p-3 md:p-4' : 'gap-8 p-6 md:p-8'} max-w-6xl mx-auto w-full h-full overflow-hidden`}>
 
-        <nav className="hidden md:flex flex-col w-56 shrink-0 sticky top-0 self-start pt-2 z-10">
+        {/* Inner Nav now hides on lg (1024px) screens to make room for calculator overlay */}
+        <nav className="hidden lg:flex flex-col w-56 shrink-0 sticky top-0 self-start pt-2 z-10">
           <div className="flex items-center justify-between mb-6 text-foreground">
             <div className="flex items-center gap-2.5">
               <Home className="w-5 h-5" />
@@ -166,7 +167,8 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
           )}
         </nav>
 
-        <div id="home-content" className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-16 flex flex-col gap-12 z-10">
+        {/* Added min-w-0 to prevent flexbox from crushing text elements */}
+        <div id="home-content" className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-16 flex flex-col gap-12 z-10 min-w-0">
 
           <div className="flex flex-col gap-3">
             <h1 className={`${globalCompactMode ? 'text-[20px] md:text-[24px]' : 'text-[28px] md:text-[32px]'} font-black text-foreground tracking-tight`}>ASTD Value List</h1>

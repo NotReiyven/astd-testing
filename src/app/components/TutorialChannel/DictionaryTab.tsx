@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/TutorialChannel/DictionaryTab.tsx
+// ================================================
+
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Search, Trash2, Check, Book } from "lucide-react";
 import { useUnits } from "../../../context/UnitContext";
@@ -81,7 +85,8 @@ export function DictionaryTab() {
            <p className="text-muted-foreground text-[12px]">Link a custom abbreviation to an official unit.</p>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4 relative">
+        {/* Fixed: flex-col lg:flex-row to prevent input crushing on 1024-1440px displays */}
+        <div className="flex flex-col lg:flex-row gap-4 relative">
           <div className="flex-1 flex flex-col gap-2">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Your Custom Slang</span>
             <input 
@@ -150,7 +155,7 @@ export function DictionaryTab() {
           <div className="flex flex-col justify-end">
             <button 
               onClick={handleAddSlang} 
-              className={`flex items-center justify-center h-[46px] px-8 rounded-[4px] text-[14px] font-bold transition-colors focus-visible:outline-none ${newSlangKey.trim() && newSlangTargetId ? "bg-[#23a559] hover:bg-[#1f914e] text-white active:scale-95 shadow-sm" : "bg-popover text-muted-foreground border border-border cursor-not-allowed"}`}
+              className={`shrink-0 px-4 py-3 md:py-2 rounded-[4px] text-[14px] md:text-[13px] font-bold transition-colors focus-visible:outline-none ${newSlangKey.trim() && newSlangTargetId ? "bg-[#23a559] hover:bg-[#1f914e] text-white active:scale-95 shadow-sm" : "bg-popover text-muted-foreground border border-border cursor-not-allowed"}`}
               disabled={!newSlangKey.trim() || !newSlangTargetId}
             >
               Save Link
@@ -202,10 +207,10 @@ export function DictionaryTab() {
 
                   <button 
                     onClick={() => handleRemoveSlang(key)} 
-                    className="text-muted-foreground hover:text-destructive p-2 transition-colors rounded-[4px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive hover:bg-destructive/10 shrink-0 ml-2"
+                    className="text-muted-foreground hover:text-destructive p-2 md:p-1.5 transition-colors rounded-[4px] md:rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive hover:bg-destructive/10 shrink-0 ml-2 cursor-pointer"
                     title="Remove slang"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4 md:w-3.5 md:h-3.5"/>
                   </button>
                 </div>
               )

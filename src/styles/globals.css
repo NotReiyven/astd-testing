@@ -3,9 +3,11 @@
 // ================================================ */
 @import "tailwindcss";
 
-/* Force dark color scheme so browsers respect dark scrollbars natively */
 html, body {
   color-scheme: dark;
+  /* Prevent iOS bounce scroll and highlight tap boxes for native app feel */
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Universal Slim Scrollbars with maximum specificity */

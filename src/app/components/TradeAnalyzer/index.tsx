@@ -528,27 +528,39 @@ export function TradeAnalyzerPanel({
     );
   }
 
+  // DESKTOP RETURN
   return (
-    <div 
-      className={`hidden md:block relative top-0 bottom-0 right-0 flex-shrink-0 overflow-hidden transition-all duration-200 ease-out will-change-[width,transform] ${isOpen ? 'translate-x-0 pointer-events-auto' : 'translate-x-full pointer-events-none'} ${analyzerZ}`}
-      style={{ opacity: isOpen ? 1 : 0, width: isOpen ? `${panelWidth}px` : '0px' }}
-    >
-      <div className="w-full h-full">
+    <>
+      {/* Overlay backdrop for md & lg screens. Hidden on xl because it's side-by-side. */}
+      {isOpen && (
+        <div 
+          className="hidden md:block xl:hidden fixed inset-0 bg-black/60 z-[55] transition-opacity" 
+          onClick={closeSheet}
+          aria-hidden="true"
+        />
+      )}
+      
+      <div 
+        className={`hidden md:block absolute xl:relative top-0 bottom-0 right-0 flex-shrink-0 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[width,transform] z-[60] xl:z-auto ${isOpen ? 'translate-x-0 pointer-events-auto shadow-[-20px_0_50px_rgba(0,0,0,0.5)] xl:shadow-none' : 'translate-x-full pointer-events-none'} ${analyzerZ}`}
+        style={{ opacity: isOpen ? 1 : 0, width: isOpen ? `${panelWidth}px` : '0px' }}
+      >
         <div className="w-full h-full">
-          <div 
-            ref={panelRef} 
-            className="flex flex-col h-full w-full select-none border-l border-border bg-card relative" 
-            style={{ width: `${panelWidth}px`, minWidth: "420px", fontFamily: "var(--font-sans)" }}
-          >
+          <div className="w-full h-full">
             <div 
-              className="absolute top-0 left-0 w-2 h-full cursor-col-resize hover:bg-primary z-[100000] transition-colors"
-              onMouseDown={startResize}
-              title="Drag to resize panel"
-            />
-            {renderCalculatorContent()}
+              ref={panelRef} 
+              className="flex flex-col h-full w-full select-none border-l border-border bg-card relative" 
+              style={{ width: `${panelWidth}px`, minWidth: "420px", fontFamily: "var(--font-sans)" }}
+            >
+              <div 
+                className="absolute top-0 left-0 w-2 h-full cursor-col-resize hover:bg-primary z-[100000] transition-colors"
+                onMouseDown={startResize}
+                title="Drag to resize panel"
+              />
+              {renderCalculatorContent()}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
