@@ -6,9 +6,6 @@ import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
 import { parseSpreadsheet, SpreadsheetData } from "./lib/parseSheet";
 
-// Removed runtime: 'edge'. Allowing Node.js to handle the memory 
-// allocation for the Google Sheets payload.
-
 let ratelimit: Ratelimit | null = null;
 
 if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
@@ -84,17 +81,12 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Implementing an abort controller to prevent the function from hanging indefinitely
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second strict timeout
-
+    // Removed the aggressive 8-second AbortController.
+    // We now rely on Vercel's native serverless timeout limits.
     const response = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batchRanges}&includeGridData=true&key=${API_KEY}`,
-      { signal: controller.signal }
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batchRanges}&includeGridData=true&key=${API_KEY}`
     );
     
-    clearTimeout(timeoutId);
-
     if (!response.ok) {
         throw new Error(`Google Sheets responded with status ${response.status}`);
     }
@@ -114,10 +106,7 @@ export async function GET(request: Request) {
   } catch (error: any) {
     console.error("syncSheet error:", error);
     
-    // Distinguish between timeouts and actual crashes
-    const isTimeout = error.name === 'AbortError';
-    const message = isTimeout ? "Google Sheets API timed out" : (error.message || error);
-    
+    const message = error.message || error;
     await sendDiscordAlert(`Sheet sync endpoint failed: ${message}`);
     return jsonResponse(500, { error: "Failed to sync sheet data." });
   }
