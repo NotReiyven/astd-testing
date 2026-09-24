@@ -4,11 +4,13 @@
 
 import { useState, useRef, useEffect } from "react";
 import { 
-  PanelLeft, Hash, Search, X, Calculator, LogIn, LogOut, User, Check, Terminal, Sparkles
+  PanelLeft, Hash, Search, X, Calculator, LogIn, LogOut, User, Check, Terminal, Sparkles, Bell, MessageSquare
 } from "lucide-react";
 import { LiveAvatars } from "./LiveAvatars";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useLayoutStore } from "../../../store/useLayoutStore";
+import { useNotificationStore } from "../../../store/useNotificationStore";
+import { useAdInteractionStore } from "../../../store/useAdInteractionStore";
 import { CommandPalette } from "./CommandPalette";
 
 interface TopBarProps {
@@ -46,12 +48,16 @@ export function TopBar({
 
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isNotifMenuOpen, setIsNotifMenuOpen] = useState(false);
 
   const mobileInputRef = useRef<HTMLInputElement>(null);
   const desktopSearchRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const notifMenuRef = useRef<HTMLDivElement>(null);
 
   const { profile, loginWithDiscord, logout, updateStatus, isLoading: isAuthLoading } = useAuthStore();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotificationStore();
+  const { openAdContext } = useAdInteractionStore();
 
   const [dismissedTips, setDismissedTips] = useState<Record<string, boolean>>(() => {
     try { return JSON.parse(localStorage.getItem('astd_tips') || '{}'); } catch { return {}; }
@@ -89,6 +95,7 @@ export function TopBar({
         setGlobalSearchQuery("");
         setMobileSearchOpen(false);
         setIsProfileMenuOpen(false);
+        setIsNotifMenuOpen(false);
         if (document.activeElement instanceof HTMLElement) {
           document.activeElement.blur();
         }
@@ -110,8 +117,11 @@ export function TopBar({
       if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
         setIsProfileMenuOpen(false);
       }
+      if (notifMenuRef.current && !notifMenuRef.current.contains(e.target as Node)) {
+        setIsNotifMenuOpen(false);
+      }
     };
-    if (isProfileMenuOpen) {
+    if (isProfileMenuOpen || isNotifMenuOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       document.addEventListener("touchstart", handleClickOutside);
     }
@@ -119,7 +129,15 @@ export function TopBar({
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);
     };
-  }, [isProfileMenuOpen]);
+  }, [isProfileMenuOpen, isNotifMenuOpen]);
+
+  const handleNotificationClick = (notif: any) => {
+    if (!notif.is_read) markAsRead(notif.id);
+    setIsNotifMenuOpen(false);
+    openAdContext(notif.ad_id, profile?.id);
+    // Explicitly navigate to the trading ads route so the modal context is correct
+    window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'trading-ads' }));
+  };
 
   const showCalcPulse = isDictionaryActive && !isAnalyzerOpen;
 
@@ -171,6 +189,62 @@ export function TopBar({
 
         <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
           <LiveAvatars />
+
+          {!isAuthLoading && profile && (
+            <div className="relative" ref={notifMenuRef}>
+              <button 
+                onClick={() => setIsNotifMenuOpen(!isNotifMenuOpen)}
+                className="flex items-center justify-center p-1 bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground rounded-[4px] transition-colors shrink-0 cursor-pointer focus-visible:outline-none min-h-[44px] min-w-[44px] relative"
+                title="Notifications"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-destructive rounded-full border-2 border-background" />
+                )}
+              </button>
+
+              {isNotifMenuOpen && (
+                <div className="absolute top-full right-0 mt-2 w-[320px] bg-card border border-border rounded-[6px] shadow-xl z-[99999] flex flex-col animate-slide-up">
+                  <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-popover rounded-t-[6px]">
+                    <span className="text-[12px] font-black uppercase tracking-widest text-foreground">Notifications</span>
+                    {unreadCount > 0 && (
+                      <button onClick={() => markAllAsRead(profile.id)} className="text-[10px] font-bold text-primary hover:underline cursor-pointer focus-visible:outline-none">
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-col max-h-[350px] overflow-y-auto custom-scrollbar">
+                    {notifications.length === 0 ? (
+                      <div className="px-4 py-8 text-center flex flex-col items-center gap-2">
+                        <Bell className="w-8 h-8 text-muted-foreground opacity-50" />
+                        <span className="text-[13px] font-medium text-muted-foreground">You have no new notifications.</span>
+                      </div>
+                    ) : (
+                      notifications.map(n => (
+                        <button
+                          key={n.id}
+                          onClick={() => handleNotificationClick(n)}
+                          className={`w-full text-left flex items-start gap-3 p-3 border-b border-border hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none ${!n.is_read ? 'bg-primary/5' : ''}`}
+                        >
+                          <img src={n.actor?.avatar_url || "/units/firezio.webp"} className="w-8 h-8 rounded-full border border-border bg-muted object-cover shrink-0" alt="" />
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <p className="text-[12.5px] text-foreground leading-snug">
+                              <strong className="font-bold">{n.actor?.username || "Someone"}</strong> {n.type === 'reply' ? "replied to your comment" : "commented on your trade ad"}.
+                            </p>
+                            <span className="text-[10px] text-muted-foreground font-mono mt-1">
+                              {new Date(n.created_at).toLocaleDateString()} at {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          {!n.is_read && <span className="w-2 h-2 bg-primary rounded-full shrink-0 mt-1.5" />}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {!isAuthLoading && (
             profile ? (

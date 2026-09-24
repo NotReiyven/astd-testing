@@ -3,9 +3,10 @@
 // ================================================
 
 import { useState, useEffect, Suspense, lazy, useCallback, useRef } from "react";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { Hash, Check, Ban, ExternalLink } from "lucide-react";
 import { FilterKey } from "../types";
-import { useStickyState, isBoolean, isNonEmptyString } from "../hooks/useStickyState";
+import { useStickyState, isBoolean } from "../hooks/useStickyState";
 import { AquaGuideOverlay } from "./components/guides/AquaGuideOverlay";
 import { TopBar } from "./components/layout/TopBar";
 import { SyncBanner } from "./components/layout/SyncBanner";
@@ -22,9 +23,9 @@ import { useGuideSystem } from "../hooks/useGuideSystem";
 import { useGlobalEvents } from "../hooks/useGlobalEvents";
 import { useMobileSwipe } from "../hooks/useMobileSwipe";
 import { useAuthStore } from "../store/useAuthStore";
+import { useNotificationStore } from "../store/useNotificationStore";
 import { supabase } from "../lib/supabase";
 
-// NEW INJECTIONS
 import { useNetworkSync } from "../hooks/useNetworkSync";
 import { GlobalToastContainer } from "./components/layout/GlobalToastContainer";
 import { GranularErrorBoundary } from "./components/shared/GranularErrorBoundary";
@@ -55,14 +56,26 @@ const CHANNEL_INFO: Record<string, { title: string; subtitle: string }> = {
 };
 
 export default function App() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  const path = location.pathname.replace(/^\/+/, '');
+  const activeChannel = path === "" ? "home" : path;
+
+  const setActiveChannel = useCallback((id: string) => {
+    navigate(`/${id}`);
+  }, [navigate]);
+
   const giveItems = useTradeStore((s) => s.giveItems);
   const getItems = useTradeStore((s) => s.getItems);
   const pinnedIds = useTradeStore((s) => s.pinnedIds);
   const { profile, isLoading: isAuthLoading } = useAuthStore();
+  
+  // Realtime Notification Listener
+  const { subscribe: subscribeToNotifications, unsubscribe: unsubscribeFromNotifications } = useNotificationStore();
 
   const { globalSearchQuery, setGlobalSearchQuery, bootChannel } = useLayoutStore();
 
-  const [activeChannel, setActiveChannel] = useStickyState("home", "astd_channel", isNonEmptyString);
   const [tutorialTab, setTutorialTab] = useState<"sandbox" | "simulator" | "theory" | "dictionary">("sandbox");
   const [activeTierFilter, setActiveTierFilter] = useStickyState<FilterKey>("S", "astd_tier");
   const [scrollToSection, setScrollToSection] = useState<{ tier: string; sectionId: string } | null>(null);
@@ -73,7 +86,6 @@ export default function App() {
   const { bootStage, isMobile } = useAppBoot();
   const hasRoutedBootChannel = useRef(false);
 
-  // Activate Offline Queue Sync System
   useNetworkSync();
 
   const { 
@@ -96,12 +108,22 @@ export default function App() {
   useEffect(() => {
     if (bootStage === 'complete' && !hasRoutedBootChannel.current) {
       hasRoutedBootChannel.current = true;
-      if (bootChannel !== 'last-used' && activeChannel !== bootChannel) {
-        setActiveChannel(bootChannel);
+      if (location.pathname === "/" || location.pathname === "") {
+        const target = bootChannel === 'last-used' 
+          ? (localStorage.getItem('astd_last_route') || '/home') 
+          : `/${bootChannel}`;
+        navigate(target, { replace: true });
       }
     }
-  }, [bootStage, bootChannel, activeChannel, setActiveChannel]);
+  }, [bootStage, bootChannel, location.pathname, navigate]);
 
+  useEffect(() => {
+    if (bootStage === 'complete' && location.pathname !== "/") {
+      localStorage.setItem('astd_last_route', location.pathname);
+    }
+  }, [location.pathname, bootStage]);
+
+  // Handle Login Modal Logic
   useEffect(() => {
     if (!isAuthLoading && !profile && (activeChannel === "inventory" || activeChannel === "trading-ads")) {
       setLoginModalChannel(activeChannel);
@@ -110,10 +132,17 @@ export default function App() {
     }
   }, [activeChannel, profile, isAuthLoading]);
 
+  // Hook up notification subscriptions based on auth state
   useEffect(() => {
-    const handleStartGuest = () => {
-      startGuide("guest_tour", true);
-    };
+    if (profile) {
+      subscribeToNotifications(profile.id);
+    } else {
+      unsubscribeFromNotifications();
+    }
+  }, [profile, subscribeToNotifications, unsubscribeFromNotifications]);
+
+  useEffect(() => {
+    const handleStartGuest = () => startGuide("guest_tour", true);
     window.addEventListener("start-guest-tour", handleStartGuest);
     return () => window.removeEventListener("start-guest-tour", handleStartGuest);
   }, [startGuide]);
@@ -162,7 +191,7 @@ export default function App() {
       if (activeTierFilter !== "All") setActiveTierFilter("All");
       if (window.innerWidth < 768 && isRosterOpen) setIsRosterOpen(false);
     }
-  }, [globalSearchQuery, activeTierFilter, setActiveTierFilter, isRosterOpen, setIsRosterOpen, setActiveChannel]);
+  }, [globalSearchQuery, activeTierFilter, setActiveTierFilter, isRosterOpen, setIsRosterOpen, activeChannel, setActiveChannel]);
 
   useEffect(() => {
     if (window.innerWidth < 768) setIsRosterOpen(false);
@@ -276,7 +305,6 @@ export default function App() {
 
           {isRosterOpen && <div className="md:hidden fixed inset-0 bg-black/80 z-40" onClick={() => setIsRosterOpen(false)} />}
 
-          {/* Legacy local toast overlay (for adding units quickly) */}
           <div 
             className="fixed bottom-[140px] md:bottom-8 left-1/2 -translate-x-1/2 pointer-events-none transition-all flex flex-col gap-2 items-center z-[9999]"
           >
@@ -322,45 +350,39 @@ export default function App() {
             </div>
 
             <div key={activeChannel} className="flex-1 flex flex-col overflow-hidden relative h-full">
-              {activeChannel === "home" ? ( <HomeChannel guideState={guideState} />
-              ) : activeChannel === "tutorial" ? ( 
-                <TutorialChannel 
-                  startGuide={startGuide}
-                  completedGuides={completedGuides}
-                  activeTab={tutorialTab}
-                  setActiveTab={setTutorialTab}
-                /> 
-              ) : activeChannel === "value-list" ? ( 
-                <GranularErrorBoundary fallbackName="Live Value List">
-                  <MainCanvas 
-                    activeTierFilter={activeTierFilter} 
-                    setActiveTierFilter={setActiveTierFilter} 
-                    searchQuery={globalSearchQuery} 
-                    setSearchQuery={setGlobalSearchQuery} 
-                    scrollToSection={scrollToSection}
-                    startGuide={startGuide}
-                    guideState={guideState}
-                    isMobile={isMobile}
-                  />
-                </GranularErrorBoundary>
-              ) : activeChannel === "inventory" ? ( 
-                <GranularErrorBoundary fallbackName="Inventory & Vault">
-                  <InventoryChannel />
-                </GranularErrorBoundary>
-              ) : activeChannel === "profile" ? ( <ProfileChannel />
-              ) : activeChannel === "trading-ads" ? ( 
-                <GranularErrorBoundary fallbackName="Live Trading Board">
-                  <TradingAdsChannel />
-                </GranularErrorBoundary>
-              ) : activeChannel === "extra-notices" ? ( <ExtraNoticesChannel />
-              ) : activeChannel === "terms-of-service" ? ( <LegalChannel type="tos" />
-              ) : activeChannel === "privacy-policy" ? ( <LegalChannel type="privacy" />
-              ) : activeChannel === "admin-panel" ? ( <AdminChannel /> 
-              ) : (
-                <div className="flex-1 flex items-center justify-center bg-background px-4">
-                   <div className="text-center"><h2 className="text-2xl font-bold text-foreground mb-2 capitalize">Welcome to {activeChannel}</h2><p className="text-muted-foreground">This channel is currently under construction.</p></div>
-                </div>
-              )}
+              <Routes>
+                <Route path="/home" element={<HomeChannel guideState={guideState} />} />
+                <Route path="/tutorial" element={<TutorialChannel startGuide={startGuide} completedGuides={completedGuides} activeTab={tutorialTab} setActiveTab={setTutorialTab} />} />
+                <Route path="/value-list" element={
+                  <GranularErrorBoundary fallbackName="Live Value List">
+                    <MainCanvas 
+                      activeTierFilter={activeTierFilter} 
+                      setActiveTierFilter={setActiveTierFilter} 
+                      searchQuery={globalSearchQuery} 
+                      setSearchQuery={setGlobalSearchQuery} 
+                      scrollToSection={scrollToSection}
+                      startGuide={startGuide}
+                      guideState={guideState}
+                      isMobile={isMobile}
+                    />
+                  </GranularErrorBoundary>
+                } />
+                <Route path="/inventory" element={<GranularErrorBoundary fallbackName="Inventory & Vault"><InventoryChannel /></GranularErrorBoundary>} />
+                <Route path="/profile" element={<ProfileChannel />} />
+                <Route path="/trading-ads" element={<GranularErrorBoundary fallbackName="Live Trading Board"><TradingAdsChannel /></GranularErrorBoundary>} />
+                <Route path="/extra-notices" element={<ExtraNoticesChannel />} />
+                <Route path="/terms-of-service" element={<LegalChannel type="tos" />} />
+                <Route path="/privacy-policy" element={<LegalChannel type="privacy" />} />
+                <Route path="/admin-panel" element={<AdminChannel />} />
+                <Route path="*" element={
+                  <div className="flex-1 flex items-center justify-center bg-background px-4">
+                     <div className="text-center">
+                       <h2 className="text-2xl font-bold text-foreground mb-2 capitalize">Welcome to {activeChannel}</h2>
+                       <p className="text-muted-foreground">This channel is currently under construction or does not exist.</p>
+                     </div>
+                  </div>
+                } />
+              </Routes>
             </div>
           </div>
 

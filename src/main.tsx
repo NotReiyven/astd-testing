@@ -3,18 +3,18 @@
 // ================================================
 import React, { Component, ErrorInfo, ReactNode } from 'react'
 import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
 import App from "./app/App.tsx";
 import './styles/index.css'
 import { UnitProvider } from './context/UnitContext'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-// Establish global caching and retry strategies for TanStack Query
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 2,
       refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 2, // 2 minutes default staleness
+      staleTime: 1000 * 60 * 2,
     },
   },
 });
@@ -46,7 +46,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       localStorage.removeItem("astd_trade_storage"); 
       localStorage.removeItem("astd_cache_version"); 
       localStorage.removeItem("astd_give");          
-      localStorage.removeItem("astd_get");           
+      localStorage.removeItem("astd_get");            
       window.location.reload();
     }
   }
@@ -90,7 +90,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <UnitProvider>
-          <App />
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
         </UnitProvider>
       </QueryClientProvider>
     </ErrorBoundary>
