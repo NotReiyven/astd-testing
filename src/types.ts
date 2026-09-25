@@ -1,9 +1,26 @@
 export type UnitStatus =
-  | "stable" | "unstable" | "rising" | "dropping"
-  | "inflated" | "deflated" | "varies" | "lowballed" | "highballed"
-  | "hyped" | "gatekept" | "black-marketed";
+  | "stable"
+  | "unstable"
+  | "rising"
+  | "dropping"
+  | "inflated"
+  | "deflated"
+  | "varies"
+  | "lowballed"
+  | "highballed"
+  | "hyped"
+  | "gatekept"
+  | "black-marketed";
 
-export type FilterKey = "All" | "S" | "A" | "B" | "C" | "Pure" | "Oddities" | "Untiered";
+export type FilterKey =
+  | "All"
+  | "S"
+  | "A"
+  | "B"
+  | "C"
+  | "Pure"
+  | "Oddities"
+  | "Untiered";
 
 export interface MasterUnit {
   id: string;
@@ -11,7 +28,7 @@ export interface MasterUnit {
   subtitle: string;
   value: number | "owner" | "range";
   valueDisplay?: string;
-  valueMin?: number;        
+  valueMin?: number;
   rarity: number;
   liquidity?: string;
   aliases?: string[];
@@ -20,10 +37,10 @@ export interface MasterUnit {
   isNew?: boolean;
   notice?: string;
   imageUrl?: string;
-  tier?: string; 
-  subCategory?: string;      
-  subCategoryRange?: string; 
-  obtainability?: "OBT" | "UNOB"; 
+  tier?: string;
+  subCategory?: string;
+  subCategoryRange?: string;
+  obtainability?: "OBT" | "UNOB";
 }
 
 export type Unit = MasterUnit;

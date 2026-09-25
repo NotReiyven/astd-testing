@@ -1,11 +1,14 @@
-import { useState, useCallback, useRef } from 'react';
-import { TradeCard } from '../types';
-import { useTradeStore } from '../store/useTradeStore';
+import { useState, useCallback, useRef } from "react";
+import { TradeCard } from "../types";
+import { useTradeStore } from "../store/useTradeStore";
 
 export function useTradeUndo() {
   const { giveItems, getItems, clearAllUnpinned, overwrite } = useTradeStore();
-  
-  const [undoCache, setUndoCache] = useState<{give: TradeCard[], get: TradeCard[]} | null>(null);
+
+  const [undoCache, setUndoCache] = useState<{
+    give: TradeCard[];
+    get: TradeCard[];
+  } | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -43,5 +46,11 @@ export function useTradeUndo() {
     }
   }, [undoCache, overwrite]);
 
-  return { undoCache, confirmClear, saveUndoState, handleSafeClear, handleUndo };
+  return {
+    undoCache,
+    confirmClear,
+    saveUndoState,
+    handleSafeClear,
+    handleUndo,
+  };
 }

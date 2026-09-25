@@ -1,12 +1,8 @@
-// ================================================
-// FILE: src/store/useLayoutStore.ts
-// ================================================
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-
-export type ThemeMode = 'dark' | 'light' | 'discord';
-export type BootChannel = 'last-used' | 'home' | 'value-list' | 'trading-ads';
+export type ThemeMode = "dark" | "light" | "discord";
+export type BootChannel = "last-used" | "home" | "value-list" | "trading-ads";
 
 interface LayoutState {
   globalSearchQuery: string;
@@ -26,30 +22,31 @@ export const useLayoutStore = create<LayoutState>()(
     (set) => ({
       globalSearchQuery: "",
       commandPaletteOpen: false,
-      theme: 'dark',
+      theme: "dark",
       globalCompactMode: false,
-      bootChannel: 'last-used',
-      
+      bootChannel: "last-used",
+
       setGlobalSearchQuery: (query) => set({ globalSearchQuery: query }),
-      
+
       setCommandPaletteOpen: (isOpen) => set({ commandPaletteOpen: isOpen }),
-      
+
       setTheme: (theme) => {
-        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.setAttribute("data-theme", theme);
         set({ theme });
       },
 
-      setGlobalCompactMode: (isCompact) => set({ globalCompactMode: isCompact }),
-      
+      setGlobalCompactMode: (isCompact) =>
+        set({ globalCompactMode: isCompact }),
+
       setBootChannel: (channel) => set({ bootChannel: channel }),
     }),
     {
-      name: 'astd_layout_storage',
+      name: "astd_layout_storage",
       // We only persist personalization settings, not active search queries or modals
-      partialize: (state) => ({ 
+      partialize: (state) => ({
         theme: state.theme,
         globalCompactMode: state.globalCompactMode,
-        bootChannel: state.bootChannel
+        bootChannel: state.bootChannel,
       }),
     }
   )

@@ -1,24 +1,20 @@
-// ================================================
-// FILE: src/store/useProfileStore.ts
-// ================================================
-
-import { create } from 'zustand';
-import { supabase } from '../lib/supabase';
-import { get as getIdb, set as setIdb } from 'idb-keyval';
-import { useToastStore } from './useToastStore';
+import { create } from "zustand";
+import { supabase } from "../lib/supabase";
+import { get as getIdb, set as setIdb } from "idb-keyval";
+import { useToastStore } from "./useToastStore";
 
 export interface UserProfileData {
   id: string;
   discord_id: string;
   username: string;
   avatar_url: string;
-  role: 'user' | 'mod' | 'admin' | 'master' | 'banned';
+  role: "user" | "mod" | "admin" | "master" | "banned";
   created_at: string;
   bio: string;
   banner_color: string;
   roblox_username: string;
   global_rep: number;
-  status: 'online' | 'dnd' | 'invisible' | 'offline';
+  status: "online" | "dnd" | "invisible" | "offline";
 }
 
 interface CacheEntry {
@@ -29,18 +25,30 @@ interface CacheEntry {
 interface ProfileState {
   cache: Record<string, CacheEntry>;
   popoutUserId: string | null;
-  popoutPosition: { x: number, y: number } | null;
+  popoutPosition: { x: number; y: number } | null;
   viewingProfileId: string | null;
   returnChannel: string | null;
   openPopout: (userId: string, x: number, y: number) => void;
   closePopout: () => void;
-  setViewingProfile: (userId: string | null, returnChannel?: string | null) => void;
-  fetchProfile: (userId: string, force?: boolean) => Promise<UserProfileData | null>;
-  updateLocalProfile: (userId: string, updates: Partial<UserProfileData>) => void;
-  saveProfileUpdates: (userId: string, updates: Partial<UserProfileData>) => Promise<{ error: any }>;
+  setViewingProfile: (
+    userId: string | null,
+    returnChannel?: string | null
+  ) => void;
+  fetchProfile: (
+    userId: string,
+    force?: boolean
+  ) => Promise<UserProfileData | null>;
+  updateLocalProfile: (
+    userId: string,
+    updates: Partial<UserProfileData>
+  ) => void;
+  saveProfileUpdates: (
+    userId: string,
+    updates: Partial<UserProfileData>
+  ) => Promise<{ error: any }>;
 }
 
-const CACHE_TTL = 5 * 60 * 1000; 
+const CACHE_TTL = 5 * 60 * 1000;
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
   cache: {},
@@ -56,25 +64,26 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       return;
     }
     set({ popoutUserId: userId, popoutPosition: { x, y } });
-    get().fetchProfile(userId); 
+    get().fetchProfile(userId);
   },
 
   closePopout: () => set({ popoutUserId: null, popoutPosition: null }),
 
-  setViewingProfile: (userId, returnChannel = null) => set({ viewingProfileId: userId, returnChannel }),
+  setViewingProfile: (userId, returnChannel = null) =>
+    set({ viewingProfileId: userId, returnChannel }),
 
   fetchProfile: async (userId, force = false) => {
     const { cache } = get();
     const now = Date.now();
 
-    if (!force && cache[userId] && (now - cache[userId].timestamp < CACHE_TTL)) {
+    if (!force && cache[userId] && now - cache[userId].timestamp < CACHE_TTL) {
       return cache[userId].data;
     }
 
     const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
       .single();
 
     if (error || !data) {
@@ -87,8 +96,8 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     set((state) => ({
       cache: {
         ...state.cache,
-        [userId]: { data: profileData, timestamp: now }
-      }
+        [userId]: { data: profileData, timestamp: now },
+      },
     }));
 
     return profileData;
@@ -103,9 +112,9 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
           ...state.cache,
           [userId]: {
             ...existing,
-            data: { ...existing.data, ...updates }
-          }
-        }
+            data: { ...existing.data, ...updates },
+          },
+        },
       };
     });
   },
@@ -113,25 +122,35 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   saveProfileUpdates: async (userId, updates) => {
     // SECURITY FIX: Explicitly sanitize allowed update fields
     const allowedUpdates: Partial<UserProfileData> = {};
-    if (typeof updates.bio === 'string') allowedUpdates.bio = updates.bio.trim().substring(0, 190);
-    if (typeof updates.roblox_username === 'string') allowedUpdates.roblox_username = updates.roblox_username.trim().substring(0, 50);
-    if (typeof updates.banner_color === 'string') allowedUpdates.banner_color = updates.banner_color.trim().substring(0, 7);
+    if (typeof updates.bio === "string")
+      allowedUpdates.bio = updates.bio.trim().substring(0, 190);
+    if (typeof updates.roblox_username === "string")
+      allowedUpdates.roblox_username = updates.roblox_username
+        .trim()
+        .substring(0, 50);
+    if (typeof updates.banner_color === "string")
+      allowedUpdates.banner_color = updates.banner_color.trim().substring(0, 7);
 
     // OFFLINE QUEUE INTERCEPTION
     if (!navigator.onLine) {
-      const queue: any[] = (await getIdb('astd_offline_profile')) || [];
+      const queue: any[] = (await getIdb("astd_offline_profile")) || [];
       queue.push({ userId, updates: allowedUpdates });
-      await setIdb('astd_offline_profile', queue);
-      
+      await setIdb("astd_offline_profile", queue);
+
       get().updateLocalProfile(userId, allowedUpdates);
-      useToastStore.getState().addToast("Offline. Profile changes queued locally.", "info");
+      useToastStore
+        .getState()
+        .addToast("Offline. Profile changes queued locally.", "info");
       return { error: null };
     }
 
-    const { error } = await supabase.from('profiles').update(allowedUpdates).eq('id', userId);
+    const { error } = await supabase
+      .from("profiles")
+      .update(allowedUpdates)
+      .eq("id", userId);
     if (!error) {
       get().updateLocalProfile(userId, allowedUpdates);
     }
     return { error };
-  }
+  },
 }));

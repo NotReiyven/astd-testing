@@ -1,7 +1,3 @@
-// ================================================
-// FILE: src/data/constants.ts
-// ================================================
-
 export const BRANDING = {
   MASCOT_NAME: "Fire Zio",
   MASCOT_AVATAR: "/units/firezio.webp",

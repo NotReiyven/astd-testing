@@ -1,9 +1,12 @@
-// ================================================
-// FILE: src/app/components/guides/AquaGuideOverlay.tsx
-// ================================================
-
 import { useState, useEffect, useRef } from "react";
-import { Sparkles, ChevronRight, ChevronLeft, X, ArrowUpRight, Zap } from "lucide-react";
+import {
+  Sparkles,
+  ChevronRight,
+  ChevronLeft,
+  X,
+  ArrowUpRight,
+  Zap,
+} from "lucide-react";
 import { GuideType } from "../../../hooks/useGuideSystem";
 import { triggerHaptic } from "../../../data/helpers";
 
@@ -20,59 +23,59 @@ interface GuideStep {
 const GUEST_STEPS: GuideStep[] = [
   {
     title: "Market Tags & Momentum",
-    body: "Listen up, you shut-in NEET! Raw numbers don't tell the whole story. Look at the status tags. A 100k unit marked with !!Dropping!! or !!Black Market!! is a trap. Always check trajectory before offering!",
+    body: "Listen up, you shut-in NEET! Raw numbers don't tell the whole story. Look at the status tags. A 100k unit marked with !!Dropping!! or !!Inflated!! is a trap. Always check before trading!",
     actionLabel: "View Value List",
-    actionChannel: "value-list"
+    actionChannel: "value-list",
   },
   {
-    title: "The Smart Parser",
+    title: "The Magical Translator",
     body: "Don't manually search for every single unit like a peasant. Open the Analyzer and click the ^^Wand^^ (or press Ctrl+V anywhere) to paste raw Discord trade text. The parser builds the offer for you!",
     actionLabel: "Open Calculator",
-    actionEvent: "open-analyzer"
+    actionEvent: "open-analyzer",
   },
   {
-    title: "Algorithmic Forecasting",
+    title: "Forecasting",
     body: "Inside the Analyzer, check the Short-Term and Long-Term flip scores. It mathematically weights unit demand and liquidity so you know if you are winning or getting completely scammed!",
     actionLabel: "Open Calculator",
-    actionEvent: "open-analyzer"
+    actionEvent: "open-analyzer",
   },
   {
     title: "Academy & Mock Simulator",
     body: "Want to test your trade judgment without risking real units? Go to the Academy to practice against real market scenarios! Don't come crying to me when you make a bad trade!",
     actionLabel: "Go to Academy",
-    actionChannel: "tutorial"
-  }
+    actionChannel: "tutorial",
+  },
 ];
 
 const AUTH_STEPS: GuideStep[] = [
   {
     title: "Your Vault & Wishlist",
-    body: "You're officially registered! Head over to ^^My Inventory^^ to record your collection. Use the Pin icon to lock high-value units so you don't accidentally clear them in trades.",
+    body: "You're officially registered! Head over to ^^My Inventory^^ to record your collection. Use the pin feature to lock high-value units so you don't accidentally clear them.",
     actionLabel: "Open My Inventory",
-    actionChannel: "inventory"
+    actionChannel: "inventory",
   },
   {
     title: "Post Live Trading Ads",
     body: "Hit ^^Create Ad^^ on the Trading Board. You can list specific trades, take open offers, or showcase your entire public vault. Ads auto-expire so dead trades don't clutter the board.",
     actionLabel: "Go to Trading Board",
-    actionChannel: "trading-ads"
+    actionChannel: "trading-ads",
   },
   {
     title: "Trader Reputation & Rank",
     body: "Your profile tracks your public reputation. Traders can upvote or downvote your listings based on fair pricing and communication. Don't be a scammer, or you'll get exiled! ^^Praise Aqua!^^",
     actionLabel: "View My Profile",
-    actionChannel: "profile"
-  }
+    actionChannel: "profile",
+  },
 ];
 
-export function AquaGuideOverlay({ 
-  guideState, 
-  onNext, 
-  onPrev, 
+export function AquaGuideOverlay({
+  guideState,
+  onNext,
+  onPrev,
   onEndGuide,
-  isAnalyzerOpen = false
-}: { 
-  guideState: { type: GuideType; step: number }; 
+  isAnalyzerOpen = false,
+}: {
+  guideState: { type: GuideType; step: number };
   onNext: (maxSteps: number) => void;
   onPrev: () => void;
   onEndGuide: () => void;
@@ -95,7 +98,7 @@ export function AquaGuideOverlay({
 
     const steps = guideState.type === "guest_tour" ? GUEST_STEPS : AUTH_STEPS;
     const fullText = steps[guideState.step - 1]?.body || "";
-    
+
     fullTextRef.current = fullText;
     setDisplayedText("");
     setIsTyping(true);
@@ -119,7 +122,10 @@ export function AquaGuideOverlay({
     };
   }, [guideState]);
 
-  if (!guideState.type || (guideState.type !== "guest_tour" && guideState.type !== "auth_tour")) {
+  if (
+    !guideState.type ||
+    (guideState.type !== "guest_tour" && guideState.type !== "auth_tour")
+  ) {
     return null;
   }
 
@@ -139,9 +145,11 @@ export function AquaGuideOverlay({
 
   const handleAction = (e: React.MouseEvent) => {
     e.stopPropagation();
-    triggerHaptic('light');
+    triggerHaptic("light");
     if (currentStepData.actionChannel) {
-      window.document.dispatchEvent(new CustomEvent('navigate', { detail: currentStepData.actionChannel }));
+      window.document.dispatchEvent(
+        new CustomEvent("navigate", { detail: currentStepData.actionChannel })
+      );
     } else if (currentStepData.actionEvent) {
       window.dispatchEvent(new Event(currentStepData.actionEvent));
     }
@@ -149,36 +157,58 @@ export function AquaGuideOverlay({
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
-    triggerHaptic('light');
+    triggerHaptic("light");
     onNext(totalSteps);
   };
 
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
-    triggerHaptic('light');
+    triggerHaptic("light");
     onPrev();
   };
 
   const handleDismiss = (e: React.MouseEvent) => {
     e.stopPropagation();
-    triggerHaptic('light');
+    triggerHaptic("light");
     onEndGuide();
   };
 
   const renderDialogue = (text: string) => {
     const parts = text.split(/(!!.*?!!|\^\^.*?\^\^|\*\*.*?\*\*|\*.*?\*)/g);
     return parts.map((part, idx) => {
-      if (part.startsWith('!!') && part.endsWith('!!')) {
-        return <strong key={idx} className="text-destructive font-black tracking-wide animate-text-shake">{part.slice(2, -2)}</strong>;
+      if (part.startsWith("!!") && part.endsWith("!!")) {
+        return (
+          <strong
+            key={idx}
+            className="text-destructive font-black tracking-wide animate-text-shake"
+          >
+            {part.slice(2, -2)}
+          </strong>
+        );
       }
-      if (part.startsWith('^^') && part.endsWith('^^')) {
-        return <strong key={idx} className="text-[#FAA61A] font-black tracking-wide">{part.slice(2, -2)}</strong>;
+      if (part.startsWith("^^") && part.endsWith("^^")) {
+        return (
+          <strong key={idx} className="text-[#FAA61A] font-black tracking-wide">
+            {part.slice(2, -2)}
+          </strong>
+        );
       }
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={idx} className="text-foreground font-black tracking-wide">{part.slice(2, -2)}</strong>;
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return (
+          <strong
+            key={idx}
+            className="text-foreground font-black tracking-wide"
+          >
+            {part.slice(2, -2)}
+          </strong>
+        );
       }
-      if (part.startsWith('*') && part.endsWith('*')) {
-        return <em key={idx} className="text-foreground/80 font-bold not-italic">{part.slice(1, -1)}</em>;
+      if (part.startsWith("*") && part.endsWith("*")) {
+        return (
+          <em key={idx} className="text-foreground/80 font-bold not-italic">
+            {part.slice(1, -1)}
+          </em>
+        );
       }
       return <span key={idx}>{part}</span>;
     });
@@ -207,60 +237,81 @@ export function AquaGuideOverlay({
         .animate-box-shake { animation: boxShake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
       `}</style>
 
-      {/* Floating Corner Widget */}
-      <aside 
+      {/* floating corner */}
+      <aside
         aria-label="Aqua Companion Guide"
         className={`fixed ${mobilePosClass} md:bottom-6 right-3 md:right-6 z-[100010] max-w-[420px] w-[calc(100vw-24px)] md:w-[420px] transition-all duration-300 ease-out animate-slide-up pointer-events-auto`}
       >
         {isMinimized ? (
-          /* Minimized State */
+          /* minimized state */
           <div className="bg-card border border-border p-3 rounded-[8px] flex items-center justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
             <div className="flex items-center gap-3">
               <div className="relative w-9 h-9 rounded-full border border-border overflow-hidden bg-popover shadow-sm shrink-0">
-                <img 
-                  src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" 
+                <img
+                  src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png"
                   alt="Aqua"
-                  className="w-full h-full object-cover object-top" 
+                  className="w-full h-full object-cover object-top"
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-[12px] font-bold text-foreground leading-none">Goddess Aqua</span>
-                <span className="text-[10px] text-muted-foreground mt-0.5">Step {guideState.step} of {totalSteps}</span>
+                <span className="text-[12px] font-bold text-foreground leading-none">
+                  Goddess Aqua
+                </span>
+                <span className="text-[10px] text-muted-foreground mt-0.5">
+                  Step {guideState.step} of {totalSteps}
+                </span>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
-              <button onClick={() => setIsMinimized(false)} className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-[11px] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer">
+              <button
+                onClick={() => setIsMinimized(false)}
+                className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-[11px] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
+              >
                 Expand
               </button>
-              <button onClick={handleDismiss} className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer">
+              <button
+                onClick={handleDismiss}
+                className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
           </div>
         ) : (
-          /* Expanded State */
-          <div className={`bg-card border border-border rounded-[10px] shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col relative overflow-hidden ${boxShake ? 'animate-box-shake ring-1 ring-primary' : ''}`} onClick={handleSkipTyping}>
-            
-            {/* Header */}
+          /* expanded state */
+          <div
+            className={`bg-card border border-border rounded-[10px] shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col relative overflow-hidden ${
+              boxShake ? "animate-box-shake ring-1 ring-primary" : ""
+            }`}
+            onClick={handleSkipTyping}
+          >
+            {/* header */}
             <div className="px-4 py-3 bg-popover border-b border-border flex items-center justify-between relative z-20">
               <div className="flex items-center gap-3">
                 <div className="relative w-9 h-9 rounded-full border border-border overflow-hidden bg-popover shadow-sm shrink-0">
-                  <img 
-                    src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png" 
+                  <img
+                    src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png"
                     alt="Aqua"
-                    className="w-full h-full object-cover object-top" 
+                    className="w-full h-full object-cover object-top"
                   />
                   <span className="w-2.5 h-2.5 bg-[#23a559] border border-popover rounded-full absolute bottom-0 right-0 z-10" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[13px] font-black text-foreground leading-tight">Goddess Aqua</span>
-                  <span className="text-[10px] font-mono text-muted-foreground">Step {guideState.step} / {totalSteps}</span>
+                  <span className="text-[13px] font-black text-foreground leading-tight">
+                    Goddess Aqua
+                  </span>
+                  <span className="text-[10px] font-mono text-muted-foreground">
+                    Step {guideState.step} / {totalSteps}
+                  </span>
                 </div>
               </div>
 
               <div className="flex items-center gap-1">
                 <button
-                  onClick={(e) => { e.stopPropagation(); setIsMinimized(true); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMinimized(true);
+                  }}
                   className="px-2.5 py-1 text-[11px] font-bold text-muted-foreground hover:text-foreground rounded-[4px] hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none"
                 >
                   Collapse
@@ -275,19 +326,22 @@ export function AquaGuideOverlay({
               </div>
             </div>
 
-            {/* Content Body */}
+            {/* content body */}
             <div className="p-4 md:p-5 flex flex-col gap-3.5 bg-card relative z-10">
               <div className="flex flex-col gap-1">
                 <h4 className="text-[14px] font-black text-foreground tracking-tight flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-primary" /> {currentStepData.title}
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />{" "}
+                  {currentStepData.title}
                 </h4>
                 <p className="text-[13px] text-muted-foreground leading-relaxed font-medium pt-0.5 min-h-[60px]">
                   {renderDialogue(displayedText)}
-                  {isTyping && <span className="inline-block w-1.5 h-3.5 bg-primary animate-pulse ml-1 align-middle" />}
+                  {isTyping && (
+                    <span className="inline-block w-1.5 h-3.5 bg-primary animate-pulse ml-1 align-middle" />
+                  )}
                 </p>
               </div>
 
-              {/* Quick Action Button */}
+              {/* quick action button */}
               <div className="w-full mt-1">
                 {currentStepData.actionLabel && !isTyping && (
                   <button
@@ -300,12 +354,13 @@ export function AquaGuideOverlay({
                 )}
                 {isTyping && (
                   <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5 animate-pulse cursor-pointer h-[38px]">
-                    <Zap className="w-3.5 h-3.5 text-primary" /> Click anywhere to skip typing...
+                    <Zap className="w-3.5 h-3.5 text-primary" /> Click anywhere
+                    to skip...
                   </span>
                 )}
               </div>
 
-              {/* Navigation Controls */}
+              {/* nav controls */}
               <div className="flex items-center justify-between pt-3 border-t border-border mt-1">
                 <button
                   onClick={handlePrev}
@@ -324,7 +379,6 @@ export function AquaGuideOverlay({
                 </button>
               </div>
             </div>
-
           </div>
         )}
       </aside>

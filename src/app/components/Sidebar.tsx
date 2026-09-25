@@ -1,12 +1,8 @@
-// ================================================
-// FILE: src/app/components/Sidebar.tsx
-// ================================================
-
 import { useState, useMemo } from "react";
-import { 
-  Hash, 
-  ChevronDown, 
-  Plus, 
+import {
+  Hash,
+  ChevronDown,
+  Plus,
   Lock,
   Megaphone,
   LucideIcon,
@@ -14,7 +10,7 @@ import {
   FileText,
   Package,
   ShieldAlert,
-  User
+  User,
 } from "lucide-react";
 import { FilterKey } from "../../types";
 import { useUnits } from "../../context/UnitContext";
@@ -23,63 +19,105 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { useProfileStore } from "../../store/useProfileStore";
 import { triggerHaptic } from "../../data/helpers";
 
-type ChannelConfig = { id: string; label: string; isLocked: boolean; hasThreads?: boolean; icon?: LucideIcon; };
-type CategoryConfig = { id: string; label: string; channels: ChannelConfig[]; };
+type ChannelConfig = {
+  id: string;
+  label: string;
+  isLocked: boolean;
+  hasThreads?: boolean;
+  icon?: LucideIcon;
+};
+type CategoryConfig = { id: string; label: string; channels: ChannelConfig[] };
 
 const BASE_CATEGORIES: CategoryConfig[] = [
   {
-    id: "important", label: "important",
+    id: "important",
+    label: "important",
     channels: [
       { id: "home", label: "home", isLocked: true },
       { id: "tutorial", label: "tutorial", isLocked: true },
-      { id: "extra-notices", label: "extra-notices", isLocked: true, icon: Megaphone },
-    ]
+      {
+        id: "extra-notices",
+        label: "extra-notices",
+        isLocked: true,
+        icon: Megaphone,
+      },
+    ],
   },
   {
-    id: "trading", label: "trading",
+    id: "trading",
+    label: "trading",
     channels: [
       { id: "profile", label: "my-profile", isLocked: true, icon: User },
       { id: "inventory", label: "my-inventory", isLocked: true, icon: Package },
-      { id: "trading-ads", label: "trading-ads", isLocked: false, icon: Megaphone },
-      { id: "value-list", label: "value-list", isLocked: false, hasThreads: true },
-    ]
+      {
+        id: "trading-ads",
+        label: "trading-ads",
+        isLocked: false,
+        icon: Megaphone,
+      },
+      {
+        id: "value-list",
+        label: "value-list",
+        isLocked: false,
+        hasThreads: true,
+      },
+    ],
   },
   {
-    id: "legal", label: "legal",
+    id: "legal",
+    label: "legal",
     channels: [
-      { id: "terms-of-service", label: "terms-of-service", isLocked: true, icon: FileText },
-      { id: "privacy-policy", label: "privacy-policy", isLocked: true, icon: Shield }
-    ]
-  }
+      {
+        id: "terms-of-service",
+        label: "terms-of-service",
+        isLocked: true,
+        icon: FileText,
+      },
+      {
+        id: "privacy-policy",
+        label: "privacy-policy",
+        isLocked: true,
+        icon: Shield,
+      },
+    ],
+  },
 ];
 
 export function Sidebar({
   activeChannel,
   setActiveChannel,
   onThreadClick,
-  guideState
+  guideState,
 }: {
   activeChannel: string;
   setActiveChannel: (c: string) => void;
   onThreadClick: (tier: FilterKey, sectionId: string) => void;
   guideState?: { type: string | null; step: number };
 }) {
-  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
+  const [collapsedCategories, setCollapsedCategories] = useState<
+    Record<string, boolean>
+  >({});
   const { units } = useUnits();
   const { profile } = useAuthStore();
-  const setViewingProfile = useProfileStore(s => s.setViewingProfile);
+  const setViewingProfile = useProfileStore((s) => s.setViewingProfile);
 
   const role = profile?.role;
-  const canModerate = role === 'master' || role === 'admin' || role === 'mod';
+  const canModerate = role === "master" || role === "admin" || role === "mod";
 
   const CATEGORIES = useMemo(() => {
     const cats = [...BASE_CATEGORIES];
     if (canModerate) {
       cats.push({
-        id: "administration", label: "administration",
+        id: "administration",
+        label: "administration",
         channels: [
-          { id: "admin-panel", label: "admin-panel", isLocked: true, icon: ShieldAlert }
-        ]
+          {
+            id: "admin-panel",
+            label: "admin-panel",
+            isLocked: true,
+            icon: ShieldAlert,
+          },
+        ],
       });
     }
     return cats;
@@ -87,52 +125,64 @@ export function Sidebar({
 
   const dynamicTierGroups = useMemo(() => {
     const order = ["S", "A", "B", "C", "Pure", "Oddities", "Untiered"];
-    const colorMap: Record<string, string> = { S: "#dd7e6b", A: "#a855f7", B: "#3b82f6", C: "#22c55e", Pure: "#9ca3af", Oddities: "#8b5cf6", Untiered: "#52525b" };
-
-    const subCatPriority: Record<string, number> = {
-      "top": 1,
-      "high": 2,
-      "mid": 3,
-      "low": 4
+    const colorMap: Record<string, string> = {
+      S: "#dd7e6b",
+      A: "#a855f7",
+      B: "#3b82f6",
+      C: "#22c55e",
+      Pure: "#9ca3af",
+      Oddities: "#8b5cf6",
+      Untiered: "#52525b",
     };
 
-    return order.map(tier => {
-      const tierUnits = units.filter(u => getTier(u) === tier);
-      let subCats = Array.from(new Set(tierUnits.map(u => u.subCategory || "Uncategorized")));
+    const subCatPriority: Record<string, number> = {
+      top: 1,
+      high: 2,
+      mid: 3,
+      low: 4,
+    };
 
-      if (["S", "A", "B", "C"].includes(tier)) {
-        subCats.sort((a, b) => {
-          const getRank = (name: string) => {
-            const lower = name.toLowerCase();
-            for (const key of Object.keys(subCatPriority)) {
-              if (lower.includes(key)) return subCatPriority[key];
-            }
-            return 99;
-          };
-          return getRank(a) - getRank(b);
-        });
-      }
+    return order
+      .map((tier) => {
+        const tierUnits = units.filter((u) => getTier(u) === tier);
+        let subCats = Array.from(
+          new Set(tierUnits.map((u) => u.subCategory || "Uncategorized"))
+        );
 
-      return {
-        tier,
-        color: colorMap[tier] || "#52525b",
-        children: subCats.map(sub => ({ 
-          id: sub,
-          label: sub 
-        }))
-      };
-    }).filter(g => g.children.length > 0);
+        if (["S", "A", "B", "C"].includes(tier)) {
+          subCats.sort((a, b) => {
+            const getRank = (name: string) => {
+              const lower = name.toLowerCase();
+              for (const key of Object.keys(subCatPriority)) {
+                if (lower.includes(key)) return subCatPriority[key];
+              }
+              return 99;
+            };
+            return getRank(a) - getRank(b);
+          });
+        }
+
+        return {
+          tier,
+          color: colorMap[tier] || "#52525b",
+          children: subCats.map((sub) => ({
+            id: sub,
+            label: sub,
+          })),
+        };
+      })
+      .filter((g) => g.children.length > 0);
   }, [units]);
 
   const toggleCategory = (id: string) => {
-    triggerHaptic('light');
-    setCollapsedCategories(prev => ({ ...prev, [id]: !prev[id] }));
+    triggerHaptic("light");
+    setCollapsedCategories((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const handleChannelClick = (channelId: string) => {
-    triggerHaptic('light');
+    triggerHaptic("light");
     if (channelId === "profile") {
-      setViewingProfile(null); 
+      setViewingProfile(null);
     }
     setActiveChannel(channelId);
   };
@@ -154,48 +204,68 @@ export function Sidebar({
 
             return (
               <div key={cat.id} className="mt-4 flex flex-col">
-                <div 
+                <div
                   className="flex items-center justify-between px-1 py-1 mb-1 group cursor-pointer text-muted-foreground hover:text-foreground"
                   onClick={() => toggleCategory(cat.id)}
                 >
                   <div className="flex items-center gap-1">
-                    <ChevronDown className={`w-3 h-3 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
-                    <span className="text-[11px] font-bold uppercase tracking-wider">{cat.label}</span>
+                    <ChevronDown
+                      className={`w-3 h-3 transition-transform ${
+                        isCollapsed ? "-rotate-90" : ""
+                      }`}
+                    />
+                    <span className="text-[11px] font-bold uppercase tracking-wider">
+                      {cat.label}
+                    </span>
                   </div>
                   <Plus className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100" />
                 </div>
 
-                <div 
-                  className={`overflow-hidden ${isCollapsed ? 'hidden' : 'block'}`}
+                <div
+                  className={`overflow-hidden ${
+                    isCollapsed ? "hidden" : "block"
+                  }`}
                 >
                   <div className="flex flex-col">
                     {cat.channels.map((channel) => {
                       const isActive = activeChannel === channel.id;
-                      const isTarget = guideState?.type === "main" && guideState.step === 1 && channel.id === "value-list";
+                      const isTarget =
+                        guideState?.type === "main" &&
+                        guideState.step === 1 &&
+                        channel.id === "value-list";
                       const Icon = channel.icon || Hash;
 
                       return (
-                        <div key={channel.id} className="flex flex-col relative">
+                        <div
+                          key={channel.id}
+                          className="flex flex-col relative"
+                        >
                           <button
                             onClick={() => handleChannelClick(channel.id)}
                             className={`group w-full flex items-center justify-between px-2.5 py-1.5 mb-[2px] rounded-[4px] focus-visible:outline-none cursor-pointer ${
-                              isTarget 
+                              isTarget
                                 ? "bg-primary text-primary-foreground border border-primary z-50 relative animate-pulse"
                                 : isActive
-                                  ? "bg-muted text-foreground font-bold border border-border"
-                                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground border border-transparent"
+                                ? "bg-muted text-foreground font-bold border border-border"
+                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground border border-transparent"
                             }`}
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               {channel.isLocked ? (
                                 <div className="relative flex items-center justify-center w-4 h-4 flex-shrink-0">
                                   <Icon className="w-4 h-4" />
-                                  <Lock className={`w-2.5 h-2.5 absolute -bottom-1 -right-1 rounded-full p-[1px] ${isTarget ? 'bg-primary' : 'bg-card'}`} />
+                                  <Lock
+                                    className={`w-2.5 h-2.5 absolute -bottom-1 -right-1 rounded-full p-[1px] ${
+                                      isTarget ? "bg-primary" : "bg-card"
+                                    }`}
+                                  />
                                 </div>
                               ) : (
                                 <Icon className="w-4 h-4 flex-shrink-0" />
                               )}
-                              <span className="text-[13px] leading-none pb-[1px] truncate">{channel.label}</span>
+                              <span className="text-[13px] leading-none pb-[1px] truncate">
+                                {channel.label}
+                              </span>
                             </div>
                           </button>
 
@@ -203,23 +273,40 @@ export function Sidebar({
                             <div className="relative flex flex-col ml-[22px] mt-1 mb-3">
                               <div className="absolute left-[-12px] top-0 bottom-[14px] w-[1px] bg-border" />
                               {dynamicTierGroups.map((group) => (
-                                <div key={group.tier} className="relative flex flex-col mb-2">
+                                <div
+                                  key={group.tier}
+                                  className="relative flex flex-col mb-2"
+                                >
                                   <div className="relative flex items-center min-h-[26px]">
                                     <div className="absolute left-[-12px] top-[-8px] w-[10px] h-[20px] border-l border-b border-border rounded-bl-[4px]" />
-                                    <span className="text-[10px] font-bold uppercase tracking-widest pl-2" style={{ color: group.color }}>
-                                      {group.tier} {["Pure", "Oddities", "Untiered"].includes(group.tier) ? "" : "Tier"}
+                                    <span
+                                      className="text-[10px] font-bold uppercase tracking-widest pl-2"
+                                      style={{ color: group.color }}
+                                    >
+                                      {group.tier}{" "}
+                                      {[
+                                        "Pure",
+                                        "Oddities",
+                                        "Untiered",
+                                      ].includes(group.tier)
+                                        ? ""
+                                        : "Tier"}
                                     </span>
                                   </div>
                                   <div className="relative flex flex-col ml-[6px] mt-0.5">
                                     <div className="absolute left-[-8px] top-[-4px] bottom-[10px] w-[1px] bg-border" />
                                     {group.children.map((child, cIdx) => {
-                                      const isLastChild = cIdx === group.children.length - 1;
+                                      const isLastChild =
+                                        cIdx === group.children.length - 1;
                                       return (
                                         <button
                                           key={`${group.tier}-${child.id}`}
                                           onClick={() => {
-                                            triggerHaptic('light');
-                                            onThreadClick(group.tier as FilterKey, child.id);
+                                            triggerHaptic("light");
+                                            onThreadClick(
+                                              group.tier as FilterKey,
+                                              child.id
+                                            );
                                           }}
                                           className="relative flex items-center min-h-[26px] rounded-[4px] px-2 text-muted-foreground hover:bg-muted/50 hover:text-foreground text-left focus-visible:outline-none cursor-pointer"
                                         >
@@ -228,7 +315,9 @@ export function Sidebar({
                                           ) : (
                                             <div className="absolute left-[-8px] top-1/2 w-[8px] h-[1px] bg-border" />
                                           )}
-                                          <span className="text-[12px] font-medium leading-none pl-2 truncate">{child.label}</span>
+                                          <span className="text-[12px] font-medium leading-none pl-2 truncate">
+                                            {child.label}
+                                          </span>
                                         </button>
                                       );
                                     })}

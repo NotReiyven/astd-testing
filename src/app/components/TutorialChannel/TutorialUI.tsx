@@ -1,4 +1,3 @@
-// src/app/components/TutorialChannel/TutorialUI.tsx
 import React, { useState } from "react";
 import { CheckCircle2, Circle, ChevronRight, History } from "lucide-react";
 import { GRID_STATUS_CFG } from "../../../data";
@@ -10,7 +9,7 @@ export function MissionCard({
   hint,
   isDone,
   accent,
-  action
+  action,
 }: {
   title: string;
   instruction: string;
@@ -51,7 +50,9 @@ export function MissionCard({
       </div>
 
       <div className="mt-3 flex items-center justify-between min-h-[28px]">
-        <span className="text-[11px] text-muted-foreground font-medium">{hint}</span>
+        <span className="text-[11px] text-muted-foreground font-medium">
+          {hint}
+        </span>
         {action && !isDone && <div>{action}</div>}
       </div>
     </div>
@@ -67,7 +68,7 @@ export function StaticStatusBadge({ status }: { status: string }) {
       style={{
         backgroundColor: cfg.bg,
         color: cfg.color,
-        borderColor: cfg.border
+        borderColor: cfg.border,
       }}
     >
       <StatusIcon status={status} />
@@ -82,7 +83,7 @@ export function TheoryEmbed({
   title,
   content,
   historyTitle,
-  historyContent
+  historyContent,
 }: {
   color: string;
   icon: React.ReactNode;
@@ -135,7 +136,7 @@ export function TheoryEmbed({
                 className="transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden"
                 style={{
                   maxHeight: isExpanded ? "200px" : "0px",
-                  opacity: isExpanded ? 1 : 0
+                  opacity: isExpanded ? 1 : 0,
                 }}
               >
                 <div
@@ -156,7 +157,7 @@ export function TheoryEmbed({
 export function TooltipText({
   text,
   tip,
-  color
+  color,
 }: {
   text: string;
   tip: string;

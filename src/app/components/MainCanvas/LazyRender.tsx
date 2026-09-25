@@ -1,16 +1,18 @@
 import { useState, useEffect, useRef, ReactNode, startTransition } from "react";
 
-export function LazyRender({ 
-  children, 
+export function LazyRender({
+  children,
   placeholderHeight = "600px",
-  forceRender = false 
-}: { 
-  children: ReactNode, 
-  placeholderHeight?: string,
-  forceRender?: boolean 
+  forceRender = false,
+}: {
+  children: ReactNode;
+  placeholderHeight?: string;
+  forceRender?: boolean;
 }) {
   const [isRendered, setIsRendered] = useState(false);
-  const [actualHeight, setActualHeight] = useState<string | number>(placeholderHeight);
+  const [actualHeight, setActualHeight] = useState<string | number>(
+    placeholderHeight
+  );
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export function LazyRender({
           startTransition(() => setIsRendered(false));
         }
       },
-      { rootMargin: "1500px 0px" } 
+      { rootMargin: "1500px 0px" }
     );
 
     if (ref.current) {

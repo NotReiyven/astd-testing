@@ -1,22 +1,32 @@
-// ================================================
-// FILE: src/app/components/layout/GlobalToastContainer.tsx
-// ================================================
-
-import { useState, useRef, useEffect } from 'react';
-import { useToastStore, ToastType, Toast } from '../../../store/useToastStore';
-import { Check, AlertTriangle, Info, XCircle, X } from 'lucide-react';
-import { triggerHaptic } from '../../../data/helpers';
+import { useState, useRef, useEffect } from "react";
+import { useToastStore, ToastType, Toast } from "../../../store/useToastStore";
+import { Check, AlertTriangle, Info, XCircle, X } from "lucide-react";
+import { triggerHaptic } from "../../../data/helpers";
 
 const getIcon = (type: ToastType) => {
   switch (type) {
-    case 'success': return <Check className="w-4 h-4 text-success" />;
-    case 'error': return <XCircle className="w-4 h-4 text-destructive" />;
-    case 'warning': return <AlertTriangle className="w-4 h-4 text-warning" />;
-    default: return <Info className="w-4 h-4 text-info" />;
+    case "success":
+      return <Check className="w-4 h-4 text-success" />;
+    case "error":
+      return <XCircle className="w-4 h-4 text-destructive" />;
+    case "warning":
+      return <AlertTriangle className="w-4 h-4 text-warning" />;
+    default:
+      return <Info className="w-4 h-4 text-info" />;
   }
 };
 
-const ToastItem = ({ t, index, total, onRemove }: { t: Toast; index: number; total: number; onRemove: (id: string) => void }) => {
+const ToastItem = ({
+  t,
+  index,
+  total,
+  onRemove,
+}: {
+  t: Toast;
+  index: number;
+  total: number;
+  onRemove: (id: string) => void;
+}) => {
   const [dragOffset, setDragOffset] = useState(0);
   const touchStartRef = useRef<number | null>(null);
 
@@ -40,7 +50,7 @@ const ToastItem = ({ t, index, total, onRemove }: { t: Toast; index: number; tot
   const handleTouchEnd = () => {
     if (!isFront) return;
     if (dragOffset > 80) {
-      triggerHaptic('light');
+      triggerHaptic("light");
       onRemove(t.id);
     } else {
       setDragOffset(0);
@@ -61,12 +71,12 @@ const ToastItem = ({ t, index, total, onRemove }: { t: Toast; index: number; tot
         zIndex: 300 - index,
         transform: `translate3d(${dragOffset}px, ${translateY}px, 0) scale(${scale})`,
         opacity: opacity,
-        transition: touchStartRef.current ? 'none' : 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+        transition: touchStartRef.current
+          ? "none"
+          : "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      <div className="shrink-0">
-        {getIcon(t.type)}
-      </div>
+      <div className="shrink-0">{getIcon(t.type)}</div>
       <span className="text-[13px] font-bold text-foreground flex-1 leading-snug">
         {t.message}
       </span>
@@ -91,16 +101,22 @@ export function GlobalToastContainer() {
 
   if (!mounted || toasts.length === 0) return null;
 
-  // Reverse so newest is at the end of the array to map to index 0 visually
+  // reverse so newest is at the end of the array to map to index 0 visually
   const reversedToasts = [...toasts].reverse();
 
   return (
-    <div 
+    <div
       aria-label="Notifications"
       className="fixed bottom-6 right-6 z-[300] flex flex-col items-end pointer-events-none w-[calc(100vw-48px)] md:w-auto h-[60px]"
     >
       {reversedToasts.map((t, i) => (
-        <ToastItem key={t.id} t={t} index={i} total={toasts.length} onRemove={removeToast} />
+        <ToastItem
+          key={t.id}
+          t={t}
+          index={i}
+          total={toasts.length}
+          onRemove={removeToast}
+        />
       ))}
     </div>
   );

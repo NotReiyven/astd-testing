@@ -1,15 +1,24 @@
-// ================================================
-// FILE: src/hooks/useGlobalEvents.ts
-// ================================================
-
-import { useState, useEffect, useRef } from 'react';
-import { triggerHaptic } from '../data/helpers';
+import { useState, useEffect, useRef } from "react";
+import { triggerHaptic } from "../data/helpers";
 
 export function useGlobalEvents({
-  giveItems, getItems, pinnedIds, completedGuides, setCompletedGuides,
-  setActiveChannel, setIsRosterOpen, setIsAnalyzerOpen, setTutorialTab, setGuideState
+  giveItems,
+  getItems,
+  pinnedIds,
+  completedGuides,
+  setCompletedGuides,
+  setActiveChannel,
+  setIsRosterOpen,
+  setIsAnalyzerOpen,
+  setTutorialTab,
+  setGuideState,
 }: any) {
-  const [toast, setToast] = useState<{ id: number; unitName: string; count: number; type: "give" | "get" } | null>(null);
+  const [toast, setToast] = useState<{
+    id: number;
+    unitName: string;
+    count: number;
+    type: "give" | "get";
+  } | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Used to prevent rapid flashing by keeping the same ID if a new toast arrives quickly
@@ -18,13 +27,18 @@ export function useGlobalEvents({
 
   // Global Window Event Listeners
   useEffect(() => {
-    const handleSetTab = (e: Event) => setTutorialTab((e as CustomEvent).detail);
-    
+    const handleSetTab = (e: Event) =>
+      setTutorialTab((e as CustomEvent).detail);
+
     const handleAcademyEvent = (e: Event) => {
-      if (e.type === "academy-used-parser") setCompletedGuides((p: any) => ({ ...p, hasUsedParser: true }));
-      if (e.type === "academy-used-filter") setCompletedGuides((p: any) => ({ ...p, hasFiltered: true }));
-      if (e.type === "academy-passed-sim") setCompletedGuides((p: any) => ({ ...p, hasPassedSim: true }));
-      if (e.type === "academy-posted-ad") setCompletedGuides((p: any) => ({ ...p, hasPostedAd: true }));
+      if (e.type === "academy-used-parser")
+        setCompletedGuides((p: any) => ({ ...p, hasUsedParser: true }));
+      if (e.type === "academy-used-filter")
+        setCompletedGuides((p: any) => ({ ...p, hasFiltered: true }));
+      if (e.type === "academy-passed-sim")
+        setCompletedGuides((p: any) => ({ ...p, hasPassedSim: true }));
+      if (e.type === "academy-posted-ad")
+        setCompletedGuides((p: any) => ({ ...p, hasPostedAd: true }));
     };
 
     const handleWelcomeClosed = () => {
@@ -32,32 +46,49 @@ export function useGlobalEvents({
     };
 
     const handleTradeAdded = (e: Event) => {
-      const customEvent = e as CustomEvent<{ name: string; type: "give" | "get" }>;
+      const customEvent = e as CustomEvent<{
+        name: string;
+        type: "give" | "get";
+      }>;
       if (!customEvent.detail) return;
-      triggerHaptic('medium'); 
-      
+      triggerHaptic("medium");
+
       const now = Date.now();
-      setToast(prev => {
+      setToast((prev) => {
         const isSameType = prev && prev.type === customEvent.detail.type;
         const count = isSameType ? prev.count + 1 : 1;
         const nameToKeep = isSameType ? prev.unitName : customEvent.detail.name;
-        
+
         // Group toasts if within 1000ms to stop flashing
         if (now - lastToastTimeRef.current < 1000 && isSameType) {
-           return { id: lastToastIdRef.current, unitName: nameToKeep, count, type: customEvent.detail.type };
+          return {
+            id: lastToastIdRef.current,
+            unitName: nameToKeep,
+            count,
+            type: customEvent.detail.type,
+          };
         } else {
-           lastToastIdRef.current = now;
-           return { id: now, unitName: nameToKeep, count, type: customEvent.detail.type };
+          lastToastIdRef.current = now;
+          return {
+            id: now,
+            unitName: nameToKeep,
+            count,
+            type: customEvent.detail.type,
+          };
         }
       });
-      
+
       lastToastTimeRef.current = now;
 
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
       toastTimerRef.current = setTimeout(() => setToast(null), 2500);
 
       // Guest Tour Progression
-      setGuideState((prev: any) => (prev.type === "guest_tour" && prev.step === 3) ? { ...prev, step: 4 } : prev);
+      setGuideState((prev: any) =>
+        prev.type === "guest_tour" && prev.step === 3
+          ? { ...prev, step: 4 }
+          : prev
+      );
     };
 
     const handleNavigate = (e: Event) => {
@@ -71,7 +102,11 @@ export function useGlobalEvents({
     const handleOpenAnalyzer = () => {
       setIsAnalyzerOpen(true);
       // Advance Guest Tour from Step 2 to Step 3 if triggered
-      setGuideState((prev: any) => (prev.type === "guest_tour" && prev.step === 2) ? { ...prev, step: 3 } : prev);
+      setGuideState((prev: any) =>
+        prev.type === "guest_tour" && prev.step === 2
+          ? { ...prev, step: 3 }
+          : prev
+      );
     };
 
     window.addEventListener("set-tutorial-tab", handleSetTab);
@@ -95,7 +130,14 @@ export function useGlobalEvents({
       window.document.removeEventListener("navigate", handleNavigate);
       window.removeEventListener("open-analyzer", handleOpenAnalyzer);
     };
-  }, [setCompletedGuides, setTutorialTab, setActiveChannel, setIsRosterOpen, setIsAnalyzerOpen, setGuideState]);
+  }, [
+    setCompletedGuides,
+    setTutorialTab,
+    setActiveChannel,
+    setIsRosterOpen,
+    setIsAnalyzerOpen,
+    setGuideState,
+  ]);
 
   return { toast };
 }

@@ -1,7 +1,3 @@
-// ================================================
-// FILE: src/app/components/TradeAnalyzer/TradeSectionPanel.tsx
-// ================================================
-
 import { useState, useRef, useEffect, memo, useMemo } from "react";
 import { Search, X } from "lucide-react";
 import { TradeCard } from "../../../types";
@@ -25,14 +21,21 @@ interface TradeSectionPanelProps {
 
 const HighlightedText = ({ text, query }: { text: string; query: string }) => {
   if (!query || !text) return <>{text}</>;
-  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const parts = text.split(new RegExp(`(${escapedQuery})`, 'gi'));
+  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escapedQuery})`, "gi"));
   return (
     <>
-      {parts.map((part, i) => 
-        part.toLowerCase() === query.toLowerCase() 
-          ? <span key={i} className="bg-[#FAA61A]/30 text-[#FAA61A] rounded-[2px]">{part}</span> 
-          : <span key={i}>{part}</span>
+      {parts.map((part, i) =>
+        part.toLowerCase() === query.toLowerCase() ? (
+          <span
+            key={i}
+            className="bg-[#FAA61A]/30 text-[#FAA61A] rounded-[2px]"
+          >
+            {part}
+          </span>
+        ) : (
+          <span key={i}>{part}</span>
+        )
       )}
     </>
   );
@@ -50,7 +53,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
   pinnedIds,
   onTogglePin,
   onInputFocus,
-  onInputBlur
+  onInputBlur,
 }: TradeSectionPanelProps) {
   const { units: ALL_UNITS } = useUnits();
   const [query, setQuery] = useState("");
@@ -71,12 +74,16 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
         setOpen(true);
         setTimeout(() => {
           searchInputRef.current?.focus();
-          searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          searchInputRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
         }, 50);
       }
     };
     window.addEventListener("focus-trade-search", handleFocusSearch);
-    return () => window.removeEventListener("focus-trade-search", handleFocusSearch);
+    return () =>
+      window.removeEventListener("focus-trade-search", handleFocusSearch);
   }, [type]);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -98,36 +105,56 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
     if (!raw) return;
     try {
       const u = JSON.parse(raw);
-      if (!u || typeof u !== "object" || typeof u.id !== "string" || typeof u.value !== "number") {
-        return; 
+      if (
+        !u ||
+        typeof u !== "object" ||
+        typeof u.id !== "string" ||
+        typeof u.value !== "number"
+      ) {
+        return;
       }
 
       const existing = items.find((c) => c.id === u.id);
       if (existing) {
         onQtyChange(existing.id, existing.qty + 1);
       } else {
-        onAdd({ id: u.id, name: u.name, subtitle: u.subtitle, value: u.value, qty: 1 });
+        onAdd({
+          id: u.id,
+          name: u.name,
+          subtitle: u.subtitle,
+          value: u.value,
+          qty: 1,
+        });
       }
-    } catch { /* malformed payload */ }
+    } catch {
+      /* malformed payload */
+    }
   };
 
   const results = useMemo(() => {
     const q = query.toLowerCase().trim();
     return ALL_UNITS.filter(
-      (u) => q === "" ||
+      (u) =>
+        q === "" ||
         (u.name?.toLowerCase() || "").includes(q) ||
         (u.subtitle?.toLowerCase() || "").includes(q) ||
-        (u.aliases?.some(a => a.toLowerCase().includes(q)))
+        u.aliases?.some((a) => a.toLowerCase().includes(q))
     ).slice(0, 6);
   }, [query, ALL_UNITS]);
 
-  const handleAdd = (u: typeof ALL_UNITS[0]) => {
+  const handleAdd = (u: (typeof ALL_UNITS)[0]) => {
     const existing = items.find((i) => i.id === u.id);
     if (existing) {
       onQtyChange(existing.id, existing.qty + 1);
     } else {
       const numericValue = typeof u.value === "number" ? u.value : 0;
-      onAdd({ id: u.id, name: u.name, subtitle: u.subtitle, value: numericValue, qty: 1 });
+      onAdd({
+        id: u.id,
+        name: u.name,
+        subtitle: u.subtitle,
+        value: numericValue,
+        qty: 1,
+      });
     }
     setQuery("");
     setOpen(false);
@@ -137,8 +164,11 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
   const isGive = type === "give";
   const accentColorHex = isGive ? "#FAA61A" : "var(--primary)";
 
-  let dropZoneClasses = "flex flex-col justify-center rounded-[6px] transition-colors duration-150 ";
-  let dropZoneStyle: React.CSSProperties = { minHeight: items.length === 0 ? "90px" : "auto" };
+  let dropZoneClasses =
+    "flex flex-col justify-center rounded-[6px] transition-colors duration-150 ";
+  let dropZoneStyle: React.CSSProperties = {
+    minHeight: items.length === 0 ? "90px" : "auto",
+  };
 
   if (isDraggingOver) {
     dropZoneClasses += "bg-popover border-2";
@@ -153,7 +183,10 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
     <div className="px-3 md:px-4 py-3">
       <div className="flex items-baseline justify-between mb-3">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: accentColorHex }} />
+          <div
+            className="w-2 h-2 rounded-full"
+            style={{ backgroundColor: accentColorHex }}
+          />
           <p
             className="text-[12px] md:text-[13px] font-extrabold uppercase tracking-widest text-foreground"
             style={{ fontFamily: "var(--font-sans)" }}
@@ -161,7 +194,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
             {label}
           </p>
           <span className="hidden md:inline-flex px-1.5 py-[2px] bg-muted rounded-[2px] text-[9px] font-semibold text-muted-foreground ml-1 border border-border">
-            Press {isGive ? '/' : '\\'}
+            Press {isGive ? "/" : "\\"}
           </span>
         </div>
 
@@ -181,7 +214,11 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
       <div className="relative mb-3">
         <div
           className="flex items-center gap-2 px-3 py-2 rounded-[4px] focus-within:border-primary bg-input transition-colors duration-100"
-          style={{ border: open ? `1px solid ${accentColorHex}` : "1px solid var(--border)" }}
+          style={{
+            border: open
+              ? `1px solid ${accentColorHex}`
+              : "1px solid var(--border)",
+          }}
         >
           <Search className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
           <input
@@ -191,32 +228,37 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
             placeholder={`Search to add units...`}
             className="flex-1 bg-transparent outline-none text-[13px] font-medium text-foreground placeholder-muted-foreground"
             style={{ caretColor: accentColorHex }}
-            onChange={(e) => { 
-              setQuery(e.target.value); 
-              setOpen(true); 
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setOpen(true);
             }}
-            onFocus={(e) => { 
-              setOpen(true); 
+            onFocus={(e) => {
+              setOpen(true);
               onInputFocus?.();
-              e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              e.currentTarget.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+              });
             }}
-            onBlur={() => { 
-              setTimeout(() => setOpen(false), 200); 
+            onBlur={() => {
+              setTimeout(() => setOpen(false), 200);
               onInputBlur?.();
             }}
             onKeyDown={(e) => {
               if (e.key === "ArrowDown") {
                 e.preventDefault();
-                setSelectedIndex(prev => Math.min(prev + 1, results.length - 1));
+                setSelectedIndex((prev) =>
+                  Math.min(prev + 1, results.length - 1)
+                );
               } else if (e.key === "ArrowUp") {
                 e.preventDefault();
-                setSelectedIndex(prev => (prev <= 0 ? -1 : prev - 1));
+                setSelectedIndex((prev) => (prev <= 0 ? -1 : prev - 1));
               } else if (e.key === "Enter") {
                 e.preventDefault();
                 if (selectedIndex >= 0 && results[selectedIndex]) {
                   handleAdd(results[selectedIndex]);
                 } else if (results.length > 0) {
-                  handleAdd(results[0]); 
+                  handleAdd(results[0]);
                 }
               } else if (e.key === "Escape") {
                 e.preventDefault();
@@ -228,7 +270,10 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
           {query.length > 0 && (
             <button
               className="flex-shrink-0 focus-visible:outline-none rounded-[2px] p-2 -m-2 md:p-0.5 md:-m-0 hover:bg-muted transition-colors text-muted-foreground cursor-pointer"
-              onMouseDown={(e) => { e.preventDefault(); setQuery(""); }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setQuery("");
+              }}
               aria-label={`Clear search input for ${label}`}
             >
               <X className="w-3.5 h-3.5" />
@@ -251,8 +296,12 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
                   key={u.id}
                   onClick={() => handleAdd(u)}
                   onMouseEnter={() => setSelectedIndex(i)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors text-left focus-visible:outline-none cursor-pointer ${isSelected ? 'bg-muted' : 'bg-transparent hover:bg-muted'}`}
-                  style={{ borderTop: i === 0 ? "none" : "1px solid var(--border)" }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors text-left focus-visible:outline-none cursor-pointer ${
+                    isSelected ? "bg-muted" : "bg-transparent hover:bg-muted"
+                  }`}
+                  style={{
+                    borderTop: i === 0 ? "none" : "1px solid var(--border)",
+                  }}
                 >
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
                     <p className="text-[13px] font-bold leading-tight truncate text-foreground">
@@ -263,7 +312,11 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
                     </p>
                   </div>
                   <span className="text-[12px] font-bold flex-shrink-0 text-muted-foreground font-mono">
-                    {typeof u.value === "number" ? u.value.toLocaleString() : u.value === "owner" ? "O/C" : u.valueDisplay || "???"}
+                    {typeof u.value === "number"
+                      ? u.value.toLocaleString()
+                      : u.value === "owner"
+                      ? "O/C"
+                      : u.valueDisplay || "???"}
                   </span>
                 </button>
               );
@@ -272,16 +325,33 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
         )}
       </div>
 
-      <div style={dropZoneStyle} className={dropZoneClasses} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+      <div
+        style={dropZoneStyle}
+        className={dropZoneClasses}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center pointer-events-none gap-0.5 py-4">
-            <p className="text-[13px] font-bold" style={{ color: isDraggingOver ? "var(--foreground)" : "var(--muted-foreground)" }}>
+            <p
+              className="text-[13px] font-bold"
+              style={{
+                color: isDraggingOver
+                  ? "var(--foreground)"
+                  : "var(--muted-foreground)",
+              }}
+            >
               {isDraggingGlobal ? "Drop unit here" : "Empty Section"}
             </p>
             {!isDraggingGlobal && (
               <p className="text-[11px] font-medium text-muted-foreground text-center">
-                <span className="hidden md:inline">Search above or drag units here.</span>
-                <span className="md:hidden">Search above or tap units in the list.</span>
+                <span className="hidden md:inline">
+                  Search above or drag units here.
+                </span>
+                <span className="md:hidden">
+                  Search above or tap units in the list.
+                </span>
               </p>
             )}
           </div>
@@ -289,10 +359,10 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
           <div className="flex flex-col gap-2">
             {items.map((card) => (
               <div key={card.id}>
-                <ActiveCardRow 
-                  card={card} 
-                  onQtyChange={onQtyChange} 
-                  onRemove={onRemove} 
+                <ActiveCardRow
+                  card={card}
+                  onQtyChange={onQtyChange}
+                  onRemove={onRemove}
                   isPinned={pinnedIds.has(`${type}-${card.id}`)}
                   onTogglePin={onTogglePin}
                 />

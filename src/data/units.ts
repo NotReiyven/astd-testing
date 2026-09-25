@@ -1,7 +1,3 @@
-// ================================================
-// FILE: src/data/units.ts
-// ================================================
-
 import { MasterUnit } from "../types";
 
 export interface UnitMeta {

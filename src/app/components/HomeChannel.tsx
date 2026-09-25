@@ -173,7 +173,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
           <div className="flex flex-col gap-3">
             <h1 className={`${globalCompactMode ? 'text-[20px] md:text-[24px]' : 'text-[28px] md:text-[32px]'} font-black text-foreground tracking-tight`}>ASTD Value List</h1>
             <p className="text-[15px] text-muted-foreground leading-relaxed max-w-3xl font-medium">
-              Stop getting scammed. These are live market estimates based on actual trading data. Verify the tags and momentum before you accept an offer.
+              Stop getting scammed. These are live market estimates based on actual trading information. Verify the tags and momentum before you accept an offer.
             </p>
           </div>
 
@@ -199,7 +199,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
                   <FileSpreadsheet className="w-4 h-4 text-primary" /> Live Data Sync
                 </h3>
                 <p className="text-[13px] leading-relaxed text-muted-foreground flex-1 font-medium">
-                  This is a live, high-performance interface for the official ASTD spreadsheet. It operates dynamically—when the value list updates, this site updates instantly.
+                  This is a live, high-performance interface for the official ASTD spreadsheet. It operates dynamically, when the value list updates, this site updates instantly.
                 </p>
                 <button onClick={() => safeOpenExternal("https://docs.google.com/spreadsheets/d/1Z20NUscF9Id2Sss-osT-Xq06gz9ooikt6Kjtianeg0I/edit?gid=163005933#gid=163005933")} className="mt-4 bg-muted hover:bg-white/10 text-foreground px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 border border-border cursor-pointer">
                   Open Official Spreadsheet <ExternalLink className="w-4 h-4" />
@@ -231,7 +231,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
               <h2 className="text-[20px] font-black text-foreground">Patch Notes</h2>
             </div>
             <p className="text-[14px] text-muted-foreground leading-relaxed font-medium">
-              A detailed ledger of all recent modifications to the value list, including unit additions, tier adjustments, and market corrections. Check the logs before complaining about shifting values.
+              A detailed ledger of all recent modifications to the value list, including unit additions, adjustments, and corrections. Check the logs before complaining about shifting values.
             </p>
 
             {parsedChangelog.length === 0 ? (
@@ -268,7 +268,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
               <h2 className="text-[20px] font-black text-foreground">Credits & Contributors</h2>
             </div>
             <p className="text-[14px] text-muted-foreground leading-relaxed font-medium">
-              The people dedicated to maintaining the list, balancing the game economy, and building the tools you use daily. Show some respect.
+              The people dedicated to maintaining the list, balancing the game economy, and building the tools you use daily.
             </p>
 
             <div className={`bg-card border rounded-[8px] flex flex-col sm:flex-row items-center sm:items-start p-6 gap-6 shadow-sm transition-colors ${guideState?.type === "developer" ? "border-primary" : "border-border"}`}>
@@ -284,7 +284,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
                 </div>
                 <p className="text-[12px] font-bold text-muted-foreground mb-3 uppercase tracking-wide">Raven • 3rd Year BSCS @ PHILIPPINES</p>
                 <p className="text-[13px] text-muted-foreground font-medium leading-relaxed max-w-2xl bg-muted p-3 rounded-[6px] border border-border">
-                  Architect and lead engineer of the ASTD Value List web platform. Combined a background in computer science and game development to build the responsive layout, advanced parsing engine, and trading tools for the community.
+                  Lead developer of the ASTD Value List web platform. Combined a background in computer science, web development, and game development to build the responsive layout, advanced parsing engine, and trading tools for the community.
                 </p>
               </div>
             </div>

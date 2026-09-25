@@ -1,12 +1,8 @@
-// ================================================
-// FILE: src/store/useAdInteractionStore.ts
-// ================================================
-
-import { create } from 'zustand';
-import { supabase } from '../lib/supabase';
-import { RealtimeChannel } from '@supabase/supabase-js';
-import { get as getIdb, set as setIdb } from 'idb-keyval';
-import { useToastStore } from './useToastStore';
+import { create } from "zustand";
+import { supabase } from "../lib/supabase";
+import { RealtimeChannel } from "@supabase/supabase-js";
+import { get as getIdb, set as setIdb } from "idb-keyval";
+import { useToastStore } from "./useToastStore";
 
 export interface AdComment {
   id: string;
@@ -26,7 +22,7 @@ export interface AdComment {
 export interface VoteData {
   upvotes: number;
   downvotes: number;
-  userVote: number; 
+  userVote: number;
 }
 
 interface AdInteractionState {
@@ -36,28 +32,38 @@ interface AdInteractionState {
   commentVotes: Record<string, VoteData>;
   isLoading: boolean;
   isActionPending: boolean;
-  
+
   openAdContext: (adId: string, currentUserId?: string) => Promise<void>;
   closeAdContext: () => void;
-  
-  postComment: (adId: string, userProfile: any, content: string, parentId?: string | null) => Promise<boolean>;
+
+  postComment: (
+    adId: string,
+    userProfile: any,
+    content: string,
+    parentId?: string | null
+  ) => Promise<boolean>;
   deleteComment: (commentId: string) => Promise<boolean>;
   voteAd: (adId: string, userId: string, value: number) => Promise<void>;
-  voteComment: (commentId: string, userId: string, value: number) => Promise<void>;
+  voteComment: (
+    commentId: string,
+    userId: string,
+    value: number
+  ) => Promise<void>;
 }
 
 const containsPhishingOrLink = (text: string) => {
-  const normalized = text.normalize('NFKD').toLowerCase();
+  const normalized = text.normalize("NFKD").toLowerCase();
   const stripped = normalized
-    .replace(/[\u200B-\u200D\uFEFF\u200E\u200F\u202A-\u202E]/g, '') // Zero-width / directional
-    .replace(/(\s|\[|\]|\(|\)|\{|\}|\*|_|-|~|`|\||\\|\/)+/g, '')   // Common separators to catch "discord . gg"
-    .replace(/[аа]/g, 'a') // Cyrillic homoglyphs
-    .replace(/[оо]/g, 'o')
-    .replace(/[ее]/g, 'e')
-    .replace(/[сс]/g, 'c')
-    .replace(/dot/g, '.');
+    .replace(/[\u200B-\u200D\uFEFF\u200E\u200F\u202A-\u202E]/g, "") // Zero-width / directional
+    .replace(/(\s|\[|\]|\(|\)|\{|\}|\*|_|-|~|`|\||\\|\/)+/g, "") // Common separators to catch "discord . gg"
+    .replace(/[аа]/g, "a") // Cyrillic homoglyphs
+    .replace(/[оо]/g, "o")
+    .replace(/[ее]/g, "e")
+    .replace(/[сс]/g, "c")
+    .replace(/dot/g, ".");
 
-  const aggressivePattern = /(https?:|www\.|[a-z0-9]+\.(com|net|org|gg|ru|io|me|co|xyz|to|link|tk)|discord\.gg|discordgg|t\.me|bit\.ly)/i;
+  const aggressivePattern =
+    /(https?:|www\.|[a-z0-9]+\.(com|net|org|gg|ru|io|me|co|xyz|to|link|tk)|discord\.gg|discordgg|t\.me|bit\.ly)/i;
   return aggressivePattern.test(stripped);
 };
 
@@ -72,12 +78,12 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
   isActionPending: false,
 
   openAdContext: async (adId: string, currentUserId?: string) => {
-    set({ 
-      activeAdId: adId, 
-      isLoading: true, 
-      comments: [], 
+    set({
+      activeAdId: adId,
+      isLoading: true,
+      comments: [],
       adVotes: { upvotes: 0, downvotes: 0, userVote: 0 },
-      commentVotes: {} 
+      commentVotes: {},
     });
 
     if (activeInteractionChannel) {
@@ -87,57 +93,67 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
 
     const fetchInteractions = async () => {
       const { data: commentsData, error: commentsError } = await supabase
-        .from('ad_comments')
-        .select(`*, profiles!ad_comments_user_id_fkey(username, avatar_url, role, discord_id)`)
-        .eq('ad_id', adId)
-        .order('created_at', { ascending: true });
-        
+        .from("ad_comments")
+        .select(
+          `*, profiles!ad_comments_user_id_fkey(username, avatar_url, role, discord_id)`
+        )
+        .eq("ad_id", adId)
+        .order("created_at", { ascending: true });
+
       if (commentsError) {
         console.error("🚨 Fetch Comments Error:", commentsError.message);
       }
 
       const comments = (commentsData as AdComment[]) || [];
-      
+
       const { data: adVotesData } = await supabase
-        .from('ad_votes')
-        .select('*')
-        .eq('ad_id', adId);
-        
-      let adUp = 0, adDown = 0, adUserVote = 0;
+        .from("ad_votes")
+        .select("*")
+        .eq("ad_id", adId);
+
+      let adUp = 0,
+        adDown = 0,
+        adUserVote = 0;
       if (adVotesData) {
-        adVotesData.forEach(v => {
+        adVotesData.forEach((v) => {
           if (v.vote_value === 1) adUp++;
           if (v.vote_value === -1) adDown++;
-          if (currentUserId && v.user_id === currentUserId) adUserVote = v.vote_value;
+          if (currentUserId && v.user_id === currentUserId)
+            adUserVote = v.vote_value;
         });
       }
 
       const commentVoteMap: Record<string, VoteData> = {};
-      const commentIds = comments.map(c => c.id);
-      
+      const commentIds = comments.map((c) => c.id);
+
       if (commentIds.length > 0) {
         const { data: cVotesData } = await supabase
-          .from('comment_votes')
-          .select('*')
-          .in('comment_id', commentIds);
-          
+          .from("comment_votes")
+          .select("*")
+          .in("comment_id", commentIds);
+
         if (cVotesData) {
-          cVotesData.forEach(v => {
+          cVotesData.forEach((v) => {
             if (!commentVoteMap[v.comment_id]) {
-              commentVoteMap[v.comment_id] = { upvotes: 0, downvotes: 0, userVote: 0 };
+              commentVoteMap[v.comment_id] = {
+                upvotes: 0,
+                downvotes: 0,
+                userVote: 0,
+              };
             }
             if (v.vote_value === 1) commentVoteMap[v.comment_id].upvotes++;
             if (v.vote_value === -1) commentVoteMap[v.comment_id].downvotes++;
-            if (currentUserId && v.user_id === currentUserId) commentVoteMap[v.comment_id].userVote = v.vote_value;
+            if (currentUserId && v.user_id === currentUserId)
+              commentVoteMap[v.comment_id].userVote = v.vote_value;
           });
         }
       }
 
-      set({ 
-        comments, 
+      set({
+        comments,
         adVotes: { upvotes: adUp, downvotes: adDown, userVote: adUserVote },
         commentVotes: commentVoteMap,
-        isLoading: false 
+        isLoading: false,
       });
     };
 
@@ -145,9 +161,31 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
 
     activeInteractionChannel = supabase.channel(`ad-${adId}-interactions`);
     activeInteractionChannel
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'ad_comments', filter: `ad_id=eq.${adId}` }, fetchInteractions)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'ad_votes', filter: `ad_id=eq.${adId}` }, fetchInteractions)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'comment_votes' }, fetchInteractions)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "ad_comments",
+          filter: `ad_id=eq.${adId}`,
+        },
+        fetchInteractions
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "ad_votes",
+          filter: `ad_id=eq.${adId}`,
+        },
+        fetchInteractions
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "comment_votes" },
+        fetchInteractions
+      )
       .subscribe();
   },
 
@@ -156,12 +194,23 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
       supabase.removeChannel(activeInteractionChannel);
       activeInteractionChannel = null;
     }
-    set({ activeAdId: null, comments: [], commentVotes: {}, adVotes: { upvotes: 0, downvotes: 0, userVote: 0 }, isActionPending: false });
+    set({
+      activeAdId: null,
+      comments: [],
+      commentVotes: {},
+      adVotes: { upvotes: 0, downvotes: 0, userVote: 0 },
+      isActionPending: false,
+    });
   },
 
   postComment: async (adId, userProfile, content, parentId = null) => {
     if (containsPhishingOrLink(content)) {
-      useToastStore.getState().addToast("External links and invite URLs are strictly prohibited to prevent scams.", "error");
+      useToastStore
+        .getState()
+        .addToast(
+          "External links and invite URLs are strictly prohibited to prevent scams.",
+          "error"
+        );
       return false;
     }
 
@@ -170,10 +219,15 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
 
     // OFFLINE QUEUE INTERCEPTION
     if (!navigator.onLine) {
-      const queue: any[] = (await getIdb('astd_offline_comments')) || [];
+      const queue: any[] = (await getIdb("astd_offline_comments")) || [];
       queue.push({ adId, userProfile, content: cleanContent, parentId });
-      await setIdb('astd_offline_comments', queue);
-      useToastStore.getState().addToast("You're offline. Comment queued to post when connection is restored.", "info");
+      await setIdb("astd_offline_comments", queue);
+      useToastStore
+        .getState()
+        .addToast(
+          "You're offline. Comment queued to post when connection is restored.",
+          "info"
+        );
       return true;
     }
 
@@ -191,31 +245,37 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
         username: userProfile.username,
         avatar_url: userProfile.avatar_url,
         role: userProfile.role,
-        discord_id: userProfile.discord_id
-      }
+        discord_id: userProfile.discord_id,
+      },
     };
 
-    set(state => ({ comments: [...state.comments, optimisticComment] }));
+    set((state) => ({ comments: [...state.comments, optimisticComment] }));
 
-    const { data, error } = await supabase.from('ad_comments').insert({
-      ad_id: adId,
-      user_id: userProfile.id,
-      content: cleanContent,
-      parent_id: parentId
-    }).select('id').single();
-    
+    const { data, error } = await supabase
+      .from("ad_comments")
+      .insert({
+        ad_id: adId,
+        user_id: userProfile.id,
+        content: cleanContent,
+        parent_id: parentId,
+      })
+      .select("id")
+      .single();
+
     if (error) {
-      set(state => ({ 
-        comments: state.comments.filter(c => c.id !== fakeId),
-        isActionPending: false
+      set((state) => ({
+        comments: state.comments.filter((c) => c.id !== fakeId),
+        isActionPending: false,
       }));
       useToastStore.getState().addToast(error.message, "error");
       return false;
     }
 
-    set(state => ({
-      comments: state.comments.map(c => c.id === fakeId ? { ...c, id: data.id } : c),
-      isActionPending: false
+    set((state) => ({
+      comments: state.comments.map((c) =>
+        c.id === fakeId ? { ...c, id: data.id } : c
+      ),
+      isActionPending: false,
     }));
 
     return true;
@@ -224,16 +284,19 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
   deleteComment: async (commentId) => {
     set({ isActionPending: true });
     const currentComments = get().comments;
-    set({ comments: currentComments.filter(c => c.id !== commentId) });
+    set({ comments: currentComments.filter((c) => c.id !== commentId) });
 
-    const { error } = await supabase.from('ad_comments').delete().eq('id', commentId);
-    
+    const { error } = await supabase
+      .from("ad_comments")
+      .delete()
+      .eq("id", commentId);
+
     if (error) {
       set({ comments: currentComments, isActionPending: false });
       useToastStore.getState().addToast("Failed to delete comment.", "error");
       return false;
     }
-    
+
     set({ isActionPending: false });
     return true;
   },
@@ -255,15 +318,24 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
     set({ adVotes: { upvotes: up, downvotes: down, userVote: newValue } });
 
     if (isRemoving) {
-      await supabase.from('ad_votes').delete().match({ ad_id: adId, user_id: userId });
+      await supabase
+        .from("ad_votes")
+        .delete()
+        .match({ ad_id: adId, user_id: userId });
     } else {
-      await supabase.from('ad_votes').upsert({ ad_id: adId, user_id: userId, vote_value: newValue });
+      await supabase
+        .from("ad_votes")
+        .upsert({ ad_id: adId, user_id: userId, vote_value: newValue });
     }
   },
 
   voteComment: async (commentId, userId, value) => {
     const { commentVotes } = get();
-    const currentData = commentVotes[commentId] || { upvotes: 0, downvotes: 0, userVote: 0 };
+    const currentData = commentVotes[commentId] || {
+      upvotes: 0,
+      downvotes: 0,
+      userVote: 0,
+    };
     const currentVote = currentData.userVote;
     const isRemoving = currentVote === value;
     const newValue = isRemoving ? 0 : value;
@@ -276,17 +348,26 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
     if (newValue === 1) up++;
     if (newValue === -1) down++;
 
-    set({ 
-      commentVotes: { 
-        ...commentVotes, 
-        [commentId]: { upvotes: up, downvotes: down, userVote: newValue } 
-      } 
+    set({
+      commentVotes: {
+        ...commentVotes,
+        [commentId]: { upvotes: up, downvotes: down, userVote: newValue },
+      },
     });
 
     if (isRemoving) {
-      await supabase.from('comment_votes').delete().match({ comment_id: commentId, user_id: userId });
+      await supabase
+        .from("comment_votes")
+        .delete()
+        .match({ comment_id: commentId, user_id: userId });
     } else {
-      await supabase.from('comment_votes').upsert({ comment_id: commentId, user_id: userId, vote_value: newValue });
+      await supabase
+        .from("comment_votes")
+        .upsert({
+          comment_id: commentId,
+          user_id: userId,
+          vote_value: newValue,
+        });
     }
-  }
+  },
 }));

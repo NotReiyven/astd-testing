@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 export function useTradeGlobalInput() {
   const [isGlobalDragging, setIsGlobalDragging] = useState(false);
@@ -11,10 +11,10 @@ export function useTradeGlobalInput() {
       if (e.dataTransfer?.types.includes("unit")) setIsGlobalDragging(true);
     };
     const handleDragEnd = () => setIsGlobalDragging(false);
-    
+
     window.addEventListener("dragstart", handleDragStart);
     window.addEventListener("dragend", handleDragEnd);
-    
+
     return () => {
       window.removeEventListener("dragstart", handleDragStart);
       window.removeEventListener("dragend", handleDragEnd);
@@ -26,7 +26,11 @@ export function useTradeGlobalInput() {
     const handlePaste = (e: ClipboardEvent) => {
       const activeEl = document.activeElement;
       // Do not intercept paste if the user is typing in a text field
-      if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) return;
+      if (
+        activeEl &&
+        (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")
+      )
+        return;
 
       const text = e.clipboardData?.getData("text");
       if (text && text.trim().length > 0) {
@@ -35,7 +39,7 @@ export function useTradeGlobalInput() {
         setSmartMenuOpen(true);
       }
     };
-    
+
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
   }, []);
@@ -44,17 +48,33 @@ export function useTradeGlobalInput() {
   useEffect(() => {
     const handleGlobalKeys = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
-      if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) return;
+      if (
+        activeEl &&
+        (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")
+      )
+        return;
 
-      if (e.key === '/') {
+      if (e.key === "/") {
         e.preventDefault();
         window.dispatchEvent(new Event("open-analyzer"));
         // Slight delay to ensure the panel mounts before focusing
-        setTimeout(() => window.dispatchEvent(new CustomEvent("focus-trade-search", { detail: "give" })), 50);
-      } else if (e.key === '\\') {
+        setTimeout(
+          () =>
+            window.dispatchEvent(
+              new CustomEvent("focus-trade-search", { detail: "give" })
+            ),
+          50
+        );
+      } else if (e.key === "\\") {
         e.preventDefault();
         window.dispatchEvent(new Event("open-analyzer"));
-        setTimeout(() => window.dispatchEvent(new CustomEvent("focus-trade-search", { detail: "get" })), 50);
+        setTimeout(
+          () =>
+            window.dispatchEvent(
+              new CustomEvent("focus-trade-search", { detail: "get" })
+            ),
+          50
+        );
       }
     };
 
@@ -62,11 +82,11 @@ export function useTradeGlobalInput() {
     return () => window.removeEventListener("keydown", handleGlobalKeys);
   }, []);
 
-  return { 
-    isGlobalDragging, 
-    smartMenuOpen, 
-    setSmartMenuOpen, 
-    initialParserText, 
-    setInitialParserText 
+  return {
+    isGlobalDragging,
+    smartMenuOpen,
+    setSmartMenuOpen,
+    initialParserText,
+    setInitialParserText,
   };
 }

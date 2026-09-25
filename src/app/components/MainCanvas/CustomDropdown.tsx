@@ -1,7 +1,3 @@
-// ================================================
-// FILE: src/app/components/MainCanvas/CustomDropdown.tsx
-// ================================================
-
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { Check, ChevronDown, LucideIcon } from "lucide-react";
@@ -41,7 +37,13 @@ export interface CustomDropdownProps {
   defaultLabel?: string;
 }
 
-export function CustomDropdown({ icon: Icon, value, options, onChange, defaultLabel }: CustomDropdownProps) {
+export function CustomDropdown({
+  icon: Icon,
+  value,
+  options,
+  onChange,
+  defaultLabel,
+}: CustomDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
@@ -50,17 +52,17 @@ export function CustomDropdown({ icon: Icon, value, options, onChange, defaultLa
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   const optionKeys = Object.keys(options);
-  
+
   useClickOutside(ref, portalRef, () => setIsOpen(false));
 
   const handleToggle = () => {
-    triggerHaptic('light');
+    triggerHaptic("light");
     if (!isOpen && ref.current) {
       const rect = ref.current.getBoundingClientRect();
       setCoords({
         top: rect.bottom + window.scrollY + 6,
         left: rect.left + window.scrollX,
-        width: rect.width
+        width: rect.width,
       });
       setFocusedIndex(optionKeys.indexOf(value));
     }
@@ -84,11 +86,13 @@ export function CustomDropdown({ icon: Icon, value, options, onChange, defaultLa
       setFocusedIndex((prev) => (prev + 1) % optionKeys.length);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setFocusedIndex((prev) => (prev - 1 + optionKeys.length) % optionKeys.length);
+      setFocusedIndex(
+        (prev) => (prev - 1 + optionKeys.length) % optionKeys.length
+      );
     } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       if (focusedIndex >= 0) {
-        triggerHaptic('medium');
+        triggerHaptic("medium");
         onChange(optionKeys[focusedIndex]);
         setIsOpen(false);
         buttonRef.current?.focus();
@@ -96,7 +100,10 @@ export function CustomDropdown({ icon: Icon, value, options, onChange, defaultLa
     }
   };
 
-  const activeDescendant = isOpen && focusedIndex >= 0 ? `dropdown-opt-${optionKeys[focusedIndex]}` : undefined;
+  const activeDescendant =
+    isOpen && focusedIndex >= 0
+      ? `dropdown-opt-${optionKeys[focusedIndex]}`
+      : undefined;
 
   return (
     <div ref={ref} className="relative w-full sm:min-w-[190px]">
@@ -111,48 +118,64 @@ export function CustomDropdown({ icon: Icon, value, options, onChange, defaultLa
         className="w-full flex items-center justify-between bg-popover hover:bg-muted rounded-[4px] border border-border px-3 h-[36px] md:h-[32px] transition-all shadow-inner whitespace-nowrap active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <div className="flex items-center min-w-0 pointer-events-none">
-          <Icon className="w-3.5 h-3.5 text-muted-foreground mr-2 shrink-0" aria-hidden="true" />
+          <Icon
+            className="w-3.5 h-3.5 text-muted-foreground mr-2 shrink-0"
+            aria-hidden="true"
+          />
           <span className="text-[11px] font-bold text-foreground uppercase tracking-wider truncate">
             {value === "all" && defaultLabel ? defaultLabel : options[value]}
           </span>
         </div>
-        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground ml-2 shrink-0 opacity-70 transition-transform duration-200 pointer-events-none ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+        <ChevronDown
+          className={`w-3.5 h-3.5 text-muted-foreground ml-2 shrink-0 opacity-70 transition-transform duration-200 pointer-events-none ${
+            isOpen ? "rotate-180" : ""
+          }`}
+          aria-hidden="true"
+        />
       </button>
 
-      {isOpen && createPortal(
-        <div 
-          ref={portalRef}
-          id="custom-dropdown-list"
-          role="listbox"
-          className="absolute bg-popover border border-border rounded-[6px] shadow-[0_10px_30px_rgba(0,0,0,0.6)] z-[100] py-1.5 flex flex-col animate-slide-up max-h-[300px] overflow-y-auto custom-scrollbar"
-          style={{ top: coords.top, left: coords.left, width: coords.width }}
-        >
-          {optionKeys.map((k, i) => (
-            <div
-              key={k}
-              id={`dropdown-opt-${k}`}
-              role="option"
-              aria-selected={value === k}
-              onClick={() => { 
-                triggerHaptic('medium');
-                onChange(k); 
-                setIsOpen(false);
-                buttonRef.current?.focus();
-              }}
-              onMouseEnter={() => setFocusedIndex(i)}
-              className={`flex items-center justify-between text-left px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer ${
-                value === k || focusedIndex === i 
-                  ? "bg-primary text-primary-foreground" 
-                  : "text-foreground hover:bg-muted"
-              }`}
-            >
-              <span className="truncate pr-4 pointer-events-none">{options[k]}</span>
-              {value === k && <Check className="w-4 h-4 shrink-0 pointer-events-none" aria-hidden="true" />}
-            </div>
-          ))}
-        </div>,
-        document.body
-      )}
+      {isOpen &&
+        createPortal(
+          <div
+            ref={portalRef}
+            id="custom-dropdown-list"
+            role="listbox"
+            className="absolute bg-popover border border-border rounded-[6px] shadow-[0_10px_30px_rgba(0,0,0,0.6)] z-[100] py-1.5 flex flex-col animate-slide-up max-h-[300px] overflow-y-auto custom-scrollbar"
+            style={{ top: coords.top, left: coords.left, width: coords.width }}
+          >
+            {optionKeys.map((k, i) => (
+              <div
+                key={k}
+                id={`dropdown-opt-${k}`}
+                role="option"
+                aria-selected={value === k}
+                onClick={() => {
+                  triggerHaptic("medium");
+                  onChange(k);
+                  setIsOpen(false);
+                  buttonRef.current?.focus();
+                }}
+                onMouseEnter={() => setFocusedIndex(i)}
+                className={`flex items-center justify-between text-left px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                  value === k || focusedIndex === i
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground hover:bg-muted"
+                }`}
+              >
+                <span className="truncate pr-4 pointer-events-none">
+                  {options[k]}
+                </span>
+                {value === k && (
+                  <Check
+                    className="w-4 h-4 shrink-0 pointer-events-none"
+                    aria-hidden="true"
+                  />
+                )}
+              </div>
+            ))}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

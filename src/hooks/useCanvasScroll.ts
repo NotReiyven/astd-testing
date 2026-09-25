@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 export function useCanvasScroll(isMobile: boolean) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const scrollTopBtnRef = useRef<HTMLButtonElement>(null);
-  
+
   const headerVisibleRef = useRef(true);
   const scrollTopVisibleRef = useRef(false);
   const lastScrollY = useRef(0);
@@ -22,14 +22,25 @@ export function useCanvasScroll(isMobile: boolean) {
       if (currentScroll > 400 && !scrollTopVisibleRef.current) {
         scrollTopVisibleRef.current = true;
         if (scrollTopBtnRef.current) {
-          scrollTopBtnRef.current.classList.remove("opacity-0", "translate-y-8", "pointer-events-none");
+          scrollTopBtnRef.current.classList.remove(
+            "opacity-0",
+            "translate-y-8",
+            "pointer-events-none"
+          );
           scrollTopBtnRef.current.classList.add("opacity-100", "translate-y-0");
         }
       } else if (currentScroll <= 400 && scrollTopVisibleRef.current) {
         scrollTopVisibleRef.current = false;
         if (scrollTopBtnRef.current) {
-          scrollTopBtnRef.current.classList.remove("opacity-100", "translate-y-0");
-          scrollTopBtnRef.current.classList.add("opacity-0", "translate-y-8", "pointer-events-none");
+          scrollTopBtnRef.current.classList.remove(
+            "opacity-100",
+            "translate-y-0"
+          );
+          scrollTopBtnRef.current.classList.add(
+            "opacity-0",
+            "translate-y-8",
+            "pointer-events-none"
+          );
         }
       }
 
@@ -57,7 +68,10 @@ export function useCanvasScroll(isMobile: boolean) {
           return;
         }
 
-        if ((delta > 0 && scrollDeltaRef.current < 0) || (delta < 0 && scrollDeltaRef.current > 0)) {
+        if (
+          (delta > 0 && scrollDeltaRef.current < 0) ||
+          (delta < 0 && scrollDeltaRef.current > 0)
+        ) {
           scrollDeltaRef.current = 0;
         }
         scrollDeltaRef.current += delta;
@@ -82,8 +96,8 @@ export function useCanvasScroll(isMobile: boolean) {
       }
     };
 
-    el.addEventListener('scroll', handleNativeScroll, { passive: true });
-    return () => el.removeEventListener('scroll', handleNativeScroll);
+    el.addEventListener("scroll", handleNativeScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleNativeScroll);
   }, [isMobile]);
 
   const scrollToTop = () => {
@@ -98,5 +112,12 @@ export function useCanvasScroll(isMobile: boolean) {
     scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  return { scrollRef, headerRef, scrollTopBtnRef, scrollToTop, headerVisibleRef, skipNextResetRef: useRef(false) };
+  return {
+    scrollRef,
+    headerRef,
+    scrollTopBtnRef,
+    scrollToTop,
+    headerVisibleRef,
+    skipNextResetRef: useRef(false),
+  };
 }

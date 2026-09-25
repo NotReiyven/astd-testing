@@ -1,7 +1,3 @@
-// ================================================
-// FILE: src/app/components/TradeAnalyzer/AdComposer.tsx
-// ================================================
-
 import { useState } from "react";
 import { Check, X, AlertCircle, Loader2 } from "lucide-react";
 import { useTradeStore } from "../../../store/useTradeStore";
@@ -15,7 +11,7 @@ const TTL_OPTIONS = [
   { hours: 1, label: "1 Hour" },
   { hours: 4, label: "4 Hours" },
   { hours: 12, label: "12 Hours" },
-  { hours: 24, label: "24 Hours" }
+  { hours: 24, label: "24 Hours" },
 ];
 
 const PRESET_NOTES = [
@@ -24,17 +20,20 @@ const PRESET_NOTES = [
   "Taking underpays",
   "Strictly fair trades",
   "DM on Discord to offer",
-  "NLF: Low demand units"
+  "NLF: Low demand units",
 ];
 
 export function AdComposer() {
   const { profile } = useAuthStore();
-  const { giveItems, getItems, composerMode, setComposerOpen } = useTradeStore();
+  const { giveItems, getItems, composerMode, setComposerOpen } =
+    useTradeStore();
   const { createAd } = useTradingAdsStore();
   const { items: inventoryItems } = useInventoryStore();
   const { units: ALL_UNITS } = useUnits();
 
-  const [adType, setAdType] = useState<"standard" | "lf_offers" | "inventory">(composerMode);
+  const [adType, setAdType] = useState<"standard" | "lf_offers" | "inventory">(
+    composerMode
+  );
   const [note, setNote] = useState("");
   const [ttl, setTtl] = useState(4);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -42,7 +41,7 @@ export function AdComposer() {
 
   const hasGiveItems = giveItems.length > 0;
   const hasGetItems = getItems.length > 0;
-  const hasUnpinnedInventory = inventoryItems.some(i => !i.is_pinned);
+  const hasUnpinnedInventory = inventoryItems.some((i) => !i.is_pinned);
 
   let isReadyToPublish = true;
   let validationHint = "Publish Ad";
@@ -72,28 +71,45 @@ export function AdComposer() {
 
   const handlePublish = async () => {
     if (!profile || !isReadyToPublish) return;
-    
+
     let submitGive = giveItems;
 
     if (adType === "inventory") {
       const ObjectCards: TradeCard[] = [];
-      
+
       const sortedInv = [...inventoryItems].sort((a, b) => {
-        const m1 = ALL_UNITS.find(u => u.id === a.unit_id);
-        const m2 = ALL_UNITS.find(u => u.id === b.unit_id);
-        const v1 = m1 ? (typeof m1.value === 'number' ? m1.value : m1.valueMin || 0) : 0;
-        const v2 = m2 ? (typeof m2.value === 'number' ? m2.value : m2.valueMin || 0) : 0;
+        const m1 = ALL_UNITS.find((u) => u.id === a.unit_id);
+        const m2 = ALL_UNITS.find((u) => u.id === b.unit_id);
+        const v1 = m1
+          ? typeof m1.value === "number"
+            ? m1.value
+            : m1.valueMin || 0
+          : 0;
+        const v2 = m2
+          ? typeof m2.value === "number"
+            ? m2.value
+            : m2.valueMin || 0
+          : 0;
         return v2 - v1;
       });
 
       sortedInv.forEach((inv) => {
         const master = ALL_UNITS.find((unit) => unit.id === inv.unit_id);
         if (master && !inv.is_pinned && ObjectCards.length < 25) {
-          const numericVal = typeof master.value === "number" ? master.value : master.valueMin || 0;
-          ObjectCards.push({ id: master.id, name: master.name, subtitle: master.subtitle, value: numericVal, qty: inv.quantity });
+          const numericVal =
+            typeof master.value === "number"
+              ? master.value
+              : master.valueMin || 0;
+          ObjectCards.push({
+            id: master.id,
+            name: master.name,
+            subtitle: master.subtitle,
+            value: numericVal,
+            qty: inv.quantity,
+          });
         }
       });
-      
+
       submitGive = ObjectCards;
     }
 
@@ -104,18 +120,21 @@ export function AdComposer() {
       const result = await createAd({
         userId: profile.id,
         giveItems: submitGive,
-        getItems: adType === "lf_offers" || adType === "inventory" ? [] : getItems,
+        getItems:
+          adType === "lf_offers" || adType === "inventory" ? [] : getItems,
         note,
         ttlHours: ttl,
-        adType
+        adType,
       });
-      
+
       if (result?.error) throw result.error;
-      
+
       window.dispatchEvent(new Event("academy-posted-ad"));
-      
+
       setComposerOpen(false);
-      window.document.dispatchEvent(new CustomEvent('navigate', { detail: 'trading-ads' }));
+      window.document.dispatchEvent(
+        new CustomEvent("navigate", { detail: "trading-ads" })
+      );
     } catch (err: any) {
       setError(err.message || "Failed to publish ad.");
       setTimeout(() => setError(""), 6000);
@@ -136,71 +155,93 @@ export function AdComposer() {
 
         {/* HIGH CONTRAST FORMAT CARDS */}
         <div className="flex flex-col gap-2.5">
-          <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Listing Format</label>
+          <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
+            Listing Format
+          </label>
           <div className="grid grid-cols-1 gap-2.5">
-            
-            <button 
+            <button
               type="button"
-              onClick={() => setAdType("standard")} 
+              onClick={() => setAdType("standard")}
               className={`flex flex-col text-left p-4 rounded-[8px] transition-all focus-visible:outline-none cursor-pointer border ${
-                adType === "standard" 
-                  ? "bg-popover border-primary ring-1 ring-primary/30 shadow-md" 
+                adType === "standard"
+                  ? "bg-popover border-primary ring-1 ring-primary/30 shadow-md"
                   : "bg-card hover:bg-muted/60 border-border text-foreground/80 hover:text-foreground"
               }`}
             >
               <div className="flex items-center justify-between w-full mb-1.5">
-                <span className="text-[13px] font-extrabold uppercase tracking-wide text-foreground">Specific Trade</span>
-                {adType === "standard" && <Check className="w-4 h-4 text-primary" />}
+                <span className="text-[13px] font-extrabold uppercase tracking-wide text-foreground">
+                  Specific Trade
+                </span>
+                {adType === "standard" && (
+                  <Check className="w-4 h-4 text-primary" />
+                )}
               </div>
               <span className="text-[12px] text-zinc-300 leading-relaxed font-medium">
-                Offer specific units in exchange for specific requested units. Requires items in both <strong className="text-foreground">Give</strong> and <strong className="text-foreground">Get</strong>.
+                Offer specific units in exchange for specific requested units.
+                Requires items in both{" "}
+                <strong className="text-foreground">Give</strong> and{" "}
+                <strong className="text-foreground">Get</strong>.
               </span>
             </button>
 
-            <button 
+            <button
               type="button"
-              onClick={() => setAdType("lf_offers")} 
+              onClick={() => setAdType("lf_offers")}
               className={`flex flex-col text-left p-4 rounded-[8px] transition-all focus-visible:outline-none cursor-pointer border ${
-                adType === "lf_offers" 
-                  ? "bg-popover border-[#FAA61A] ring-1 ring-[#FAA61A]/30 shadow-md" 
+                adType === "lf_offers"
+                  ? "bg-popover border-[#FAA61A] ring-1 ring-[#FAA61A]/30 shadow-md"
                   : "bg-card hover:bg-muted/60 border-border text-foreground/80 hover:text-foreground"
               }`}
             >
               <div className="flex items-center justify-between w-full mb-1.5">
-                <span className="text-[13px] font-extrabold uppercase tracking-wide text-foreground">Taking Offers (LF Offers)</span>
-                {adType === "lf_offers" && <Check className="w-4 h-4 text-[#FAA61A]" />}
+                <span className="text-[13px] font-extrabold uppercase tracking-wide text-foreground">
+                  Taking Offers (LF Offers)
+                </span>
+                {adType === "lf_offers" && (
+                  <Check className="w-4 h-4 text-[#FAA61A]" />
+                )}
               </div>
               <span className="text-[12px] text-zinc-300 leading-relaxed font-medium">
-                Offer your units and leave the request open to general community offers. Requires items only in <strong className="text-foreground">Give</strong>.
+                Offer your units and leave the request open to general community
+                offers. Requires items only in{" "}
+                <strong className="text-foreground">Give</strong>.
               </span>
             </button>
 
-            <button 
+            <button
               type="button"
-              onClick={() => setAdType("inventory")} 
+              onClick={() => setAdType("inventory")}
               className={`flex flex-col text-left p-4 rounded-[8px] transition-all focus-visible:outline-none cursor-pointer border ${
-                adType === "inventory" 
-                  ? "bg-popover border-[#23a559] ring-1 ring-[#23a559]/30 shadow-md" 
+                adType === "inventory"
+                  ? "bg-popover border-[#23a559] ring-1 ring-[#23a559]/30 shadow-md"
                   : "bg-card hover:bg-muted/60 border-border text-foreground/80 hover:text-foreground"
               }`}
             >
               <div className="flex items-center justify-between w-full mb-1.5">
-                <span className="text-[13px] font-extrabold uppercase tracking-wide text-foreground">Vault Showcase</span>
-                {adType === "inventory" && <Check className="w-4 h-4 text-[#23a559]" />}
+                <span className="text-[13px] font-extrabold uppercase tracking-wide text-foreground">
+                  Vault Showcase
+                </span>
+                {adType === "inventory" && (
+                  <Check className="w-4 h-4 text-[#23a559]" />
+                )}
               </div>
               <span className="text-[12px] text-zinc-300 leading-relaxed font-medium">
-                Showcase your entire personal vault collection on the trading board. Automatically pulls your unpinned vault items.
+                Showcase your entire personal vault collection on the trading
+                board. Automatically pulls your unpinned vault items.
               </span>
             </button>
-
           </div>
         </div>
 
         {/* TRADER NOTE */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between px-0.5">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Trader Note</label>
-            <span className="text-[10px] text-muted-foreground font-mono">{note.length}/150</span>
+            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Trader Note
+            </label>
+            <span className="text-[10px] text-muted-foreground font-mono">
+              {note.length}/150
+            </span>
           </div>
           <div className="flex flex-wrap gap-1.5 mb-1">
             {PRESET_NOTES.map((preset) => (
@@ -225,7 +266,9 @@ export function AdComposer() {
 
         {/* LISTING DURATION PILLS */}
         <div className="flex flex-col gap-2">
-          <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">Listing Duration</label>
+          <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
+            Listing Duration
+          </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {TTL_OPTIONS.map((o) => (
               <button
@@ -233,8 +276,8 @@ export function AdComposer() {
                 type="button"
                 onClick={() => setTtl(o.hours)}
                 className={`py-2.5 px-3 rounded-[6px] text-[12px] font-bold transition-all border cursor-pointer focus-visible:outline-none ${
-                  ttl === o.hours 
-                    ? "bg-primary text-primary-foreground border-primary shadow-sm" 
+                  ttl === o.hours
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
                     : "bg-popover text-foreground/80 hover:text-foreground border-border hover:bg-muted"
                 }`}
               >
@@ -259,7 +302,11 @@ export function AdComposer() {
           disabled={isPublishing || !isReadyToPublish}
           className="px-6 py-2.5 min-h-[44px] bg-primary hover:bg-primary/80 disabled:bg-popover disabled:opacity-40 text-primary-foreground text-[12px] font-bold uppercase tracking-wider rounded-[4px] transition-colors shadow-md flex items-center gap-2 focus-visible:outline-none active:scale-[0.98] cursor-pointer"
         >
-          {isPublishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+          {isPublishing ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Check className="w-4 h-4" />
+          )}
           {isPublishing ? "Publishing..." : validationHint}
         </button>
       </div>

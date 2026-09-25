@@ -1,7 +1,3 @@
-// ================================================
-// FILE: src/data/helpers.ts
-// ================================================
-
 import { MasterUnit } from "../types";
 import { RARITY_SCALE } from "./config";
 import { UNIT_IMAGES } from "./images";

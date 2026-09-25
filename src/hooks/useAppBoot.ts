@@ -1,17 +1,18 @@
-// ================================================
-// FILE: src/hooks/useAppBoot.ts
-// ================================================
+import { useState, useEffect } from "react";
+import { useAuthStore } from "../store/useAuthStore";
+import { useInventoryStore } from "../store/useInventoryStore";
 
-import { useState, useEffect } from 'react';
-import { useAuthStore } from '../store/useAuthStore';
-import { useInventoryStore } from '../store/useInventoryStore';
-
-export type BootStage = 'loading' | 'tension' | 'strike' | 'fracture' | 'complete';
+export type BootStage =
+  | "loading"
+  | "tension"
+  | "strike"
+  | "fracture"
+  | "complete";
 
 export function useAppBoot() {
-  const [bootStage, setBootStage] = useState<BootStage>('loading');
+  const [bootStage, setBootStage] = useState<BootStage>("loading");
   const [isMobile, setIsMobile] = useState(false);
-  
+
   const initializeAuth = useAuthStore((s) => s.initialize);
   const fetchInventory = useInventoryStore((s) => s.fetchInventory);
   const fetchWishlist = useInventoryStore((s) => s.fetchWishlist); // ADDED: Fetch wishlist
@@ -22,8 +23,8 @@ export function useAppBoot() {
     initializeAuth();
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, [initializeAuth]);
 
   // Inventory & Wishlist Sync
@@ -46,19 +47,21 @@ export function useAppBoot() {
       import("../app/components/TradingAdsChannel"),
       import("../app/components/ExtraNoticesChannel"),
       import("../app/components/LegalChannel"),
-      import("../app/components/AdminChannel")
-    ]).then(() => {
-      setTimeout(() => {
-        setBootStage('tension');
+      import("../app/components/AdminChannel"),
+    ])
+      .then(() => {
         setTimeout(() => {
-          setBootStage('strike');
+          setBootStage("tension");
           setTimeout(() => {
-            setBootStage('fracture');
-            setTimeout(() => setBootStage('complete'), 900);
-          }, 200);
-        }, 900);
-      }, 700);
-    }).catch(() => setBootStage('complete'));
+            setBootStage("strike");
+            setTimeout(() => {
+              setBootStage("fracture");
+              setTimeout(() => setBootStage("complete"), 900);
+            }, 200);
+          }, 900);
+        }, 700);
+      })
+      .catch(() => setBootStage("complete"));
   }, []);
 
   return { bootStage, isMobile };
