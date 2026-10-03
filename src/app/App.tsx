@@ -156,8 +156,12 @@ export default function App() {
     unsubscribe: unsubscribeFromNotifications,
   } = useNotificationStore();
 
-  const { globalSearchQuery, setGlobalSearchQuery, bootChannel } =
-    useLayoutStore();
+  const {
+    globalSearchQuery,
+    setGlobalSearchQuery,
+    bootChannel,
+    globalCompactMode,
+  } = useLayoutStore();
 
   const [tutorialTab, setTutorialTab] = useState<
     "sandbox" | "simulator" | "theory" | "dictionary"
@@ -188,6 +192,15 @@ export default function App() {
   const hasRoutedBootChannel = useRef(false);
 
   useNetworkSync();
+
+  // Map Zustand layout state to native DOM for responsive density foundations
+  useEffect(() => {
+    if (globalCompactMode) {
+      document.documentElement.setAttribute("data-density", "compact");
+    } else {
+      document.documentElement.removeAttribute("data-density");
+    }
+  }, [globalCompactMode]);
 
   const {
     guideState,

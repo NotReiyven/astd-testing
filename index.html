@@ -2,24 +2,30 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Added maximum-scale and user-scalable to prevent iOS input zoom-in bugs on touch devices -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>ASTD Value List Website</title>
     <meta name="description" content="Calculate and analyze Roblox item trades with real-time value comparisons, demand insights, and customizable unit management for savvy traders." />
 
-    <!-- Anti-Flashbang Theme Script: Runs BEFORE the DOM paints -->
+    <!-- Anti-Flashbang & Density Script: Runs BEFORE the DOM paints to prevent layout shifts -->
     <script>
       try {
         let theme = 'dark'; // Default
+        let density = 'default';
         const stored = localStorage.getItem('astd_layout_storage');
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (parsed && parsed.state && parsed.state.theme) {
-            theme = parsed.state.theme;
+          if (parsed && parsed.state) {
+            if (parsed.state.theme) theme = parsed.state.theme;
+            if (parsed.state.globalCompactMode) density = 'compact';
           }
         }
         document.documentElement.setAttribute('data-theme', theme);
+        if (density === 'compact') {
+          document.documentElement.setAttribute('data-density', density);
+        }
       } catch (e) {
-        console.error("Failed to load theme preference", e);
+        console.error("Failed to load layout preference", e);
       }
     </script>
 
@@ -48,7 +54,7 @@
     <!-- Preconnect to Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    
+
     <!-- Premium Technical Typography: Geist and Geist Mono (Vercel's Typefaces) -->
     <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
