@@ -19,28 +19,6 @@ interface TradeSectionPanelProps {
   onInputBlur?: () => void;
 }
 
-const HighlightedText = ({ text, query }: { text: string; query: string }) => {
-  if (!query || !text) return <>{text}</>;
-  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const parts = text.split(new RegExp(`(${escapedQuery})`, "gi"));
-  return (
-    <>
-      {parts.map((part, i) =>
-        part.toLowerCase() === query.toLowerCase() ? (
-          <span
-            key={i}
-            className="bg-[#FAA61A]/30 text-[#FAA61A] rounded-[2px]"
-          >
-            {part}
-          </span>
-        ) : (
-          <span key={i}>{part}</span>
-        )
-      )}
-    </>
-  );
-};
-
 export const TradeSectionPanel = memo(function TradeSectionPanel({
   label,
   type,
@@ -179,8 +157,26 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
     dropZoneClasses += "bg-transparent border border-transparent";
   }
 
+  // HighlightText Helper omitted for brevity, keeping original inside file if needed.
+  const HighlightedText = ({ text, q }: { text: string; q: string }) => {
+    if (!q || !text) return <>{text}</>;
+    const escapedQuery = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const parts = text.split(new RegExp(`(${escapedQuery})`, "gi"));
+    return (
+      <>
+        {parts.map((part, i) =>
+          part.toLowerCase() === q.toLowerCase() ? (
+            <span key={i} className="bg-[#FAA61A]/30 text-[#FAA61A] rounded-[2px]">{part}</span>
+          ) : (
+            <span key={i}>{part}</span>
+          )
+        )}
+      </>
+    );
+  };
+
   return (
-    <div className="px-3 md:px-4 py-3">
+    <div className="px-[var(--panel-p)] py-[calc(var(--panel-p)*0.75)]">
       <div className="flex items-baseline justify-between mb-3">
         <div className="flex items-center gap-2">
           <div
@@ -188,7 +184,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
             style={{ backgroundColor: accentColorHex }}
           />
           <p
-            className="text-[12px] md:text-[13px] font-extrabold uppercase tracking-widest text-foreground"
+            className="text-[var(--ui-text-sm)] font-extrabold uppercase tracking-widest text-foreground"
             style={{ fontFamily: "var(--font-sans)" }}
           >
             {label}
@@ -201,7 +197,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
         <div className="flex items-center gap-3">
           {items.length > 0 && (
             <button
-              className="text-[11px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none rounded-[4px] px-3 py-2 md:px-2 md:py-1 bg-muted border border-border hover:bg-destructive hover:text-destructive-foreground hover:border-destructive text-muted-foreground active:scale-95 cursor-pointer"
+              className="text-[11px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none rounded-[4px] px-3 py-1.5 bg-muted border border-border hover:bg-destructive hover:text-destructive-foreground hover:border-destructive text-muted-foreground active:scale-95 cursor-pointer"
               onClick={onClear}
               aria-label={`Clear ${label} Section`}
             >
@@ -211,9 +207,9 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
         </div>
       </div>
 
-      <div className="relative mb-3">
+      <div className="relative mb-[var(--gap-sm)]">
         <div
-          className="flex items-center gap-2 px-3 py-2 rounded-[4px] focus-within:border-primary bg-input transition-colors duration-100"
+          className="flex items-center gap-2 px-3 h-[var(--ui-height-input)] rounded-[4px] focus-within:border-primary bg-input transition-colors duration-100"
           style={{
             border: open
               ? `1px solid ${accentColorHex}`
@@ -226,7 +222,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
             type="text"
             value={query}
             placeholder={`Search to add units...`}
-            className="flex-1 bg-transparent outline-none text-[13px] font-medium text-foreground placeholder-muted-foreground"
+            className="flex-1 bg-transparent outline-none text-[var(--ui-text-base)] font-medium text-foreground placeholder-muted-foreground"
             style={{ caretColor: accentColorHex }}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -247,9 +243,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
             onKeyDown={(e) => {
               if (e.key === "ArrowDown") {
                 e.preventDefault();
-                setSelectedIndex((prev) =>
-                  Math.min(prev + 1, results.length - 1)
-                );
+                setSelectedIndex((prev) => Math.min(prev + 1, results.length - 1));
               } else if (e.key === "ArrowUp") {
                 e.preventDefault();
                 setSelectedIndex((prev) => (prev <= 0 ? -1 : prev - 1));
@@ -269,7 +263,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
           />
           {query.length > 0 && (
             <button
-              className="flex-shrink-0 focus-visible:outline-none rounded-[2px] p-2 -m-2 md:p-0.5 md:-m-0 hover:bg-muted transition-colors text-muted-foreground cursor-pointer"
+              className="flex-shrink-0 focus-visible:outline-none rounded-[2px] p-2 hover:bg-muted transition-colors text-muted-foreground cursor-pointer"
               onMouseDown={(e) => {
                 e.preventDefault();
                 setQuery("");
@@ -299,16 +293,14 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
                   className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors text-left focus-visible:outline-none cursor-pointer ${
                     isSelected ? "bg-muted" : "bg-transparent hover:bg-muted"
                   }`}
-                  style={{
-                    borderTop: i === 0 ? "none" : "1px solid var(--border)",
-                  }}
+                  style={{ borderTop: i === 0 ? "none" : "1px solid var(--border)" }}
                 >
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
                     <p className="text-[13px] font-bold leading-tight truncate text-foreground">
-                      <HighlightedText text={u.name} query={query} />
+                      <HighlightedText text={u.name} q={query} />
                     </p>
                     <p className="text-[10px] font-bold uppercase tracking-wider leading-tight mt-[1px] truncate text-muted-foreground">
-                      <HighlightedText text={u.subtitle || ""} query={query} />
+                      <HighlightedText text={u.subtitle || ""} q={query} />
                     </p>
                   </div>
                   <span className="text-[12px] font-bold flex-shrink-0 text-muted-foreground font-mono">
@@ -336,27 +328,19 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
           <div className="flex flex-col items-center justify-center pointer-events-none gap-0.5 py-4">
             <p
               className="text-[13px] font-bold"
-              style={{
-                color: isDraggingOver
-                  ? "var(--foreground)"
-                  : "var(--muted-foreground)",
-              }}
+              style={{ color: isDraggingOver ? "var(--foreground)" : "var(--muted-foreground)" }}
             >
               {isDraggingGlobal ? "Drop unit here" : "Empty Section"}
             </p>
             {!isDraggingGlobal && (
               <p className="text-[11px] font-medium text-muted-foreground text-center">
-                <span className="hidden md:inline">
-                  Search above or drag units here.
-                </span>
-                <span className="md:hidden">
-                  Search above or tap units in the list.
-                </span>
+                <span className="hidden md:inline">Search above or drag units here.</span>
+                <span className="md:hidden">Search above or tap units in the list.</span>
               </p>
             )}
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-[var(--gap-sm)]">
             {items.map((card) => (
               <div key={card.id}>
                 <ActiveCardRow

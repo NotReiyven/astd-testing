@@ -12,9 +12,9 @@ export const UnitGrid = memo(function UnitGrid({
 }) {
   return (
     <div
-      className="grid gap-3 sm:gap-5 w-full pb-3 sm:pb-5"
+      className="grid gap-[var(--gap-md)] w-full pb-[var(--gap-lg)]"
       style={{
-        gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 155px), 1fr))",
+        gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 160px), 1fr))",
       }}
     >
       {units.map((unit) => (

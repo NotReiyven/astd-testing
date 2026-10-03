@@ -20,7 +20,6 @@ export type VirtualItem =
       type: "grid-row";
       id: string;
       units: MasterUnit[];
-      cols: number;
       searchQuery: string;
     }
   | {
@@ -40,7 +39,6 @@ interface UseCanvasVirtualizationProps {
   sortMode: string;
   activeTierFilter: FilterKey;
   viewMode: "grid" | "list" | "compact";
-  cols: number;
 }
 
 export function useCanvasVirtualization({
@@ -51,7 +49,6 @@ export function useCanvasVirtualization({
   sortMode,
   activeTierFilter,
   viewMode,
-  cols,
 }: UseCanvasVirtualizationProps) {
   const isDefaultView =
     sortMode === "value-desc" &&
@@ -69,6 +66,7 @@ export function useCanvasVirtualization({
   }, [ALL_UNITS]);
 
   const filteredAllUnits = useMemo(() => {
+    // filtering logic unchanged
     const rawFiltered = ALL_UNITS.filter((u) => {
       const q = deferredSearchQuery.toLowerCase();
       const matchesSearch =
@@ -104,10 +102,34 @@ export function useCanvasVirtualization({
       items.push({ type: "welcome", id: "welcome" });
     }
 
-    // Dynamic extraction of tier order from global config
     const TIER_ORDER = Object.keys(TIER_CONFIG).filter(
       (k) => k !== "All"
     ) as FilterKey[];
+
+    // Helper to package units into a grid chunk or individual list rows. 
+    // By providing all units to the grid-row, CSS grid auto-fill takes over rendering.
+    const pushUnits = (units: MasterUnit[], idPrefix: string) => {
+        if (viewMode === "grid") {
+             // We pass all units for this section into a single grid-row element.
+             // CSS `grid-template-columns: repeat(auto-fill, ...)` handles the columns.
+             items.push({
+                 type: "grid-row",
+                 id: idPrefix,
+                 units: units,
+                 searchQuery: deferredSearchQuery
+             });
+        } else {
+             units.forEach((u, i) => {
+                items.push({
+                  type: "list-row",
+                  id: `list-${u.id}`,
+                  unit: u,
+                  isLast: i === units.length - 1,
+                  searchQuery: deferredSearchQuery,
+                });
+              });
+        }
+    };
 
     if (deferredSearchQuery) {
       items.push({
@@ -129,28 +151,8 @@ export function useCanvasVirtualization({
           id: `banner-${tKey}`,
           tier: TIER_CONFIG[tKey],
         });
-
-        if (viewMode === "grid") {
-          for (let i = 0; i < unitsInTier.length; i += cols) {
-            items.push({
-              type: "grid-row",
-              id: `grid-${tKey}-${i}`,
-              units: unitsInTier.slice(i, i + cols),
-              cols,
-              searchQuery: deferredSearchQuery,
-            });
-          }
-        } else {
-          unitsInTier.forEach((u, i) => {
-            items.push({
-              type: "list-row",
-              id: `list-${u.id}`,
-              unit: u,
-              isLast: i === unitsInTier.length - 1,
-              searchQuery: deferredSearchQuery,
-            });
-          });
-        }
+        
+        pushUnits(unitsInTier, `grid-${tKey}`);
       });
     } else {
       const tiersToRender =
@@ -192,51 +194,10 @@ export function useCanvasVirtualization({
               range: sec.range,
               count: sec.processedUnits.length,
             });
-
-            if (viewMode === "grid") {
-              for (let i = 0; i < sec.processedUnits.length; i += cols) {
-                items.push({
-                  type: "grid-row",
-                  id: `grid-${sec.label}-${i}`,
-                  units: sec.processedUnits.slice(i, i + cols),
-                  cols,
-                  searchQuery: deferredSearchQuery,
-                });
-              }
-            } else {
-              sec.processedUnits.forEach((u, i) => {
-                items.push({
-                  type: "list-row",
-                  id: `list-${u.id}`,
-                  unit: u,
-                  isLast: i === sec.processedUnits.length - 1,
-                  searchQuery: deferredSearchQuery,
-                });
-              });
-            }
+            pushUnits(sec.processedUnits, `grid-${sec.label}`);
           });
         } else {
-          if (viewMode === "grid") {
-            for (let i = 0; i < processed.length; i += cols) {
-              items.push({
-                type: "grid-row",
-                id: `grid-${tKey}-${i}`,
-                units: processed.slice(i, i + cols),
-                cols,
-                searchQuery: deferredSearchQuery,
-              });
-            }
-          } else {
-            processed.forEach((u, i) => {
-              items.push({
-                type: "list-row",
-                id: `list-${u.id}`,
-                unit: u,
-                isLast: i === processed.length - 1,
-                searchQuery: deferredSearchQuery,
-              });
-            });
-          }
+          pushUnits(processed, `grid-${tKey}`);
         }
       });
     }
@@ -250,7 +211,6 @@ export function useCanvasVirtualization({
     sortMode,
     activeTierFilter,
     viewMode,
-    cols,
     filteredAllUnits,
     UNITS_BY_TIER,
     isDefaultView,

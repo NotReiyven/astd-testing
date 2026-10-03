@@ -31,23 +31,38 @@ import {
 import { GridValueDisplay } from "./GridValueDisplay";
 import { useToastStore } from "../../../../store/useToastStore";
 
+/* -------------------------------------------------------------------------- */
+/* Status Badge                                                               */
+/* -------------------------------------------------------------------------- */
+
 export function GridStatusBadge({ status }: { status: string }) {
   const c = GRID_STATUS_CFG[status as keyof typeof GRID_STATUS_CFG];
+
   if (!c) return null;
+
   const badgeRef = useRef<HTMLDivElement>(null);
   const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
-      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+      if (hoverTimer.current) {
+        clearTimeout(hoverTimer.current);
+      }
+
       setTipPos(null);
     };
   }, []);
 
   const openTip = () => {
     const r = badgeRef.current?.getBoundingClientRect();
-    if (r) setTipPos({ x: r.left + r.width / 2, y: r.top - 8 });
+
+    if (r) {
+      setTipPos({
+        x: r.left + r.width / 2,
+        y: r.top - 8,
+      });
+    }
   };
 
   const toggleTip = (e?: React.MouseEvent | React.TouchEvent) => {
@@ -55,8 +70,12 @@ export function GridStatusBadge({ status }: { status: string }) {
       e.preventDefault();
       e.stopPropagation();
     }
-    if (tipPos) setTipPos(null);
-    else openTip();
+
+    if (tipPos) {
+      setTipPos(null);
+    } else {
+      openTip();
+    }
   };
 
   return (
@@ -65,10 +84,14 @@ export function GridStatusBadge({ status }: { status: string }) {
       className="relative inline-flex cursor-help"
       onMouseEnter={() => {
         if (!window.matchMedia("(hover: hover)").matches) return;
+
         hoverTimer.current = setTimeout(openTip, 200);
       }}
       onMouseLeave={() => {
-        if (hoverTimer.current) clearTimeout(hoverTimer.current);
+        if (hoverTimer.current) {
+          clearTimeout(hoverTimer.current);
+        }
+
         setTipPos(null);
       }}
       onClick={toggleTip}
@@ -82,10 +105,12 @@ export function GridStatusBadge({ status }: { status: string }) {
         }}
       >
         <StatusIcon status={status} />
+
         <span className="text-[10px] font-bold tracking-wide uppercase transition-colors leading-none">
           {c.label}
         </span>
       </div>
+
       {tipPos &&
         createPortal(
           <>
@@ -100,6 +125,7 @@ export function GridStatusBadge({ status }: { status: string }) {
                 setTipPos(null);
               }}
             />
+
             <div
               className="rounded-xl px-3 py-2 pointer-events-none fixed z-[99999] animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.6)]"
               style={{
@@ -122,6 +148,10 @@ export function GridStatusBadge({ status }: { status: string }) {
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/* Stat Footer                                                                */
+/* -------------------------------------------------------------------------- */
+
 export function GridStatFooter({
   rarity,
   liquidity,
@@ -130,10 +160,16 @@ export function GridStatFooter({
   liquidity: number | string;
 }) {
   const numVal = Number(rarity) || 0;
-  const rarityDisplay = numVal % 1 === 0 ? String(numVal) : numVal.toFixed(1);
+
+  const rarityDisplay =
+    numVal % 1 === 0 ? String(numVal) : numVal.toFixed(1);
+
   const liqStr = String(liquidity || "Average");
+
   const liqDisplay =
-    liqStr.toLowerCase() === "black marketed" ? "BM" : liqStr.toUpperCase();
+    liqStr.toLowerCase() === "black marketed"
+      ? "BM"
+      : liqStr.toUpperCase();
 
   return (
     <div className="grid grid-cols-2 gap-2 pt-3 mt-3 border-t border-border/80 w-full font-mono">
@@ -141,14 +177,17 @@ export function GridStatFooter({
         <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
           Rarity
         </span>
+
         <span className="text-[13px] font-black text-foreground">
           {rarityDisplay}
         </span>
       </div>
+
       <div className="flex flex-col bg-muted border border-border/70 rounded-[6px] px-2.5 py-1.5 transition-colors hover:border-muted-foreground">
         <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
           Liquidity
         </span>
+
         <span className="text-[12px] font-black text-foreground truncate">
           {liqDisplay}
         </span>
@@ -156,6 +195,10 @@ export function GridStatFooter({
     </div>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* Tier Grid Card                                                             */
+/* -------------------------------------------------------------------------- */
 
 export const TierGridCard = memo(function TierGridCard({
   unit,
@@ -175,11 +218,25 @@ export const TierGridCard = memo(function TierGridCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  /* ------------------------------------------------------------------------ */
+  /* Stores                                                                   */
+  /* ------------------------------------------------------------------------ */
+
   const addCard = useTradeStore((state) => state.addCard);
-  const openModal = useHistoryModalStore((state) => state.openModal);
+
+  const openModal = useHistoryModalStore(
+    (state) => state.openModal
+  );
 
   const profile = useAuthStore((state) => state.profile);
-  const addOrUpdateUnit = useInventoryStore((state) => state.addOrUpdateUnit);
+
+  const addOrUpdateUnit = useInventoryStore(
+    (state) => state.addOrUpdateUnit
+  );
+
+  /* ------------------------------------------------------------------------ */
+  /* Inventory                                                                 */
+  /* ------------------------------------------------------------------------ */
 
   const handleSaveToInventory = async () => {
     if (!profile) {
@@ -189,11 +246,15 @@ export const TierGridCard = memo(function TierGridCard({
           "Please log in with Discord first to save items to your inventory.",
           "warning"
         );
+
       return;
     }
+
     setIsSaving(true);
+
     try {
       await addOrUpdateUnit(profile.id, unit.id, 1);
+
       useToastStore
         .getState()
         .addToast(`Added ${unit.name} to Vault`, "success");
@@ -202,6 +263,10 @@ export const TierGridCard = memo(function TierGridCard({
       setMenuOpen(false);
     }
   };
+
+  /* ------------------------------------------------------------------------ */
+  /* Popup / Trade Data                                                       */
+  /* ------------------------------------------------------------------------ */
 
   const numericValue =
     typeof unit.value === "number"
@@ -219,30 +284,69 @@ export const TierGridCard = memo(function TierGridCard({
 
   const obtainability = getObtainability(unit as MasterUnit);
 
+  /* ------------------------------------------------------------------------ */
+  /* Trade Actions                                                            */
+  /* ------------------------------------------------------------------------ */
+
   const handleAdd = (type: "give" | "get") => {
-    addCard(type, { ...popupUnit, qty: 1 });
+    addCard(type, {
+      ...popupUnit,
+      qty: 1,
+    });
+
     window.dispatchEvent(
-      new CustomEvent("trade-added", { detail: { name: popupUnit.name, type } })
+      new CustomEvent("trade-added", {
+        detail: {
+          name: popupUnit.name,
+          type,
+        },
+      })
     );
+
     setMenuOpen(false);
   };
 
+  /* ------------------------------------------------------------------------ */
+  /* Drag & Drop                                                              */
+  /* ------------------------------------------------------------------------ */
+
   const handleDragStart = (e: React.DragEvent) => {
-    e.dataTransfer.setData("unit", JSON.stringify(popupUnit));
+    e.dataTransfer.setData(
+      "unit",
+      JSON.stringify(popupUnit)
+    );
+
     e.dataTransfer.effectAllowed = "copy";
   };
 
+  /* ------------------------------------------------------------------------ */
+  /* Card Interaction                                                         */
+  /* ------------------------------------------------------------------------ */
+
   const handleCardClick = () => {
     triggerHaptic("light");
+
     if (isSelectMode && onToggleSelect) {
       onToggleSelect(unit.id);
       return;
     }
+
     setMenuOpen(true);
   };
 
+  /* ------------------------------------------------------------------------ */
+  /* Tier                                                                      */
+  /* ------------------------------------------------------------------------ */
+
   const tierKey = getTier(unit as MasterUnit);
-  const tierColor = TIER_CONFIG[tierKey]?.badgeColor || "var(--primary)";
+
+  const tierColor =
+    TIER_CONFIG[tierKey]?.badgeColor ||
+    "var(--primary)";
+
+  /* ------------------------------------------------------------------------ */
+  /* Render                                                                    */
+  /* ------------------------------------------------------------------------ */
 
   return (
     <>
@@ -252,8 +356,10 @@ export const TierGridCard = memo(function TierGridCard({
           onDragStart={handleDragStart}
           onClick={handleCardClick}
           onContextMenu={(e) => e.preventDefault()}
-          className={`flex flex-col h-full rounded-[6px] overflow-hidden cursor-pointer relative z-10 will-change-transform specular-card ${
-            isSelected ? "border-primary ring-2 ring-primary" : ""
+          className={`flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10 will-change-transform specular-card bg-card border ${
+            isSelected
+              ? "border-primary ring-2 ring-primary"
+              : "border-border hover:border-muted-foreground"
           }`}
           style={
             {
@@ -261,9 +367,16 @@ export const TierGridCard = memo(function TierGridCard({
             } as React.CSSProperties
           }
         >
+          {/* ---------------------------------------------------------------- */}
+          {/* Image                                                             */}
+          {/* ---------------------------------------------------------------- */}
+
           <div
             className="relative w-full overflow-hidden flex-shrink-0 border-b border-border bg-[#0b0c0e]"
-            style={{ aspectRatio: "1/1", transform: "translateZ(0)" }}
+            style={{
+              aspectRatio: "1/1",
+              transform: "translateZ(0)",
+            }}
           >
             <UnitAvatar
               unitId={unit.id}
@@ -273,16 +386,20 @@ export const TierGridCard = memo(function TierGridCard({
               imageClassName="absolute inset-0 w-full h-full object-cover z-10 bg-transparent"
             />
 
-            {/* Subtle Studio Vignette & Dynamic Bottom Gradient Fade */}
+            {/* Subtle vignette */}
             <div className="absolute inset-0 pointer-events-none z-20 shadow-[inset_0_0_24px_rgba(0,0,0,0.4)]" />
+
+            {/* Bottom fade */}
             <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-card via-card/50 to-transparent pointer-events-none z-20" />
 
+            {/* Status */}
             {unit.status && (
-              <div className="absolute top-2 left-2 md:top-3 md:left-3 z-50">
+              <div className="absolute top-2 left-2 z-50">
                 <GridStatusBadge status={unit.status} />
               </div>
             )}
 
+            {/* Selection */}
             {isSelected && (
               <div className="absolute top-2 right-2 z-50 bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center shadow-md">
                 <Check className="w-4 h-4 stroke-[3]" />
@@ -290,40 +407,66 @@ export const TierGridCard = memo(function TierGridCard({
             )}
           </div>
 
-          <div className="flex flex-col flex-1 px-3 md:px-4 pt-3 md:pt-4 pb-3 md:pb-4 relative z-10 bg-card">
+          {/* ---------------------------------------------------------------- */}
+          {/* Card Content                                                      */}
+          {/* ---------------------------------------------------------------- */}
+
+          <div className="flex flex-col flex-1 p-[var(--card-p)] relative z-10 bg-card">
+            {/* -------------------------------------------------------------- */}
+            {/* Header                                                           */}
+            {/* -------------------------------------------------------------- */}
+
             <div className="flex flex-col">
               <div className="flex items-start gap-2">
-                <h3 className="text-[13px] md:text-[15px] font-extrabold tracking-tight leading-snug flex-1 min-w-0 line-clamp-2 text-foreground min-h-[38px] md:min-h-[44px]">
-                  <HighlightText query={searchQuery} text={unit.name} />
+                <h3 className="text-[var(--ui-text-base)] font-extrabold tracking-tight leading-snug flex-1 min-w-0 line-clamp-2 text-foreground min-h-[2.5em]">
+                  <HighlightText
+                    query={searchQuery}
+                    text={unit.name}
+                  />
                 </h3>
+
                 {unit.notice && (
-                  <div className="mt-0.5 md:mt-1">
+                  <div className="mt-1">
                     <NoticeTooltip notice={unit.notice} />
                   </div>
                 )}
               </div>
-              <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-wider leading-none mt-1 md:mt-1.5 truncate text-muted-foreground min-h-[14px] md:min-h-[16px]">
-                <HighlightText text={unit.subtitle || ""} query={searchQuery} />
+
+              <p className="text-[var(--ui-text-xs)] font-bold uppercase tracking-wider leading-none mt-1 truncate text-muted-foreground">
+                <HighlightText
+                  text={unit.subtitle || ""}
+                  query={searchQuery}
+                />
               </p>
-              <div className="flex mt-1.5 md:mt-2">
+
+              {/* Obtainability */}
+              <div className="flex mt-2">
                 {obtainability === "UNOB" ? (
-                  <span className="text-[9px] md:text-[10px] font-bold uppercase text-muted-foreground bg-popover px-1.5 md:px-2 py-0.5 rounded-[2px] border border-border tracking-widest leading-none">
+                  <span className="text-[var(--ui-text-xs)] font-bold uppercase text-muted-foreground bg-popover px-1.5 py-0.5 rounded-[2px] border border-border tracking-widest leading-none">
                     UNOB
                   </span>
                 ) : (
-                  <span className="text-[9px] md:text-[10px] font-bold uppercase text-foreground bg-white/5 px-1.5 md:px-2 py-0.5 rounded-[2px] border border-border tracking-widest leading-none">
+                  <span className="text-[var(--ui-text-xs)] font-bold uppercase text-foreground bg-white/5 px-1.5 py-0.5 rounded-[2px] border border-border tracking-widest leading-none">
                     OBN
                   </span>
                 )}
               </div>
             </div>
 
-            <div className="flex flex-col mt-auto pt-3 md:pt-4 w-full">
+            {/* -------------------------------------------------------------- */}
+            {/* Value + Stats                                                    */}
+            {/* -------------------------------------------------------------- */}
+
+            <div className="flex flex-col mt-auto pt-3 w-full">
               <div
                 className="pl-2 border-l-[3px] w-full min-w-0 mb-1"
-                style={{ borderColor: tierColor }}
+                style={{
+                  borderColor: tierColor,
+                }}
               >
-                <GridValueDisplay unit={unit as GridUnit} />
+                <GridValueDisplay
+                  unit={unit as GridUnit}
+                />
               </div>
 
               <GridStatFooter
@@ -335,17 +478,26 @@ export const TierGridCard = memo(function TierGridCard({
         </div>
       </div>
 
+      {/* -------------------------------------------------------------------- */}
+      {/* Action Modal                                                          */}
+      {/* -------------------------------------------------------------------- */}
+
       {menuOpen &&
         !isSelectMode &&
         createPortal(
           <div className="fixed inset-0 z-[1000000] flex flex-col justify-end md:justify-center md:items-center">
+            {/* Backdrop */}
             <div
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
               onClick={() => setMenuOpen(false)}
             />
+
+            {/* Modal */}
             <div className="relative w-full md:max-w-sm bg-popover rounded-t-[12px] md:rounded-[6px] p-5 shadow-2xl border-t md:border border-border animate-slide-up md:animate-fade-in">
+              {/* Mobile grab handle */}
               <div className="md:hidden absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-border rounded-full" />
 
+              {/* Header */}
               <div className="flex items-center justify-between mb-5 mt-2 md:mt-0">
                 <div className="flex items-center gap-3 min-w-0 pr-4">
                   <div className="w-12 h-12 rounded-[4px] overflow-hidden bg-muted border border-border shrink-0 relative">
@@ -355,15 +507,18 @@ export const TierGridCard = memo(function TierGridCard({
                       imageUrl={unit.imageUrl}
                     />
                   </div>
+
                   <div className="flex flex-col min-w-0">
                     <span className="text-[16px] font-black text-foreground tracking-tight truncate">
                       {unit.name}
                     </span>
+
                     <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground truncate">
                       {unit.subtitle}
                     </span>
                   </div>
                 </div>
+
                 <button
                   onClick={() => setMenuOpen(false)}
                   className="w-11 h-11 md:w-8 md:h-8 rounded-[4px] border border-transparent hover:border-border hover:bg-muted flex items-center justify-center text-muted-foreground shrink-0 focus-visible:outline-none"
@@ -372,19 +527,27 @@ export const TierGridCard = memo(function TierGridCard({
                 </button>
               </div>
 
+              {/* Actions */}
               <div className="flex flex-col gap-2">
+                {/* Give */}
                 <button
                   onClick={() => handleAdd("give")}
                   className="w-full flex items-center justify-center gap-2 bg-[#FAA61A] hover:bg-[#d98b14] transition-colors text-white text-[13px] font-bold h-[44px] rounded-[4px] focus-visible:outline-none"
                 >
-                  <ArrowUpCircle className="w-4 h-4" /> Add to 'You Give'
+                  <ArrowUpCircle className="w-4 h-4" />
+                  Add to 'You Give'
                 </button>
+
+                {/* Get */}
                 <button
                   onClick={() => handleAdd("get")}
                   className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/80 transition-colors text-primary-foreground text-[13px] font-bold h-[44px] rounded-[4px] focus-visible:outline-none"
                 >
-                  <ArrowDownCircle className="w-4 h-4" /> Add to 'You Get'
+                  <ArrowDownCircle className="w-4 h-4" />
+                  Add to 'You Get'
                 </button>
+
+                {/* Inventory */}
                 <button
                   onClick={handleSaveToInventory}
                   disabled={isSaving}
@@ -395,8 +558,13 @@ export const TierGridCard = memo(function TierGridCard({
                   ) : (
                     <Package className="w-4 h-4" />
                   )}
-                  {isSaving ? "Saving..." : "Save to My Inventory"}
+
+                  {isSaving
+                    ? "Saving..."
+                    : "Save to My Inventory"}
                 </button>
+
+                {/* History */}
                 <button
                   onClick={() => {
                     setMenuOpen(false);
@@ -404,10 +572,12 @@ export const TierGridCard = memo(function TierGridCard({
                   }}
                   className="w-full flex items-center justify-center gap-2 bg-card hover:bg-muted transition-colors text-foreground border border-border text-[13px] font-bold h-[44px] rounded-[4px] mt-0.5 focus-visible:outline-none"
                 >
-                  <History className="w-4 h-4" /> View Market History
+                  <History className="w-4 h-4" />
+                  View Market History
                 </button>
               </div>
 
+              {/* Safe area */}
               <div className="w-full h-[env(safe-area-inset-bottom)] md:hidden mt-2" />
             </div>
           </div>,

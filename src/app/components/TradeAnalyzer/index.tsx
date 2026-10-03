@@ -198,18 +198,18 @@ export function TradeAnalyzerPanel({
 
   const renderCalculatorContent = () => (
     <>
-      <div className="flex-shrink-0 flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-3 md:py-4 border-b border-border relative z-20 bg-popover overflow-hidden">
+      <div className="flex-shrink-0 flex items-center gap-1.5 md:gap-2 px-3 md:px-[var(--panel-p)] py-3 border-b border-border relative z-20 bg-popover overflow-hidden">
         <div className="w-7 h-7 flex-shrink-0 rounded-[4px] flex items-center justify-center bg-card border border-border">
           <Calculator className="w-3.5 h-3.5 text-foreground" />
         </div>
 
         {isComposerOpen ? (
-          <span className="text-[14px] md:text-[15px] font-bold flex-1 text-foreground truncate whitespace-nowrap select-none pr-1">
+          <span className="text-[var(--ui-text-base)] font-bold flex-1 text-foreground truncate whitespace-nowrap select-none pr-1">
             Create Listing
           </span>
         ) : (
           <div className="flex items-center flex-1 min-w-0 pr-1 md:pr-2">
-            <span className="hidden md:block text-[14px] lg:text-[15px] font-bold text-foreground select-none whitespace-nowrap truncate">
+            <span className="hidden md:block text-[var(--ui-text-base)] font-bold text-foreground select-none whitespace-nowrap truncate">
               Trade Analyzer
             </span>
             <div className="flex-1 md:hidden" />
@@ -222,7 +222,7 @@ export function TradeAnalyzerPanel({
               triggerHaptic("light");
               setComposerOpen(false);
             }}
-            className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-muted hover:bg-card text-foreground text-[12px] font-bold rounded-[4px] border border-border transition-colors focus-visible:outline-none min-h-[44px] md:min-h-0 cursor-pointer"
+            className="flex-shrink-0 flex items-center gap-1 px-3 h-[var(--ui-height-btn)] bg-muted hover:bg-card text-foreground text-[var(--ui-text-sm)] font-bold rounded-[4px] border border-border transition-colors focus-visible:outline-none cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back
           </button>
@@ -234,7 +234,7 @@ export function TradeAnalyzerPanel({
                   triggerHaptic("medium");
                   handleUndo();
                 }}
-                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-bold transition-colors active:scale-95 text-destructive-foreground bg-destructive hover:bg-destructive/80 focus-visible:outline-none relative z-35 pointer-events-auto shadow-sm mr-1 min-h-[44px] md:min-h-0 cursor-pointer"
+                className="flex-shrink-0 flex items-center gap-1.5 px-3 h-[var(--ui-height-btn)] rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-95 text-destructive-foreground bg-destructive hover:bg-destructive/80 focus-visible:outline-none relative z-35 pointer-events-auto shadow-sm mr-1 cursor-pointer"
                 title="Undo Clear"
               >
                 <RotateCcw className="w-3.5 h-3.5" />{" "}
@@ -248,7 +248,7 @@ export function TradeAnalyzerPanel({
                 setSmartMenuOpen(!smartMenuOpen);
                 setIsPresetsOpen(false);
               }}
-              className={`flex-shrink-0 w-11 h-11 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
+              className={`flex-shrink-0 w-[var(--ui-height-btn)] h-[var(--ui-height-btn)] max-w-10 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
                 isWandTarget
                   ? "bg-primary text-primary-foreground border-primary z-[100005] animate-pulse shadow-[0_0_15px_var(--primary)]"
                   : smartMenuOpen
@@ -257,7 +257,7 @@ export function TradeAnalyzerPanel({
               }`}
               title="Context Recognition"
             >
-              <Wand2 className="w-5 h-5 md:w-4 md:h-4" />
+              <Wand2 className="w-[18px] h-[18px]" />
             </button>
 
             <button
@@ -266,14 +266,14 @@ export function TradeAnalyzerPanel({
                 setIsPresetsOpen(!isPresetsOpen);
                 setSmartMenuOpen(false);
               }}
-              className={`flex-shrink-0 w-11 h-11 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
+              className={`flex-shrink-0 w-[var(--ui-height-btn)] h-[var(--ui-height-btn)] max-w-10 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
                 isPresetsOpen
                   ? "bg-primary text-primary-foreground border-primary"
                   : "bg-muted border-border text-muted-foreground hover:bg-card hover:text-foreground"
               }`}
               title="Trade Presets"
             >
-              <Bookmark className="w-5 h-5 md:w-4 md:h-4" />
+              <Bookmark className="w-[18px] h-[18px]" />
             </button>
 
             <button
@@ -281,7 +281,7 @@ export function TradeAnalyzerPanel({
                 triggerHaptic("medium");
                 handleSafeClear();
               }}
-              className={`flex-shrink-0 w-11 h-11 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
+              className={`flex-shrink-0 w-[var(--ui-height-btn)] h-[var(--ui-height-btn)] max-w-10 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
                 isClearTarget
                   ? "bg-destructive text-destructive-foreground border-destructive z-[100005] animate-pulse"
                   : confirmClear
@@ -291,25 +291,24 @@ export function TradeAnalyzerPanel({
               title={confirmClear ? "Click again to confirm" : "Clear trade"}
             >
               {confirmClear ? (
-                <Check className="w-5 h-5 md:w-4 md:h-4" />
+                <Check className="w-[18px] h-[18px]" />
               ) : (
-                <X className="w-5 h-5 md:w-4 md:h-4" />
+                <X className="w-[18px] h-[18px]" />
               )}
             </button>
             <button
               onClick={handleShare}
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-2.5 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-colors active:scale-95 text-foreground focus-visible:outline-none relative z-35 pointer-events-auto min-h-[44px] md:min-h-0 cursor-pointer"
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 h-[var(--ui-height-btn)] rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-95 text-foreground focus-visible:outline-none relative z-35 pointer-events-auto cursor-pointer"
               style={{
                 background: copied ? "#23a559" : "var(--muted)",
                 border: "1px solid var(--border)",
-                fontFamily: "var(--font-sans)",
               }}
               title="Share formatted trade string"
             >
               {copied ? (
-                <Check className="w-4 h-4 md:w-3.5 md:h-3.5 text-white" />
+                <Check className="w-4 h-4 text-white" />
               ) : (
-                <Share2 className="w-4 h-4 md:w-3.5 md:h-3.5 text-muted-foreground" />
+                <Share2 className="w-4 h-4 text-muted-foreground" />
               )}
               <span className="hidden xl:inline">
                 {copied ? "Copied!" : "Share"}
@@ -317,10 +316,10 @@ export function TradeAnalyzerPanel({
             </button>
             <button
               onClick={handleAdvertise}
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 md:px-3 md:py-1.5 rounded-[4px] text-[12px] font-bold transition-colors active:scale-95 text-primary-foreground bg-primary hover:bg-primary/90 focus-visible:outline-none border border-primary relative z-35 pointer-events-auto shadow-sm min-h-[44px] md:min-h-0 cursor-pointer"
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 h-[var(--ui-height-btn)] rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-95 text-primary-foreground bg-primary hover:bg-primary/90 focus-visible:outline-none border border-primary relative z-35 pointer-events-auto shadow-sm cursor-pointer"
               title="Post this trade as an advertisement"
             >
-              <Megaphone className="w-4 h-4 md:w-3.5 md:h-3.5" />
+              <Megaphone className="w-4 h-4" />
               <span className="hidden sm:inline">Advertise</span>
             </button>
           </>
@@ -329,10 +328,10 @@ export function TradeAnalyzerPanel({
         {!isMobile && onClose && (
           <button
             onClick={closeSheet}
-            className="flex-shrink-0 w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-[4px] text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors focus-visible:outline-none border border-transparent hover:border-destructive relative z-35 pointer-events-auto cursor-pointer"
+            className="flex-shrink-0 w-[var(--ui-height-btn)] h-[var(--ui-height-btn)] max-w-10 flex items-center justify-center rounded-[4px] text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors focus-visible:outline-none border border-transparent hover:border-destructive relative z-35 pointer-events-auto cursor-pointer ml-1"
             title="Close Analyzer"
           >
-            <X className="w-4 h-4" />
+            <X className="w-[18px] h-[18px]" />
           </button>
         )}
       </div>
@@ -340,7 +339,7 @@ export function TradeAnalyzerPanel({
       {isComposerOpen ? (
         <AdComposer />
       ) : (
-        <div className="flex-1 min-h-0 flex flex-col relative">
+        <div className="flex-1 min-h-0 flex flex-col relative bg-card">
           {smartMenuOpen && (
             <SmartParserMenu
               ALL_UNITS={ALL_UNITS}
@@ -354,14 +353,14 @@ export function TradeAnalyzerPanel({
           )}
 
           {isPresetsOpen && (
-            <div className="absolute top-3 left-0 right-0 z-50 mx-3 md:mx-4 p-4 bg-card border border-border rounded-[8px] animate-fade-in shadow-[0_15px_40px_rgba(0,0,0,0.6)] flex flex-col gap-4 max-h-[calc(100vh-160px)] overflow-y-auto custom-scrollbar">
+            <div className="absolute top-[var(--gap-sm)] left-[var(--gap-sm)] right-[var(--gap-sm)] z-50 p-[var(--panel-p)] bg-card border border-border rounded-[8px] animate-fade-in shadow-[0_15px_40px_rgba(0,0,0,0.6)] flex flex-col gap-4 max-h-[calc(100vh-160px)] overflow-y-auto custom-scrollbar">
               <div className="flex items-center justify-between border-b border-border pb-3">
-                <span className="text-[12px] font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <span className="text-[var(--ui-text-sm)] font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <Bookmark className="w-4 h-4 text-primary" /> Saved Loadouts
                 </span>
                 <button
                   onClick={() => setIsPresetsOpen(false)}
-                  className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none rounded-[3px] p-1 -m-1 cursor-pointer"
+                  className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none rounded-[3px] p-1 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -373,7 +372,7 @@ export function TradeAnalyzerPanel({
                   onChange={(e) => setNewPresetName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSavePreset()}
                   placeholder="Name this loadout..."
-                  className="flex-1 bg-input border border-border rounded-[4px] px-3 py-2 text-[13px] text-foreground outline-none placeholder-muted-foreground focus:ring-1 focus:ring-primary transition-all shadow-inner"
+                  className="flex-1 bg-input border border-border rounded-[4px] px-3 py-2 text-[var(--ui-text-base)] text-foreground outline-none placeholder-muted-foreground focus:ring-1 focus:ring-primary transition-all shadow-inner"
                   maxLength={30}
                 />
                 <button
@@ -382,7 +381,7 @@ export function TradeAnalyzerPanel({
                     !newPresetName.trim() ||
                     (giveItems.length === 0 && getItems.length === 0)
                   }
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-[4px] text-[13px] font-bold transition-colors active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none shadow-sm"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none shadow-sm"
                 >
                   Save
                 </button>
@@ -390,7 +389,7 @@ export function TradeAnalyzerPanel({
 
               <div className="flex flex-col gap-2 flex-1 overflow-y-auto custom-scrollbar pr-1">
                 {presets.length === 0 ? (
-                  <p className="text-[12px] text-muted-foreground italic text-center py-4 bg-muted rounded-[6px] border border-border">
+                  <p className="text-[var(--ui-text-sm)] text-muted-foreground italic text-center py-4 bg-muted rounded-[6px] border border-border">
                     No saved loadouts.
                   </p>
                 ) : (
@@ -400,10 +399,10 @@ export function TradeAnalyzerPanel({
                       className="flex items-center justify-between bg-popover p-2.5 rounded-[6px] border border-border group hover:border-primary/50 transition-colors shadow-sm"
                     >
                       <div className="flex flex-col min-w-0 pr-2">
-                        <span className="text-[13px] font-bold text-foreground truncate">
+                        <span className="text-[var(--ui-text-base)] font-bold text-foreground truncate">
                           {p.name}
                         </span>
-                        <span className="text-[10px] font-medium text-muted-foreground truncate">
+                        <span className="text-[var(--ui-text-xs)] font-medium text-muted-foreground truncate">
                           {p.give.length} Give • {p.get.length} Get
                         </span>
                       </div>
@@ -414,7 +413,7 @@ export function TradeAnalyzerPanel({
                             loadPreset(p.id);
                             setIsPresetsOpen(false);
                           }}
-                          className="px-3 py-1.5 bg-muted hover:bg-primary hover:text-primary-foreground text-foreground text-[11px] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer border border-border hover:border-primary"
+                          className="px-3 py-1.5 bg-muted hover:bg-primary hover:text-primary-foreground text-foreground text-[var(--ui-text-sm)] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer border border-border hover:border-primary"
                         >
                           Load
                         </button>
@@ -491,7 +490,7 @@ export function TradeAnalyzerPanel({
               />
             </div>
 
-            <div className="relative mx-3 md:mx-4 flex items-center justify-center my-1">
+            <div className="relative mx-[var(--panel-p)] flex items-center justify-center my-[var(--gap-sm)]">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-border" />
               </div>
@@ -564,6 +563,7 @@ export function TradeAnalyzerPanel({
           />
         )}
 
+        {/* Minimized bottom tab */}
         <div
           className={`fixed left-0 right-0 bottom-0 bg-card border-t border-border transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer pb-safe
           ${
