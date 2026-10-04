@@ -267,7 +267,7 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
         comments: state.comments.filter((c) => c.id !== fakeId),
         isActionPending: false,
       }));
-      useToastStore.getState().addToast(error.message, "error");
+      useToastStore.getState().addToast("Failed to post comment. Please try again.", "error");
       return false;
     }
 
@@ -371,3 +371,5 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
     }
   },
 }));
+
+

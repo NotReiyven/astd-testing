@@ -58,8 +58,21 @@ export function GridStatusBadge({ status }: { status: string }) {
     const r = badgeRef.current?.getBoundingClientRect();
 
     if (r) {
+      const tipWidth = 240;
+      const padding = 16;
+      let startX = r.left + r.width / 2;
+      
+      const leftEdge = startX - tipWidth / 2;
+      const rightEdge = startX + tipWidth / 2;
+      
+      if (leftEdge < padding) {
+        startX += (padding - leftEdge);
+      } else if (rightEdge > window.innerWidth - padding) {
+        startX -= (rightEdge - (window.innerWidth - padding));
+      }
+
       setTipPos({
-        x: r.left + r.width / 2,
+        x: startX,
         y: r.top - 8,
       });
     }
@@ -127,7 +140,7 @@ export function GridStatusBadge({ status }: { status: string }) {
             />
 
             <div
-              className="rounded-xl px-3 py-2 pointer-events-none fixed z-[99999] animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.6)]"
+              className="rounded-xl px-3 py-2 pointer-events-none fixed z-[99999] animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.6)] -translate-x-1/2 -translate-y-full"
               style={{
                 top: tipPos.y,
                 left: tipPos.x,
@@ -344,6 +357,10 @@ export const TierGridCard = memo(function TierGridCard({
     TIER_CONFIG[tierKey]?.badgeColor ||
     "var(--primary)";
 
+  const giveItems = useTradeStore((state) => state.giveItems);
+  const getItems = useTradeStore((state) => state.getItems);
+  const isInTrade = giveItems.some((c) => c.id === unit.id) || getItems.some((c) => c.id === unit.id);
+
   /* ------------------------------------------------------------------------ */
   /* Render                                                                    */
   /* ------------------------------------------------------------------------ */
@@ -356,14 +373,15 @@ export const TierGridCard = memo(function TierGridCard({
           onDragStart={handleDragStart}
           onClick={handleCardClick}
           onContextMenu={(e) => e.preventDefault()}
-          className={`flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10 will-change-transform specular-card bg-card border ${
+          className={`flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10 will-change-transform specular-card bg-card border transition-all duration-300 ${
             isSelected
               ? "border-primary ring-2 ring-primary"
-              : "border-border hover:border-muted-foreground"
+              : "hover:-translate-y-1 hover:shadow-xl"
           }`}
           style={
             {
-              "--hover-glow": tierColor,
+              
+              borderColor: !isSelected ? `${tierColor}50` : undefined,
             } as React.CSSProperties
           }
         >
@@ -376,6 +394,7 @@ export const TierGridCard = memo(function TierGridCard({
             style={{
               aspectRatio: "1/1",
               transform: "translateZ(0)",
+              borderColor: `${tierColor}30`,
             }}
           >
             <UnitAvatar
@@ -391,6 +410,18 @@ export const TierGridCard = memo(function TierGridCard({
 
             {/* Bottom fade */}
             <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-card via-card/50 to-transparent pointer-events-none z-20" />
+
+            {/* Already in Trade overlay */}
+            {isInTrade && !isSelectMode && (
+              <div className="absolute inset-0 bg-background/80 z-[25] flex flex-col items-center justify-center pointer-events-none">
+                <div className="bg-[#23a559] text-white rounded-full p-2 shadow-lg mb-1 border border-white/10">
+                  <Check className="w-5 h-5 stroke-[4]" />
+                </div>
+                <span className="text-[10px] font-black tracking-[0.2em] uppercase text-white">
+                  In Trade
+                </span>
+              </div>
+            )}
 
             {/* Status */}
             {unit.status && (
@@ -432,7 +463,7 @@ export const TierGridCard = memo(function TierGridCard({
                 )}
               </div>
 
-              <p className="text-[var(--ui-text-xs)] font-bold uppercase tracking-wider leading-none mt-1 truncate text-muted-foreground">
+              <p className="text-[12px] font-bold uppercase tracking-wider leading-none mt-1 truncate text-muted-foreground">
                 <HighlightText
                   text={unit.subtitle || ""}
                   query={searchQuery}
@@ -440,13 +471,13 @@ export const TierGridCard = memo(function TierGridCard({
               </p>
 
               {/* Obtainability */}
-              <div className="flex mt-2">
+              <div className="flex mt-1.5">
                 {obtainability === "UNOB" ? (
-                  <span className="text-[var(--ui-text-xs)] font-bold uppercase text-muted-foreground bg-popover px-1.5 py-0.5 rounded-[2px] border border-border tracking-widest leading-none">
+                  <span className="text-[8px] font-bold uppercase text-muted-foreground bg-popover px-1.5 py-0.5 rounded-[2px] border border-border tracking-widest leading-none">
                     UNOB
                   </span>
                 ) : (
-                  <span className="text-[var(--ui-text-xs)] font-bold uppercase text-foreground bg-white/5 px-1.5 py-0.5 rounded-[2px] border border-border tracking-widest leading-none">
+                  <span className="text-[8px] font-bold uppercase text-foreground bg-white/5 px-1.5 py-0.5 rounded-[2px] border border-border tracking-widest leading-none">
                     OBN
                   </span>
                 )}
@@ -488,7 +519,7 @@ export const TierGridCard = memo(function TierGridCard({
           <div className="fixed inset-0 z-[1000000] flex flex-col justify-end md:justify-center md:items-center">
             {/* Backdrop */}
             <div
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/90"
               onClick={() => setMenuOpen(false)}
             />
 

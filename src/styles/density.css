@@ -4,68 +4,82 @@
 */
 :root {
   /* Foundation Spacing */
-  --page-p: 1.5rem;
-  --panel-p: 1.25rem;
-  --card-p: 1rem;
-  --gap-lg: 1.5rem;
-  --gap-md: 1rem;
+  --page-p: 1rem;
+  --panel-p: 1rem;
+  --card-p: 0.875rem;
+  --gap-lg: 1rem;
+  --gap-md: 0.875rem;
   --gap-sm: 0.5rem;
 
-  /* Foundation Typography */
-  --ui-text-lg: 16px;
-  --ui-text-base: 14px;
-  --ui-text-sm: 12px;
-  --ui-text-xs: 10px;
+  /* Foundation Typography (UI Labels) */
+  /* Centralized sizes: refer to theme.css Tailwind @theme for base values if you want them synced, 
+     but keeping direct px control here for exact UI fitting */
+  --ui-text-lg: 15px; 
+  --ui-text-base: 12px; 
+  --ui-text-sm: 11px; 
+  --ui-text-xs: 10px; 
+
+  /* Display Typography (Data & Big Numbers) */
+  --display-lg: 16px;
+  --display-md: 14px;
+  --display-sm: 12px;
 
   /* Foundation Sizing */
-  --ui-height-nav: 56px;
-  --ui-height-btn: 44px;
-  --ui-height-input: 44px;
-}
-
-/* Compact Mode Overrides (Desktop/Tablet) */
-:root[data-density="compact"] {
-  --page-p: 1rem;
-  --panel-p: 0.875rem;
-  --card-p: 0.75rem;
-  --gap-lg: 1rem;
-  --gap-md: 0.75rem;
-  --gap-sm: 0.375rem;
-
-  --ui-text-lg: 15px;
-  --ui-text-base: 13px;
-  --ui-text-sm: 11.5px;
-  --ui-text-xs: 9.5px;
-
   --ui-height-nav: 48px;
   --ui-height-btn: 36px;
   --ui-height-input: 36px;
 }
 
+/* Compact Mode Overrides (Desktop/Tablet) */
+:root[data-density="compact"] {
+  --page-p: 0.875rem;
+  --panel-p: 0.75rem;
+  --card-p: 0.625rem;
+  --gap-lg: 0.875rem;
+  --gap-md: 0.625rem;
+  --gap-sm: 0.375rem;
+
+  --ui-text-lg: 14px;
+  --ui-text-base: 11px;
+  --ui-text-sm: 10px;
+  --ui-text-xs: 9px;
+
+  --display-lg: 14px;
+  --display-md: 12px;
+  --display-sm: 11px;
+
+  --ui-height-nav: 40px;
+  --ui-height-btn: 32px;
+  --ui-height-input: 32px;
+}
+
 /* Mobile Overrides (Naturally Tighter) */
 @media (max-width: 768px) {
   :root {
-    --page-p: 1rem;
-    --panel-p: 1rem;
-    --card-p: 0.875rem;
-    --gap-lg: 1rem;
-    --gap-md: 0.875rem;
+    --page-p: 0.875rem;
+    --panel-p: 0.875rem;
+    --card-p: 0.75rem;
+    --gap-lg: 0.875rem;
+    --gap-md: 0.75rem;
     
+    --display-lg: 14px;
+    --display-md: 12px;
+
     /* Preserve touch targets on mobile */
-    --ui-height-btn: 44px;
-    --ui-height-input: 44px;
+    --ui-height-btn: 40px;
+    --ui-height-input: 40px;
   }
   
   /* Mobile Compact Mode */
   :root[data-density="compact"] {
     --page-p: 0.5rem;
     --panel-p: 0.5rem;
-    --card-p: 0.625rem;
+    --card-p: 0.5rem;
     --gap-md: 0.5rem;
     --gap-sm: 0.25rem;
     
-    /* Hard floor for touch accessibility. Do NOT shrink below 40px */
-    --ui-height-btn: 40px;
-    --ui-height-input: 40px;
+    /* Hard floor for touch accessibility */
+    --ui-height-btn: 36px;
+    --ui-height-input: 36px;
   }
 }

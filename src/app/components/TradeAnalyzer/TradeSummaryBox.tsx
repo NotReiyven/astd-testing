@@ -151,7 +151,7 @@ export function TradeSummaryBox({
       <div className="flex items-start justify-between w-full">
         {/* Total Give */}
         <div className="flex-1 min-w-0 text-left">
-          <p className="text-[var(--ui-text-xs)] font-bold uppercase tracking-widest text-muted-foreground mb-1">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
             Total Give
           </p>
 
@@ -175,7 +175,7 @@ export function TradeSummaryBox({
                 N/A
               </span>
 
-              <span className="text-[var(--ui-text-xs)] font-bold text-muted-foreground uppercase tracking-wider mt-0.5">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-0.5">
                 O/C Present
               </span>
             </>
@@ -194,7 +194,7 @@ export function TradeSummaryBox({
                 <RollingNumber value={valDiff} />
               </span>
 
-              <span className="text-[var(--ui-text-xs)] font-bold text-muted-foreground uppercase tracking-wider mt-0.5">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-0.5">
                 Raw Diff
               </span>
             </>
@@ -203,7 +203,7 @@ export function TradeSummaryBox({
 
         {/* Total Get */}
         <div className="flex-1 min-w-0 text-right">
-          <p className="text-[var(--ui-text-xs)] font-bold uppercase tracking-widest text-muted-foreground mb-1">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
             Total Get
           </p>
 

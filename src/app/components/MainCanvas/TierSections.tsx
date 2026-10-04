@@ -168,23 +168,33 @@ export function TierBanner({
   tier: { label: string; badgeColor: string; subtitle?: string };
 }) {
   return (
-    <div className="flex items-center justify-between py-4 px-1 border-b border-border my-2">
-      <div className="flex items-center gap-3">
-        <div
-          className="w-1.5 h-6 rounded-full"
-          style={{ backgroundColor: tier.badgeColor }}
-        />
-        <div className="flex flex-col">
-          <h2 className="text-[18px] font-black text-foreground tracking-tight uppercase flex items-center gap-2">
-            {tier.label}
-          </h2>
-          {tier.subtitle && (
-            <p className="text-[11px] text-muted-foreground font-medium tracking-wide mt-0.5">
-              {tier.subtitle}
-            </p>
-          )}
-        </div>
-      </div>
+    <div className="relative w-full rounded-xl bg-card border border-border shadow-sm overflow-hidden flex flex-col items-center justify-center py-6 my-4">
+      {/* Top Gradient Glow */}
+      <div 
+        className="absolute top-0 left-0 right-0 h-[3px] opacity-80"
+        style={{
+          background: `linear-gradient(90deg, transparent 0%, ${tier.badgeColor} 50%, transparent 100%)`
+        }}
+      />
+      <div 
+        className="absolute top-0 left-0 right-0 h-[30px] opacity-20 pointer-events-none"
+        style={{
+          background: `linear-gradient(180deg, ${tier.badgeColor} 0%, transparent 100%)`
+        }}
+      />
+      
+      
+      <h2 
+        className="text-[26px] font-black tracking-wide uppercase leading-none"
+        style={{ color: tier.badgeColor, textShadow: `0 2px 10px ${tier.badgeColor}40` }}
+      >
+        {tier.label}
+      </h2>
+      {tier.subtitle && (
+        <p className="text-[12px] text-muted-foreground font-medium tracking-wide mt-2">
+          {tier.subtitle}
+        </p>
+      )}
     </div>
   );
 }
@@ -199,20 +209,24 @@ export function TierSubHeader({
   count: number;
 }) {
   return (
-    <div className="flex items-center justify-between py-2 px-1 text-muted-foreground">
-      <div className="flex items-center gap-2">
-        <span className="text-[12px] font-black uppercase tracking-widest text-foreground">
+    <div className="flex items-center w-full py-3 mt-4 mb-2">
+      <div className="flex items-baseline gap-2 shrink-0">
+        <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
           {label}
         </span>
         {valueRange && (
-          <span className="text-[11px] font-mono text-muted-foreground">
-            • {valueRange}
+          <span className="text-[12px] font-bold text-foreground/90 font-mono">
+            {valueRange}
           </span>
         )}
       </div>
-      <span className="text-[11px] font-mono font-bold bg-card border border-border px-2 py-0.5 rounded-[4px]">
-        {count} {count === 1 ? "Unit" : "Units"}
+      
+      <div className="flex-1 h-px bg-border/60 mx-4" />
+      
+      <span className="shrink-0 text-[10px] font-black font-mono text-muted-foreground bg-muted border border-border px-2 py-1 rounded-[4px] leading-none">
+        {count}
       </span>
     </div>
   );
 }
+

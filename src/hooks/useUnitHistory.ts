@@ -38,6 +38,7 @@ export function useUnitHistory(unitId: string | null) {
   return {
     history: data || [],
     loading: isLoading,
-    error: error ? error.message : null,
+    error: error ? "Failed to load value history." : null,
   };
 }
+

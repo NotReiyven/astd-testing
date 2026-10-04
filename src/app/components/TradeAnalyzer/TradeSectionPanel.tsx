@@ -184,7 +184,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
             style={{ backgroundColor: accentColorHex }}
           />
           <p
-            className="text-[var(--ui-text-sm)] font-extrabold uppercase tracking-widest text-foreground"
+            className="text-sm font-extrabold uppercase tracking-widest text-foreground"
             style={{ fontFamily: "var(--font-sans)" }}
           >
             {label}
@@ -197,7 +197,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
         <div className="flex items-center gap-3">
           {items.length > 0 && (
             <button
-              className="text-[11px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none rounded-[4px] px-3 py-1.5 bg-muted border border-border hover:bg-destructive hover:text-destructive-foreground hover:border-destructive text-muted-foreground active:scale-95 cursor-pointer"
+              className="text-[10px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none rounded-[4px] px-3 py-1.5 bg-muted border border-border hover:bg-destructive hover:text-destructive-foreground hover:border-destructive text-muted-foreground active:scale-95 cursor-pointer"
               onClick={onClear}
               aria-label={`Clear ${label} Section`}
             >
@@ -222,7 +222,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
             type="text"
             value={query}
             placeholder={`Search to add units...`}
-            className="flex-1 bg-transparent outline-none text-[var(--ui-text-base)] font-medium text-foreground placeholder-muted-foreground"
+            className="flex-1 bg-transparent outline-none text-sm font-medium text-foreground placeholder-muted-foreground"
             style={{ caretColor: accentColorHex }}
             onChange={(e) => {
               setQuery(e.target.value);

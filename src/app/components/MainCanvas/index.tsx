@@ -75,6 +75,20 @@ export const MainCanvas = memo(function MainCanvas({
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const [headerHeight, setHeaderHeight] = useState(80);
+  const [cols, setCols] = useState(1);
+
+  useEffect(() => {
+    const updateCols = () => {
+      const container = document.getElementById("main-scroll-container");
+      const w = container ? container.clientWidth : window.innerWidth;
+      // Account for 16px gap and 160px min width
+      const c = Math.max(1, Math.floor((w + 16) / 176));
+      setCols(c);
+    };
+    updateCols();
+    window.addEventListener("resize", updateCols);
+    return () => window.removeEventListener("resize", updateCols);
+  }, []);
 
   useEffect(() => {
     if (!headerRef.current) return;
@@ -120,6 +134,7 @@ export const MainCanvas = memo(function MainCanvas({
     sortMode,
     activeTierFilter,
     viewMode,
+    cols,
   });
 
   const virtualizer = useVirtualizer({
@@ -142,7 +157,7 @@ export const MainCanvas = memo(function MainCanvas({
         default: return 50;
       }
     },
-    overscan: 10,
+    overscan: 2,
   });
 
   useEffect(() => {
@@ -224,10 +239,34 @@ export const MainCanvas = memo(function MainCanvas({
                   className="absolute top-0 left-0 w-full"
                   style={{ transform: `translateY(${virtualRow.start}px)` }}
                 >
-                  {/* ... other items (space-top, welcome, etc) ... */}
+                  {item.type === "space-top" && <div className="h-[20px]" />}
+                  {item.type === "space-bottom" && <div className="h-[120px]" />}
+                  {item.type === "welcome" && null /* Render welcome if needed */}
+                  {item.type === "search-stats" && null}
+                  {item.type === "no-results" && (
+                    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+                      No units found matching your search.
+                    </div>
+                  )}
+
+                  {item.type === "tier-banner" && (
+                    <div className="pt-4 pb-2">
+                      <TierBanner tier={item.tier} />
+                    </div>
+                  )}
+
+                  {item.type === "sub-header" && (
+                    <div className="pt-2 pb-2 sticky top-0 bg-background/95 backdrop-blur z-10 border-b border-border/50 -mx-[var(--page-p)] px-[var(--page-p)]">
+                      <TierSubHeader
+                        label={item.label}
+                        valueRange={item.range}
+                        count={item.count}
+                      />
+                    </div>
+                  )}
 
                   {item.type === "grid-row" && (
-                    <div className="w-full pb-[var(--gap-lg)]">
+                    <div className={`w-full ${item.isLast ? "pb-[var(--gap-lg)]" : "pb-[var(--gap-md)]"}`}>
                        <div 
                          className="grid gap-[var(--gap-md)] w-full"
                          style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 160px), 1fr))' }}
@@ -269,3 +308,6 @@ export const MainCanvas = memo(function MainCanvas({
     </div>
   );
 });
+
+
+

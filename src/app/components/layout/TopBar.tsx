@@ -242,7 +242,7 @@ export function TopBar({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+        <div className="flex items-center justify-end gap-2 md:gap-3 shrink min-w-0">
           <LiveAvatars />
 
           {!isAuthLoading && profile && (
@@ -477,7 +477,7 @@ export function TopBar({
           </button>
 
           <div
-            className="hidden md:flex items-center bg-input rounded-[4px] px-2.5 h-[28px] w-[180px] lg:w-64 border border-border cursor-text focus-within:border-primary transition-colors"
+            className="hidden md:flex items-center bg-input rounded-[4px] px-2.5 h-[28px] w-[180px] lg:w-64 shrink min-w-[80px] border border-border cursor-text focus-within:border-primary transition-colors"
             onClick={() => desktopSearchRef.current?.focus()}
           >
             <Search className="w-3.5 h-3.5 flex-shrink-0 text-muted-foreground mr-2" />
@@ -504,7 +504,7 @@ export function TopBar({
 
           <button
             onClick={handleToggleAnalyzer}
-            className={`hidden md:flex relative items-center gap-2 px-3 py-1.5 rounded-[4px] transition-colors font-bold text-[12px] focus-visible:outline-none cursor-pointer border ${
+            className={`hidden md:flex relative items-center gap-2 px-3 py-1.5 rounded-[4px] transition-colors font-bold text-[12px] focus-visible:outline-none cursor-pointer border shrink-0 ${
               isAnalyzerOpen
                 ? "bg-popover text-foreground border-border"
                 : "bg-primary text-primary-foreground border-primary hover:bg-primary/90"

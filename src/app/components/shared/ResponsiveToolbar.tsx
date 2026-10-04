@@ -27,7 +27,7 @@ export function ResponsiveToolbar({
     <div className={`flex flex-col z-40 relative bg-card border-b border-border shadow-sm px-[var(--panel-p)] py-[calc(var(--panel-p)*0.75)] gap-[var(--gap-sm)] ${className}`}>
       {/* Mobile Header (Only shows on small viewports) */}
       <div className="flex md:hidden items-center justify-between pb-1">
-        <span className="text-[var(--ui-text-sm)] font-bold uppercase tracking-widest text-muted-foreground">
+        <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
           {title}
         </span>
         <button
@@ -35,7 +35,7 @@ export function ResponsiveToolbar({
             triggerHaptic("light");
             setIsCollapsed(!isCollapsed);
           }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-[var(--ui-text-sm)] font-bold uppercase tracking-wider cursor-pointer focus-visible:outline-none"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-xs font-bold uppercase tracking-wider cursor-pointer focus-visible:outline-none"
         >
           <SlidersHorizontal className="w-3.5 h-3.5" />
           <span>{isCollapsed ? "Filters" : "Collapse"}</span>

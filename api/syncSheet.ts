@@ -24,25 +24,37 @@ async function sendDiscordAlert(message: string) {
   if (!webhookUrl) return;
   try {
     await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: `🚨 **ASTD Value List Alert**\n${message}` })
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: `🚨 **ASTD Value List Alert**\n${message}` }),
     });
-  } catch (err) {
-    console.error("Failed to send Discord webhook alert:", err);
+  } catch {
+    // Silently swallow — webhook failure must never surface to the caller
   }
 }
 
-function jsonResponse(statusCode: number, body: unknown, extraHeaders: Record<string, string> = {}) {
-  const allowedOrigin = process.env.URL || "https://all-star-vl.vercel.app";
+function jsonResponse(
+  statusCode: number,
+  body: unknown,
+  extraHeaders: Record<string, string> = {}
+) {
+  // Only allow our own verified domain. If URL env var is absent the deploy
+  // is misconfigured and we refuse to issue permissive CORS headers.
+  const allowedOrigin = process.env.URL ?? "";
+  const corsHeaders: Record<string, string> = allowedOrigin
+    ? {
+        "Access-Control-Allow-Origin": allowedOrigin,
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+      }
+    : {};
+
   return new Response(JSON.stringify(body), {
     status: statusCode,
     headers: {
       "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": allowedOrigin,
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
-      ...extraHeaders
-    }
+      ...corsHeaders,
+      ...extraHeaders,
+    },
   });
 }
 
@@ -51,13 +63,27 @@ export async function OPTIONS() {
 }
 
 export async function GET(request: Request) {
+  // ── 1. AUTH ──────────────────────────────────────────────────────────────
+  // Secret-gated so arbitrary bots cannot drain Google Sheets API quota.
+  // The frontend must attach the same secret via Authorization header.
+  const SYNC_SECRET = process.env.SYNC_SECRET;
+  if (!SYNC_SECRET) {
+    console.error("[syncSheet] SYNC_SECRET env var is not configured");
+    return jsonResponse(500, { error: "Server misconfiguration." });
+  }
+
+  const authHeader = request.headers.get("authorization");
+  if (authHeader !== `Bearer ${SYNC_SECRET}`) {
+    return jsonResponse(401, { error: "Unauthorized." });
+  }
+
+  // ── 2. QUERY PARAM GUARD ─────────────────────────────────────────────────
   const url = new URL(request.url);
-  
   if (url.searchParams.toString().length > 0) {
     return jsonResponse(400, { error: "Query parameters are not allowed." });
   }
 
-  // Rate Limiting
+  // ── 3. RATE LIMITING ─────────────────────────────────────────────────────
   if (ratelimit) {
     const ip = request.headers.get("x-forwarded-for") || "anonymous";
     const { success } = await ratelimit.limit(`sync_${ip}`);
@@ -66,29 +92,29 @@ export async function GET(request: Request) {
     }
   }
 
+  // ── 4. ENV CHECKS ────────────────────────────────────────────────────────
   const API_KEY = process.env.GOOGLE_SHEETS_API_KEY;
   const SHEET_ID = process.env.SPREADSHEET_ID;
+
+  if (!API_KEY || !SHEET_ID) {
+    return jsonResponse(500, { error: "Server misconfiguration." });
+  }
 
   const ranges = [
     "S Tier!A:I", "A Tier!A:I", "B Tier!A:I", "C Tier!A:I",
     "Pure Tier!A:I", "Oddities!A:I", "Untiered!A:I",
-    "Home!A:K", "Extra Notices!A:B"
+    "Home!A:K", "Extra Notices!A:B",
   ];
-  const batchRanges = ranges.map(r => `ranges=${encodeURIComponent(r)}`).join("&");
+  const batchRanges = ranges.map((r) => `ranges=${encodeURIComponent(r)}`).join("&");
 
-  if (!API_KEY || !SHEET_ID) {
-    return jsonResponse(500, { error: "Missing Environment Variables" });
-  }
-
+  // ── 5. FETCH & RESPOND ───────────────────────────────────────────────────
   try {
-    // Removed the aggressive 8-second AbortController.
-    // We now rely on Vercel's native serverless timeout limits.
     const response = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batchRanges}&includeGridData=true&key=${API_KEY}`
     );
-    
+
     if (!response.ok) {
-        throw new Error(`Google Sheets responded with status ${response.status}`);
+      throw new Error(`Google Sheets responded with status ${response.status}`);
     }
 
     const data = (await response.json()) as SpreadsheetData;
@@ -103,10 +129,9 @@ export async function GET(request: Request) {
       { ...parsed, lastUpdated },
       { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" }
     );
-  } catch (error: any) {
-    console.error("syncSheet error:", error);
-    
-    const message = error.message || error;
+  } catch (error: unknown) {
+    console.error("[syncSheet] Fetch error");
+    const message = error instanceof Error ? error.message : String(error);
     await sendDiscordAlert(`Sheet sync endpoint failed: ${message}`);
     return jsonResponse(500, { error: "Failed to sync sheet data." });
   }

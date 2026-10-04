@@ -180,7 +180,22 @@ export function NoticeTooltip({ notice }: { notice?: string }) {
 
   const openTip = () => {
     const r = btnRef.current?.getBoundingClientRect();
-    if (r) setTipPos({ x: r.left + r.width / 2, y: r.top - 6 });
+    if (r) {
+      const tipWidth = 220;
+      const padding = 16;
+      let startX = r.left + r.width / 2;
+      
+      const leftEdge = startX - tipWidth / 2;
+      const rightEdge = startX + tipWidth / 2;
+      
+      if (leftEdge < padding) {
+        startX += (padding - leftEdge);
+      } else if (rightEdge > window.innerWidth - padding) {
+        startX -= (rightEdge - (window.innerWidth - padding));
+      }
+
+      setTipPos({ x: startX, y: r.top - 6 });
+    }
   };
 
   const toggleTip = (e?: React.MouseEvent | React.TouchEvent) => {

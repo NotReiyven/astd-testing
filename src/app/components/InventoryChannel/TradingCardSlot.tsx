@@ -4,7 +4,6 @@ import {
   Minus,
   Check,
   Lock as LockIcon,
-  Search,
   Package,
 } from "lucide-react";
 import { InventoryItem } from "../../../store/useInventoryStore";
@@ -13,6 +12,7 @@ import { TIER_CONFIG, getTier, GRID_STATUS_CFG } from "../../../data";
 import { getUnitConservativeValue } from "./inventoryUtils";
 import { StatusIcon, JargonWrap } from "../shared/Formatters";
 import { UnitAvatar } from "../shared/UnitAvatar";
+import { useTradeStore } from "../../../store/useTradeStore";
 
 interface TradingCardSlotProps {
   item: InventoryItem;
@@ -68,6 +68,10 @@ export const TradingCardSlot = memo(
     const dropCfg = master.status
       ? GRID_STATUS_CFG[master.status as keyof typeof GRID_STATUS_CFG]
       : null;
+
+    const giveItems = useTradeStore((state) => state.giveItems);
+    const getItems = useTradeStore((state) => state.getItems);
+    const isInTrade = giveItems.some((c) => c.id === master.id) || getItems.some((c) => c.id === master.id);
 
     const totalStaged = stagedGiveQty + stagedGetQty;
     const isFullyStaged = totalStaged >= item.quantity;
@@ -143,7 +147,7 @@ export const TradingCardSlot = memo(
           !isWishlist
         }
         onDragStart={handleDragStart}
-        className={`group relative flex flex-col h-full bg-card rounded-[6px] transition-all cursor-pointer overflow-hidden will-change-transform specular-card ${
+        className={`group relative flex flex-col h-full bg-card rounded-[8px] transition-all cursor-pointer overflow-hidden will-change-transform specular-card ${
           isSelected
             ? "border-primary ring-2 ring-primary scale-[0.98]"
             : isFullyStaged && !isWishlist
@@ -154,7 +158,7 @@ export const TradingCardSlot = memo(
       >
         {!isSelectMode && !isSandbox && !isReadOnly && !isWishlist && (
           <div
-            className="absolute top-0 bottom-[35%] left-0 w-8 bg-card border-r border-border flex flex-col justify-center items-center py-2 gap-2 -translate-x-full group-hover:translate-x-0 transition-transform duration-200 z-50 rounded-br-[6px]"
+            className="absolute top-0 bottom-[35%] left-0 w-8 bg-card border-r border-border flex flex-col justify-center items-center py-2 gap-2 -translate-x-full group-hover:translate-x-0 transition-transform duration-200 z-50 rounded-br-[8px]"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -230,6 +234,17 @@ export const TradingCardSlot = memo(
           <div className="absolute inset-0 pointer-events-none z-20 shadow-[inset_0_0_24px_rgba(0,0,0,0.4)]" />
           <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-card via-card/50 to-transparent pointer-events-none z-20" />
 
+          {isInTrade && !isSelectMode && !isSandbox && (
+            <div className="absolute inset-0 bg-background/60 z-[25] flex flex-col items-center justify-center backdrop-blur-[1px] pointer-events-none">
+              <div className="bg-[#23a559] text-white rounded-full p-2 shadow-lg mb-1 border border-white/10">
+                <Check className="w-5 h-5 stroke-[4]" />
+              </div>
+              <span className="text-[10px] font-black tracking-[0.2em] uppercase text-white drop-shadow-md">
+                In Trade
+              </span>
+            </div>
+          )}
+
           {isWishlist && !isSelectMode && !isReadOnly && (
             <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-40 flex items-center justify-center p-4">
               <button
@@ -245,19 +260,19 @@ export const TradingCardSlot = memo(
           )}
         </div>
 
-        <div className="flex flex-col flex-1 px-3 md:px-4 pt-3 md:pt-4 pb-3 md:pb-4 relative z-10 bg-card">
+        <div className="flex flex-col flex-1 p-[var(--card-p)] relative z-10 bg-card">
           <div className="flex flex-col">
             <div className="flex items-start gap-2">
-              <h3 className="text-[13px] md:text-[15px] font-extrabold tracking-tight leading-snug flex-1 min-w-0 line-clamp-2 text-foreground">
+              <h3 className="text-[14px] font-extrabold tracking-tight leading-snug flex-1 min-w-0 line-clamp-2 text-foreground">
                 {master.name}
               </h3>
             </div>
-            <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-wider leading-none mt-1 md:mt-1.5 truncate text-muted-foreground">
+            <p className="text-[10px] font-bold uppercase tracking-wider leading-none mt-1 truncate text-muted-foreground">
               {master.subtitle || "Official Unit"}
             </p>
-            <div className="flex mt-1.5 md:mt-2">
+            <div className="flex mt-2">
               <span
-                className={`text-[9px] md:text-[10px] font-bold uppercase px-1.5 md:px-2 py-0.5 rounded-[2px] border tracking-widest leading-none ${
+                className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[2px] border tracking-widest leading-none ${
                   obtainability === "UNOB"
                     ? "bg-popover text-muted-foreground border-border"
                     : "bg-white/5 text-foreground border-border"
@@ -268,7 +283,7 @@ export const TradingCardSlot = memo(
             </div>
           </div>
 
-          <div className="flex flex-col mt-auto pt-3 md:pt-4 w-full">
+          <div className="flex flex-col mt-auto pt-3 w-full">
             <div
               className="pl-2 border-l-[3px] w-full min-w-0 mb-1"
               style={{ borderColor: tierColor }}
@@ -283,7 +298,7 @@ export const TradingCardSlot = memo(
                   </JargonWrap>
                 </span>
               ) : (
-                <span className="text-[16px] md:text-[22px] font-black tracking-tighter tabular-nums text-foreground font-mono block w-full truncate">
+                <span className="text-[14px] md:text-[18px] font-black tracking-tighter tabular-nums text-foreground font-mono block w-full truncate">
                   {displayVal}
                 </span>
               )}
@@ -294,7 +309,7 @@ export const TradingCardSlot = memo(
                 <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
                   Rarity
                 </span>
-                <span className="text-[13px] font-black text-foreground">
+                <span className="text-[11px] font-black text-foreground">
                   {rarityDisplay}
                 </span>
               </div>
@@ -302,7 +317,7 @@ export const TradingCardSlot = memo(
                 <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
                   Liquidity
                 </span>
-                <span className="text-[12px] font-black text-foreground truncate">
+                <span className="text-[11px] font-black text-foreground truncate">
                   {liqDisplay}
                 </span>
               </div>

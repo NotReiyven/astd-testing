@@ -108,7 +108,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       }
     } else {
       set({ isLoading: false });
-      if (error) console.error("Failed to fetch inventory:", error.message);
+      if (error) console.error("[Inventory] Failed to fetch inventory");
     }
   },
 
@@ -130,7 +130,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       if (isViewing) set({ viewedWishlist: data });
       else set({ wishlistItems: data });
     } else if (error) {
-      console.error("Failed to fetch wishlist:", error.message);
+      console.error("[Inventory] Failed to fetch wishlist");
     }
   },
 
@@ -433,3 +433,4 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     }
   },
 }));
+

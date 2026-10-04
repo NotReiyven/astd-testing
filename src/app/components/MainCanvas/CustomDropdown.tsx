@@ -18,7 +18,7 @@ export function useClickOutside(
       const target = event.target as Node;
       if (ref.current && ref.current.contains(target)) return;
       if (portalRef.current && portalRef.current.contains(target)) return;
-      handlerRef.current();
+      handlerRef.current?.();
     };
     document.addEventListener("mousedown", listener);
     document.addEventListener("touchstart", listener);
@@ -122,7 +122,7 @@ export function CustomDropdown({
             className="w-3.5 h-3.5 text-muted-foreground mr-2 shrink-0"
             aria-hidden="true"
           />
-          <span className="text-[11px] font-bold text-foreground uppercase tracking-wider truncate">
+          <span className="text-xs font-bold text-foreground uppercase tracking-wider truncate">
             {value === "all" && defaultLabel ? defaultLabel : options[value]}
           </span>
         </div>
@@ -156,7 +156,7 @@ export function CustomDropdown({
                   buttonRef.current?.focus();
                 }}
                 onMouseEnter={() => setFocusedIndex(i)}
-                className={`flex items-center justify-between text-left px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                className={`flex items-center justify-between text-left px-3 py-2 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${
                   value === k || focusedIndex === i
                     ? "bg-primary text-primary-foreground"
                     : "text-foreground hover:bg-muted"
@@ -179,3 +179,4 @@ export function CustomDropdown({
     </div>
   );
 }
+

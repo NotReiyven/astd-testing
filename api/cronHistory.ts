@@ -229,6 +229,6 @@ export async function GET(request: Request) {
       description: `\`\`\`${errorDetails}\`\`\``,
       color: 15158332 // Red
     });
-    return new Response(JSON.stringify({ error: errorDetails }), { status: 500, headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: "An internal error occurred. Check server logs for details." }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 }

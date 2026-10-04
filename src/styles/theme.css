@@ -10,6 +10,7 @@
   --foreground: #ededed;
   
   --card: #0a0a0a;
+
   --card-foreground: #ededed;
   
   --popover: #111111;
@@ -176,4 +177,23 @@
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Centralized Text Sizes */
+  --text-xs: 10px;
+  --text-xs--line-height: 14px;
+  
+  --text-sm: 12px;
+  --text-sm--line-height: 16px;
+  
+  --text-base: 5px;
+  --text-base--line-height: 20px;
+  
+  --text-lg: 15px;
+  --text-lg--line-height: 22px;
+  
+  --text-xl: 18px;
+  --text-xl--line-height: 26px;
+  
+  --text-2xl: 22px;
+  --text-2xl--line-height: 28px;
 }

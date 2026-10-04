@@ -336,7 +336,7 @@ export function HistoryModal() {
   return (
     <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-0 sm:p-5 animate-fade-in">
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 bg-black/90 transition-opacity"
         onClick={() => {
           triggerHaptic("light");
           closeModal();
@@ -730,7 +730,7 @@ export function HistoryModal() {
                                 );
                               })}
                               <Area
-                                type="monotone"
+                                type="monotone" isAnimationActive={false}
                                 dataKey="value"
                                 stroke={currentConfig.color}
                                 strokeWidth={2}
@@ -906,3 +906,4 @@ export function HistoryModal() {
     </div>
   );
 }
+

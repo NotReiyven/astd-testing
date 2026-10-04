@@ -103,7 +103,7 @@ export function CanvasControls({
             triggerHaptic("medium");
             setIsSelectMode(!isSelectMode);
           }}
-          className={`flex items-center justify-center gap-1.5 px-4 h-[var(--ui-height-btn)] rounded-[4px] text-[var(--ui-text-sm)] font-bold uppercase tracking-wider transition-all border focus-visible:outline-none shrink-0 active:scale-95 cursor-pointer shadow-sm flex-1 md:flex-none ${
+          className={`flex items-center justify-center gap-1.5 px-4 h-[var(--ui-height-btn)] rounded-[4px] text-xs font-bold uppercase tracking-wider transition-all border focus-visible:outline-none shrink-0 active:scale-95 cursor-pointer shadow-sm flex-1 md:flex-none ${
             isSelectMode
               ? "bg-primary text-primary-foreground border-primary"
               : "bg-popover text-foreground/90 border-border hover:bg-muted"
@@ -119,7 +119,7 @@ export function CanvasControls({
               triggerHaptic("medium");
               handleResetFilters();
             }}
-            className="flex-shrink-0 flex items-center justify-center gap-1.5 px-4 h-[var(--ui-height-btn)] rounded-[4px] text-[var(--ui-text-sm)] font-bold uppercase tracking-wider text-rose-400 bg-rose-400/10 hover:bg-rose-400 hover:text-white transition-all duration-200 animate-fade-in border border-rose-400/20 active:scale-95 cursor-pointer shadow-sm flex-1 md:flex-none"
+            className="flex-shrink-0 flex items-center justify-center gap-1.5 px-4 h-[var(--ui-height-btn)] rounded-[4px] text-xs font-bold uppercase tracking-wider text-rose-400 bg-rose-400/10 hover:bg-rose-400 hover:text-white transition-all duration-200 animate-fade-in border border-rose-400/20 active:scale-95 cursor-pointer shadow-sm flex-1 md:flex-none"
             title="Reset Filters"
           >
             <X className="w-4 h-4" />
@@ -131,7 +131,7 @@ export function CanvasControls({
       <div className="flex bg-popover rounded-[4px] p-1 border border-border shadow-sm ml-auto md:ml-0 h-[var(--ui-height-btn)]">
         <button
           onClick={() => { triggerHaptic("light"); setViewMode("grid"); }}
-          className={`p-2 rounded-[3px] transition-all duration-200 focus-visible:outline-none flex items-center justify-center h-full w-10 ${
+          className={`p-1.5 rounded-[3px] transition-all duration-200 focus-visible:outline-none flex items-center justify-center h-full w-9 ${
             viewMode === "grid" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -139,7 +139,7 @@ export function CanvasControls({
         </button>
         <button
           onClick={() => { triggerHaptic("light"); setViewMode("list"); }}
-          className={`p-2 rounded-[3px] transition-all duration-200 focus-visible:outline-none flex items-center justify-center h-full w-10 ${
+          className={`p-1.5 rounded-[3px] transition-all duration-200 focus-visible:outline-none flex items-center justify-center h-full w-9 ${
             viewMode === "list" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -168,7 +168,7 @@ export function CanvasControls({
               setActiveTierFilter(f);
               if (f !== "All") window.dispatchEvent(new Event("academy-used-filter"));
             }}
-            className={`px-5 py-3 text-[var(--ui-text-sm)] font-bold tracking-wide uppercase transition-all whitespace-nowrap focus-visible:outline-none shrink-0 cursor-pointer border-b-2 ${
+            className={`px-4 py-2.5 text-xs font-bold tracking-wider uppercase transition-all whitespace-nowrap focus-visible:outline-none shrink-0 cursor-pointer border-b-2 ${
               activeTierFilter === f && !deferredSearchQuery
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"

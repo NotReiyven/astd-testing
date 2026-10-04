@@ -33,7 +33,10 @@ export const UnitProvider = ({ children }: { children: React.ReactNode }) => {
   const { data, isLoading, isError, isFetching } = useQuery({
     queryKey: ["sheetData"],
     queryFn: async () => {
-      const res = await fetch("/api/syncSheet");
+      const syncSecret = import.meta.env.VITE_SYNC_SECRET;
+      const res = await fetch("/api/syncSheet", {
+        headers: syncSecret ? { Authorization: `Bearer ${syncSecret}` } : {},
+      });
       if (!res.ok) throw new Error("API Response not OK");
       const json = await res.json();
 

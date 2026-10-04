@@ -9,15 +9,11 @@ import {
   Lock,
   Calculator,
   Package,
-  Copy,
   Activity,
   MessageSquare,
   ArrowBigUp,
   ArrowBigDown,
   Send,
-  ChevronDown,
-  ChevronUp,
-  SlidersHorizontal,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
@@ -37,6 +33,7 @@ import { useAdInteractionStore } from "../../store/useAdInteractionStore";
 import { AdInteractionModal } from "./AdInteractionModal";
 import { HoldToConfirmButton } from "./shared/Formatters";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
+import { ResponsiveToolbar } from "./shared/ResponsiveToolbar";
 
 const SORT_OPTIONS = {
   newest: "Recently Posted",
@@ -141,7 +138,8 @@ const FixedSlotGrid = ({
           </span>
         )}
       </div>
-      <div className="grid grid-cols-4 gap-2 sm:gap-2.5 w-full">
+      {/* Responsive Grid Layout to prevent crushing */}
+      <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-4 gap-[var(--gap-sm)] w-full">
         {slots.map((_, i) => {
           if (isOfferTile && i === 0) {
             return (
@@ -392,15 +390,11 @@ const VanguardAdCard = memo(
 
     return (
       <div
-        className={`relative rounded-[8px] flex flex-col h-full transition-all duration-200 will-change-transform specular-card ${
-          globalCompactMode ? "p-2.5 sm:p-3" : "p-4 sm:p-5"
-        } ${isNewAd ? "border-primary ring-1 ring-primary" : ""}`}
+        className={`relative rounded-[8px] flex flex-col h-full bg-card border border-border transition-all duration-200 will-change-transform specular-card p-[var(--card-p)] ${
+          isNewAd ? "border-primary ring-1 ring-primary" : "hover:border-muted-foreground shadow-sm"
+        }`}
       >
-        <div
-          className={`flex items-start justify-between ${
-            globalCompactMode ? "mb-2.5 h-[32px]" : "mb-4 h-[40px]"
-          } relative z-10`}
-        >
+        <div className="flex items-start justify-between mb-[var(--gap-md)] relative z-10">
           <div className="flex items-center gap-3 min-w-0">
             <div
               className="relative shrink-0 cursor-pointer hover:opacity-80 transition-opacity active:scale-95"
@@ -413,19 +407,11 @@ const VanguardAdCard = memo(
             >
               <img
                 src={ad.profiles?.avatar_url || "/units/firezio.webp"}
-                className={`${
-                  globalCompactMode
-                    ? "w-7 h-7 sm:w-8 sm:h-8"
-                    : "w-10 h-10 sm:w-11 sm:h-11"
-                } rounded-full bg-muted object-cover border border-border`}
+                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-muted object-cover border border-border"
                 alt=""
               />
               <div
-                className={`absolute -bottom-0.5 -right-0.5 ${
-                  globalCompactMode
-                    ? "w-2.5 h-2.5 sm:w-3 sm:h-3"
-                    : "w-3 h-3 sm:w-3.5 sm:h-3.5"
-                } rounded-full border-2 border-card z-10`}
+                className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-2 border-card z-10"
                 style={{
                   backgroundColor:
                     STATUS_COLORS[ad.profiles?.status || "offline"],
@@ -434,11 +420,7 @@ const VanguardAdCard = memo(
             </div>
             <div className="flex flex-col min-w-0 pt-0.5">
               <span
-                className={`${
-                  globalCompactMode
-                    ? "text-[13px] sm:text-[14px]"
-                    : "text-[14px] sm:text-[15px]"
-                } font-bold text-foreground tracking-tight leading-none mb-1.5 truncate cursor-pointer hover:underline`}
+                className="text-[var(--ui-text-base)] font-bold text-foreground tracking-tight leading-none mb-1.5 truncate cursor-pointer hover:underline"
                 onClick={(e) => {
                   triggerHaptic("light");
                   const rect = e.currentTarget.getBoundingClientRect();
@@ -447,7 +429,7 @@ const VanguardAdCard = memo(
               >
                 {ad.profiles?.username || "Unknown"}
               </span>
-              <span className="text-[11px] sm:text-[12px] text-muted-foreground font-medium leading-none flex items-center gap-1.5">
+              <span className="text-[var(--ui-text-xs)] text-muted-foreground font-medium leading-none flex items-center gap-1.5">
                 {getTimeAgo(ad.created_at)}
               </span>
             </div>
@@ -460,9 +442,9 @@ const VanguardAdCard = memo(
         </div>
 
         {ad.note && (
-          <div className="mb-5 bg-muted/30 border border-border border-l-2 border-l-primary rounded-[4px] p-3 shadow-inner">
+          <div className="mb-[var(--gap-md)] bg-muted/30 border border-border border-l-2 border-l-primary rounded-[4px] p-3 shadow-inner">
             <div
-              className="text-[12px] text-foreground font-medium leading-relaxed break-words overflow-hidden"
+              className="text-[var(--ui-text-sm)] text-foreground font-medium leading-relaxed break-words overflow-hidden"
               style={{
                 display: "-webkit-box",
                 WebkitLineClamp: 2,
@@ -474,7 +456,7 @@ const VanguardAdCard = memo(
           </div>
         )}
 
-        <div className="flex flex-col w-full flex-1 relative z-10 gap-5">
+        <div className="flex flex-col w-full flex-1 relative z-10 gap-[var(--gap-md)]">
           {isInventory ? (
             <FixedSlotGrid
               items={ad.give_items}
@@ -504,8 +486,8 @@ const VanguardAdCard = memo(
           )}
         </div>
 
-        <div className="mt-6 pt-4 border-t border-border flex flex-col gap-2 relative z-10">
-          <div className="flex items-center justify-between w-full mb-2">
+        <div className="mt-auto pt-[var(--gap-md)] border-t border-border flex flex-col gap-3 relative z-10">
+          <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-0.5 bg-muted rounded-[4px] border border-border p-0.5">
               <button
                 onClick={() => handleVote(1)}
@@ -522,7 +504,7 @@ const VanguardAdCard = memo(
                 />
               </button>
               <span
-                className={`text-[12px] font-bold min-w-[20px] text-center font-mono ${
+                className={`text-[var(--ui-text-sm)] font-bold min-w-[20px] text-center font-mono ${
                   score > 0
                     ? "text-[#23a559]"
                     : score < 0
@@ -556,7 +538,7 @@ const VanguardAdCard = memo(
 
           <button
             onClick={handleDiscordContact}
-            className={`w-full px-4 py-2.5 flex items-center justify-center gap-2 text-[12px] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer border ${
+            className={`w-full h-[var(--ui-height-btn)] flex items-center justify-center gap-2 text-[var(--ui-text-sm)] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer border ${
               isContacting
                 ? "bg-[#23a559] text-white border-[#23a559]"
                 : "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
@@ -570,7 +552,7 @@ const VanguardAdCard = memo(
             {isContacting ? "Copied! Paste in Discord" : "Contact on Discord"}
           </button>
 
-          <div className="flex gap-2 w-full mt-1">
+          <div className="flex gap-2 w-full">
             <button
               onClick={() => {
                 triggerHaptic("light");
@@ -578,7 +560,7 @@ const VanguardAdCard = memo(
                   ? handleInspectVault()
                   : onSendToCalculator(ad.give_items, ad.get_items);
               }}
-              className="flex-1 px-3 py-2 flex items-center justify-center gap-1.5 text-[11px] font-bold rounded-[4px] border border-border bg-muted hover:bg-card text-foreground transition-colors active:scale-95 focus-visible:outline-none cursor-pointer"
+              className="flex-1 h-[var(--ui-height-btn)] flex items-center justify-center gap-1.5 text-[var(--ui-text-sm)] font-bold rounded-[4px] border border-border bg-muted hover:bg-card text-foreground transition-colors active:scale-95 focus-visible:outline-none cursor-pointer"
             >
               {isInventory ? (
                 <Package className="w-3.5 h-3.5" />
@@ -595,7 +577,7 @@ const VanguardAdCard = memo(
                 triggerHaptic("light");
                 openAdContext(ad.id, currentUserId);
               }}
-              className="flex-1 px-3 py-2 flex items-center justify-center gap-1.5 text-[11px] font-bold rounded-[4px] border border-border bg-muted hover:bg-card text-foreground transition-colors active:scale-95 focus-visible:outline-none cursor-pointer"
+              className="flex-1 h-[var(--ui-height-btn)] flex items-center justify-center gap-1.5 text-[var(--ui-text-sm)] font-bold rounded-[4px] border border-border bg-muted hover:bg-card text-foreground transition-colors active:scale-95 focus-visible:outline-none cursor-pointer"
             >
               <MessageSquare className="w-3.5 h-3.5" />
               <span className="truncate">Thread</span>
@@ -608,9 +590,9 @@ const VanguardAdCard = memo(
                   onDelete(ad.id);
                 }}
                 title="Hold to delete"
-                className="px-3 py-2 border border-border text-muted-foreground hover:text-destructive-foreground hover:border-destructive bg-muted hover:bg-destructive rounded-[4px] transition-colors focus-visible:outline-none flex items-center justify-center shrink-0"
+                className="w-[var(--ui-height-btn)] h-[var(--ui-height-btn)] border border-border text-muted-foreground hover:text-destructive-foreground hover:border-destructive bg-muted hover:bg-destructive rounded-[4px] transition-colors focus-visible:outline-none flex items-center justify-center shrink-0"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-4 h-4" />
               </HoldToConfirmButton>
             )}
           </div>
@@ -627,12 +609,10 @@ export function TradingAdsChannel() {
   const { overwrite, setComposerOpen } = useTradeStore();
   const { units: ALL_UNITS } = useUnits();
   const openHistoryModal = useHistoryModalStore((state) => state.openModal);
-  const { globalCompactMode } = useLayoutStore();
 
   const [searchFilter, setSearchFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortMode, setSortMode] = useState("newest");
-  const [isControlsCollapsed, setIsControlsCollapsed] = useState(false);
 
   useEffect(() => {
     fetchAds();
@@ -690,145 +670,113 @@ export function TradingAdsChannel() {
     window.dispatchEvent(new Event("open-analyzer"));
   };
 
+  const SearchNode = (
+    <div className="relative w-full">
+      <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+      <input
+        type="text"
+        value={searchFilter}
+        onChange={(e) => setSearchFilter(e.target.value)}
+        placeholder="Search board by unit name..."
+        className="w-full bg-input text-foreground text-[var(--ui-text-sm)] pl-9 pr-4 h-[var(--ui-height-input)] rounded-[4px] outline-none border border-border focus:border-primary transition-colors shadow-inner"
+      />
+    </div>
+  );
+
+  const FilterNodes = (
+    <>
+      <div className="flex bg-input rounded-[4px] p-1 border border-border w-full sm:w-auto overflow-x-auto hide-scrollbar shrink-0 shadow-inner h-[var(--ui-height-input)]">
+        {[
+          { id: "all", label: "All" },
+          { id: "standard", label: "Trades" },
+          { id: "lf_offers", label: "LF Offers" },
+          { id: "inventory", label: "Showcases" },
+        ].map((t) => (
+          <button
+            key={t.id}
+            onClick={() => {
+              triggerHaptic("light");
+              setTypeFilter(t.id);
+            }}
+            className={`flex-1 sm:flex-none px-4 rounded-[4px] text-[var(--ui-text-xs)] font-bold uppercase tracking-wider transition-all focus-visible:outline-none cursor-pointer whitespace-nowrap active:scale-95 flex items-center justify-center ${
+              typeFilter === t.id
+                ? "bg-foreground text-background shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div className="w-full sm:w-[190px] shrink-0">
+        <CustomDropdown
+          icon={Clock}
+          value={sortMode}
+          options={SORT_OPTIONS}
+          onChange={(val: string) => {
+            triggerHaptic("light");
+            setSortMode(val);
+          }}
+          defaultLabel="Sort By"
+        />
+      </div>
+    </>
+  );
+
+  const ActionNodes = (
+    <>
+      {profile ? (
+        <button
+          type="button"
+          onClick={handleCreateAdClick}
+          className="flex items-center justify-center gap-1.5 px-4 w-full sm:w-auto h-[var(--ui-height-btn)] rounded-[4px] bg-primary hover:bg-primary/90 text-primary-foreground text-[var(--ui-text-sm)] font-bold uppercase tracking-wider transition-all focus-visible:outline-none shrink-0 shadow-sm cursor-pointer active:scale-95 border border-primary"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Create Ad</span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            triggerHaptic("medium");
+            loginWithDiscord();
+          }}
+          className="flex items-center justify-center gap-1.5 px-4 w-full sm:w-auto h-[var(--ui-height-btn)] rounded-[4px] bg-muted border border-border text-foreground text-[var(--ui-text-sm)] font-bold uppercase tracking-wider transition-all hover:bg-card focus-visible:outline-none shrink-0 cursor-pointer active:scale-95"
+        >
+          <Lock className="w-4 h-4 text-primary" />
+          <span>Login</span>
+        </button>
+      )}
+    </>
+  );
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full select-none font-sans relative bg-background">
-      <div className="flex-shrink-0 flex flex-col px-4 py-3 border-b border-border z-20 gap-3 bg-card">
-        <div className="flex items-center justify-between gap-2.5">
-          <div className="hidden sm:flex items-center gap-2.5 min-w-0">
-            <div className="relative flex items-center justify-center shrink-0">
-              <div className="w-2.5 h-2.5 bg-primary rounded-full z-10" />
-              <div className="absolute inset-0 bg-primary rounded-full animate-ping opacity-60" />
-            </div>
-            <h2 className="text-[15px] font-black text-foreground tracking-tight whitespace-nowrap">
-              Live Trading Board
-            </h2>
-          </div>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
-            <button
-              onClick={() => {
-                triggerHaptic("light");
-                setIsControlsCollapsed(!isControlsCollapsed);
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-[11px] font-bold uppercase tracking-wider cursor-pointer"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>{isControlsCollapsed ? "Filters" : "Collapse"}</span>
-              {isControlsCollapsed ? (
-                <ChevronDown className="w-3.5 h-3.5" />
-              ) : (
-                <ChevronUp className="w-3.5 h-3.5" />
-              )}
-            </button>
-
-            {profile ? (
-              <button
-                type="button"
-                onClick={handleCreateAdClick}
-                className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-[4px] bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none shrink-0 shadow-sm cursor-pointer active:scale-95 border border-primary"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Create Ad</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  triggerHaptic("medium");
-                  loginWithDiscord();
-                }}
-                className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-[11px] font-bold uppercase tracking-wider transition-all hover:bg-card focus-visible:outline-none shrink-0 cursor-pointer active:scale-95"
-              >
-                <Lock className="w-3.5 h-3.5 text-primary" />
-                <span>Login</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div
-          className={`flex flex-col gap-3 transition-all duration-300 overflow-hidden ${
-            isControlsCollapsed
-              ? "max-h-0 opacity-0 md:max-h-none md:opacity-100"
-              : "max-h-[300px] opacity-100"
-          }`}
-        >
-          <div className="flex flex-col xl:flex-row xl:items-center gap-3 w-full">
-            <div className="flex bg-muted rounded-[4px] p-1 border border-border w-full md:w-fit overflow-x-auto hide-scrollbar shrink-0 shadow-inner">
-              {[
-                { id: "all", label: "All" },
-                { id: "standard", label: "Trades" },
-                { id: "lf_offers", label: "LF Offers" },
-                { id: "inventory", label: "Showcases" },
-              ].map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => {
-                    triggerHaptic("light");
-                    setTypeFilter(t.id);
-                  }}
-                  className={`flex-1 md:flex-none px-4 py-1.5 rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-all focus-visible:outline-none cursor-pointer whitespace-nowrap active:scale-95 ${
-                    typeFilter === t.id
-                      ? "bg-foreground text-background shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
-              <div className="relative w-full">
-                <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  value={searchFilter}
-                  onChange={(e) => setSearchFilter(e.target.value)}
-                  placeholder="Search board by unit name..."
-                  className="w-full bg-input text-foreground text-[13px] pl-9 pr-4 py-2 rounded-[4px] outline-none border border-border focus:border-primary transition-colors font-medium h-[36px] shadow-inner"
-                />
-              </div>
-
-              <div className="w-full sm:w-[190px] shrink-0">
-                <CustomDropdown
-                  icon={Clock}
-                  value={sortMode}
-                  options={SORT_OPTIONS}
-                  onChange={(val: string) => {
-                    triggerHaptic("light");
-                    setSortMode(val);
-                  }}
-                  defaultLabel="Sort By"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ResponsiveToolbar
+        title="Live Trading Board"
+        searchNode={SearchNode}
+        filterNodes={FilterNodes}
+        actionNodes={ActionNodes}
+      />
 
       <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col bg-transparent relative z-10">
-        <div
-          className={`w-full h-full max-w-[1400px] mx-auto pb-24 ${
-            globalCompactMode ? "p-2 md:p-3 lg:p-4" : "p-4 md:p-6 lg:p-8"
-          }`}
-        >
+        <div className="w-full h-full max-w-[1400px] mx-auto pb-24 p-[var(--page-p)]">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
               <Activity className="w-8 h-8 animate-pulse text-primary" />
-              <span className="text-[12px] md:text-[13px] font-bold uppercase tracking-widest">
+              <span className="text-[var(--ui-text-sm)] font-bold uppercase tracking-widest">
                 Connecting to live market...
               </span>
             </div>
           ) : filteredAndSortedAds.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center gap-3 md:gap-4 px-4">
+            <div className="flex flex-col items-center justify-center py-24 text-center gap-4 px-4">
               <div className="w-16 h-16 md:w-20 md:h-20 bg-muted rounded-[8px] flex items-center justify-center border border-border mb-2 shadow-sm">
                 <Megaphone className="w-8 h-8 md:w-10 md:h-10 text-muted-foreground" />
               </div>
-              <span className="text-[18px] md:text-[20px] font-black text-foreground tracking-tight">
+              <span className="text-[20px] font-black text-foreground tracking-tight">
                 No Active Listings
               </span>
-              <p className="text-[13px] md:text-[14px] text-muted-foreground max-w-md leading-relaxed">
+              <p className="text-[var(--ui-text-sm)] text-muted-foreground max-w-md leading-relaxed">
                 There are currently no trading ads matching your search
                 parameters. Try adjusting your filters or post a new ad
                 yourself.
@@ -836,17 +784,13 @@ export function TradingAdsChannel() {
 
               <button
                 onClick={handleCreateAdClick}
-                className="mt-4 px-6 py-3 bg-primary text-primary-foreground font-bold rounded-[4px] transition-all active:scale-95 hover:bg-primary/80 cursor-pointer shadow-md min-h-[44px]"
+                className="mt-4 px-6 h-[var(--ui-height-btn)] bg-primary text-primary-foreground font-bold rounded-[4px] transition-all active:scale-95 hover:bg-primary/80 cursor-pointer shadow-md"
               >
                 Be the first to post a trade
               </button>
             </div>
           ) : (
-            <div
-              className={`grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 w-full animate-fade-in ${
-                globalCompactMode ? "gap-2 sm:gap-3" : "gap-4 sm:gap-6"
-              }`}
-            >
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 w-full animate-fade-in gap-[var(--gap-lg)]">
               {filteredAndSortedAds.map((ad) => (
                 <VanguardAdCard
                   key={ad.id}

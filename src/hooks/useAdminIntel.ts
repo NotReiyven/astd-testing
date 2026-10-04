@@ -250,7 +250,7 @@ export function useAdminIntel() {
 
     if (error) {
       console.error("🚨 DB Insert Error for Moderation Log:", error.message);
-      showToast(`Audit log failed to save: ${error.message}`, "error");
+      showToast("Audit log failed to save. Please try again.", "error");
       setModLogs((prev) => prev.filter((log) => log.id !== optimisticLog.id));
     }
   };
@@ -268,7 +268,7 @@ export function useAdminIntel() {
     });
 
     if (error) {
-      showToast(`Database Error: ${error.message}`, "error");
+      showToast("A database error occurred. Please try again.", "error");
       return false;
     } else {
       if (reason)
@@ -309,7 +309,7 @@ export function useAdminIntel() {
     });
 
     if (error) {
-      showToast(`Failed to create role: ${error.message}`, "error");
+      showToast("Failed to create role. Check that the name is unique and try again.", "error");
     } else {
       showToast(`Role '${cleanName}' created successfully!`);
       loadMetrics();
@@ -331,7 +331,7 @@ export function useAdminIntel() {
 
     const { error } = await supabase.from("roles").delete().eq("name", name);
     if (error) {
-      showToast(`Failed to delete role: ${error.message}`, "error");
+      showToast("Failed to delete role. Please try again.", "error");
     } else {
       showToast(`Role '${name}' deleted.`);
       loadMetrics();
@@ -436,7 +436,7 @@ export function useAdminIntel() {
     });
 
     if (error) {
-      showToast(`Nuke Failed: ${error.message}`, "error");
+      showToast("Action failed. Please try again or contact an admin.", "error");
       return;
     }
 
@@ -484,3 +484,4 @@ export function useAdminIntel() {
     isMaster,
   };
 }
+

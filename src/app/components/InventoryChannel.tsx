@@ -49,6 +49,7 @@ import {
 } from "./InventoryChannel/inventoryUtils";
 import { Sparkline } from "./InventoryChannel/Sparkline";
 import { TradingCardSlot } from "./InventoryChannel/TradingCardSlot";
+import { ValueBreakdownModal } from "./InventoryChannel/ValueBreakdownModal";
 import { useInventoryManager } from "../../hooks/useInventoryManager";
 import { useHistoryModalStore } from "../../store/useHistoryModalStore";
 import { useTradeStore } from "../../store/useTradeStore";
@@ -114,6 +115,7 @@ export function InventoryChannel() {
   const [isOmniboxOpen, setIsOmniboxOpen] = useState(false);
   const [omniboxIndex, setOmniboxIndex] = useState(-1);
   const [isControlsCollapsed, setIsControlsCollapsed] = useState(false);
+  const [breakdownModalOpen, setBreakdownModalOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const omniboxRef = useRef<HTMLDivElement>(null);
@@ -722,7 +724,7 @@ export function InventoryChannel() {
                           </div>
                         </div>
 
-                        <h2 className="text-[32px] md:text-[40px] font-black text-foreground tracking-tighter leading-none font-mono">
+                        <h2 onClick={() => setBreakdownModalOpen(true)} className="text-[32px] md:text-[40px] font-black text-foreground tracking-tighter leading-none font-mono cursor-pointer hover:text-primary transition-colors" title="Click to view value breakdown">
                           {isSandbox
                             ? sandboxMockItems
                                 .reduce(
@@ -1407,6 +1409,8 @@ export function InventoryChannel() {
           </div>
         </div>
       )}
+
+      <ValueBreakdownModal isOpen={breakdownModalOpen} onClose={() => setBreakdownModalOpen(false)} items={Object.values(tierGroupedUnits).flat()} />
     </div>
   );
 }

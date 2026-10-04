@@ -95,7 +95,7 @@ export function AdComposer() {
 
       sortedInv.forEach((inv) => {
         const master = ALL_UNITS.find((unit) => unit.id === inv.unit_id);
-        if (master && !inv.is_pinned && ObjectCards.length < 25) {
+        if (master && !inv.is_pinned && ObjectCards.length < 1000) {
           const numericVal =
             typeof master.value === "number"
               ? master.value
@@ -135,8 +135,8 @@ export function AdComposer() {
       window.document.dispatchEvent(
         new CustomEvent("navigate", { detail: "trading-ads" })
       );
-    } catch (err: any) {
-      setError(err.message || "Failed to publish ad.");
+    } catch {
+      setError("Something went wrong. Please try again.");
       setTimeout(() => setError(""), 6000);
     } finally {
       setIsPublishing(false);
@@ -313,3 +313,4 @@ export function AdComposer() {
     </div>
   );
 }
+

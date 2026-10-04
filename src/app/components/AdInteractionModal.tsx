@@ -14,12 +14,9 @@ import {
   Copy,
   Check,
   ArrowRightLeft,
-  Sparkles,
-  AlertCircle,
+  Search,
   ChevronDown,
   ChevronUp,
-  Package,
-  Search,
 } from "lucide-react";
 import {
   useAdInteractionStore,
@@ -217,7 +214,7 @@ export function AdInteractionModal() {
     triggerHaptic("medium");
     overwrite(activeAd.get_items, activeAd.give_items);
     window.dispatchEvent(new Event("open-analyzer"));
-    closeAdContext(); // Automatically close modal so calculator is immediately visible
+    closeAdContext();
   };
 
   const handleShareLink = () => {
@@ -317,7 +314,7 @@ export function AdInteractionModal() {
             <div className="flex items-center justify-between gap-2 mb-1">
               <div className="flex items-center gap-2 min-w-0">
                 <span
-                  className="text-[13px] font-bold text-foreground truncate cursor-pointer hover:underline"
+                  className="text-[var(--ui-text-sm)] font-bold text-foreground truncate cursor-pointer hover:underline"
                   onClick={(e) => {
                     triggerHaptic("light");
                     const rect = e.currentTarget.getBoundingClientRect();
@@ -345,7 +342,7 @@ export function AdInteractionModal() {
               </span>
             </div>
 
-            <p className="text-[13px] text-foreground leading-relaxed break-all whitespace-pre-wrap font-medium">
+            <p className="text-[var(--ui-text-sm)] text-foreground leading-relaxed break-all whitespace-pre-wrap font-medium">
               {comment.content}
             </p>
 
@@ -493,7 +490,7 @@ export function AdInteractionModal() {
 
   return (
     <div
-      className="fixed inset-0 z-[100000] flex items-end md:items-center justify-center p-0 md:p-6 bg-black/80 animate-fade-in"
+      className="fixed inset-0 z-[100000] flex items-center justify-center p-0 md:p-[var(--page-p)] bg-black/80 animate-fade-in"
       role="dialog"
       aria-modal="true"
       onClick={(e) => {
@@ -503,9 +500,9 @@ export function AdInteractionModal() {
         }
       }}
     >
-      {/* Container offset on desktop so Sidebar and Calculator remain visible/accessible */}
-      <div className="bg-card w-full h-[90dvh] md:h-[82vh] md:max-w-4xl md:ml-[240px] md:mr-[420px] md:rounded-[6px] shadow-2xl border-0 md:border border-border flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-4 md:px-6 py-3 bg-popover border-b border-border shrink-0 z-20">
+      {/* Full width container, no arbitrary margins */}
+      <div className="bg-card w-full h-[100dvh] md:h-[85vh] max-w-5xl md:rounded-[8px] shadow-2xl border-0 md:border border-border flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-[var(--panel-p)] py-3 bg-popover border-b border-border shrink-0 z-20">
           <div className="flex items-center gap-3">
             <span
               className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px] border ${statusColor}`}
@@ -582,7 +579,7 @@ export function AdInteractionModal() {
               mobileTab === "comments" ? "hidden md:flex" : "flex"
             }`}
           >
-            <div className="p-4 md:p-6 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-5">
+            <div className="p-[var(--panel-p)] flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-[var(--gap-md)]">
               <div className="flex items-center justify-between bg-muted p-3.5 rounded-[6px] border border-border shadow-sm">
                 <div className="flex items-center gap-3 min-w-0">
                   <img
@@ -798,14 +795,14 @@ export function AdInteractionModal() {
             <div className="p-4 bg-popover border-t border-border shrink-0 flex flex-col sm:flex-row items-center gap-3">
               <button
                 onClick={handleLoadIntoCalculator}
-                className="w-full sm:flex-1 py-3 bg-primary hover:bg-primary/90 text-primary-foreground text-[12px] font-black uppercase tracking-wider rounded-[4px] transition-colors shadow-sm focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2 border border-primary"
+                className="w-full sm:flex-1 h-[var(--ui-height-btn)] bg-primary hover:bg-primary/90 text-primary-foreground text-[12px] font-black uppercase tracking-wider rounded-[4px] transition-colors shadow-sm focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2 border border-primary"
               >
                 <Calculator className="w-4 h-4" /> Load into Calculator
               </button>
 
               <button
                 onClick={handleContact}
-                className="w-full sm:w-auto px-4 py-3 bg-[#5865F2] hover:bg-[#4752C4] text-white text-[12px] font-bold rounded-[4px] transition-colors shadow-sm focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-4 h-[var(--ui-height-btn)] bg-[#5865F2] hover:bg-[#4752C4] text-white text-[12px] font-bold rounded-[4px] transition-colors shadow-sm focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2"
               >
                 <MessageSquare className="w-4 h-4" /> Message
               </button>
@@ -880,7 +877,7 @@ export function AdInteractionModal() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 flex flex-col pb-8">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-[var(--panel-p)] flex flex-col pb-8">
               {isLoading ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-3">
                   <Clock className="w-6 h-6 animate-spin text-primary" />

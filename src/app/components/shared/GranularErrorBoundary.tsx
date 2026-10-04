@@ -38,8 +38,7 @@ export class GranularErrorBoundary extends Component<Props, State> {
             {this.props.fallbackName || "Component"} Failed
           </h3>
           <p className="text-muted-foreground text-[13px] mb-6 max-w-sm leading-relaxed">
-            {this.state.error?.message ||
-              "An unexpected rendering error occurred. Our monitoring systems have logged the fault."}
+            {"Something went wrong while loading this section. Try refreshing, or contact support if the issue persists."}
           </p>
           <button
             onClick={() => this.setState({ hasError: false, error: null })}

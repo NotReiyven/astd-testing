@@ -198,23 +198,24 @@ export function TradeAnalyzerPanel({
 
   const renderCalculatorContent = () => (
     <>
-      <div className="flex-shrink-0 flex items-center gap-1.5 md:gap-2 px-3 md:px-[var(--panel-p)] py-3 border-b border-border relative z-20 bg-popover overflow-hidden">
+      <div className="flex-shrink-0 flex items-center gap-1 px-2 @[28rem]/analyzer:px-3 py-2 border-b border-border relative z-20 bg-popover min-w-0">
         <div className="w-7 h-7 flex-shrink-0 rounded-[4px] flex items-center justify-center bg-card border border-border">
           <Calculator className="w-3.5 h-3.5 text-foreground" />
         </div>
 
         {isComposerOpen ? (
-          <span className="text-[var(--ui-text-base)] font-bold flex-1 text-foreground truncate whitespace-nowrap select-none pr-1">
+          <span className="text-[var(--ui-text-base)] font-bold flex-1 min-w-0 text-foreground truncate whitespace-nowrap select-none pr-1">
             Create Listing
           </span>
         ) : (
-          <div className="flex items-center flex-1 min-w-0 pr-1 md:pr-2">
-            <span className="hidden md:block text-[var(--ui-text-base)] font-bold text-foreground select-none whitespace-nowrap truncate">
+          <div className="hidden @[36rem]/analyzer:flex items-center min-w-0 flex-1 pr-2">
+            <span className="text-[var(--ui-text-base)] font-bold text-foreground select-none whitespace-nowrap truncate">
               Trade Analyzer
             </span>
-            <div className="flex-1 md:hidden" />
           </div>
         )}
+
+        {!isComposerOpen && <div className="@[36rem]/analyzer:hidden flex-1 min-w-0" />}
 
         {isComposerOpen ? (
           <button
@@ -234,7 +235,7 @@ export function TradeAnalyzerPanel({
                   triggerHaptic("medium");
                   handleUndo();
                 }}
-                className="flex-shrink-0 flex items-center gap-1.5 px-3 h-[var(--ui-height-btn)] rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-95 text-destructive-foreground bg-destructive hover:bg-destructive/80 focus-visible:outline-none relative z-35 pointer-events-auto shadow-sm mr-1 cursor-pointer"
+                className="flex-shrink-0 flex items-center gap-1.5 px-2 h-9 rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-95 text-destructive-foreground bg-destructive hover:bg-destructive/80 focus-visible:outline-none relative z-35 pointer-events-auto shadow-sm mr-1 cursor-pointer"
                 title="Undo Clear"
               >
                 <RotateCcw className="w-3.5 h-3.5" />{" "}
@@ -248,7 +249,7 @@ export function TradeAnalyzerPanel({
                 setSmartMenuOpen(!smartMenuOpen);
                 setIsPresetsOpen(false);
               }}
-              className={`flex-shrink-0 w-[var(--ui-height-btn)] h-[var(--ui-height-btn)] max-w-10 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
+              className={`flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
                 isWandTarget
                   ? "bg-primary text-primary-foreground border-primary z-[100005] animate-pulse shadow-[0_0_15px_var(--primary)]"
                   : smartMenuOpen
@@ -266,7 +267,7 @@ export function TradeAnalyzerPanel({
                 setIsPresetsOpen(!isPresetsOpen);
                 setSmartMenuOpen(false);
               }}
-              className={`flex-shrink-0 w-[var(--ui-height-btn)] h-[var(--ui-height-btn)] max-w-10 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
+              className={`flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
                 isPresetsOpen
                   ? "bg-primary text-primary-foreground border-primary"
                   : "bg-muted border-border text-muted-foreground hover:bg-card hover:text-foreground"
@@ -281,7 +282,7 @@ export function TradeAnalyzerPanel({
                 triggerHaptic("medium");
                 handleSafeClear();
               }}
-              className={`flex-shrink-0 w-[var(--ui-height-btn)] h-[var(--ui-height-btn)] max-w-10 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
+              className={`flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
                 isClearTarget
                   ? "bg-destructive text-destructive-foreground border-destructive z-[100005] animate-pulse"
                   : confirmClear
@@ -298,29 +299,31 @@ export function TradeAnalyzerPanel({
             </button>
             <button
               onClick={handleShare}
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 h-[var(--ui-height-btn)] rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-95 text-foreground focus-visible:outline-none relative z-35 pointer-events-auto cursor-pointer"
+              className="flex-shrink-0 flex items-center justify-center gap-1.5 px-2 h-9 min-w-9 rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-95 text-foreground focus-visible:outline-none relative z-35 pointer-events-auto cursor-pointer"
               style={{
                 background: copied ? "#23a559" : "var(--muted)",
                 border: "1px solid var(--border)",
               }}
               title="Share formatted trade string"
+              aria-label={copied ? "Copied" : "Share"}
             >
               {copied ? (
                 <Check className="w-4 h-4 text-white" />
               ) : (
                 <Share2 className="w-4 h-4 text-muted-foreground" />
               )}
-              <span className="hidden xl:inline">
+              <span className="hidden @[40rem]/analyzer:inline">
                 {copied ? "Copied!" : "Share"}
               </span>
             </button>
             <button
               onClick={handleAdvertise}
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 h-[var(--ui-height-btn)] rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-95 text-primary-foreground bg-primary hover:bg-primary/90 focus-visible:outline-none border border-primary relative z-35 pointer-events-auto shadow-sm cursor-pointer"
+              className="flex-shrink-0 flex items-center justify-center gap-1.5 px-2 h-9 min-w-9 rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-95 text-primary-foreground bg-primary hover:bg-primary/90 focus-visible:outline-none border border-primary relative z-35 pointer-events-auto shadow-sm cursor-pointer"
               title="Post this trade as an advertisement"
+              aria-label="Advertise"
             >
               <Megaphone className="w-4 h-4" />
-              <span className="hidden sm:inline">Advertise</span>
+              <span className="hidden @[40rem]/analyzer:inline">Advertise</span>
             </button>
           </>
         )}

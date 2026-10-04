@@ -39,6 +39,7 @@ interface UseCanvasVirtualizationProps {
   sortMode: string;
   activeTierFilter: FilterKey;
   viewMode: "grid" | "list" | "compact";
+  cols?: number;
 }
 
 export function useCanvasVirtualization({
@@ -49,6 +50,7 @@ export function useCanvasVirtualization({
   sortMode,
   activeTierFilter,
   viewMode,
+  cols = 1,
 }: UseCanvasVirtualizationProps) {
   const isDefaultView =
     sortMode === "value-desc" &&
@@ -106,18 +108,18 @@ export function useCanvasVirtualization({
       (k) => k !== "All"
     ) as FilterKey[];
 
-    // Helper to package units into a grid chunk or individual list rows. 
-    // By providing all units to the grid-row, CSS grid auto-fill takes over rendering.
     const pushUnits = (units: MasterUnit[], idPrefix: string) => {
         if (viewMode === "grid") {
-             // We pass all units for this section into a single grid-row element.
-             // CSS `grid-template-columns: repeat(auto-fill, ...)` handles the columns.
-             items.push({
-                 type: "grid-row",
-                 id: idPrefix,
-                 units: units,
-                 searchQuery: deferredSearchQuery
-             });
+             const columns = Math.max(1, cols);
+             for (let i = 0; i < units.length; i += columns) {
+                 const chunk = units.slice(i, i + columns);
+                 items.push({
+                     type: "grid-row",
+                     id: `${idPrefix}-${i}`,
+                     units: chunk,
+                     searchQuery: deferredSearchQuery
+                 });
+             }
         } else {
              units.forEach((u, i) => {
                 items.push({
@@ -211,6 +213,7 @@ export function useCanvasVirtualization({
     sortMode,
     activeTierFilter,
     viewMode,
+    cols,
     filteredAllUnits,
     UNITS_BY_TIER,
     isDefaultView,
@@ -218,3 +221,4 @@ export function useCanvasVirtualization({
 
   return { flattenedItems };
 }
+

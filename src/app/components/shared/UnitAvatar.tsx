@@ -21,11 +21,15 @@ export const UnitAvatar = memo(
     isOpaqueFallback = false,
   }: UnitAvatarProps) => {
     const [imgLoaded, setImgLoaded] = useState(false);
+    const [imgError, setImgError] = useState(false);
     const proxyUrl = getProxyImage(unitId, imageUrl);
 
     return (
       <>
-        <div
+        {!imgLoaded && !imgError && proxyUrl && (
+          <div className="absolute inset-0 z-[5] bg-muted/40 animate-pulse" />
+        )}
+        {(!proxyUrl || imgError) && <div
           className={`${fallbackClassName} ${
             !isOpaqueFallback
               ? "opacity-20 select-none pointer-events-none"
@@ -34,20 +38,27 @@ export const UnitAvatar = memo(
           style={getAvatarStyle(unitName)}
         >
           {getInitials(unitName)}
-        </div>
-        <img
-          src={proxyUrl || undefined}
-          alt={unitName}
-          loading="lazy"
-          decoding="async"
-          onLoad={() => setImgLoaded(true)}
-          onError={(e) => handleImageError(e, unitId)}
-          className={`${imageClassName} transition-opacity duration-300 ease-out ${
-            imgLoaded ? "opacity-100" : "opacity-0"
-          }`}
-          style={{ objectPosition: "center 15%" }}
-        />
+        </div>}
+        {proxyUrl && (
+          <img
+            src={proxyUrl}
+            alt={unitName}
+            loading="lazy"
+            decoding="async"
+            onLoad={() => setImgLoaded(true)}
+            onError={(e) => {
+              setImgError(true);
+              handleImageError(e, unitId);
+            }}
+            className={`${imageClassName} transition-opacity duration-300 ease-out ${
+              imgLoaded ? "opacity-100" : "opacity-0"
+            }`}
+            style={{ objectPosition: "center 15%" }}
+          />
+        )}
       </>
     );
   }
 );
+
+
