@@ -6,6 +6,21 @@ import "./styles/index.css";
 import "./styles/density.css";
 import { UnitProvider } from "./context/UnitContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import * as Sentry from "@sentry/react";
+
+Sentry.init({
+  dsn: import.meta.env.VITE_SENTRY_DSN,
+  integrations: [
+    Sentry.browserTracingIntegration(),
+    Sentry.replayIntegration(),
+  ],
+  // Performance Monitoring
+  tracesSampleRate: 1.0, //  Capture 100% of the transactions
+  // Session Replay
+  replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%. You may want to change it to 100% while in development and then sample at a lower rate in production.
+  replaysOnErrorSampleRate: 1.0, 
+  enabled: import.meta.env.PROD, // Only run Sentry in production
+});
 
 // Safely register Service Worker for PWA offline caching
 try {
@@ -49,6 +64,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught app error:", error, errorInfo);
+    Sentry.captureException(error, { extra: { errorInfo } });
   }
 
   handleReset = () => {

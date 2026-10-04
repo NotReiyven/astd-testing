@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { AlertOctagon, ShieldAlert, Send, StopCircle, RefreshCw } from "lucide-react";
+import { AlertOctagon, ShieldAlert, Send, StopCircle, RefreshCw, History, CheckCircle2 } from "lucide-react";
 import { supabase } from "../../../lib/supabase";
 import { useNotificationStore } from "../../../store/useNotificationStore";
 
@@ -10,10 +10,12 @@ interface SecurityAlert {
   severity: "info" | "warning" | "critical";
   link_url?: string;
   link_text?: string;
+  created_at: string;
 }
 
 export const SecuritySettingsTab = () => {
   const [activeAlert, setActiveAlert] = useState<SecurityAlert | null>(null);
+  const [history, setHistory] = useState<SecurityAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const addToast = useNotificationStore((s) => s.addToast);
@@ -23,26 +25,26 @@ export const SecuritySettingsTab = () => {
   const [linkUrl, setLinkUrl] = useState("");
   const [linkText, setLinkText] = useState("");
 
-  const fetchCurrentAlert = async () => {
+  const fetchAlerts = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("global_alerts")
       .select("*")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+      .order("created_at", { ascending: false });
 
     if (!error && data) {
-      setActiveAlert(data as SecurityAlert);
+      const active = data.find((a: SecurityAlert) => a.is_active);
+      setActiveAlert(active || null);
+      setHistory(data as SecurityAlert[]);
     } else {
       setActiveAlert(null);
+      setHistory([]);
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    fetchCurrentAlert();
+    fetchAlerts();
   }, []);
 
   const handleBroadcast = async () => {
@@ -51,7 +53,6 @@ export const SecuritySettingsTab = () => {
       return;
     }
 
-    // Safety confirmation for critical alerts
     if (
       severity === "critical" &&
       !window.confirm(
@@ -63,7 +64,6 @@ export const SecuritySettingsTab = () => {
 
     setSubmitting(true);
     try {
-      // If there's an existing active alert, deactivate it first
       if (activeAlert) {
         await supabase
           .from("global_alerts")
@@ -87,7 +87,7 @@ export const SecuritySettingsTab = () => {
       setMessage("");
       setLinkUrl("");
       setLinkText("");
-      await fetchCurrentAlert();
+      await fetchAlerts();
     } catch (err: any) {
       addToast("Failed to broadcast alert. Check permissions.", "error");
       console.error(err);
@@ -112,8 +112,12 @@ export const SecuritySettingsTab = () => {
 
       if (error) throw error;
 
+      // Optimistically clear the active alert to instantly update UI
+      setActiveAlert(null); 
       addToast("Alert deactivated.", "success");
-      await fetchCurrentAlert();
+      
+      // Fetch latest to update history list
+      await fetchAlerts();
     } catch (err: any) {
       addToast("Failed to deactivate alert.", "error");
       console.error(err);
@@ -129,6 +133,12 @@ export const SecuritySettingsTab = () => {
       </div>
     );
   }
+
+  const getSeverityColor = (sev: string) => {
+    if (sev === "critical") return "text-destructive border-destructive bg-destructive/10";
+    if (sev === "warning") return "text-[#FAA61A] border-[#FAA61A] bg-[#FAA61A]/10";
+    return "text-primary border-primary bg-primary/10";
+  };
 
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar p-[var(--page-p)] animate-fade-in bg-transparent z-10">
@@ -242,6 +252,51 @@ export const SecuritySettingsTab = () => {
             </div>
           </div>
         </div>
+
+        {/* History Log */}
+        {history.length > 0 && (
+          <div className="bg-card border border-border rounded-xl p-6 shadow-sm mb-12">
+            <h2 className="text-[16px] font-bold uppercase text-foreground mb-4 flex items-center gap-2">
+              <History className="w-5 h-5" /> Broadcast History Log
+            </h2>
+            <div className="space-y-3">
+              {history.map((alert) => (
+                <div key={alert.id} className="p-4 bg-background border border-border rounded-md flex flex-col sm:flex-row gap-4 justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${getSeverityColor(alert.severity)}`}>
+                        {alert.severity}
+                      </span>
+                      {alert.is_active ? (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-green-500 bg-green-500/10 px-2 py-0.5 rounded flex items-center gap-1">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                          </span>
+                          Active
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/50 px-2 py-0.5 rounded flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> Concluded
+                        </span>
+                      )}
+                      <span className="text-[11px] text-muted-foreground font-medium">
+                        {new Date(alert.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-[var(--ui-text-sm)] text-foreground font-medium">{alert.message}</p>
+                    {alert.link_url && (
+                      <a href={alert.link_url} target="_blank" rel="noopener noreferrer" className="text-[12px] text-primary hover:underline mt-1 inline-block">
+                        {alert.link_text || "Attached Link"}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
