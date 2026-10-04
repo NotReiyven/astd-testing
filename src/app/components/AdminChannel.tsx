@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { SecuritySettingsTab } from "./Admin/SecuritySettingsTab";
 import {
   Search,
   ShieldAlert,
@@ -63,7 +64,7 @@ export function AdminChannel() {
     isMaster,
   } = useAdminIntel();
 
-  const [adminTab, setAdminTab] = useState<"users" | "roles">("users");
+  const [adminTab, setAdminTab] = useState<"users" | "roles" | "security">("users");
 
   const [newRoleName, setNewRoleName] = useState("");
   const [newRoleColor, setNewRoleColor] = useState("#7289da");
@@ -213,8 +214,21 @@ export function AdminChannel() {
           >
             <Settings2 className="w-4 h-4" /> Role Management
           </button>
+          <button
+            onClick={() => setAdminTab("security")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-[4px] text-[var(--ui-text-sm)] font-bold uppercase tracking-wider transition-all cursor-pointer focus-visible:outline-none ${
+              adminTab === "security"
+                ? "bg-destructive text-destructive-foreground shadow-sm"
+                : "bg-card text-muted-foreground hover:text-foreground border border-border"
+            }`}
+          >
+            <ShieldAlert className="w-4 h-4" /> Security
+          </button>
         </div>
       )}
+
+      {/* Tab Content: Security */}
+      {adminTab === "security" && isMaster && <SecuritySettingsTab />}
 
       {/* Tab Content: Roles */}
       {adminTab === "roles" && isMaster ? (

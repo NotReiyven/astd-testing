@@ -13,6 +13,7 @@ import { useStickyState, isBoolean } from "../hooks/useStickyState";
 import { AquaGuideOverlay } from "./components/guides/AquaGuideOverlay";
 import { TopBar } from "./components/layout/TopBar";
 import { SyncBanner } from "./components/layout/SyncBanner";
+import { SecurityBanner } from "./components/layout/SecurityBanner";
 import { WelcomeModal } from "./components/WelcomeModal";
 import { ExternalLinkModal } from "./components/layout/ExternalLinkModal";
 import { MiniProfilePopout } from "./components/layout/MiniProfilePopout";
@@ -559,6 +560,7 @@ export default function App() {
             className={`flex-1 flex flex-col min-w-0 bg-background md:pb-0 pb-[84px] z-10 ${mainContentZ}`}
           >
             <div className={`relative ${calcHeaderZ}`}>
+              <SecurityBanner />
               <SyncBanner />
               <TopBar
                 calcHeaderZ={calcHeaderZ}
