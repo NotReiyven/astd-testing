@@ -444,7 +444,7 @@ export function HistoryModal() {
                     <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary" />
                   )}
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">
+                    <span className="text-[12px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
                       Current Value
                     </span>
                     {displayHistory.length > 1 &&
@@ -491,7 +491,7 @@ export function HistoryModal() {
                   {activeMetric === "rarity" && (
                     <div className="absolute top-0 left-0 bottom-0 w-1 bg-[#4DB6AC]" />
                   )}
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">
+                  <span className="text-[12px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
                     Rarity (0-20)
                   </span>
                   <span className="text-[16px] font-black font-mono text-[#4DB6AC] mt-1.5">
@@ -513,7 +513,7 @@ export function HistoryModal() {
                   {activeMetric === "liquidity" && (
                     <div className="absolute top-0 left-0 bottom-0 w-1 bg-[#81C784]" />
                   )}
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">
+                  <span className="text-[12px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
                     Liquidity
                   </span>
                   <span className="text-[13px] font-black font-mono text-[#81C784] mt-1.5 uppercase">
@@ -541,7 +541,7 @@ export function HistoryModal() {
                   {currentUnit.secondaryTags &&
                     currentUnit.secondaryTags.length > 0 && (
                       <div className="flex flex-col gap-2 pt-2 border-t border-border mt-1">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        <span className="text-[12px] font-medium text-muted-foreground">
                           Market Tags:
                         </span>
                         <div className="flex flex-wrap gap-2">

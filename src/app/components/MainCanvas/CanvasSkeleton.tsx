@@ -1,8 +1,13 @@
+import { useShowDelay } from "../../../hooks/useShowDelay";
+
 export function CanvasSkeleton({
   viewMode,
 }: {
   viewMode: "grid" | "list" | "compact";
 }) {
+  const show = useShowDelay(200);
+
+  if (!show) return null;
   if (viewMode === "list" || viewMode === "compact") {
     const isCompact = viewMode === "compact";
 

@@ -93,7 +93,7 @@ export function DictionaryTab() {
 
       <div className="bg-card border border-border rounded-[8px] p-5 md:p-6 shadow-sm">
         <div className="flex flex-col gap-1.5 mb-2">
-          <h3 className="text-[14px] font-bold text-foreground uppercase tracking-wider">
+          <h3 className="text-base md:text-sm font-bold text-foreground uppercase tracking-wider">
             Add New Slang
           </h3>
           <p className="text-muted-foreground text-[12px]">
@@ -111,7 +111,7 @@ export function DictionaryTab() {
               value={newSlangKey}
               onChange={(e) => setNewSlangKey(e.target.value)}
               placeholder="e.g., 'fbg', 'flaw', 'udbz'"
-              className="w-full bg-input border border-border rounded-[4px] px-4 py-3 text-[14px] text-foreground outline-none placeholder-muted-foreground focus:ring-1 focus:ring-primary transition-all shadow-inner"
+              className="w-full bg-input border border-border rounded-[4px] px-4 py-3 text-base md:text-sm text-foreground outline-none placeholder-muted-foreground focus:ring-1 focus:ring-primary transition-all shadow-inner"
             />
           </div>
 
@@ -140,7 +140,7 @@ export function DictionaryTab() {
                 }}
                 onFocus={() => setIsDropdownOpen(true)}
                 placeholder="Search official database..."
-                className="bg-transparent text-[14px] text-foreground w-full outline-none placeholder-muted-foreground"
+                className="bg-transparent text-base md:text-sm text-foreground w-full outline-none placeholder-muted-foreground"
               />
               {newSlangTargetId && (
                 <Check className="w-4 h-4 text-[#23a559] ml-2 shrink-0" />
@@ -184,7 +184,7 @@ export function DictionaryTab() {
                           )}
                         </div>
                         <div className="flex flex-col min-w-0 flex-1">
-                          <span className="text-[14px] font-bold text-foreground truncate group-hover:text-white transition-colors">
+                          <span className="text-base md:text-sm font-bold text-foreground truncate group-hover:text-white transition-colors">
                             {u.name}
                           </span>
                           {u.subtitle && (
@@ -204,7 +204,7 @@ export function DictionaryTab() {
           <div className="flex flex-col justify-end">
             <button
               onClick={handleAddSlang}
-              className={`shrink-0 px-4 py-3 md:py-2 rounded-[4px] text-[14px] md:text-[13px] font-bold transition-colors focus-visible:outline-none ${
+              className={`shrink-0 px-4 py-3 md:py-2 rounded-[4px] text-base md:text-sm md:text-[13px] font-bold transition-colors focus-visible:outline-none ${
                 newSlangKey.trim() && newSlangTargetId
                   ? "bg-[#23a559] hover:bg-[#1f914e] text-white active:scale-95 shadow-sm"
                   : "bg-popover text-muted-foreground border border-border cursor-not-allowed"
@@ -219,7 +219,7 @@ export function DictionaryTab() {
 
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between border-b border-border pb-3">
-          <h3 className="text-[14px] font-bold text-foreground uppercase tracking-wider">
+          <h3 className="text-base md:text-sm font-bold text-foreground uppercase tracking-wider">
             Your Dictionary
           </h3>
           <span className="text-[11px] font-bold bg-popover border border-border text-foreground px-2.5 py-1 rounded-[4px]">
@@ -257,7 +257,7 @@ export function DictionaryTab() {
                       <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">
                         Slang
                       </span>
-                      <span className="text-[14px] font-black text-foreground truncate">
+                      <span className="text-base md:text-sm font-black text-foreground truncate">
                         "{key}"
                       </span>
                     </div>

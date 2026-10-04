@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { PanelLeft, Hash, Search, X, LogIn, LogOut, User, Check } from "lucide-react";
+import { PanelLeft, Hash, Search, X, LogIn, LogOut, User, Check, Calculator } from "lucide-react";
 import { GiAbacus, GiMagicPortal, GiSparkles, GiRingingBell, GiChatBubble } from "react-icons/gi";
 import { LiveAvatars } from "./LiveAvatars";
 import { useAuthStore } from "../../../store/useAuthStore";
@@ -182,7 +182,7 @@ export function TopBar({
               value={globalSearchQuery}
               onChange={(e) => setGlobalSearchQuery(e.target.value)}
               placeholder="Search all units..."
-              className="flex-1 bg-transparent outline-none text-foreground text-[14px] px-2 h-full"
+              className="flex-1 bg-transparent outline-none text-foreground text-base px-2 h-full"
             />
             <button
               onClick={() => {
@@ -198,7 +198,7 @@ export function TopBar({
 
         <div className="flex items-center gap-3 pr-2 flex-1 min-w-0">
           <button
-            onClick={() => setIsRosterOpen(!isRosterOpen)}
+            onClick={() => setIsRosterOpen(!isRosterOpen)} aria-label="Toggle sidebar"
             className={`p-2 transition-colors flex-shrink-0 focus-visible:outline-none rounded-[4px] border border-transparent hover:bg-muted min-h-[44px] min-w-[44px] flex items-center justify-center ${
               isRosterOpen
                 ? "text-foreground border-border"
@@ -211,7 +211,7 @@ export function TopBar({
           <div className="flex flex-col md:flex-row md:items-center min-w-0 overflow-hidden w-full gap-2">
             <div className="flex items-center gap-1.5 min-w-0">
               <Hash className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
-              <span className="text-[14px] font-bold text-foreground whitespace-nowrap truncate">
+              <span className="text-base font-bold text-foreground whitespace-nowrap truncate">
                 {currentChannelInfo.title}
               </span>
             </div>
@@ -327,14 +327,7 @@ export function TopBar({
                       alt="Avatar"
                       className="w-7 h-7 rounded-[2px] object-cover bg-background"
                     />
-                    <div
-                      className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-popover"
-                      style={{
-                        backgroundColor:
-                          STATUS_COLORS[profile.status] ||
-                          STATUS_COLORS.offline,
-                      }}
-                    />
+                    
                   </div>
                 </button>
 
@@ -354,7 +347,7 @@ export function TopBar({
                       className="flex items-center justify-between w-full px-2 py-2 rounded-[4px] hover:bg-muted transition-colors group cursor-pointer"
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-[#23a559]" />
+                        
                         <span className="text-[13px] font-semibold text-foreground">
                           Online
                         </span>
@@ -372,7 +365,7 @@ export function TopBar({
                       className="flex items-center justify-between w-full px-2 py-2 rounded-[4px] hover:bg-muted transition-colors group cursor-pointer"
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" />
+                        
                         <span className="text-[13px] font-semibold text-foreground">
                           Do Not Disturb
                         </span>
@@ -390,7 +383,7 @@ export function TopBar({
                       className="flex items-center justify-between w-full px-2 py-2 rounded-[4px] hover:bg-muted transition-colors group cursor-pointer"
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-transparent border-2 border-[#888888]" />
+                        
                         <span className="text-[13px] font-semibold text-foreground">
                           Invisible
                         </span>
@@ -502,8 +495,8 @@ export function TopBar({
             }`}
             title="Toggle Trade Analyzer"
           >
-            <GiAbacus className="w-4 h-4 flex-shrink-0" />
-            <span>Calculator</span>
+            <Calculator className="w-4 h-4 flex-shrink-0" />
+            <span>Analyzer</span>
             {activeItemsCount > 0 && (
               <span className="absolute -top-1.5 -right-1.5 bg-foreground text-background font-mono font-bold text-[9px] w-4 h-4 rounded-full flex items-center justify-center">
                 {activeItemsCount > 9 ? "9+" : activeItemsCount}
@@ -531,4 +524,6 @@ export function TopBar({
     </div>
   );
 }
+
+
 

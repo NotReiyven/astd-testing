@@ -177,17 +177,17 @@ export const GRID_STATUS_CFG: Record<
 };
 
 export const RARITY_SCALE: { min: number; max: number; label: string }[] = [
-  { min: 0, max: 1, label: "Common – Easily obtainable" },
-  { min: 2, max: 4, label: "Uncommon – Somewhat common" },
-  { min: 5, max: 7, label: "Rare – Less frequently seen" },
-  { min: 8, max: 9, label: "Very Rare – Hard to come by" },
-  { min: 10, max: 10, label: "Pretty Rare – ~5,000 Copies (Aqua rarity)" },
-  { min: 11, max: 13, label: "Super Rare – A few thousand copies" },
-  { min: 14, max: 15, label: "Ultra Rare – ~1,000 Copies or fewer" },
-  { min: 16, max: 17, label: "Extremely Rare – ~500 Copies or fewer" },
-  { min: 18, max: 18, label: "Insanely Rare – ~200 Copies or fewer" },
-  { min: 19, max: 19, label: "Legendary – ~50 Copies or fewer" },
-  { min: 20, max: 20, label: "Ultra Mega Rare – 20 Copies or Less" },
+  { min: 0, max: 1, label: "Common - Easily obtainable" },
+  { min: 2, max: 4, label: "Uncommon - Somewhat common" },
+  { min: 5, max: 7, label: "Rare - Less frequently seen" },
+  { min: 8, max: 9, label: "Very Rare - Hard to come by" },
+  { min: 10, max: 10, label: "Pretty Rare - ~5,000 Copies (Aqua rarity)" },
+  { min: 11, max: 13, label: "Super Rare - A few thousand copies" },
+  { min: 14, max: 15, label: "Ultra Rare - ~1,000 Copies or fewer" },
+  { min: 16, max: 17, label: "Extremely Rare - ~500 Copies or fewer" },
+  { min: 18, max: 18, label: "Insanely Rare - ~200 Copies or fewer" },
+  { min: 19, max: 19, label: "Legendary - ~50 Copies or fewer" },
+  { min: 20, max: 20, label: "Ultra Mega Rare - 20 Copies or Less" },
 ];
 
 export const LIQUIDITY_SCALE: Record<string, string> = {
@@ -257,7 +257,7 @@ export const AQUA_DIALOGUES: Record<string, string[]> = {
     "Listen up, you shut-in NEET! I, the beautiful and wise Goddess Aqua, have descended to save you from getting completely scammed! First, click the ^^Value List^^ channel in the sidebar so we can begin!",
     "Hmph, even someone with your pitiful intelligence stat can do this part. Let's build a mock trade. ^^Click or tap^^ any unit card to open its menu, then toss it into your *Give* or *Get* side! Don't mess this up!",
     "W-Wait! Don't just accept a trade blindly! Are you trying to lose all your value?! Use the divine tool I've graciously bestowed upon you! Click that glowing ^^Calculator^^ button up top to open the Analyzer!",
-    "See?! It instantly breaks down the value differences and market momentum! But wait—you're not done! I've enrolled you in the Academy to finish your training. Go complete your Graduation Checklist!",
+    "See?! It instantly breaks down the value differences and market momentum! But wait-you're not done! I've enrolled you in the Academy to finish your training. Go complete your Graduation Checklist!",
   ],
   channels: [
     "",

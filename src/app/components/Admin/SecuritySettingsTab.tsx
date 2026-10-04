@@ -19,7 +19,7 @@ export const SecuritySettingsTab = () => {
   const [history, setHistory] = useState<SecurityAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const addToast = useNotificationStore((s) => s.addToast);
+  const addToast = (msg: string, type: string) => alert(msg);
 
   const [message, setMessage] = useState("");
   const [severity, setSeverity] = useState<"info" | "warning" | "critical">("critical");
@@ -65,7 +65,7 @@ export const SecuritySettingsTab = () => {
     });
 
     if (!validationResult.success) {
-      addToast(validationResult.error.errors[0].message, "error");
+      addToast(validationResult.error.issues[0].message, "error");
       return;
     }
 
@@ -162,10 +162,10 @@ export const SecuritySettingsTab = () => {
         <div className="flex items-center gap-3.5 mb-2">
           <ShieldAlert className="w-8 h-8 text-destructive drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
           <div>
-            <h1 className="text-[20px] font-black uppercase tracking-tight text-foreground leading-tight">
+            <h1 className="text-[18px] font-bold tracking-tight text-foreground leading-tight">
               Emergency Broadcast System
             </h1>
-            <p className="text-[var(--ui-text-sm)] text-muted-foreground font-medium uppercase tracking-widest mt-0.5">
+            <p className="text-[var(--ui-text-sm)] text-muted-foreground font-medium font-medium mt-0.5">
               Master Clearance Required
             </p>
           </div>
@@ -173,7 +173,7 @@ export const SecuritySettingsTab = () => {
 
         {activeAlert && (
           <div className="bg-destructive/10 border-2 border-destructive rounded-lg p-5">
-            <h2 className="text-destructive font-bold uppercase tracking-wider mb-2 flex items-center gap-2">
+            <h2 className="text-destructive font-medium mb-2 flex items-center gap-2">
               <span className="relative flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
@@ -184,7 +184,7 @@ export const SecuritySettingsTab = () => {
             <button
               onClick={handleDeactivate}
               disabled={submitting}
-              className="bg-destructive text-destructive-foreground px-4 py-2 rounded font-bold uppercase tracking-wider text-[var(--ui-text-sm)] hover:bg-destructive/90 transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="bg-destructive text-destructive-foreground px-4 py-2 rounded font-medium text-[var(--ui-text-sm)] hover:bg-destructive/90 transition-colors flex items-center gap-2 disabled:opacity-50"
             >
               <StopCircle className="w-4 h-4" /> Kill Alert
             </button>
@@ -192,13 +192,13 @@ export const SecuritySettingsTab = () => {
         )}
 
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
-          <h2 className="text-[16px] font-bold uppercase text-foreground mb-4">
+          <h2 className="text-[16px] font-bold text-foreground mb-4">
             Broadcast New Alert
           </h2>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-[var(--ui-text-xs)] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
+              <label className="block text-[var(--ui-text-xs)] font-medium text-muted-foreground mb-1.5">
                 Severity Level
               </label>
               <select
@@ -213,7 +213,7 @@ export const SecuritySettingsTab = () => {
             </div>
 
             <div>
-              <label className="block text-[var(--ui-text-xs)] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
+              <label className="block text-[var(--ui-text-xs)] font-medium text-muted-foreground mb-1.5">
                 Broadcast Message
               </label>
               <textarea
@@ -224,9 +224,9 @@ export const SecuritySettingsTab = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[var(--ui-text-xs)] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
+                <label className="block text-[var(--ui-text-xs)] font-medium text-muted-foreground mb-1.5">
                   Link URL (Optional)
                 </label>
                 <input
@@ -238,7 +238,7 @@ export const SecuritySettingsTab = () => {
                 />
               </div>
               <div>
-                <label className="block text-[var(--ui-text-xs)] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
+                <label className="block text-[var(--ui-text-xs)] font-medium text-muted-foreground mb-1.5">
                   Link Text (Optional)
                 </label>
                 <input
@@ -255,7 +255,7 @@ export const SecuritySettingsTab = () => {
               <button
                 onClick={handleBroadcast}
                 disabled={submitting || !message.trim()}
-                className="w-full bg-primary text-primary-foreground font-bold uppercase tracking-wider py-3 rounded-md flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="w-full bg-primary text-primary-foreground font-medium py-3 rounded-md flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {submitting ? (
                   <RefreshCw className="w-5 h-5 animate-spin" />
@@ -272,7 +272,7 @@ export const SecuritySettingsTab = () => {
         {/* History Log */}
         {history.length > 0 && (
           <div className="bg-card border border-border rounded-xl p-6 shadow-sm mb-12">
-            <h2 className="text-[16px] font-bold uppercase text-foreground mb-4 flex items-center gap-2">
+            <h2 className="text-[16px] font-bold text-foreground mb-4 flex items-center gap-2">
               <History className="w-5 h-5" /> Broadcast History Log
             </h2>
             <div className="space-y-3">
@@ -280,11 +280,11 @@ export const SecuritySettingsTab = () => {
                 <div key={alert.id} className="p-4 bg-background border border-border rounded-md flex flex-col sm:flex-row gap-4 justify-between items-start">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${getSeverityColor(alert.severity)}`}>
+                      <span className={`text-[11px] font-bold capitalize px-2 py-0.5 rounded border ${getSeverityColor(alert.severity)}`}>
                         {alert.severity}
                       </span>
                       {alert.is_active ? (
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-green-500 bg-green-500/10 px-2 py-0.5 rounded flex items-center gap-1">
+                        <span className="text-[10px] font-medium text-green-500 bg-green-500/10 px-2 py-0.5 rounded flex items-center gap-1">
                           <span className="relative flex h-2 w-2">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -292,7 +292,7 @@ export const SecuritySettingsTab = () => {
                           Active
                         </span>
                       ) : (
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/50 px-2 py-0.5 rounded flex items-center gap-1">
+                        <span className="text-[10px] font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded flex items-center gap-1">
                           <CheckCircle2 className="w-3 h-3" /> Concluded
                         </span>
                       )}

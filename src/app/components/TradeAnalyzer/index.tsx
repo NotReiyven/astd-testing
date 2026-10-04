@@ -16,7 +16,6 @@ import { TradeSectionPanel } from "./TradeSectionPanel";
 import { TradeNotices } from "./TradeNotices";
 import { SmartParserMenu } from "./SmartParserMenu";
 import { TradeSummaryBox } from "./TradeSummaryBox";
-import { AdComposer } from "./AdComposer";
 import { usePanelResize } from "../../../hooks/usePanelResize";
 import { getShareText } from "./summaryUtils";
 import { useUnits } from "../../../context/UnitContext";
@@ -70,7 +69,7 @@ export function TradeAnalyzerPanel({
   const [isPresetsOpen, setIsPresetsOpen] = useState(false);
   const [newPresetName, setNewPresetName] = useState("");
 
-  const { panelWidth, startResize, panelRef } = usePanelResize(480, 420, 800);
+  const { panelWidth, startResize, panelRef } = usePanelResize(360, 320, 600);
   const {
     undoCache,
     confirmClear,
@@ -98,7 +97,7 @@ export function TradeAnalyzerPanel({
     if (onClose) onClose();
   }, [onClose]);
 
-  const { sheetRef, onTouchStart, onTouchMove, onTouchEnd, backdropOpacity } =
+  const { sheetRef, onTouchStart, onTouchMove, onTouchEnd } =
     useBottomSheet(isOpen, closeSheet, isMobile);
 
   useEffect(() => {
@@ -203,31 +202,14 @@ export function TradeAnalyzerPanel({
           <Calculator className="w-3.5 h-3.5 text-foreground" />
         </div>
 
-        {isComposerOpen ? (
-          <span className="text-[var(--ui-text-base)] font-bold flex-1 min-w-0 text-foreground truncate whitespace-nowrap select-none pr-1">
-            Create Listing
-          </span>
-        ) : (
           <div className="hidden @[36rem]/analyzer:flex items-center min-w-0 flex-1 pr-2">
             <span className="text-[var(--ui-text-base)] font-bold text-foreground select-none whitespace-nowrap truncate">
               Trade Analyzer
             </span>
           </div>
-        )}
+          
+          <div className="@[36rem]/analyzer:hidden flex-1 min-w-0" />
 
-        {!isComposerOpen && <div className="@[36rem]/analyzer:hidden flex-1 min-w-0" />}
-
-        {isComposerOpen ? (
-          <button
-            onClick={() => {
-              triggerHaptic("light");
-              setComposerOpen(false);
-            }}
-            className="flex-shrink-0 flex items-center gap-1 px-3 h-[var(--ui-height-btn)] bg-muted hover:bg-card text-foreground text-[var(--ui-text-sm)] font-bold rounded-[4px] border border-border transition-colors focus-visible:outline-none cursor-pointer"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" /> Back
-          </button>
-        ) : (
           <>
             {undoCache && (
               <button
@@ -326,9 +308,8 @@ export function TradeAnalyzerPanel({
               <span className="hidden @[40rem]/analyzer:inline">Advertise</span>
             </button>
           </>
-        )}
 
-        {!isMobile && onClose && (
+        {onClose && (
           <button
             onClick={closeSheet}
             className="flex-shrink-0 w-[var(--ui-height-btn)] h-[var(--ui-height-btn)] max-w-10 flex items-center justify-center rounded-[4px] text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors focus-visible:outline-none border border-transparent hover:border-destructive relative z-35 pointer-events-auto cursor-pointer ml-1"
@@ -339,12 +320,9 @@ export function TradeAnalyzerPanel({
         )}
       </div>
 
-      {isComposerOpen ? (
-        <AdComposer />
-      ) : (
-        <div className="flex-1 min-h-0 flex flex-col relative bg-card">
-          {smartMenuOpen && (
-            <SmartParserMenu
+      <div className="flex-1 min-h-0 flex flex-col relative bg-card">
+        {smartMenuOpen && (
+          <SmartParserMenu
               ALL_UNITS={ALL_UNITS}
               onClose={() => {
                 setSmartMenuOpen(false);
@@ -550,22 +528,12 @@ export function TradeAnalyzerPanel({
             />
           </div>
         </div>
-      )}
     </>
   );
 
   if (isMobile) {
     return (
       <>
-        {isOpen && (
-          <div
-            className="fixed inset-0 bg-black/80 z-[90] transition-opacity"
-            style={{ opacity: backdropOpacity }}
-            onClick={closeSheet}
-            aria-hidden="true"
-          />
-        )}
-
         {/* Minimized bottom tab */}
         <div
           className={`fixed left-0 right-0 bottom-0 bg-card border-t border-border transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer pb-safe
@@ -583,7 +551,7 @@ export function TradeAnalyzerPanel({
         >
           <div className="flex items-center justify-between px-4 py-3 pb-safe">
             <div className="flex flex-col min-w-0 flex-1 border-r border-border pr-3">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 flex items-center gap-1.5">
+              <span className="text-[12px] font-medium text-muted-foreground mb-0.5 flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-[2px] bg-[#FAA61A]" /> Give
               </span>
               <span className="text-[14px] font-black text-foreground font-mono truncate">
@@ -592,7 +560,7 @@ export function TradeAnalyzerPanel({
             </div>
 
             <div className="flex flex-col min-w-0 flex-1 pl-3">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5 flex items-center gap-1.5">
+              <span className="text-[12px] font-medium text-muted-foreground mb-0.5 flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-[2px] bg-primary" /> Get
               </span>
               <span className="text-[14px] font-black text-foreground font-mono truncate">
@@ -604,16 +572,16 @@ export function TradeAnalyzerPanel({
 
         <div
           ref={sheetRef}
-          className={`fixed left-0 right-0 bottom-0 bg-card flex flex-col border-t border-border rounded-t-[12px] overflow-hidden transition-transform duration-200 ease-out ${
+          className={`fixed left-0 right-0 bottom-0 bg-card flex flex-col border-t border-border rounded-t-[16px] overflow-hidden transition-transform duration-200 ease-out shadow-[0_-8px_40px_rgba(0,0,0,0.4)] ${
             isElevated ? "!z-[100000]" : "z-[100]"
           }`}
           style={{
-            height: "92dvh",
+            height: "85dvh",
             transform: isOpen ? "translateY(0%)" : "translateY(100%)",
           }}
         >
           <div
-            className="w-full pt-3 pb-2 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none flex-shrink-0 select-none bg-popover"
+            className="w-full py-5 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none flex-shrink-0 select-none bg-popover"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
@@ -630,14 +598,6 @@ export function TradeAnalyzerPanel({
   // DESKTOP RETURN
   return (
     <>
-      {isOpen && (
-        <div
-          className="hidden md:block xl:hidden fixed inset-0 bg-black/60 z-[55] transition-opacity"
-          onClick={closeSheet}
-          aria-hidden="true"
-        />
-      )}
-
       <div
         className={`hidden md:block absolute xl:relative top-0 bottom-0 right-0 flex-shrink-0 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[width,transform] z-[60] xl:z-auto ${
           isOpen
@@ -656,7 +616,7 @@ export function TradeAnalyzerPanel({
               className="flex flex-col h-full w-full select-none border-l border-border bg-card relative"
               style={{
                 width: `${panelWidth}px`,
-                minWidth: "420px",
+                minWidth: "320px",
                 fontFamily: "var(--font-sans)",
               }}
             >

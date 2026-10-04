@@ -130,7 +130,7 @@ export function CanvasControls({
 
       <div className="flex bg-popover rounded-[4px] p-1 border border-border shadow-sm ml-auto md:ml-0 h-[var(--ui-height-btn)]">
         <button
-          onClick={() => { triggerHaptic("light"); setViewMode("grid"); }}
+          onClick={() => { triggerHaptic("light"); setViewMode("grid"); }} aria-label="Grid View"
           className={`p-1.5 rounded-[3px] transition-all duration-200 focus-visible:outline-none flex items-center justify-center h-full w-9 ${
             viewMode === "grid" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
           }`}
@@ -138,7 +138,7 @@ export function CanvasControls({
           <LayoutGrid className="w-4 h-4" />
         </button>
         <button
-          onClick={() => { triggerHaptic("light"); setViewMode("list"); }}
+          onClick={() => { triggerHaptic("light"); setViewMode("list"); }} aria-label="List View"
           className={`p-1.5 rounded-[3px] transition-all duration-200 focus-visible:outline-none flex items-center justify-center h-full w-9 ${
             viewMode === "list" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
           }`}
@@ -146,7 +146,7 @@ export function CanvasControls({
           <List className="w-4 h-4" />
         </button>
         <button
-          onClick={() => { triggerHaptic("light"); setViewMode("compact"); }}
+          onClick={() => { triggerHaptic("light"); setViewMode("compact"); }} aria-label="Compact View"
           className={`hidden md:flex p-2 rounded-[3px] transition-all duration-200 focus-visible:outline-none items-center justify-center h-full w-10 ${
             viewMode === "compact" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
           }`}

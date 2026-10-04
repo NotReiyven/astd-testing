@@ -257,7 +257,7 @@ export function SmartParserMenu({
             <div className="flex items-start gap-3 bg-[#FAA61A]/10 p-3 rounded-[6px] border border-[#FAA61A]/20">
               <TriangleAlert className="w-5 h-5 text-[#FAA61A] shrink-0 mt-0.5" />
               <div className="flex flex-col gap-0.5">
-                <span className="text-[14px] font-bold text-[#FAA61A]">
+                <span className="text-base md:text-sm font-bold text-[#FAA61A]">
                   Clarification Needed
                 </span>
                 <span className="text-[13px] text-foreground leading-snug">
@@ -311,7 +311,7 @@ export function SmartParserMenu({
 
                     <div className="flex items-center justify-between mt-1">
                       {item.options.length > 4 ? (
-                        <div className="px-2 py-1 text-[10px] text-muted-foreground font-bold uppercase tracking-wider cursor-default">
+                        <div className="px-2 py-1 text-[11px] text-muted-foreground font-medium cursor-default">
                           +{item.options.length - 4} more
                         </div>
                       ) : (
@@ -429,7 +429,7 @@ export function SmartParserMenu({
             <button
               onClick={handleConfirmReview}
               disabled={stagedGive.length === 0 && stagedGet.length === 0}
-              className="w-full mt-2 py-3 bg-[#23a559] hover:bg-[#1f914e] disabled:bg-popover disabled:text-muted-foreground text-white text-[14px] font-bold rounded-[6px] transition-colors shadow-md flex items-center justify-center gap-2 focus-visible:outline-none"
+              className="w-full mt-2 py-3 bg-[#23a559] hover:bg-[#1f914e] disabled:bg-popover disabled:text-muted-foreground text-white text-base md:text-sm font-bold rounded-[6px] transition-colors shadow-md flex items-center justify-center gap-2 focus-visible:outline-none"
             >
               <Check className="w-4 h-4" /> Confirm & Add to Trade
             </button>
@@ -473,13 +473,13 @@ export function SmartParserMenu({
                 placeholder="Paste offer here..."
                 maxLength={500}
                 disabled={isParsing}
-                className="flex-1 bg-input border-border border rounded-[4px] px-3 py-3 md:py-2.5 text-[14px] text-foreground outline-none placeholder-muted-foreground focus:ring-2 focus:ring-primary transition-all disabled:opacity-50"
+                className="flex-1 bg-input border-border border rounded-[4px] px-3 py-3 md:py-2.5 text-base md:text-sm text-foreground outline-none placeholder-muted-foreground focus:ring-2 focus:ring-primary transition-all disabled:opacity-50"
                 autoFocus
               />
               <button
                 onClick={handleSmartImport}
                 disabled={isParsing}
-                className="bg-primary hover:bg-primary/80 text-primary-foreground px-5 py-3 md:py-2.5 rounded-[4px] text-[14px] font-medium transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white flex items-center justify-center min-w-[90px] disabled:opacity-50 cursor-pointer"
+                className="bg-primary hover:bg-primary/80 text-primary-foreground px-5 py-3 md:py-2.5 rounded-[4px] text-base md:text-sm font-medium transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white flex items-center justify-center min-w-[90px] disabled:opacity-50 cursor-pointer"
               >
                 {isParsing ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -506,7 +506,7 @@ export function SmartParserMenu({
                 value={newSlangKey}
                 onChange={(e) => setNewSlangKey(e.target.value)}
                 placeholder="e.g. gg"
-                className="w-full sm:w-[100px] shrink-0 bg-input border border-border rounded-[4px] px-3 py-3 md:py-2 text-[14px] md:text-[13px] text-foreground outline-none placeholder-muted-foreground focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                className="w-full sm:w-[100px] shrink-0 bg-input border border-border rounded-[4px] px-3 py-3 md:py-2 text-base md:text-sm text-foreground outline-none placeholder-muted-foreground focus:ring-1 focus:ring-primary focus:border-primary transition-all"
               />
 
               <div className="relative flex-1" ref={dropdownRef}>
@@ -528,7 +528,7 @@ export function SmartParserMenu({
                     }}
                     onFocus={() => setIsDropdownOpen(true)}
                     placeholder="Search target unit..."
-                    className="bg-transparent text-[14px] md:text-[13px] text-foreground w-full outline-none placeholder-muted-foreground"
+                    className="bg-transparent text-base md:text-sm text-foreground w-full outline-none placeholder-muted-foreground"
                   />
                   {newSlangTargetId && (
                     <Check className="w-4 h-4 text-[#23a559] ml-2 shrink-0" />
@@ -600,7 +600,7 @@ export function SmartParserMenu({
 
               <button
                 onClick={handleAddSlang}
-                className={`shrink-0 px-4 py-3 md:py-2 rounded-[4px] text-[14px] md:text-[13px] font-bold transition-colors cursor-pointer focus-visible:outline-none ${
+                className={`shrink-0 px-4 py-3 md:py-2 rounded-[4px] text-base md:text-sm font-bold transition-colors cursor-pointer focus-visible:outline-none ${
                   newSlangKey.trim() && newSlangTargetId
                     ? "bg-[#23a559] hover:bg-[#1f914e] text-white"
                     : "bg-popover text-muted-foreground cursor-not-allowed"

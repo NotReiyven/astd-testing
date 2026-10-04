@@ -476,6 +476,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
         );
       setSelectedUnits(new Set());
       setIsSelectMode(false);
+      window.dispatchEvent(new Event('open-analyzer'));
       return;
     }
 
@@ -499,6 +500,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     window.dispatchEvent(
       new CustomEvent("trade-added", { detail: { name: master.name, type } })
     );
+    window.dispatchEvent(new Event('open-analyzer'));
     if (!targetMaster) setInspectTarget(null);
   };
 
@@ -656,3 +658,4 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     handleCloseVault,
   };
 }
+

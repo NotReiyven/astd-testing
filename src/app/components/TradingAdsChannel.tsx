@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, memo } from "react";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { Search, Plus, Trash2, Check, Send, Clock, ArrowBigUp, ArrowBigDown } from "lucide-react";
-import { GiMegaphone, GiHourglass, GiLockedFortress, GiAbacus, GiChest, GiTornado, GiChatBubble, GiGiveaway, GiReceiveMoney } from "react-icons/gi";
+import { GiMegaphone, GiHourglass, GiLockedFortress, GiAbacus, GiChest, GiTornado, GiChatBubble } from "react-icons/gi";
 import { supabase } from "../../lib/supabase";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -799,5 +799,3 @@ export function TradingAdsChannel() {
     </div>
   );
 }
-
-

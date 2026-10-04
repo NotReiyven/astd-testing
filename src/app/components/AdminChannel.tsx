@@ -157,13 +157,13 @@ export function AdminChannel() {
     <div className="flex-1 flex flex-col overflow-hidden h-full select-none font-sans relative text-foreground bg-background">
       {/* Top Header */}
       <div className="flex-shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-[var(--gap-md)] px-[var(--panel-p)] py-[calc(var(--panel-p)*0.75)] bg-card/60 backdrop-blur-md border-b border-border shadow-sm z-20">
-        <h2 className="text-[16px] font-black text-foreground tracking-tight uppercase flex items-center gap-2.5">
+        <h2 className="text-[18px] font-bold text-foreground tracking-tight flex items-center gap-2.5">
           <ShieldAlert className="w-5 h-5 text-primary" /> Tel Aviv Center
         </h2>
         <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar">
           <div className="flex items-center gap-2 bg-muted border border-border px-3.5 py-2 rounded-[4px] shrink-0 shadow-inner">
             <Users className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+            <span className="text-[13px] font-medium text-muted-foreground">
               Registered
             </span>
             <span className="text-[12px] font-mono font-black text-foreground ml-1">
@@ -172,7 +172,7 @@ export function AdminChannel() {
           </div>
           <div className="flex items-center gap-2 bg-muted border border-border px-3.5 py-2 rounded-[4px] shrink-0 shadow-inner">
             <Megaphone className="w-3.5 h-3.5 text-[#23a559]" />
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+            <span className="text-[13px] font-medium text-muted-foreground">
               Active Ads
             </span>
             <span className="text-[12px] font-mono font-black text-foreground ml-1">
@@ -181,7 +181,7 @@ export function AdminChannel() {
           </div>
           <div className="flex items-center gap-2 bg-muted border border-border px-3.5 py-2 rounded-[4px] shrink-0 shadow-inner">
             <Ban className="w-3.5 h-3.5 text-destructive" />
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+            <span className="text-[13px] font-medium text-muted-foreground">
               Banned
             </span>
             <span className="text-[12px] font-mono font-black text-foreground ml-1">
@@ -196,7 +196,7 @@ export function AdminChannel() {
         <div className="flex-shrink-0 bg-muted/30 backdrop-blur-sm border-b border-border px-[var(--panel-p)] py-2.5 flex gap-2 shadow-sm z-10">
           <button
             onClick={() => setAdminTab("users")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-[4px] text-[var(--ui-text-sm)] font-bold uppercase tracking-wider transition-all cursor-pointer focus-visible:outline-none ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-[4px] text-base md:text-[14px] font-medium transition-all cursor-pointer focus-visible:outline-none ${
               adminTab === "users"
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "bg-card text-muted-foreground hover:text-foreground border border-border"
@@ -206,7 +206,7 @@ export function AdminChannel() {
           </button>
           <button
             onClick={() => setAdminTab("roles")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-[4px] text-[var(--ui-text-sm)] font-bold uppercase tracking-wider transition-all cursor-pointer focus-visible:outline-none ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-[4px] text-base md:text-[14px] font-medium transition-all cursor-pointer focus-visible:outline-none ${
               adminTab === "roles"
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "bg-card text-muted-foreground hover:text-foreground border border-border"
@@ -216,7 +216,7 @@ export function AdminChannel() {
           </button>
           <button
             onClick={() => setAdminTab("security")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-[4px] text-[var(--ui-text-sm)] font-bold uppercase tracking-wider transition-all cursor-pointer focus-visible:outline-none ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-[4px] text-base md:text-[14px] font-medium transition-all cursor-pointer focus-visible:outline-none ${
               adminTab === "security"
                 ? "bg-destructive text-destructive-foreground shadow-sm"
                 : "bg-card text-muted-foreground hover:text-foreground border border-border"
@@ -239,10 +239,10 @@ export function AdminChannel() {
                 <Settings2 className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h2 className="text-[20px] font-black text-foreground uppercase tracking-tight">
+                <h2 className="text-[18px] font-bold text-foreground tracking-tight">
                   Role Management
                 </h2>
-                <p className="text-[var(--ui-text-sm)] text-muted-foreground">
+                <p className="text-base md:text-sm text-muted-foreground">
                   Create and manage custom community roles and permissions.
                 </p>
               </div>
@@ -305,7 +305,7 @@ export function AdminChannel() {
               <div className="flex justify-end pt-2">
                 <button
                   type="submit"
-                  className="bg-[#23a559] hover:bg-[#1f914e] text-white px-5 h-[var(--ui-height-btn)] rounded-[4px] text-[var(--ui-text-sm)] font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm focus-visible:outline-none"
+                  className="bg-[#23a559] hover:bg-[#1f914e] text-white px-5 h-[var(--ui-height-btn)] rounded-[4px] text-base md:text-sm font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm focus-visible:outline-none"
                 >
                   <Plus className="w-4 h-4" /> Add Role
                 </button>
@@ -334,7 +334,7 @@ export function AdminChannel() {
                     >
                       <div className="flex items-center gap-4">
                         <span
-                          className="px-3 py-1.5 rounded-[4px] text-[11px] font-black uppercase tracking-wider min-w-[90px] text-center border shadow-sm"
+                          className="px-3 py-1.5 rounded-[4px] text-[16px] font-boldr min-w-[90px] text-center border shadow-sm"
                           style={{
                             backgroundColor: `${role.color}15`,
                             borderColor: `${role.color}40`,
@@ -351,7 +351,7 @@ export function AdminChannel() {
                             </strong>
                           </span>
                           {isCore && (
-                            <span className="text-[9px] font-bold uppercase tracking-widest text-[#FAA61A]">
+                            <span className="text-[13px] font-medium text-[#FAA61A]">
                               Core System Role
                             </span>
                           )}
@@ -390,12 +390,12 @@ export function AdminChannel() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search by username or ID..."
-                  className="w-full bg-input text-foreground text-[var(--ui-text-sm)] pl-9 pr-3.5 h-[var(--ui-height-input)] rounded-[4px] outline-none border border-border focus:border-primary transition-colors font-medium shadow-inner"
+                  className="w-full bg-input text-foreground text-base md:text-sm pl-9 pr-3.5 h-[var(--ui-height-input)] rounded-[4px] outline-none border border-border focus:border-primary transition-colors font-medium shadow-inner"
                 />
               </form>
               <button
                 onClick={() => setShowBannedOnly(!showBannedOnly)}
-                className={`w-full h-[calc(var(--ui-height-btn)-6px)] rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-all border cursor-pointer ${
+                className={`w-full h-[calc(var(--ui-height-btn)-6px)] rounded-[4px] text-[14px] font-medium transition-all border cursor-pointer ${
                   showBannedOnly
                     ? "bg-destructive/20 text-destructive border-destructive/50 shadow-sm"
                     : "bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground"
@@ -528,7 +528,7 @@ export function AdminChannel() {
                 <div className="lg:hidden p-3 border-b border-border bg-card/40">
                   <button
                     onClick={() => setSelectedUser(null)}
-                    className="flex items-center gap-1.5 text-[var(--ui-text-sm)] font-bold text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none"
+                    className="flex items-center gap-1.5 text-base md:text-sm font-bold text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none"
                   >
                     <ArrowRight className="w-4 h-4 rotate-180" /> Back to
                     Directory
@@ -570,7 +570,7 @@ export function AdminChannel() {
                       return (
                         <span
                           key={roleName}
-                          className="px-2.5 py-1 rounded-[4px] text-[10px] font-black uppercase tracking-wider border shadow-2xs"
+                          className="px-2.5 py-1 rounded-[4px] text-[16px] font-boldr border shadow-2xs"
                           style={{
                             backgroundColor: rStyle
                               ? `${rStyle.color}15`
@@ -617,7 +617,7 @@ export function AdminChannel() {
                       ) : (
                         <div className="grid grid-cols-2 gap-3">
                           <div className="bg-input p-3 rounded-[4px] border border-border shadow-inner">
-                            <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                            <span className="block text-[14px] font-medium text-muted-foreground mb-1">
                               Vault Value
                             </span>
                             <span className="text-[15px] font-mono font-black text-foreground">
@@ -625,7 +625,7 @@ export function AdminChannel() {
                             </span>
                           </div>
                           <div className="bg-input p-3 rounded-[4px] border border-border shadow-inner">
-                            <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                            <span className="block text-[14px] font-medium text-muted-foreground mb-1">
                               Active Ads
                             </span>
                             <span className="text-[15px] font-mono font-black text-foreground">
@@ -699,7 +699,7 @@ export function AdminChannel() {
                                     isDestructive: isAssigned,
                                   })
                                 }
-                                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-[4px] border text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer focus-visible:outline-none shadow-2xs ${
+                                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-[4px] border text-[14px] font-medium transition-all cursor-pointer focus-visible:outline-none shadow-2xs ${
                                   disabled
                                     ? "opacity-30 cursor-not-allowed"
                                     : "hover:opacity-80"
@@ -743,7 +743,7 @@ export function AdminChannel() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                           <div className="flex flex-col gap-2.5 bg-muted p-3.5 rounded-[6px] border border-border">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                            <span className="text-[13px] font-medium text-muted-foreground">
                               Content Controls
                             </span>
                             <button
@@ -794,7 +794,7 @@ export function AdminChannel() {
                           </div>
 
                           <div className="flex flex-col gap-2.5 bg-muted p-3.5 rounded-[6px] border border-border">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                            <span className="text-[13px] font-medium text-muted-foreground">
                               Asset Wipes
                             </span>
                             <button
@@ -840,7 +840,7 @@ export function AdminChannel() {
                                   isDestructive: true,
                                 })
                               }
-                              className="w-full flex items-center justify-center gap-2.5 p-3.5 bg-transparent border-2 border-destructive hover:bg-destructive text-destructive hover:text-destructive-foreground rounded-[6px] transition-all cursor-pointer focus-visible:outline-none shadow-sm font-black uppercase tracking-wider"
+                              className="w-full flex items-center justify-center gap-2.5 p-3.5 bg-transparent border-2 border-destructive hover:bg-destructive text-destructive hover:text-destructive-foreground rounded-[6px] transition-all cursor-pointer focus-visible:outline-none shadow-sm font-bold"
                             >
                               <Ban className="w-4 h-4" />
                               <span className="text-[13px]">
@@ -857,7 +857,7 @@ export function AdminChannel() {
                                   isDestructive: false,
                                 })
                               }
-                              className="w-full flex items-center justify-center gap-2.5 p-3.5 bg-transparent border-2 border-[#23a559] hover:bg-[#23a559] text-[#23a559] hover:text-white rounded-[6px] transition-all cursor-pointer focus-visible:outline-none shadow-sm font-black uppercase tracking-wider"
+                              className="w-full flex items-center justify-center gap-2.5 p-3.5 bg-transparent border-2 border-[#23a559] hover:bg-[#23a559] text-[#23a559] hover:text-white rounded-[6px] transition-all cursor-pointer focus-visible:outline-none shadow-sm font-bold"
                             >
                               <Shield className="w-4 h-4" />
                               <span className="text-[13px]">
@@ -886,7 +886,7 @@ export function AdminChannel() {
                                 className="bg-input p-3.5 rounded-[6px] border border-border flex flex-col gap-1.5 shadow-2xs animate-fade-in"
                               >
                                 <div className="flex items-center justify-between">
-                                  <span className="text-[11px] font-bold uppercase tracking-wider text-destructive">
+                                  <span className="text-[14px] font-medium text-destructive">
                                     {log.action_type}
                                   </span>
                                   <span className="text-[10px] font-mono text-muted-foreground">
@@ -928,7 +928,7 @@ export function AdminChannel() {
               Confirm: {modActionData.label}
             </h3>
 
-            <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+            <label className="text-[13px] font-medium text-muted-foreground mb-2">
               Reason for action <span className="text-destructive">*</span>
             </label>
             <textarea

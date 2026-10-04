@@ -25,7 +25,7 @@ export function SplashScreen({ visible }: { visible: boolean }) {
           />
           {/* Icon card */}
           <div className="relative z-10 w-16 h-16 bg-card border border-border rounded-[12px] flex items-center justify-center shadow-lg">
-            {/* Hash mark — animated draw */}
+            {/* Hash mark - animated draw */}
             <svg
               width="32"
               height="32"

@@ -179,8 +179,8 @@ export function GridStatFooter({
 
   return (
     <div className="grid grid-cols-2 gap-2 pt-3 mt-3 border-t border-border/80 w-full font-mono">
-      <div className="flex flex-col bg-muted border border-border/70 rounded-[6px] px-2.5 py-1.5 transition-colors hover:border-muted-foreground">
-        <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
+      <div className="flex flex-col bg-muted border border-transparent rounded-[6px] px-2.5 py-1.5 transition-colors hover:border-muted-foreground">
+        <span className="text-[11px] font-medium text-muted-foreground mb-0.5">
           Rarity
         </span>
 
@@ -189,8 +189,8 @@ export function GridStatFooter({
         </span>
       </div>
 
-      <div className="flex flex-col bg-muted border border-border/70 rounded-[6px] px-2.5 py-1.5 transition-colors hover:border-muted-foreground">
-        <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
+      <div className="flex flex-col bg-muted border border-transparent rounded-[6px] px-2.5 py-1.5 transition-colors hover:border-muted-foreground">
+        <span className="text-[11px] font-medium text-muted-foreground mb-0.5">
           Liquidity
         </span>
 
@@ -466,11 +466,11 @@ export const TierGridCard = memo(function TierGridCard({
               {/* Obtainability */}
               <div className="flex mt-1.5">
                 {obtainability === "UNOB" ? (
-                  <span className="text-[8px] font-bold uppercase text-muted-foreground bg-popover px-1.5 py-0.5 rounded-[2px] border border-border tracking-widest leading-none">
+                  <span className="text-[8px] font-bold uppercase text-muted-foreground bg-popover px-1.5 py-0.5 rounded-[2px] border border-transparent tracking-widest leading-none">
                     UNOB
                   </span>
                 ) : (
-                  <span className="text-[8px] font-bold uppercase text-foreground bg-white/5 px-1.5 py-0.5 rounded-[2px] border border-border tracking-widest leading-none">
+                  <span className="text-[8px] font-bold uppercase text-foreground bg-white/5 px-1.5 py-0.5 rounded-[2px] border border-transparent tracking-widest leading-none">
                     OBN
                   </span>
                 )}

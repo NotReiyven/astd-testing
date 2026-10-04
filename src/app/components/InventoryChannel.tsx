@@ -121,14 +121,14 @@ export function InventoryChannel() {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const omniboxRef = useRef<HTMLDivElement>(null);
-  useClickOutside(omniboxRef, () => setIsOmniboxOpen(false));
+  useClickOutside(omniboxRef, null, () => setIsOmniboxOpen(false));
 
   const [importMenuOpen, setImportMenuOpen] = useState(false);
   const importInputRef = useRef<HTMLTextAreaElement>(null);
 
   const [manageOpen, setManageOpen] = useState(false);
   const manageRef = useRef<HTMLDivElement>(null);
-  useClickOutside(manageRef, () => {
+  useClickOutside(manageRef, null, () => {
     setManageOpen(false);
     setConfirmClear(null);
   });
@@ -205,7 +205,7 @@ export function InventoryChannel() {
         <div className="flex items-center gap-6">
           <button
             onClick={() => handleTabSwitch("owned")}
-            className={`pb-3 text-[13px] font-bold uppercase tracking-widest transition-all border-b-[2px] focus-visible:outline-none cursor-pointer ${
+            className={`pb-3 text-sm font-medium transition-all border-b-[2px] focus-visible:outline-none cursor-pointer ${
               vaultView === "owned"
                 ? "text-foreground border-foreground"
                 : "text-muted-foreground border-transparent hover:text-foreground"
@@ -215,7 +215,7 @@ export function InventoryChannel() {
           </button>
           <button
             onClick={() => handleTabSwitch("wishlist")}
-            className={`pb-3 text-[13px] font-bold uppercase tracking-widest transition-all border-b-[2px] focus-visible:outline-none cursor-pointer ${
+            className={`pb-3 text-sm font-medium transition-all border-b-[2px] focus-visible:outline-none cursor-pointer ${
               vaultView === "wishlist"
                 ? "text-foreground border-foreground"
                 : "text-muted-foreground border-transparent hover:text-foreground"
@@ -231,7 +231,7 @@ export function InventoryChannel() {
               triggerHaptic("light");
               setIsControlsCollapsed(!isControlsCollapsed);
             }}
-            className="md:hidden flex items-center gap-1 px-3 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-[11px] font-bold uppercase tracking-wider cursor-pointer"
+            className="md:hidden flex items-center gap-1 px-3 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-[13px] font-medium text-muted-foreground cursor-pointer"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
             <span>{isControlsCollapsed ? "Filters" : "Collapse"}</span>
@@ -994,7 +994,7 @@ export function InventoryChannel() {
 
       {/* Persistent Action Dock for Selection Mode */}
       {isSelectMode && (
-        <div className="fixed bottom-0 left-0 right-0 z-[80] p-4 pointer-events-none">
+        <div className="fixed bottom-[70px] md:bottom-0 left-0 right-0 z-[80] p-4 pointer-events-none">
           <div className="max-w-2xl mx-auto bg-card border border-border p-3 rounded-[6px] shadow-2xl pointer-events-auto flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <span className="text-[13px] font-bold text-foreground">

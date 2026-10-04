@@ -215,7 +215,7 @@ export function Sidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col pt-3">
-        <div className="flex flex-col px-2 pb-6">
+        <div className="flex flex-col px-2 pb-[100px] md:pb-6">
           {CATEGORIES.map((cat) => {
             const isCollapsed = collapsedCategories[cat.id];
 

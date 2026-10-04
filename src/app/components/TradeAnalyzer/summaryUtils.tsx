@@ -44,7 +44,7 @@ export const avgStat = (
   key: "rarity" | "supply" | "demand",
   ALL_UNITS: MasterUnit[]
 ) => {
-  if (items.length === 0) return "—";
+  if (items.length === 0) return "-";
   let weightedSum = 0;
   let totalWeight = 0;
   const unitMap = getUnitMap(ALL_UNITS);
@@ -58,7 +58,7 @@ export const avgStat = (
     }
   });
 
-  if (totalWeight === 0) return "—";
+  if (totalWeight === 0) return "-";
   return (weightedSum / totalWeight).toFixed(1);
 };
 

@@ -174,7 +174,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
           <div className="flex flex-col gap-3">
             <h1 className={`${globalCompactMode ? 'text-[20px] md:text-[24px]' : 'text-[28px] md:text-[32px]'} font-black text-foreground tracking-tight`}>ASTD Value List</h1>
             <p className="text-[15px] text-muted-foreground leading-relaxed max-w-3xl font-medium">
-              Stop getting scammed. These are live market estimates based on actual trading information. Verify the tags and momentum before you accept an offer.
+              Live market estimates based on actual trading data. Verify tags and momentum before accepting offers.
             </p>
           </div>
 
@@ -200,7 +200,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
                   <GiScrollUnfurled className="w-4 h-4 text-primary group-hover:scale-110 transition-transform duration-300" /> Live Data Sync
                 </h3>
                 <p className="text-[13px] leading-relaxed text-muted-foreground flex-1 font-medium">
-                  This site pulls directly from the official ASTD spreadsheet. When the value list updates, this site updates instantly—no manual refreshes needed.
+                  This site pulls directly from the official ASTD spreadsheet. When the value list updates, this site updates instantly-no manual refreshes needed.
                 </p>
                 <button onClick={() => safeOpenExternal("https://docs.google.com/spreadsheets/d/1Z20NUscF9Id2Sss-osT-Xq06gz9ooikt6Kjtianeg0I/edit?gid=163005933#gid=163005933")} className="mt-4 bg-muted hover:bg-primary hover:text-primary-foreground text-foreground px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 border border-border hover:border-primary cursor-pointer active:scale-[0.98]">
                   Open Official Spreadsheet <ExternalLink className="w-4 h-4" />

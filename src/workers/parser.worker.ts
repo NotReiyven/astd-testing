@@ -128,7 +128,7 @@ const cleanTradeText = (input: string): string[] => {
   text = lines
     .join("\n")
     .replace(/```/g, "")
-    .replace(/[–—−~]/g, "-")
+    .replace(/[--−~]/g, "-")
     .replace(/\s*\/\s*/g, " / ")
     .replace(/\s*\|\s*/g, " , ")
     .replace(/^\s*>\s?/gm, "")

@@ -269,8 +269,8 @@ export const TradingCardSlot = memo(
               <span
                 className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[2px] border tracking-widest leading-none ${
                   obtainability === "UNOB"
-                    ? "bg-popover text-muted-foreground border-border"
-                    : "bg-white/5 text-foreground border-border"
+                    ? "bg-popover text-muted-foreground border-transparent"
+                    : "bg-white/5 text-foreground border-transparent"
                 }`}
               >
                 {obtainability}
@@ -300,16 +300,16 @@ export const TradingCardSlot = memo(
             </div>
 
             <div className="grid grid-cols-2 gap-2 pt-3 mt-3 border-t border-border w-full font-mono">
-              <div className="flex flex-col bg-muted border border-border rounded-[4px] px-2.5 py-1.5 transition-colors">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
+              <div className="flex flex-col bg-muted border border-transparent rounded-[4px] px-2.5 py-1.5 transition-colors">
+                <span className="text-[11px] font-medium text-muted-foreground mb-0.5">
                   Rarity
                 </span>
                 <span className="text-[11px] font-black text-foreground">
                   {rarityDisplay}
                 </span>
               </div>
-              <div className="flex flex-col bg-muted border border-border rounded-[4px] px-2.5 py-1.5 transition-colors">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
+              <div className="flex flex-col bg-muted border border-transparent rounded-[4px] px-2.5 py-1.5 transition-colors">
+                <span className="text-[11px] font-medium text-muted-foreground mb-0.5">
                   Liquidity
                 </span>
                 <span className="text-[11px] font-black text-foreground truncate">

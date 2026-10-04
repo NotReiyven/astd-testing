@@ -58,7 +58,7 @@ export function TradeSummaryBox({
   }, [giveItems, getItems, ALL_UNITS]);
 
   const getLiqLabel = (items: TradeCard[]) => {
-    if (items.length === 0) return "—";
+    if (items.length === 0) return "-";
 
     const score = getLiquidityScore(
       items,
@@ -92,7 +92,7 @@ export function TradeSummaryBox({
       <div className="flex-shrink-0 mx-[var(--panel-p)] mt-[var(--gap-sm)] rounded-[6px] px-3.5 py-2.5 bg-popover border border-border flex items-center justify-between shadow-sm z-20 animate-fade-in">
         {/* Give */}
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase">
+          <span className="text-[12px] font-medium text-muted-foreground">
             Give:
           </span>
 
@@ -125,7 +125,7 @@ export function TradeSummaryBox({
 
         {/* Get */}
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase">
+          <span className="text-[12px] font-medium text-muted-foreground">
             Get:
           </span>
 
@@ -307,7 +307,7 @@ export function TradeSummaryBox({
               ? `${forecast.st > 0 ? "+" : ""}${forecast.st.toFixed(
                   1
                 )}`
-              : "—"}
+              : "-"}
           </span>
 
           <div
@@ -352,7 +352,7 @@ export function TradeSummaryBox({
               ? `${forecast.lt > 0 ? "+" : ""}${forecast.lt.toFixed(
                   1
                 )}`
-              : "—"}
+              : "-"}
           </span>
 
           <div

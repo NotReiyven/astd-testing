@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 
 export function useBottomSheet(
   isOpen: boolean,
@@ -10,7 +10,6 @@ export function useBottomSheet(
   const lastYRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
   const velocityRef = useRef<number>(0);
-  const [backdropOpacity, setBackdropOpacity] = useState(1);
 
   const onTouchStart = (e: React.TouchEvent) => {
     if (!isMobile || !isOpen) return;
@@ -40,10 +39,6 @@ export function useBottomSheet(
     if (sheetRef.current) {
       sheetRef.current.style.transform = `translateY(${dy}px)`;
     }
-
-    // Dynamic fade calculation based on screen height
-    const fadeRatio = Math.max(0, 1 - dy / (window.innerHeight * 0.4));
-    setBackdropOpacity(fadeRatio);
   };
 
   const onTouchEnd = () => {
@@ -66,10 +61,7 @@ export function useBottomSheet(
     }
 
     touchStartYRef.current = null;
-
-    // Reset backdrop opacity after animation finishes
-    setTimeout(() => setBackdropOpacity(1), 300);
   };
 
-  return { sheetRef, onTouchStart, onTouchMove, onTouchEnd, backdropOpacity };
+  return { sheetRef, onTouchStart, onTouchMove, onTouchEnd };
 }

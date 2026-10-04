@@ -191,7 +191,7 @@ export function TheoryTab() {
           </div>
           <p className="text-[14px] text-foreground leading-relaxed">
             Rarity represents the absolute scarcity of a unit in the global
-            economy. Rarity acts as a stabilizer—units with higher rarity are
+            economy. Rarity acts as a stabilizer-units with higher rarity are
             heavily insulated against market crashes and manipulation compared
             to common, hyped units.
           </p>

@@ -18,6 +18,7 @@ import { SecurityBanner } from "./components/layout/SecurityBanner";
 import { WelcomeModal } from "./components/WelcomeModal";
 import { ExternalLinkModal } from "./components/layout/ExternalLinkModal";
 import { SplashScreen } from "./components/layout/SplashScreen";
+import { AdComposerModal } from "./components/layout/AdComposerModal";
 import { MiniProfilePopout } from "./components/layout/MiniProfilePopout";
 import { LoginRecommendationModal } from "./components/layout/LoginRecommendationModal";
 import { useTradeStore } from "../store/useTradeStore";
@@ -474,6 +475,7 @@ export default function App() {
           <WelcomeModal />
           <HistoryModal />
           <ExternalLinkModal />
+          <AdComposerModal />
           <LoginRecommendationModal
             isOpen={!!loginModalChannel}
             onClose={() => setLoginModalChannel(null)}

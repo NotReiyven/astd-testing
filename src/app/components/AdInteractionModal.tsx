@@ -173,12 +173,12 @@ export function AdInteractionModal() {
   }, [activeAd, ALL_UNITS]);
 
   const giveRarity = useMemo(() => {
-    if (!activeAd) return "—";
+    if (!activeAd) return "-";
     return avgStat(activeAd.give_items, "rarity", ALL_UNITS);
   }, [activeAd, ALL_UNITS]);
 
   const getRarity = useMemo(() => {
-    if (!activeAd) return "—";
+    if (!activeAd) return "-";
     return avgStat(activeAd.get_items, "rarity", ALL_UNITS);
   }, [activeAd, ALL_UNITS]);
 
@@ -626,7 +626,7 @@ export function AdInteractionModal() {
               </div>
 
               {activeAd.note && (
-                <blockquote className="border-l-2 border-primary pl-4 py-2 italic text-[14px] text-foreground/90 bg-muted rounded-r-[6px] border border-border shadow-inner">
+                <blockquote className="border-l-2 border-primary pl-4 py-2 italic text-base md:text-sm text-foreground/90 bg-muted rounded-r-[6px] border border-border shadow-inner">
                   "{activeAd.note}"
                 </blockquote>
               )}
@@ -954,7 +954,7 @@ export function AdInteractionModal() {
                       maxLength={500}
                       rows={1}
                       disabled={isActionPending}
-                      className="w-full bg-input text-foreground text-[14px] px-3.5 py-2.5 rounded-[4px] outline-none border border-border focus:border-foreground transition-colors font-medium placeholder:text-muted-foreground resize-none max-h-[120px] custom-scrollbar shadow-inner"
+                      className="w-full bg-input text-foreground text-base md:text-sm px-3.5 py-2.5 rounded-[4px] outline-none border border-border focus:border-foreground transition-colors font-medium placeholder:text-muted-foreground resize-none max-h-[120px] custom-scrollbar shadow-inner"
                     />
                     <div className="absolute right-2 bottom-2.5 text-[10px] font-mono text-muted-foreground pointer-events-none">
                       {newComment.length}/500
