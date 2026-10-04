@@ -215,7 +215,7 @@ export function SmartParserMenu({
   };
 
   return (
-    <div className="absolute top-3 left-0 right-0 z-50 mx-3 md:mx-4 p-4 bg-card border border-border rounded-[8px] animate-fade-in shadow-[0_15px_40px_rgba(0,0,0,0.6)] flex flex-col gap-4 max-h-[calc(100vh-160px)] overflow-y-auto custom-scrollbar">
+    <div className="absolute top-3 left-0 right-0 z-[100] mx-3 md:mx-4 p-4 bg-card border border-border rounded-[8px] animate-fade-in shadow-[0_15px_40px_rgba(0,0,0,0.6)] flex flex-col gap-4 max-h-[calc(100vh-160px)] overflow-y-auto custom-scrollbar">
       <div className="flex items-center justify-between">
         <span className="text-[12px] font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
           <Wand2 className="w-4 h-4 text-primary" /> Smart Parser
@@ -536,7 +536,7 @@ export function SmartParserMenu({
                 </div>
 
                 {isDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-1 max-h-[250px] overflow-y-auto custom-scrollbar bg-popover border border-border rounded-[4px] shadow-2xl z-50 flex flex-col p-2 gap-1">
+                  <div className="absolute top-full left-0 right-0 mt-1 max-h-[250px] overflow-y-auto custom-scrollbar bg-popover border border-border rounded-[4px] shadow-2xl z-[110] flex flex-col p-2 gap-1">
                     {filteredUnits.length === 0 ? (
                       <div className="p-4 text-center text-[13px] text-muted-foreground">
                         No units found matching that search.

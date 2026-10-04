@@ -162,10 +162,24 @@ export const MainCanvas = memo(function MainCanvas({
 
   useEffect(() => {
     if (!scrollToSection || flattenedItems.length === 0) return;
-    // ... scroll logic
-  }, [scrollToSection, flattenedItems.length, skipNextResetRef, virtualizer]);
-
-  // ... reset scroll logic
+    
+    // Defer slightly to ensure virtualizer layout is updated after filter change
+    setTimeout(() => {
+      let targetId = scrollToSection.sectionId
+        ? `sub-${scrollToSection.tier}-${scrollToSection.sectionId}`
+        : `banner-${scrollToSection.tier}`;
+        
+      let index = flattenedItems.findIndex((item) => item.id === targetId);
+      
+      if (index === -1) {
+        index = flattenedItems.findIndex((item) => item.id === `banner-${scrollToSection.tier}`);
+      }
+      
+      if (index !== -1) {
+        virtualizer.scrollToIndex(index, { align: "start", behavior: "smooth" });
+      }
+    }, 50);
+  }, [scrollToSection, flattenedItems, virtualizer]);
 
   const dismissWelcome = () => {
     setShowWelcome(false);
@@ -308,6 +322,7 @@ export const MainCanvas = memo(function MainCanvas({
     </div>
   );
 });
+
 
 
 

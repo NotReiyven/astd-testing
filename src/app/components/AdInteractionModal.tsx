@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, memo, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
   MessageSquare,

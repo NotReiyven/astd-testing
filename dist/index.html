@@ -2,9 +2,69 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ASTD Value List Website</title>
-    <meta name="description" content="Calculate and analyze Roblox item trades with real-time value comparisons, demand insights, and customizable unit management for savvy traders." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>ASTD Value List | Trading & Analytics</title>
+    
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="ASTD Value List | Advanced All-Star Tower Defense Value List Platform" />
+    <meta name="description" content="Calculate and analyze Roblox item trades with real-time value comparisons, live market data, demand insights, and customizable inventory management for savvy traders." />
+    <meta name="keywords" content="ASTD, All Star Tower Defense, Value List, Trading Calculator, Roblox, Tier List, Market Data, Anime Tower Defense" />
+    <meta name="author" content="Fire Zio & The Value List Team" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://all-star-vl.vercel.app" />
+    <meta property="og:title" content="ASTD Value List | Advanced Trading Analytics" />
+    <meta property="og:description" content="Live market data, trade calculation, and inventory management for ASTD." />
+    <meta property="og:image" content="https://all-star-vl.vercel.app/units/all-star.webp" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://all-star-vl.vercel.app" />
+    <meta property="twitter:title" content="ASTD Value List | Advanced Trading Analytics" />
+    <meta property="twitter:description" content="Live market data, trade calculation, and inventory management for ASTD." />
+    <meta property="twitter:image" content="https://all-star-vl.vercel.app/units/all-star.webp" />
+
+    <!-- JSON-LD Structured Data for Crawlers -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "ASTD Value List",
+        "url": "https://all-star-vl.vercel.app/",
+        "description": "Live market data, trade calculation, and inventory management for All Star Tower Defense.",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://all-star-vl.vercel.app/?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
+
+    <!-- Anti-Flashbang & Density Script: Runs BEFORE the DOM paints to prevent layout shifts -->
+    <script>
+      try {
+        let theme = 'dark'; // Default
+        let density = 'default';
+        const stored = localStorage.getItem('astd_layout_storage');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.state) {
+            if (parsed.state.theme) theme = parsed.state.theme;
+            if (parsed.state.globalCompactMode) density = 'compact';
+          }
+        }
+        document.documentElement.setAttribute('data-theme', theme);
+        if (density === 'compact') {
+          document.documentElement.setAttribute('data-density', density);
+        }
+      } catch (e) {
+        console.error("Failed to load layout preference", e);
+      }
+    </script>
+
+    <!-- Bypass Fandom/Wikia hotlink protection (403 Forbidden) -->
+    <meta name="referrer" content="no-referrer" />
 
     <!-- Google tag (gtag.js) with Consent Mode v2 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-2R3P9SZK74"></script>
@@ -12,7 +72,6 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
 
-      // Default consent to 'denied' BEFORE loading config
       gtag('consent', 'default', {
         'analytics_storage': 'denied',
         'ad_storage': 'denied',
@@ -28,16 +87,30 @@
     <!-- Preconnect to Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="dns-prefetch" href="https://static.wikia.nocookie.net" />
-    
-    <style>html, body { height: 100%; margin: 0; } #root { height: 100%; }</style>
-    <script type="module" crossorigin src="/assets/index-C1JkvBNK.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/icons-vendor-CvoJsTzA.js">
-    <link rel="modulepreload" crossorigin href="/assets/react-vendor-DZsqrnXB.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-BXPdpHUy.css">
-  <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+
+    <!-- Premium Technical Typography: Geist and Geist Mono (Vercel's Typefaces) -->
+    <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+    <style>html, body { height: 100%; margin: 0; background-color: var(--background, #000000); } #root { height: 100%; }</style>
+    <script type="module" crossorigin src="/assets/index-DxE-htD1.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/icons-vendor-DiU50tS1.js">
+    <link rel="modulepreload" crossorigin href="/assets/react-vendor-ByAbSB5x.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-CC0yTqOv.css">
+  <link rel="manifest" href="/manifest.webmanifest"></head>
   <body>
-    <div id="root"></div>
+    <!-- Fallback Semantic HTML for Crawlers (Replaced on JS load) -->
+    <noscript>
+      <main>
+        <h1>ASTD Value List & Trading Calculator</h1>
+        <p>The premier database and market calculator for All Star Tower Defense.</p>
+        <ul>
+          <li>Live Market Values and Demands</li>
+          <li>Real-time Trade Analyzer and Smart Parser</li>
+          <li>Inventory and Roster Management</li>
+          <li>Official Community Tier Lists and Updates</li>
+        </ul>
+      </main>
+    </noscript>
+    <div id="root"></div>
   </body>
 </html>

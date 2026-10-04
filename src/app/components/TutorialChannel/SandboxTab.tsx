@@ -1,19 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
-import {
-  X,
-  ArrowRight,
-  Calculator,
-  CheckCircle2,
-  Circle,
-  Lock,
-  Wand2,
-  ShieldCheck,
-  Database,
-  Megaphone,
-  Award,
-  Bookmark,
-  BookOpen,
-} from "lucide-react";
+import { X, ArrowRight, CheckCircle2, Circle } from "lucide-react";
+import { GiAbacus, GiLockedFortress, GiFairyWand, GiShieldEchoes, GiScrollUnfurled, GiMegaphone, GiTrophyCup, GiBookmark, GiOpenBook } from "react-icons/gi";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { useInventoryStore } from "../../../store/useInventoryStore";
 import { useAuthStore } from "../../../store/useAuthStore";
@@ -114,7 +101,7 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
             onClick={handleOpenCalc}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-card border border-border text-foreground rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none"
           >
-            <Calculator className="w-3.5 h-3.5" /> Calculator
+            <GiAbacus className="w-3.5 h-3.5" /> Calculator
           </button>
         ),
       },
@@ -128,7 +115,7 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
             onClick={handleOpenCalc}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-card border border-border text-foreground rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none"
           >
-            <Wand2 className="w-3.5 h-3.5" /> Parser
+            <GiFairyWand className="w-3.5 h-3.5" /> Parser
           </button>
         ),
       },
@@ -142,7 +129,7 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
             onClick={handleOpenCalc}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-card border border-border text-foreground rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none"
           >
-            <Bookmark className="w-3.5 h-3.5" /> Presets
+            <GiBookmark className="w-3.5 h-3.5" /> Presets
           </button>
         ),
       },
@@ -156,7 +143,7 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
             onClick={switchToSimulator}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground border border-primary rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none shadow-sm"
           >
-            <Award className="w-3.5 h-3.5" /> Simulator
+            <GiTrophyCup className="w-3.5 h-3.5" /> Simulator
           </button>
         ),
       },
@@ -200,7 +187,7 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
             onClick={() => handleNavigate("inventory")}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-card border border-border text-foreground rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none"
           >
-            <Database className="w-3.5 h-3.5" /> Inventory
+            <GiScrollUnfurled className="w-3.5 h-3.5" /> Inventory
           </button>
         ),
       },
@@ -214,7 +201,7 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
             onClick={() => handleNavigate("inventory")}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-card border border-border text-foreground rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none"
           >
-            <Database className="w-3.5 h-3.5" /> Wishlist
+            <GiScrollUnfurled className="w-3.5 h-3.5" /> Wishlist
           </button>
         ),
       },
@@ -228,7 +215,7 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
             onClick={() => handleNavigate("trading-ads")}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-card border border-border text-foreground rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none"
           >
-            <Megaphone className="w-3.5 h-3.5" /> Board
+            <GiMegaphone className="w-3.5 h-3.5" /> Board
           </button>
         ),
       },
@@ -314,7 +301,7 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
       {/* DOCUMENTATION SIDEBAR NAVIGATION (Matching TheoryTab Style) */}
       <nav className="hidden md:flex flex-col w-56 shrink-0 sticky top-0 self-start pt-2">
         <div className="flex items-center gap-2.5 mb-6 text-foreground">
-          <BookOpen className="w-5 h-5 text-primary" />
+          <GiOpenBook className="w-5 h-5 text-primary" />
           <h2 className="text-[15px] font-black uppercase tracking-wider">
             Documentation
           </h2>
@@ -376,7 +363,7 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
           <div className="bg-popover border-l-4 border-l-[#23a559] border-y border-y-border border-r border-r-border rounded-r-[8px] p-4 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-[#23a559]/20 flex items-center justify-center border border-[#23a559]/30">
-                <ShieldCheck className="w-4 h-4 text-[#23a559]" />
+                <GiShieldEchoes className="w-4 h-4 text-[#23a559]" />
               </div>
               <span className="text-[14px] font-bold text-foreground">
                 Fundamentals Completed
@@ -406,9 +393,9 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
             {phase1Tasks.map((task, i) => (
               <div
                 key={task.id}
-                className={`p-4 md:p-5 flex flex-col sm:flex-row sm:items-center gap-4 transition-colors ${
+                className={`group p-4 md:p-5 flex flex-col sm:flex-row sm:items-center gap-4 transition-all duration-300 hover:bg-muted/30 ${
                   i !== phase1Tasks.length - 1 ? "border-b border-border" : ""
-                } ${task.isDone ? "bg-muted/30" : ""}`}
+                } ${task.isDone ? "bg-muted/30 opacity-75" : ""}`}
               >
                 <div className="flex-1 flex items-start gap-3.5">
                   {task.isDone ? (
@@ -450,7 +437,7 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
             </span>
             {!profile && (
               <span className="bg-muted text-muted-foreground text-[10px] font-bold px-2 py-0.5 rounded-[4px] border border-border flex items-center gap-1 shadow-sm">
-                <Lock className="w-3 h-3" /> Login Required
+                <GiLockedFortress className="w-3 h-3" /> Login Required
               </span>
             )}
           </div>
@@ -462,9 +449,9 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
             {phase2Tasks.map((task, i) => (
               <div
                 key={task.id}
-                className={`p-4 md:p-5 flex flex-col sm:flex-row sm:items-center gap-4 transition-colors ${
+                className={`group p-4 md:p-5 flex flex-col sm:flex-row sm:items-center gap-4 transition-all duration-300 hover:bg-muted/30 ${
                   i !== phase2Tasks.length - 1 ? "border-b border-border" : ""
-                } ${task.isDone ? "bg-muted/30" : ""}`}
+                } ${task.isDone ? "bg-muted/30 opacity-75" : ""}`}
               >
                 <div className="flex-1 flex items-start gap-3.5">
                   {task.isDone ? (
@@ -498,3 +485,4 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
     </div>
   );
 }
+

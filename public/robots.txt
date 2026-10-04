@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://all-star-vl.vercel.app/sitemap.xml
+

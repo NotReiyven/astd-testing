@@ -36,6 +36,20 @@ let activeProfileChannel: RealtimeChannel | null = null;
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+// SECURITY FIX: Sanitize the Supabase session object to prevent Discord provider_token leakage
+// If the raw session is stored in global state, an XSS attack could steal the Discord access token
+// and completely take over the user's Discord account.
+const sanitizeSession = (rawSession: Session | null): Session | null => {
+  if (!rawSession) return null;
+  const safeSession = { ...rawSession };
+  
+  // Strip dangerous OAuth tokens
+  delete safeSession.provider_token;
+  delete safeSession.provider_refresh_token;
+  
+  return safeSession;
+};
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   profile: null,
@@ -152,16 +166,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initialize: () => {
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) clearLocalAuthCache();
-      set({ session, isLoading: false });
-      if (session?.user) {
-        get().fetchProfile(session.user.id);
+      
+      const safeSession = sanitizeSession(session);
+      set({ session: safeSession, isLoading: false });
+      
+      if (safeSession?.user) {
+        get().fetchProfile(safeSession.user.id);
       }
     });
 
     supabase.auth.onAuthStateChange((_event, session) => {
-      set({ session, isLoading: false });
-      if (session?.user) {
-        get().fetchProfile(session.user.id);
+      const safeSession = sanitizeSession(session);
+      set({ session: safeSession, isLoading: false });
+      
+      if (safeSession?.user) {
+        get().fetchProfile(safeSession.user.id);
       } else {
         if (activeProfileChannel) {
           supabase.removeChannel(activeProfileChannel);

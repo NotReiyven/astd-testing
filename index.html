@@ -2,10 +2,44 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- Added maximum-scale and user-scalable to prevent iOS input zoom-in bugs on touch devices -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>ASTD Value List Website</title>
-    <meta name="description" content="Calculate and analyze Roblox item trades with real-time value comparisons, demand insights, and customizable unit management for savvy traders." />
+    <title>ASTD Value List | Trading & Analytics</title>
+    
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="ASTD Value List | Advanced All-Star Tower Defense Value List Platform" />
+    <meta name="description" content="Calculate and analyze Roblox item trades with real-time value comparisons, live market data, demand insights, and customizable inventory management for savvy traders." />
+    <meta name="keywords" content="ASTD, All Star Tower Defense, Value List, Trading Calculator, Roblox, Tier List, Market Data, Anime Tower Defense" />
+    <meta name="author" content="Fire Zio & The Value List Team" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://all-star-vl.vercel.app" />
+    <meta property="og:title" content="ASTD Value List | Advanced Trading Analytics" />
+    <meta property="og:description" content="Live market data, trade calculation, and inventory management for ASTD." />
+    <meta property="og:image" content="https://all-star-vl.vercel.app/units/all-star.webp" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://all-star-vl.vercel.app" />
+    <meta property="twitter:title" content="ASTD Value List | Advanced Trading Analytics" />
+    <meta property="twitter:description" content="Live market data, trade calculation, and inventory management for ASTD." />
+    <meta property="twitter:image" content="https://all-star-vl.vercel.app/units/all-star.webp" />
+
+    <!-- JSON-LD Structured Data for Crawlers -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "ASTD Value List",
+        "url": "https://all-star-vl.vercel.app/",
+        "description": "Live market data, trade calculation, and inventory management for All Star Tower Defense.",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://all-star-vl.vercel.app/?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
 
     <!-- Anti-Flashbang & Density Script: Runs BEFORE the DOM paints to prevent layout shifts -->
     <script>
@@ -38,7 +72,6 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
 
-      // Default consent to 'denied' BEFORE loading config
       gtag('consent', 'default', {
         'analytics_storage': 'denied',
         'ad_storage': 'denied',
@@ -58,10 +91,22 @@
     <!-- Premium Technical Typography: Geist and Geist Mono (Vercel's Typefaces) -->
     <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
-    <!-- Updated to use the CSS variable so the background matches the injected theme instantly -->
     <style>html, body { height: 100%; margin: 0; background-color: var(--background, #000000); } #root { height: 100%; }</style>
   </head>
   <body>
+    <!-- Fallback Semantic HTML for Crawlers (Replaced on JS load) -->
+    <noscript>
+      <main>
+        <h1>ASTD Value List & Trading Calculator</h1>
+        <p>The premier database and market calculator for All Star Tower Defense.</p>
+        <ul>
+          <li>Live Market Values and Demands</li>
+          <li>Real-time Trade Analyzer and Smart Parser</li>
+          <li>Inventory and Roster Management</li>
+          <li>Official Community Tier Lists and Updates</li>
+        </ul>
+      </main>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

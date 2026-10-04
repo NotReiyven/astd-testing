@@ -1,16 +1,16 @@
 import React, { useState, useRef, useEffect, memo } from "react";
 import { createPortal } from "react-dom";
 import {
-  ChevronsUp,
-  ChevronsDown,
-  Activity,
-  TrendingUp,
-  TrendingDown,
-  ArrowUpCircle,
-  Flame,
-  Lock,
-  EyeOff,
-} from "lucide-react";
+  GiUpgrade,
+  GiFallDown,
+  GiTornado,
+  GiBalloons,
+  GiShatter,
+  GiMoneyStack,
+  GiFlame,
+  GiLockedFortress,
+  GiRobberMask,
+} from "react-icons/gi";
 import { triggerHaptic } from "../../../data/helpers";
 
 export function JargonWrap({
@@ -134,15 +134,15 @@ export function StatusIcon({ status }: { status?: string | null }) {
   const lower = status.toLowerCase();
   const sz = "w-3 h-3 shrink-0";
 
-  if (lower === "rising") return <ChevronsUp className={sz} />;
-  if (lower === "dropping") return <ChevronsDown className={sz} />;
-  if (lower === "unstable") return <Activity className={sz} />;
-  if (lower === "inflated") return <TrendingUp className={sz} />;
-  if (lower === "deflated") return <TrendingDown className={sz} />;
-  if (lower === "highballed") return <ArrowUpCircle className={sz} />;
-  if (lower === "hyped") return <Flame className={sz} />;
-  if (lower === "gatekept") return <Lock className={sz} />;
-  if (lower === "black-marketed") return <EyeOff className={sz} />;
+  if (lower === "rising") return <GiUpgrade className={sz} />;
+  if (lower === "dropping") return <GiFallDown className={sz} />;
+  if (lower === "unstable") return <GiTornado className={sz} />;
+  if (lower === "inflated") return <GiBalloons className={sz} />;
+  if (lower === "deflated") return <GiShatter className={sz} />;
+  if (lower === "highballed") return <GiMoneyStack className={sz} />;
+  if (lower === "hyped") return <GiFlame className={sz} />;
+  if (lower === "gatekept") return <GiLockedFortress className={sz} />;
+  if (lower === "black-marketed") return <GiRobberMask className={sz} />;
 
   if (lower === "stable")
     return (
@@ -366,3 +366,4 @@ export function RollingNumber({
 
   return <span className={className}>{displayValue.toLocaleString()}</span>;
 }
+

@@ -1,14 +1,7 @@
 import React, { useState, memo, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import {
-  ArrowUpCircle,
-  ArrowDownCircle,
-  History,
-  Package,
-  X,
-  Loader2,
-  Check,
-} from "lucide-react";
+import { X, Loader2, Check } from "lucide-react";
+import { GiPayMoney, GiReceiveMoney, GiHourglass, GiChest } from "react-icons/gi";
 import { PopupUnit, GridUnit, MasterUnit } from "../../../../types";
 import {
   getTier,
@@ -565,7 +558,7 @@ export const TierGridCard = memo(function TierGridCard({
                   onClick={() => handleAdd("give")}
                   className="w-full flex items-center justify-center gap-2 bg-[#FAA61A] hover:bg-[#d98b14] transition-colors text-white text-[13px] font-bold h-[44px] rounded-[4px] focus-visible:outline-none"
                 >
-                  <ArrowUpCircle className="w-4 h-4" />
+                  <GiPayMoney className="w-4 h-4" />
                   Add to 'You Give'
                 </button>
 
@@ -574,7 +567,7 @@ export const TierGridCard = memo(function TierGridCard({
                   onClick={() => handleAdd("get")}
                   className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/80 transition-colors text-primary-foreground text-[13px] font-bold h-[44px] rounded-[4px] focus-visible:outline-none"
                 >
-                  <ArrowDownCircle className="w-4 h-4" />
+                  <GiReceiveMoney className="w-4 h-4" />
                   Add to 'You Get'
                 </button>
 
@@ -587,7 +580,7 @@ export const TierGridCard = memo(function TierGridCard({
                   {isSaving ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <Package className="w-4 h-4" />
+                    <GiChest className="w-4 h-4" />
                   )}
 
                   {isSaving
@@ -603,7 +596,7 @@ export const TierGridCard = memo(function TierGridCard({
                   }}
                   className="w-full flex items-center justify-center gap-2 bg-card hover:bg-muted transition-colors text-foreground border border-border text-[13px] font-bold h-[44px] rounded-[4px] mt-0.5 focus-visible:outline-none"
                 >
-                  <History className="w-4 h-4" />
+                  <GiHourglass className="w-4 h-4" />
                   View Market History
                 </button>
               </div>
@@ -617,3 +610,5 @@ export const TierGridCard = memo(function TierGridCard({
     </>
   );
 });
+
+

@@ -178,7 +178,7 @@ export function ExtraNoticesChannel() {
                 return (
                   <article
                     key={idx}
-                    className="group relative bg-card border border-border rounded-[6px] overflow-hidden transition-colors hover:border-muted-foreground"
+                    className="group relative bg-card border border-border rounded-[6px] overflow-hidden transition-all duration-300 hover:border-primary/50 hover:shadow-md hover:-translate-y-[2px]"
                   >
                     {/* Semantic left border indicator */}
                     <div
@@ -189,9 +189,9 @@ export function ExtraNoticesChannel() {
                     <div className="p-5 pl-6 flex flex-col gap-3">
                       <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
                         <div className="flex items-center gap-3">
-                          <div className="p-1.5 rounded-[4px] bg-muted border border-border">
+                          <div className="p-1.5 rounded-[4px] bg-muted border border-border overflow-hidden">
                             <Icon
-                              className="w-4 h-4"
+                              className="w-4 h-4 group-hover:scale-110 transition-transform duration-300"
                               style={{ color: activeColor }}
                             />
                           </div>

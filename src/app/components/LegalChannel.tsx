@@ -79,7 +79,7 @@ export function LegalChannel({ type }: { type: "tos" | "privacy" }) {
                 3. Acceptable Use & API Rate Limiting
               </h2>
               <p className="text-muted-foreground font-medium">
-                Our service utilizes serverless functions to fetch live market
+                Our service uses serverless functions to fetch live market
                 data. To protect the integrity and performance of the Service:
               </p>
               <ul className="list-disc pl-5 text-muted-foreground flex flex-col gap-2 mt-2 font-medium">
@@ -88,7 +88,7 @@ export function LegalChannel({ type }: { type: "tos" | "privacy" }) {
                   continuously ping our API endpoints.
                 </li>
                 <li>
-                  We utilize strict Redis-based rate-limiting. Excessive
+                  We enforce strict Redis-based rate-limiting. Excessive
                   requests will result in a temporary or permanent block of your
                   IP address.
                 </li>
@@ -174,7 +174,7 @@ export function LegalChannel({ type }: { type: "tos" | "privacy" }) {
               </p>
               <ul className="list-disc pl-5 text-muted-foreground flex flex-col gap-2 mt-2 font-medium">
                 <li>
-                  We utilize Redis to monitor request frequencies to prevent
+                  We use Redis to monitor request frequencies to prevent
                   DDoS attacks and server abuse.
                 </li>
                 <li>

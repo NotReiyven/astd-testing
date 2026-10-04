@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { AlertOctagon, ShieldAlert, Send, StopCircle, RefreshCw, History, CheckCircle2 } from "lucide-react";
 import { supabase } from "../../../lib/supabase";
 import { useNotificationStore } from "../../../store/useNotificationStore";
+import { z } from "zod";
 
 interface SecurityAlert {
   id: string;
@@ -47,9 +48,24 @@ export const SecuritySettingsTab = () => {
     fetchAlerts();
   }, []);
 
+  const alertSchema = z.object({
+    message: z.string().min(5, "Message is too short").max(1000, "Message is too long"),
+    severity: z.enum(["info", "warning", "critical"]),
+    link_url: z.union([z.string().url("Invalid URL format").max(500), z.literal(""), z.null()]),
+    link_text: z.string().max(50).nullable().optional(),
+  });
+
   const handleBroadcast = async () => {
-    if (!message.trim()) {
-      addToast("Please enter a message for the alert.", "error");
+    // 1. Validate Input (Prevents Injection/Form tampering)
+    const validationResult = alertSchema.safeParse({
+      message: message.trim(),
+      severity,
+      link_url: linkUrl.trim() || null,
+      link_text: linkText.trim() || null,
+    });
+
+    if (!validationResult.success) {
+      addToast(validationResult.error.errors[0].message, "error");
       return;
     }
 

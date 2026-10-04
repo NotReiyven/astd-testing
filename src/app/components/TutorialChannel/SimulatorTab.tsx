@@ -315,7 +315,7 @@ export function SimulatorTab() {
                   <strong className="text-[#FAA61A] block mb-1">
                     Disclaimer
                   </strong>
-                  This simulator utilizes rigid mathematical algorithms to
+                  This simulator uses strict math to
                   determine win/loss states based on current stats. Real market
                   trading requires reading the room, predicting trends, and
                   human intuition. Always prioritize your own market knowledge

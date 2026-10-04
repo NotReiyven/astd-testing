@@ -3,7 +3,8 @@
 // ================================================
 
 import React, { useState, useMemo, useEffect } from "react";
-import { ExternalLink, Users, Wrench, ChevronRight, Code2, Check, Terminal, MessageSquarePlus, BookOpen, FileSpreadsheet, Info, Award, FileClock, Home } from "lucide-react";
+import { ExternalLink, ChevronRight, Check } from "lucide-react";
+import { GiMeepleGroup, GiSpanner, GiSpellBook, GiMagicPortal, GiChatBubble, GiOpenBook, GiScrollUnfurled, GiTrophyCup, GiClockwork, GiCastle } from "react-icons/gi";
 import { useUnits } from "../../context/UnitContext";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
 import { useLayoutStore } from "../../store/useLayoutStore";
@@ -130,11 +131,11 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
         <nav className="hidden lg:flex flex-col w-56 shrink-0 sticky top-0 self-start pt-2 z-10">
           <div className="flex items-center justify-between mb-6 text-foreground">
             <div className="flex items-center gap-2.5">
-              <Home className="w-5 h-5" />
+              <GiCastle className="w-5 h-5" />
               <h2 className="text-[15px] font-black uppercase tracking-wider">Welcome</h2>
             </div>
             <button onClick={handleSecretClick} className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer">
-              <Terminal className="w-4 h-4" />
+              <GiMagicPortal className="w-4 h-4" />
             </button>
           </div>
           <div className="flex flex-col gap-1 border-l-2 border-border pl-4">
@@ -179,7 +180,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
 
           <section id="section-info" className="flex flex-col gap-6 pt-2">
             <div className="flex items-center gap-2 border-b border-border pb-3">
-              <Info className="w-5 h-5 text-primary" />
+              <GiScrollUnfurled className="w-5 h-5 text-primary" />
               <h2 className="text-[20px] font-black text-foreground">General Info</h2>
             </div>
 
@@ -194,30 +195,30 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-card border border-border rounded-[8px] p-5 flex flex-col h-full shadow-sm">
+              <div className="group bg-card border border-border rounded-[8px] p-5 flex flex-col h-full shadow-sm hover:shadow-md hover:border-border/80 transition-all duration-300">
                 <h3 className="flex items-center gap-2 text-[15px] font-bold text-foreground mb-3">
-                  <FileSpreadsheet className="w-4 h-4 text-primary" /> Live Data Sync
+                  <GiScrollUnfurled className="w-4 h-4 text-primary group-hover:scale-110 transition-transform duration-300" /> Live Data Sync
                 </h3>
                 <p className="text-[13px] leading-relaxed text-muted-foreground flex-1 font-medium">
-                  This is a live, high-performance interface for the official ASTD spreadsheet. It operates dynamically, when the value list updates, this site updates instantly.
+                  This site pulls directly from the official ASTD spreadsheet. When the value list updates, this site updates instantly—no manual refreshes needed.
                 </p>
-                <button onClick={() => safeOpenExternal("https://docs.google.com/spreadsheets/d/1Z20NUscF9Id2Sss-osT-Xq06gz9ooikt6Kjtianeg0I/edit?gid=163005933#gid=163005933")} className="mt-4 bg-muted hover:bg-white/10 text-foreground px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 border border-border cursor-pointer">
+                <button onClick={() => safeOpenExternal("https://docs.google.com/spreadsheets/d/1Z20NUscF9Id2Sss-osT-Xq06gz9ooikt6Kjtianeg0I/edit?gid=163005933#gid=163005933")} className="mt-4 bg-muted hover:bg-primary hover:text-primary-foreground text-foreground px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 border border-border hover:border-primary cursor-pointer active:scale-[0.98]">
                   Open Official Spreadsheet <ExternalLink className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="bg-card border border-border rounded-[8px] p-5 flex flex-col h-full shadow-sm">
+              <div className="group bg-card border border-border rounded-[8px] p-5 flex flex-col h-full shadow-sm hover:shadow-md hover:border-border/80 transition-all duration-300">
                 <h3 className="flex items-center gap-2 text-[15px] font-bold text-foreground mb-3">
-                  <MessageSquarePlus className="w-4 h-4 text-primary" /> Community & Feedback
+                  <GiChatBubble className="w-4 h-4 text-primary group-hover:scale-110 transition-transform duration-300" /> Community & Feedback
                 </h3>
                 <p className="text-[13px] leading-relaxed text-muted-foreground flex-1 font-medium">
                   Spotted a bad value? Want to complain about a scam? Join the Discord and talk to the team directly, or submit a report.
                 </p>
                 <div className="flex flex-col gap-2 mt-4">
-                  <button onClick={() => safeOpenExternal("https://discord.gg/Q7JTvPUEM")} className="bg-muted hover:bg-white/10 text-foreground border border-border px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                  <button onClick={() => safeOpenExternal("https://discord.gg/Q7JTvPUEM")} className="bg-muted hover:bg-primary hover:text-primary-foreground text-foreground border border-border hover:border-primary px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]">
                     Join Discord Server <ExternalLink className="w-4 h-4" />
                   </button>
-                  <button onClick={() => safeOpenExternal("https://docs.google.com/forms/d/e/1FAIpQLSeUAAvBHod23it13WYD8XK61K2C-BFCWJ8tGwJxA7c0sCCVvA/viewform")} className="bg-muted hover:bg-white/10 text-foreground border border-border px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                  <button onClick={() => safeOpenExternal("https://docs.google.com/forms/d/e/1FAIpQLSeUAAvBHod23it13WYD8XK61K2C-BFCWJ8tGwJxA7c0sCCVvA/viewform")} className="bg-muted hover:bg-primary hover:text-primary-foreground text-foreground border border-border hover:border-primary px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]">
                     Submit Feedback Form <ExternalLink className="w-4 h-4" />
                   </button>
                 </div>
@@ -227,7 +228,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
 
           <section id="section-updates" className="flex flex-col gap-6 pt-2">
             <div className="flex items-center gap-2 border-b border-border pb-3">
-              <FileClock className="w-5 h-5 text-primary" />
+              <GiClockwork className="w-5 h-5 text-primary" />
               <h2 className="text-[20px] font-black text-foreground">Patch Notes</h2>
             </div>
             <p className="text-[14px] text-muted-foreground leading-relaxed font-medium">
@@ -243,7 +244,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
                 {parsedChangelog.map((block, idx) => (
                   <div key={idx} className="bg-card border border-border rounded-[6px] overflow-hidden shadow-sm">
                     <div className="bg-muted px-4 py-3 border-b border-border flex items-center gap-2">
-                      {block.title.toLowerCase().includes("fix") ? <Wrench className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                      {block.title.toLowerCase().includes("fix") ? <GiSpanner className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                       <h3 className="font-bold text-foreground text-[14px]">{block.title}</h3>
                     </div>
                     <div className="p-4">
@@ -264,7 +265,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
 
           <section id="section-credits" className="flex flex-col gap-6 pt-2">
             <div className="flex items-center gap-2 border-b border-border pb-3">
-              <Award className="w-5 h-5 text-primary" />
+              <GiTrophyCup className="w-5 h-5 text-primary" />
               <h2 className="text-[20px] font-black text-foreground">Credits & Contributors</h2>
             </div>
             <p className="text-[14px] text-muted-foreground leading-relaxed font-medium">
@@ -279,7 +280,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
                 <div className="flex flex-wrap justify-center sm:justify-start items-center gap-2 mb-1.5">
                   <h4 className="text-[20px] font-black text-foreground tracking-tight">Reiyven</h4>
                   <span className="bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] border border-primary/30 flex items-center gap-1.5">
-                    <Code2 className="w-3 h-3" /> Lead Web Developer
+                    <GiSpellBook className="w-3 h-3" /> Lead Web Developer
                   </span>
                 </div>
                 <p className="text-[12px] font-bold text-muted-foreground mb-3 uppercase tracking-wide">Raven • 3rd Year BSCS @ PHILIPPINES</p>
@@ -318,7 +319,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
 
             <div className="bg-card border border-border rounded-[8px] p-5 shadow-sm">
               <h3 className="flex items-center gap-2 text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-3">
-                <Users className="w-4 h-4" /> Ex-Staff Contributors
+                <GiMeepleGroup className="w-4 h-4" /> Ex-Staff Contributors
               </h3>
               <div className="flex flex-wrap gap-2 opacity-80 hover:opacity-100 transition-opacity">
                 {exStaffList.map((n) => (

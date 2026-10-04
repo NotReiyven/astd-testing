@@ -1,29 +1,6 @@
 import { useState, useEffect, memo } from "react";
-import {
-  UserCircle,
-  Edit2,
-  Check,
-  X,
-  ShieldAlert,
-  Shield,
-  Star,
-  MessageSquare,
-  Package,
-  Megaphone,
-  Activity,
-  Settings,
-  Gamepad2,
-  Clock,
-  ArrowRight,
-  Copy,
-  Share2,
-  ArrowLeft,
-  Palette,
-  MousePointer2,
-  Maximize,
-  ArrowRightLeft,
-  LogIn,
-} from "lucide-react";
+import { Edit2, Check, X, ShieldAlert, Shield, Settings, ArrowRight, Copy, Share2, ArrowLeft, Palette, MousePointer2, Maximize, ArrowRightLeft, LogIn } from "lucide-react";
+import { GiCharacter, GiSpikedHalo, GiChatBubble, GiChest, GiMegaphone, GiTornado, GiGamepad, GiHourglass } from "react-icons/gi";
 import { useProfileStore, UserProfileData } from "../../store/useProfileStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useTradingAdsStore } from "../../store/useTradingAdsStore";
@@ -62,7 +39,7 @@ const getRoleConfig = (role: string) => {
       };
     default:
       return {
-        icon: UserCircle,
+        icon: GiCharacter,
         color: "var(--muted-foreground)",
         bg: "bg-muted border-border text-muted-foreground",
         label: "Trader",
@@ -89,7 +66,7 @@ const getReputationRank = (rep: number) => {
       bg: "bg-muted",
       next: 10,
       min: 0,
-      icon: Star,
+      icon: GiSpikedHalo,
     };
   if (rep < 50)
     return {
@@ -99,7 +76,7 @@ const getReputationRank = (rep: number) => {
       bg: "bg-[#cd7f32]/15",
       next: 50,
       min: 10,
-      icon: Star,
+      icon: GiSpikedHalo,
     };
   if (rep < 150)
     return {
@@ -109,7 +86,7 @@ const getReputationRank = (rep: number) => {
       bg: "bg-[#c0c0c0]/15",
       next: 150,
       min: 50,
-      icon: Star,
+      icon: GiSpikedHalo,
     };
   if (rep < 300)
     return {
@@ -119,7 +96,7 @@ const getReputationRank = (rep: number) => {
       bg: "bg-[#ffd700]/15",
       next: 300,
       min: 150,
-      icon: Star,
+      icon: GiSpikedHalo,
     };
   if (rep < 500)
     return {
@@ -129,7 +106,7 @@ const getReputationRank = (rep: number) => {
       bg: "bg-info/15",
       next: 500,
       min: 300,
-      icon: Star,
+      icon: GiSpikedHalo,
     };
   if (rep < 1000)
     return {
@@ -139,7 +116,7 @@ const getReputationRank = (rep: number) => {
       bg: "bg-[#3A7CE6]/15",
       next: 1000,
       min: 500,
-      icon: Star,
+      icon: GiSpikedHalo,
     };
   return {
     label: "Legend",
@@ -148,7 +125,7 @@ const getReputationRank = (rep: number) => {
     bg: "bg-[#a855f7]/15",
     next: 1000,
     min: 1000,
-    icon: Star,
+    icon: GiSpikedHalo,
   };
 };
 
@@ -530,7 +507,7 @@ export function ProfileChannel() {
   if (isLoading || !profileData) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-background gap-4">
-        <Activity className="w-8 h-8 text-primary animate-pulse" />
+        <GiTornado className="w-8 h-8 text-primary animate-pulse" />
         <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-widest">
           Loading Profile...
         </span>
@@ -663,7 +640,7 @@ export function ProfileChannel() {
                   onClick={handleContact}
                   className="px-6 py-2 rounded-[4px] bg-primary hover:bg-primary/90 text-primary-foreground text-[12px] font-bold flex items-center gap-2 transition-colors shadow-sm focus-visible:outline-none cursor-pointer border border-primary"
                 >
-                  <MessageSquare className="w-4 h-4" /> Message
+                  <GiChatBubble className="w-4 h-4" /> Message
                 </button>
               )}
             </div>
@@ -816,7 +793,7 @@ export function ProfileChannel() {
               onClick={handleInspectVault}
               className="w-full py-3.5 bg-foreground hover:bg-foreground/90 text-background rounded-[6px] text-[12px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-colors shadow-sm focus-visible:outline-none cursor-pointer group border border-foreground"
             >
-              <Package className="w-4 h-4 group-hover:scale-110 transition-transform" />{" "}
+              <GiChest className="w-4 h-4 group-hover:scale-110 transition-transform" />{" "}
               Access Public Vault{" "}
               <ArrowRight className="w-4 h-4 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
             </button>
@@ -836,7 +813,7 @@ export function ProfileChannel() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Megaphone className="w-4 h-4" /> Active Ads{" "}
+                <GiMegaphone className="w-4 h-4" /> Active Ads{" "}
                 <span className="bg-muted border border-border px-2 py-0.5 rounded-[2px] text-[11px] font-mono">
                   {activeAds.length}
                 </span>
@@ -849,7 +826,7 @@ export function ProfileChannel() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Star className="w-4 h-4" /> Target Wishlist{" "}
+                <GiSpikedHalo className="w-4 h-4" /> Target Wishlist{" "}
                 <span className="bg-muted border border-border px-2 py-0.5 rounded-[2px] text-[11px] font-mono">
                   {viewedWishlist.length}
                 </span>
@@ -1029,7 +1006,7 @@ export function ProfileChannel() {
                 <div className="animate-fade-in flex flex-col gap-4">
                   {activeAds.length === 0 ? (
                     <div className="flex flex-col items-center justify-center flex-1 text-center bg-card border border-border rounded-[6px] p-16 shadow-sm min-h-[350px]">
-                      <Megaphone className="w-12 h-12 text-muted-foreground mb-4 opacity-40" />
+                      <GiMegaphone className="w-12 h-12 text-muted-foreground mb-4 opacity-40" />
                       <h3 className="text-[18px] font-black text-foreground">
                         No Active Listings
                       </h3>
@@ -1144,7 +1121,7 @@ export function ProfileChannel() {
                 <div className="animate-fade-in flex flex-col h-full">
                   {viewedWishlist.length === 0 ? (
                     <div className="flex flex-col items-center justify-center flex-1 text-center bg-card border border-border rounded-[6px] p-16 shadow-sm min-h-[350px]">
-                      <Star className="w-12 h-12 text-muted-foreground mb-4 opacity-40" />
+                      <GiSpikedHalo className="w-12 h-12 text-muted-foreground mb-4 opacity-40" />
                       <h3 className="text-[18px] font-black text-foreground">
                         Empty Wishlist
                       </h3>
@@ -1276,7 +1253,7 @@ export function ProfileChannel() {
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                  <Gamepad2 className="w-3.5 h-3.5" /> Roblox Username
+                  <GiGamepad className="w-3.5 h-3.5" /> Roblox Username
                 </label>
                 <input
                   type="text"
@@ -1315,3 +1292,6 @@ export function ProfileChannel() {
     </div>
   );
 }
+
+
+

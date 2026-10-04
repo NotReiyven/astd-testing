@@ -5,13 +5,29 @@ import {
   Plus,
   Lock,
   Megaphone,
-  LucideIcon,
   Shield,
   FileText,
   Package,
   ShieldAlert,
   User,
 } from "lucide-react";
+import {
+  GiCastle,
+  GiOpenBook,
+  GiMegaphone,
+  GiSecretBook,
+  GiBackpack,
+  GiTrade,
+  GiScrollUnfurled,
+  GiWaxSeal,
+  GiSpikedHalo,
+  GiCardboardBoxClosed,
+  GiCheckeredFlag,
+  GiFeather,
+  GiSwordsEmblem,
+  GiShieldEchoes,
+  GiCharacter
+} from "react-icons/gi";
 import { FilterKey } from "../../types";
 import { useUnits } from "../../context/UnitContext";
 import { getTier } from "../../data";
@@ -24,7 +40,7 @@ type ChannelConfig = {
   label: string;
   isLocked: boolean;
   hasThreads?: boolean;
-  icon?: LucideIcon;
+  icon?: React.ElementType;
 };
 type CategoryConfig = { id: string; label: string; channels: ChannelConfig[] };
 
@@ -33,13 +49,13 @@ const BASE_CATEGORIES: CategoryConfig[] = [
     id: "important",
     label: "important",
     channels: [
-      { id: "home", label: "home", isLocked: true },
-      { id: "tutorial", label: "tutorial", isLocked: true },
+      { id: "home", label: "home", isLocked: true, icon: GiCastle },
+      { id: "tutorial", label: "tutorial", isLocked: true, icon: GiOpenBook },
       {
         id: "extra-notices",
         label: "extra-notices",
         isLocked: true,
-        icon: Megaphone,
+        icon: GiWaxSeal,
       },
     ],
   },
@@ -47,19 +63,20 @@ const BASE_CATEGORIES: CategoryConfig[] = [
     id: "trading",
     label: "trading",
     channels: [
-      { id: "profile", label: "my-profile", isLocked: true, icon: User },
-      { id: "inventory", label: "my-inventory", isLocked: true, icon: Package },
+      { id: "profile", label: "my-profile", isLocked: true, icon: GiCharacter },
+      { id: "inventory", label: "my-inventory", isLocked: true, icon: GiBackpack },
       {
         id: "trading-ads",
         label: "trading-ads",
         isLocked: false,
-        icon: Megaphone,
+        icon: GiTrade,
       },
       {
         id: "value-list",
         label: "value-list",
         isLocked: false,
         hasThreads: true,
+        icon: GiScrollUnfurled
       },
     ],
   },
@@ -71,13 +88,13 @@ const BASE_CATEGORIES: CategoryConfig[] = [
         id: "terms-of-service",
         label: "terms-of-service",
         isLocked: true,
-        icon: FileText,
+        icon: GiFeather,
       },
       {
         id: "privacy-policy",
         label: "privacy-policy",
         isLocked: true,
-        icon: Shield,
+        icon: GiShieldEchoes,
       },
     ],
   },
@@ -339,3 +356,5 @@ export function Sidebar({
     </div>
   );
 }
+
+

@@ -1,11 +1,6 @@
 import React, { memo } from "react";
-import {
-  Plus,
-  Minus,
-  Check,
-  Lock as LockIcon,
-  Package,
-} from "lucide-react";
+import { Plus, Minus, Check } from "lucide-react";
+import { GiPadlock, GiChest } from "react-icons/gi";
 import { InventoryItem } from "../../../store/useInventoryStore";
 import { MasterUnit } from "../../../types";
 import { TIER_CONFIG, getTier, GRID_STATUS_CFG } from "../../../data";
@@ -213,7 +208,7 @@ export const TradingCardSlot = memo(
                 className="bg-popover text-foreground p-1 rounded-[4px] border border-border shadow-sm flex items-center justify-center"
                 title="Locked"
               >
-                <LockIcon className="w-3 h-3 fill-current" />
+                <GiPadlock className="w-3 h-3 fill-current" />
               </div>
             )}
             {!isWishlist && (
@@ -254,7 +249,7 @@ export const TradingCardSlot = memo(
                 }}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] font-bold py-2 rounded-[4px] shadow-sm flex items-center justify-center gap-1.5 transition-transform active:scale-95"
               >
-                <Package className="w-3.5 h-3.5" /> To Vault
+                <GiChest className="w-3.5 h-3.5" /> To Vault
               </button>
             </div>
           )}
@@ -328,3 +323,4 @@ export const TradingCardSlot = memo(
     );
   }
 );
+

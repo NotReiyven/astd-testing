@@ -1,32 +1,31 @@
 @custom-variant dark (&:is(.dark *));
 
 :root, [data-theme="dark"] {
-  /* Default Deep Dark */
+  /* OP.GG Sleek Graphite Dark Mode */
   --font-size: 14px;
   --font-sans: 'Geist', sans-serif;
   --font-mono: 'Geist Mono', monospace;
 
-  --background: #000000;
-  --foreground: #ededed;
+  --background: #1c1c1f;
+  --foreground: #ffffff;
   
-  --card: #0a0a0a;
-
-  --card-foreground: #ededed;
+  --card: #31313c;
+  --card-foreground: #ffffff;
   
-  --popover: #111111;
-  --popover-foreground: #ededed;
+  --popover: #282830;
+  --popover-foreground: #ffffff;
   
-  --primary: #ededed;
-  --primary-foreground: #000000;
+  --primary: #5383e8;
+  --primary-foreground: #ffffff;
   
-  --secondary: #1a1a1a;
-  --secondary-foreground: #ededed;
+  --secondary: #424254;
+  --secondary-foreground: #ffffff;
   
-  --muted: #1a1a1a;
-  --muted-foreground: #888888;
+  --muted: #282830;
+  --muted-foreground: #9e9eb1;
   
-  --accent: #222222;
-  --accent-foreground: #ededed;
+  --accent: #424254;
+  --accent-foreground: #ffffff;
   
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
@@ -40,11 +39,11 @@
   --info: #3b82f6;
   --info-foreground: #ffffff;
   
-  --border: #222222;
-  --input: #0a0a0a;
-  --input-background: #0a0a0a;
-  --switch-background: #222222;
-  --ring: #ededed;
+  --border: #424254;
+  --input: #282830;
+  --input-background: #282830;
+  --switch-background: #424254;
+  --ring: #5383e8;
 
   --radius: 6px;
 }

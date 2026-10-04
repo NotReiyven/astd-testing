@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, memo, useMemo } from "react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { Search, X } from "lucide-react";
 import { TradeCard } from "../../../types";
 import { useUnits } from "../../../context/UnitContext";
@@ -33,6 +34,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
   onInputFocus,
   onInputBlur,
 }: TradeSectionPanelProps) {
+  const [animationParent] = useAutoAnimate<HTMLDivElement>();
   const { units: ALL_UNITS } = useUnits();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -340,7 +342,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
             )}
           </div>
         ) : (
-          <div className="flex flex-col gap-[var(--gap-sm)]">
+          <div ref={animationParent} className="flex flex-col gap-[var(--gap-sm)]">
             {items.map((card) => (
               <div key={card.id}>
                 <ActiveCardRow

@@ -1,5 +1,6 @@
-import { useCallback, useMemo, memo } from "react";
-import { X, Pin } from "lucide-react";
+import { useCallback, useMemo, memo, useState } from "react";
+import { X, Pin, ChevronDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { TradeCard } from "../../../types";
 import { GRID_STATUS_CFG } from "../../../data";
 import { useUnits } from "../../../context/UnitContext";
@@ -22,6 +23,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
   onTogglePin: (id: string) => void;
 }) {
   const { units } = useUnits();
+  const [qtyOpen, setQtyOpen] = useState(true);
 
   const masterData = useMemo(
     () => units.find((u) => u.id === card.id),
@@ -49,6 +51,11 @@ export const ActiveCardRow = memo(function ActiveCardRow({
     onTogglePin(card.id);
   }, [card.id, onTogglePin]);
 
+  const toggleQty = useCallback(() => {
+    triggerHaptic("light");
+    setQtyOpen((o) => !o);
+  }, []);
+
   const isOwnerChoice =
     masterData?.value === "owner" ||
     masterData?.valueDisplay === "Owner's Choice" ||
@@ -61,7 +68,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
         : "w-[var(--ui-height-btn)] h-[var(--ui-height-btn)] max-h-9 max-w-9"
     }`;
 
-  const controls = (compact: boolean) => (
+  const qtyControls = (compact: boolean) => (
     <>
       <QuantitySelector qty={card.qty} onChange={handleQtyInput} minQty={1} />
       <div className="flex items-center flex-shrink-0 gap-0.5">
@@ -104,6 +111,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
         isPinned ? "border-primary" : "border-border"
       }`}
     >
+      {/* ── Top row: avatar / name / value / compact controls ── */}
       <div className="flex items-center gap-[var(--gap-sm)] w-full min-w-0">
         <div
           className={`relative w-10 h-10 flex-shrink-0 rounded-[4px] bg-muted overflow-hidden flex items-center justify-center border ${
@@ -157,9 +165,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
 
         <span
           className="text-sm font-bold text-foreground font-mono tracking-tight text-right tabular-nums shrink-0"
-          title={
-            isOwnerChoice ? "" : (card.value * card.qty).toLocaleString()
-          }
+          title={isOwnerChoice ? "" : (card.value * card.qty).toLocaleString()}
         >
           {isOwnerChoice ? (
             <JargonWrap
@@ -175,17 +181,101 @@ export const ActiveCardRow = memo(function ActiveCardRow({
           )}
         </span>
 
+        {/* Compact mode: qty badge + chevron + pin/remove controls */}
         <div className="hidden @[36rem]/analyzer:flex items-center gap-1.5 shrink-0">
-          {controls(true)}
+          {/* Qty badge that opens/closes the controls */}
+          {!qtyOpen && (
+            <span className="text-[10px] font-bold text-muted-foreground tabular-nums bg-muted border border-border rounded-[4px] px-1.5 py-0.5">
+              ×{card.qty}
+            </span>
+          )}
+          <button
+            onClick={toggleQty}
+            title={qtyOpen ? "Collapse quantity" : "Expand quantity"}
+            className="flex items-center justify-center w-7 h-7 rounded-[4px] text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border transition-all cursor-pointer active:scale-90"
+          >
+            <motion.span
+              animate={{ rotate: qtyOpen ? 180 : 0 }}
+              transition={{ duration: 0.18 }}
+              className="flex"
+            >
+              <ChevronDown className="w-3.5 h-3.5" />
+            </motion.span>
+          </button>
+          <AnimatePresence initial={false}>
+            {qtyOpen && (
+              <motion.div
+                key="compact-qty"
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                exit={{ opacity: 0, width: 0 }}
+                transition={{ duration: 0.18, ease: "easeInOut" }}
+                className="flex items-center gap-1.5 overflow-hidden"
+              >
+                {qtyControls(true)}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
-      <div className="flex @[36rem]/analyzer:hidden items-center justify-between gap-2 mt-[var(--gap-sm)] pt-[var(--gap-sm)] border-t border-border min-w-0">
-        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest shrink-0">
-          Qty
-        </span>
-        <div className="flex items-center gap-1.5 min-w-0">{controls(false)}</div>
-      </div>
+      {/* ── Mobile / narrow mode: collapsible QTY row ── */}
+      <AnimatePresence initial={false}>
+        {qtyOpen && (
+          <motion.div
+            key="mobile-qty"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="overflow-hidden @[36rem]/analyzer:hidden"
+          >
+            <div className="flex items-center justify-between gap-2 mt-[var(--gap-sm)] pt-[var(--gap-sm)] border-t border-border min-w-0">
+              <button
+                onClick={toggleQty}
+                title="Collapse quantity"
+                className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase tracking-widest shrink-0 hover:text-foreground transition-colors cursor-pointer group/qtylabel"
+              >
+                <span>Qty</span>
+                <motion.span
+                  animate={{ rotate: 180 }}
+                  className="flex opacity-0 group-hover/qtylabel:opacity-100 transition-opacity"
+                >
+                  <ChevronDown className="w-3 h-3" />
+                </motion.span>
+              </button>
+              <div className="flex items-center gap-1.5 min-w-0">{qtyControls(false)}</div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Collapsed pill (narrow mode only) ── */}
+      <AnimatePresence initial={false}>
+        {!qtyOpen && (
+          <motion.div
+            key="mobile-collapsed"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.18, ease: "easeInOut" }}
+            className="overflow-hidden @[36rem]/analyzer:hidden"
+          >
+            <button
+              onClick={toggleQty}
+              className="flex items-center gap-1.5 mt-[var(--gap-sm)] pt-[var(--gap-sm)] border-t border-border w-full text-left cursor-pointer hover:text-foreground text-muted-foreground transition-colors"
+            >
+              <span className="text-[9px] font-bold uppercase tracking-widest">
+                Qty
+              </span>
+              <span className="text-[10px] font-bold tabular-nums bg-muted border border-border rounded-[4px] px-1.5 py-0.5 text-foreground">
+                ×{card.qty}
+              </span>
+              <ChevronDown className="w-3 h-3 ml-auto" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 });

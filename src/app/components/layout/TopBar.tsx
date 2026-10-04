@@ -1,19 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import {
-  PanelLeft,
-  Hash,
-  Search,
-  X,
-  Calculator,
-  LogIn,
-  LogOut,
-  User,
-  Check,
-  Terminal,
-  Sparkles,
-  Bell,
-  MessageSquare,
-} from "lucide-react";
+import { PanelLeft, Hash, Search, X, LogIn, LogOut, User, Check } from "lucide-react";
+import { GiAbacus, GiMagicPortal, GiSparkles, GiRingingBell, GiChatBubble } from "react-icons/gi";
 import { LiveAvatars } from "./LiveAvatars";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useLayoutStore } from "../../../store/useLayoutStore";
@@ -252,7 +239,7 @@ export function TopBar({
                 className="flex items-center justify-center p-1 bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground rounded-[4px] transition-colors shrink-0 cursor-pointer focus-visible:outline-none min-h-[44px] min-w-[44px] relative"
                 title="Notifications"
               >
-                <Bell className="w-5 h-5" />
+                <GiRingingBell className="w-5 h-5" />
                 {unreadCount > 0 && (
                   <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-destructive rounded-full border-2 border-background" />
                 )}
@@ -277,7 +264,7 @@ export function TopBar({
                   <div className="flex flex-col max-h-[350px] overflow-y-auto custom-scrollbar">
                     {notifications.length === 0 ? (
                       <div className="px-4 py-8 text-center flex flex-col items-center gap-2">
-                        <Bell className="w-8 h-8 text-muted-foreground opacity-50" />
+                        <GiRingingBell className="w-8 h-8 text-muted-foreground opacity-50" />
                         <span className="text-[13px] font-medium text-muted-foreground">
                           You have no new notifications.
                         </span>
@@ -460,7 +447,7 @@ export function TopBar({
             className="flex items-center justify-center gap-2 px-3 py-2 md:px-2.5 rounded-[4px] bg-input border border-border hover:border-muted-foreground text-muted-foreground transition-colors text-[12px] font-bold focus-visible:outline-none shrink-0 cursor-pointer min-h-[44px]"
             title="Open Command Palette"
           >
-            <Terminal className="w-4 h-4 sm:hidden flex-shrink-0" />
+            <GiMagicPortal className="w-4 h-4 sm:hidden flex-shrink-0" />
             <span className="hidden sm:flex items-center gap-2 text-[12px] font-mono tracking-wider">
               Search...{" "}
               <span className="bg-popover border border-border rounded px-1 text-[10px]">
@@ -515,7 +502,7 @@ export function TopBar({
             }`}
             title="Toggle Trade Analyzer"
           >
-            <Calculator className="w-4 h-4 flex-shrink-0" />
+            <GiAbacus className="w-4 h-4 flex-shrink-0" />
             <span>Calculator</span>
             {activeItemsCount > 0 && (
               <span className="absolute -top-1.5 -right-1.5 bg-foreground text-background font-mono font-bold text-[9px] w-4 h-4 rounded-full flex items-center justify-center">
@@ -529,7 +516,7 @@ export function TopBar({
       {showTip && (
         <div className="bg-popover border-b border-border px-4 py-2 flex items-center justify-between relative z-40">
           <span className="text-[12px] font-medium text-foreground flex items-center gap-2">
-            <Sparkles className="w-4 h-4 shrink-0 text-primary" /> {currentTip}
+            <GiSparkles className="w-4 h-4 shrink-0 text-primary" /> {currentTip}
           </span>
           <button
             onClick={() => dismissTip(currentChannelInfo.title)}
@@ -544,3 +531,4 @@ export function TopBar({
     </div>
   );
 }
+

@@ -21,6 +21,7 @@ export type VirtualItem =
       id: string;
       units: MasterUnit[];
       searchQuery: string;
+      isLast?: boolean;
     }
   | {
       type: "list-row";
@@ -221,4 +222,5 @@ export function useCanvasVirtualization({
 
   return { flattenedItems };
 }
+
 

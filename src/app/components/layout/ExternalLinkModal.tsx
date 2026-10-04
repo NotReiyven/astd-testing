@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, X } from "lucide-react";
 import { useExternalLinkStore } from "../../../store/useExternalLinkStore";
 import { triggerHaptic } from "../../../data/helpers";
@@ -25,7 +26,7 @@ export function ExternalLinkModal() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, closeModal]);
 
-  if (!isOpen || !targetUrl) return null;
+  
 
   let domain = targetUrl;
   try {
@@ -52,14 +53,26 @@ export function ExternalLinkModal() {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in select-none font-sans"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="external-link-title"
-      aria-describedby="external-link-desc"
-    >
-      <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-2xl flex flex-col relative animate-slide-up">
+    <AnimatePresence>
+      {(isOpen && targetUrl) && (
+        <motion.div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm select-none font-sans"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="external-link-title"
+          aria-describedby="external-link-desc"
+        >
+      <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+            className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-2xl flex flex-col relative"
+          >
         <button
           onClick={() => {
             triggerHaptic("light");
@@ -133,7 +146,10 @@ export function ExternalLinkModal() {
             Continue to site
           </button>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
+

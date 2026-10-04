@@ -1,20 +1,7 @@
 import { useState, useEffect, useMemo, memo } from "react";
-import {
-  Megaphone,
-  Search,
-  Plus,
-  Trash2,
-  Clock,
-  Check,
-  Lock,
-  Calculator,
-  Package,
-  Activity,
-  MessageSquare,
-  ArrowBigUp,
-  ArrowBigDown,
-  Send,
-} from "lucide-react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
+import { Search, Plus, Trash2, Check, Send, Clock, ArrowBigUp, ArrowBigDown } from "lucide-react";
+import { GiMegaphone, GiHourglass, GiLockedFortress, GiAbacus, GiChest, GiTornado, GiChatBubble, GiGiveaway, GiReceiveMoney } from "react-icons/gi";
 import { supabase } from "../../lib/supabase";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -531,7 +518,7 @@ const VanguardAdCard = memo(
             </div>
 
             <div className="flex items-center gap-1.5 text-muted-foreground bg-muted px-2 py-1 rounded-[4px] border border-border">
-              <Clock className="w-3.5 h-3.5" />
+              <GiHourglass className="w-3.5 h-3.5" />
               <CountdownTimer expiresAt={ad.expires_at} />
             </div>
           </div>
@@ -563,9 +550,9 @@ const VanguardAdCard = memo(
               className="flex-1 h-[var(--ui-height-btn)] flex items-center justify-center gap-1.5 text-[var(--ui-text-sm)] font-bold rounded-[4px] border border-border bg-muted hover:bg-card text-foreground transition-colors active:scale-95 focus-visible:outline-none cursor-pointer"
             >
               {isInventory ? (
-                <Package className="w-3.5 h-3.5" />
+                <GiChest className="w-3.5 h-3.5" />
               ) : (
-                <Calculator className="w-3.5 h-3.5" />
+                <GiAbacus className="w-3.5 h-3.5" />
               )}
               <span className="truncate">
                 {isInventory ? "Inspect Vault" : "Analyze Trade"}
@@ -579,7 +566,7 @@ const VanguardAdCard = memo(
               }}
               className="flex-1 h-[var(--ui-height-btn)] flex items-center justify-center gap-1.5 text-[var(--ui-text-sm)] font-bold rounded-[4px] border border-border bg-muted hover:bg-card text-foreground transition-colors active:scale-95 focus-visible:outline-none cursor-pointer"
             >
-              <MessageSquare className="w-3.5 h-3.5" />
+              <GiChatBubble className="w-3.5 h-3.5" />
               <span className="truncate">Thread</span>
             </button>
 
@@ -603,8 +590,8 @@ const VanguardAdCard = memo(
 );
 
 export function TradingAdsChannel() {
-  const { ads, isLoading, fetchAds, subscribeToAds, deleteAd } =
-    useTradingAdsStore();
+  const [animationParent] = useAutoAnimate<HTMLDivElement>();
+  const { ads, isLoading, fetchAds, subscribeToAds, deleteAd } = useTradingAdsStore();
   const { profile, loginWithDiscord } = useAuthStore();
   const { overwrite, setComposerOpen } = useTradeStore();
   const { units: ALL_UNITS } = useUnits();
@@ -743,7 +730,7 @@ export function TradingAdsChannel() {
           }}
           className="flex items-center justify-center gap-1.5 px-4 w-full sm:w-auto h-[var(--ui-height-btn)] rounded-[4px] bg-muted border border-border text-foreground text-[var(--ui-text-sm)] font-bold uppercase tracking-wider transition-all hover:bg-card focus-visible:outline-none shrink-0 cursor-pointer active:scale-95"
         >
-          <Lock className="w-4 h-4 text-primary" />
+          <GiLockedFortress className="w-4 h-4 text-primary" />
           <span>Login</span>
         </button>
       )}
@@ -763,7 +750,7 @@ export function TradingAdsChannel() {
         <div className="w-full h-full max-w-[1400px] mx-auto pb-24 p-[var(--page-p)]">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
-              <Activity className="w-8 h-8 animate-pulse text-primary" />
+              <GiTornado className="w-8 h-8 animate-pulse text-primary" />
               <span className="text-[var(--ui-text-sm)] font-bold uppercase tracking-widest">
                 Connecting to live market...
               </span>
@@ -771,7 +758,7 @@ export function TradingAdsChannel() {
           ) : filteredAndSortedAds.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center gap-4 px-4">
               <div className="w-16 h-16 md:w-20 md:h-20 bg-muted rounded-[8px] flex items-center justify-center border border-border mb-2 shadow-sm">
-                <Megaphone className="w-8 h-8 md:w-10 md:h-10 text-muted-foreground" />
+                <GiMegaphone className="w-8 h-8 md:w-10 md:h-10 text-muted-foreground" />
               </div>
               <span className="text-[20px] font-black text-foreground tracking-tight">
                 No Active Listings
@@ -812,3 +799,5 @@ export function TradingAdsChannel() {
     </div>
   );
 }
+
+

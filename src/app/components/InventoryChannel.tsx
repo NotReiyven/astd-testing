@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import {
   Package,
   Search,
@@ -55,6 +56,7 @@ import { useHistoryModalStore } from "../../store/useHistoryModalStore";
 import { useTradeStore } from "../../store/useTradeStore";
 
 export function InventoryChannel() {
+  const [animationParent] = useAutoAnimate<HTMLDivElement>();
   const { units: ALL_UNITS } = useUnits();
   const openModal = useHistoryModalStore((state) => state.openModal);
   const { giveItems, getItems, addCard, overwrite, setComposerOpen } =
@@ -949,7 +951,7 @@ export function InventoryChannel() {
                       </div>
 
                       {!isCollapsed && (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
+                        <div ref={animationParent} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
                           {tierItems.map((item, idx) => {
                             const stagedGive =
                               giveItems.find((g) => g.id === item.unit_id)

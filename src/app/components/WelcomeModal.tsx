@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Check,
   Palette,
@@ -76,11 +77,23 @@ export function WelcomeModal() {
     setStep("crossroads");
   };
 
-  if (!isVisible) return null;
-
   return (
-    <div className="fixed inset-0 z-[100000] flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md select-none font-sans animate-fade-in">
-      <div className="bg-card w-full max-w-[540px] rounded-[10px] flex flex-col border border-border shadow-2xl overflow-hidden animate-slide-up">
+    <AnimatePresence>
+      {isVisible && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="fixed inset-0 z-[100000] flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md select-none font-sans"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 15, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 15, scale: 0.98 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+            className="bg-card w-full max-w-[540px] rounded-[10px] flex flex-col border border-border shadow-2xl overflow-hidden"
+          >
         {/* Header Indicator */}
         <div className="px-5 py-3.5 bg-popover border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -451,7 +464,9 @@ export function WelcomeModal() {
             </div>
           </div>
         )}
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

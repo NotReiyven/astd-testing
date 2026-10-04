@@ -10,12 +10,14 @@ import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { Hash, Check, Ban, ExternalLink } from "lucide-react";
 import { FilterKey } from "../types";
 import { useStickyState, isBoolean } from "../hooks/useStickyState";
+import { useSEO } from "../hooks/useSEO";
 import { AquaGuideOverlay } from "./components/guides/AquaGuideOverlay";
 import { TopBar } from "./components/layout/TopBar";
 import { SyncBanner } from "./components/layout/SyncBanner";
 import { SecurityBanner } from "./components/layout/SecurityBanner";
 import { WelcomeModal } from "./components/WelcomeModal";
 import { ExternalLinkModal } from "./components/layout/ExternalLinkModal";
+import { SplashScreen } from "./components/layout/SplashScreen";
 import { MiniProfilePopout } from "./components/layout/MiniProfilePopout";
 import { LoginRecommendationModal } from "./components/layout/LoginRecommendationModal";
 import { useTradeStore } from "../store/useTradeStore";
@@ -393,6 +395,11 @@ export default function App() {
     subtitle: "",
   };
 
+  useSEO({
+    title: `ASTD Value List | ${currentChannelInfo.title === "home" ? "All-Star Trading & Analytics" : currentChannelInfo.title.replace("-", " ").toUpperCase()}`,
+    description: currentChannelInfo.subtitle || "Calculate and analyze Roblox item trades with real-time value comparisons, live market data, demand insights, and customizable inventory management."
+  });
+
   const isGuestStep1 =
     guideState.type === "guest_tour" && guideState.step === 1;
   const isGuestStep2 =
@@ -454,28 +461,7 @@ export default function App() {
       `}</style>
 
       {bootStage !== "complete" && (
-        <div className="fixed inset-0 z-[1000000] pointer-events-none flex items-center justify-center overflow-hidden bg-background">
-          <div
-            className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-300 ${
-              bootStage === "loading" ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <div className="relative flex items-center justify-center mb-6">
-              <div className="w-16 h-16 bg-card rounded-[8px] border border-border flex items-center justify-center shadow-sm relative z-10">
-                <Hash className="w-8 h-8 text-primary" />
-              </div>
-            </div>
-            <h3 className="text-foreground font-black text-[18px] tracking-tight mb-1">
-              ASTD Value List
-            </h3>
-            <p className="text-muted-foreground text-[12px] font-bold uppercase tracking-widest mb-6">
-              Starting Engine...
-            </p>
-            <div className="w-48 h-[2px] bg-border overflow-hidden relative">
-              <div className="absolute top-0 bottom-0 left-0 bg-primary animate-loading-bar"></div>
-            </div>
-          </div>
-        </div>
+        <SplashScreen visible={bootStage === "loading"} />
       )}
 
       <div
@@ -556,7 +542,7 @@ export default function App() {
             </div>
           </div>
 
-          <div
+          <main
             className={`flex-1 flex flex-col min-w-0 bg-background md:pb-0 pb-[84px] z-10 ${mainContentZ}`}
           >
             <div className={`relative ${calcHeaderZ}`}>
@@ -661,7 +647,7 @@ export default function App() {
                 />
               </Routes>
             </div>
-          </div>
+          </main>
 
           <GranularErrorBoundary fallbackName="Trade Analyzer">
             <TradeAnalyzerPanel
@@ -677,3 +663,4 @@ export default function App() {
     </>
   );
 }
+
