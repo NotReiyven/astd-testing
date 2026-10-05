@@ -185,7 +185,7 @@ export function TierBanner({
       
       
       <h2 
-        className="text-[26px] font-black tracking-wide uppercase leading-none"
+        className="text-2xl font-bold leading-none"
         style={{ color: tier.badgeColor, textShadow: `0 2px 10px ${tier.badgeColor}40` }}
       >
         {tier.label}
@@ -211,7 +211,7 @@ export function TierSubHeader({
   return (
     <div className="flex items-center w-full py-3 mt-4 mb-2">
       <div className="flex items-baseline gap-2 shrink-0">
-        <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+        <span className="text-sm font-semibold text-muted-foreground">
           {label}
         </span>
         {valueRange && (

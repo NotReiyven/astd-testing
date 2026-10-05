@@ -48,7 +48,7 @@ export function GridStatusBadge({ status }: { status: UnitStatus }) {
         }}
       >
         <StatusIcon status={status} />
-        <span className="text-[10px] font-bold tracking-wide uppercase transition-colors leading-none">
+        <span className="text-xs font-semibold transition-colors leading-none">
           {c.label}
         </span>
       </div>

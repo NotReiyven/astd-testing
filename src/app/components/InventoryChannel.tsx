@@ -1,3 +1,4 @@
+import { BulkSelectionDock } from "./shared/BulkSelectionDock";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import {
@@ -993,54 +994,20 @@ export function InventoryChannel() {
       </div>
 
       {/* Persistent Action Dock for Selection Mode */}
-      {isSelectMode && (
-        <div className="fixed bottom-[70px] md:bottom-0 left-0 right-0 z-[80] p-4 pointer-events-none">
-          <div className="max-w-2xl mx-auto bg-card border border-border p-3 rounded-[6px] shadow-2xl pointer-events-auto flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <span className="text-[13px] font-bold text-foreground">
-                {selectedUnits.size} Selected
-              </span>
-            </div>
+        {isSelectMode && selectedUnits.size > 0 && (
+          <BulkSelectionDock
+            selectedCount={selectedUnits.size}
+            onClearSelection={() => {
+              setIsSelectMode(false);
+              setSelectedUnits(new Set());
+            }}
+            onPostAsAd={handlePostAsAd}
+            onSendToGive={() => handleSendToAnalyzer("give")}
+            onSendToGet={() => handleSendToAnalyzer("get")}
+          />
+        )}
 
-            <div className="flex items-center gap-2">
-              <button
-                disabled={selectedUnits.size === 0}
-                onClick={handlePostAsAd}
-                className="px-4 py-2 bg-muted hover:bg-border disabled:opacity-50 text-foreground text-[12px] font-bold rounded-[4px] transition-colors focus-visible:outline-none flex items-center gap-1.5 cursor-pointer border border-transparent hover:border-border"
-                title="Create a new trade ad using these units"
-              >
-                <Megaphone className="w-3.5 h-3.5" /> Post as Ad
-              </button>
-              <div className="w-px h-6 bg-border mx-1" />
-              <button
-                disabled={selectedUnits.size === 0}
-                onClick={() => handleSendToAnalyzer("give")}
-                className="px-4 py-2 bg-[#FAA61A] hover:bg-[#d98b14] disabled:opacity-50 text-black text-[12px] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer border border-transparent"
-              >
-                To Give
-              </button>
-              <button
-                disabled={selectedUnits.size === 0}
-                onClick={() => handleSendToAnalyzer("get")}
-                className="px-4 py-2 bg-foreground hover:bg-foreground/80 disabled:opacity-50 text-background text-[12px] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer border border-transparent"
-              >
-                To Get
-              </button>
-              <button
-                onClick={() => {
-                  setIsSelectMode(false);
-                  setSelectedUnits(new Set());
-                }}
-                className="p-2 text-muted-foreground hover:text-foreground rounded-[4px] hover:bg-muted ml-1 focus-visible:outline-none cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Mass Import Modal */}
+        {/* Mass Import Modal */}
       {importMenuOpen && !isReadOnly && (
         <div className="absolute inset-0 z-[100000] flex items-center justify-center p-4">
           <div

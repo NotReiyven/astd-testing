@@ -1,3 +1,4 @@
+import { BulkSelectionDock } from "../shared/BulkSelectionDock";
 import {
   useState,
   useDeferredValue,
@@ -7,7 +8,7 @@ import {
   useRef,
 } from "react";
 import { ArrowUp } from "lucide-react";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useVirtualizer, defaultRangeExtractor } from "@tanstack/react-virtual";
 import { FilterKey } from "../../../types";
 import { TIER_CONFIG } from "../../../data";
 import { useUnits } from "../../../context/UnitContext";
@@ -74,6 +75,30 @@ export const MainCanvas = memo(function MainCanvas({
   } = useCanvasScroll(isMobile);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
+  const [draggedRowIndex, setDraggedRowIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    const handleDragStart = (e: DragEvent) => {
+      const target = e.target as HTMLElement;
+      const row = target.closest("[data-index]");
+      if (row) {
+        const idx = row.getAttribute("data-index");
+        if (idx !== null) setDraggedRowIndex(Number(idx));
+      }
+    };
+    const handleDragEnd = () => setDraggedRowIndex(null);
+
+    window.addEventListener("dragstart", handleDragStart);
+    window.addEventListener("dragend", handleDragEnd);
+    window.addEventListener("drop", handleDragEnd);
+
+    return () => {
+      window.removeEventListener("dragstart", handleDragStart);
+      window.removeEventListener("dragend", handleDragEnd);
+      window.removeEventListener("drop", handleDragEnd);
+    };
+  }, []);
+
   const [headerHeight, setHeaderHeight] = useState(80);
   const [cols, setCols] = useState(1);
 
@@ -116,7 +141,27 @@ export const MainCanvas = memo(function MainCanvas({
   }, []);
 
   const handleBulkAddToTrade = (type: "give" | "get") => {
-    // Implementation omitted for brevity, identical to original
+    if (selectedUnitIds.size === 0) return;
+    ALL_UNITS.filter((u) => selectedUnitIds.has(u.id)).forEach((u) => {
+      addCard(type, {
+        id: u.id,
+        name: u.name,
+        subtitle: u.subtitle,
+        value: typeof u.value === "number" ? u.value : 0,
+        qty: 1,
+      });
+      window.dispatchEvent(
+        new CustomEvent("trade-added", {
+          detail: {
+            name: u.name,
+            type,
+          },
+        })
+      );
+    });
+    window.dispatchEvent(new Event("open-analyzer"));
+    setIsSelectMode(false);
+    setSelectedUnitIds(new Set());
   };
 
   const hasFiltersApplied =
@@ -141,7 +186,14 @@ export const MainCanvas = memo(function MainCanvas({
     count: flattenedItems.length,
     getScrollElement: () => scrollRef.current,
     getItemKey: (index) => flattenedItems[index]?.id ?? index,
-    estimateSize: (index) => {
+    rangeExtractor: (range) => {
+        const r = defaultRangeExtractor(range);
+        if (draggedRowIndex !== null && !r.includes(draggedRowIndex)) {
+          r.push(draggedRowIndex);
+        }
+        return r;
+      },
+      estimateSize: (index) => {
       const item = flattenedItems[index];
       // Note: We use approximate heights. The measureElement ref handles exact sizing later.
       switch (item.type) {
@@ -282,8 +334,8 @@ export const MainCanvas = memo(function MainCanvas({
                   {item.type === "grid-row" && (
                     <div className={`w-full ${item.isLast ? "pb-[var(--gap-lg)]" : "pb-[var(--gap-md)]"}`}>
                        <div 
-                         className="grid gap-[var(--gap-md)] w-full"
-                         style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 160px), 1fr))' }}
+                         className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-[var(--gap-md)] w-full"
+                         
                        >
                          {item.units.map((u, i) => (
                            <TierGridCard
@@ -315,6 +367,18 @@ export const MainCanvas = memo(function MainCanvas({
           </div>
         )}
       </div>
+
+      {isSelectMode && selectedUnitIds.size > 0 && (
+          <BulkSelectionDock
+            selectedCount={selectedUnitIds.size}
+            onClearSelection={() => {
+              setIsSelectMode(false);
+              setSelectedUnitIds(new Set());
+            }}
+            onSendToGive={() => handleBulkAddToTrade("give")}
+            onSendToGet={() => handleBulkAddToTrade("get")}
+          />
+        )}
 
       <button ref={scrollTopBtnRef} onClick={scrollToTop} className="absolute bottom-[90px] right-6 md:bottom-8 md:right-8 w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ease-out hover:bg-primary/80 hover:-translate-y-1 z-50 opacity-0 translate-y-8 pointer-events-none cursor-pointer focus-visible:outline-none">
         <ArrowUp className="w-5 h-5" />

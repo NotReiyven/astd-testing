@@ -67,7 +67,7 @@ function CountdownTimer({ expiresAt }: { expiresAt: string }) {
   }, [expiresAt]);
 
   return (
-    <span className="text-[11px] font-bold tracking-wider uppercase font-mono">
+    <span className="text-xs font-medium font-mono text-muted-foreground">
       {timeLeft}
     </span>
   );
@@ -116,7 +116,7 @@ const FixedSlotGrid = ({
   return (
     <div className="flex flex-col gap-3 w-full">
       <div className="flex items-center justify-between border-b border-border pb-2">
-        <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+        <span className="text-sm font-semibold text-foreground">
           {label}
         </span>
         {totalVal > 0 && !isOfferTile && (
@@ -125,8 +125,8 @@ const FixedSlotGrid = ({
           </span>
         )}
       </div>
-      {/* Responsive Grid Layout to prevent crushing */}
-      <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-4 gap-[var(--gap-sm)] w-full">
+      {/* Responsive Grid Layout */}
+      <div className="grid grid-cols-4 gap-2 w-full">
         {slots.map((_, i) => {
           if (isOfferTile && i === 0) {
             return (
@@ -135,7 +135,7 @@ const FixedSlotGrid = ({
                 className={`${slotBase} bg-popover border border-border flex flex-col items-center justify-center gap-1 shadow-inner`}
               >
                 <Search className="w-5 h-5 text-muted-foreground opacity-80" />
-                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-wider">
+                <span className="text-xs font-medium text-muted-foreground">
                   Offers
                 </span>
               </div>
@@ -364,24 +364,24 @@ const VanguardAdCard = memo(
 
     const score = votes.up - votes.down;
 
-    let badgeTitle = "TRADE";
+    let badgeTitle = "Trade";
     let badgeClasses = "bg-primary text-primary-foreground border-primary";
 
     if (isTakingOffers) {
-      badgeTitle = "LF OFFERS";
+      badgeTitle = "LF Offers";
       badgeClasses = "bg-foreground text-background border-foreground";
     } else if (isInventory) {
-      badgeTitle = "SHOWCASE";
+      badgeTitle = "Showcase";
       badgeClasses = "bg-muted text-foreground border-border";
     }
 
     return (
       <div
-        className={`relative rounded-[8px] flex flex-col h-full bg-card border border-border transition-all duration-200 will-change-transform specular-card p-[var(--card-p)] ${
+        className={`relative rounded-[8px] flex flex-col h-full bg-card border border-border transition-all duration-200 will-change-transform specular-card p-4 ${
           isNewAd ? "border-primary ring-1 ring-primary" : "hover:border-muted-foreground shadow-sm"
         }`}
       >
-        <div className="flex items-start justify-between mb-[var(--gap-md)] relative z-10">
+        <div className="flex items-start justify-between mb-4 relative z-10">
           <div className="flex items-center gap-3 min-w-0">
             <div
               className="relative shrink-0 cursor-pointer hover:opacity-80 transition-opacity active:scale-95"
@@ -422,14 +422,14 @@ const VanguardAdCard = memo(
             </div>
           </div>
           <span
-            className={`px-2 py-1 rounded-[4px] text-[9px] font-black uppercase tracking-wider shrink-0 ml-2 border ${badgeClasses}`}
+            className={`px-2 py-1 rounded-[4px] text-xs font-semibold shrink-0 ml-2 border ${badgeClasses}`}
           >
             {badgeTitle}
           </span>
         </div>
 
         {ad.note && (
-          <div className="mb-[var(--gap-md)] bg-muted/30 border border-border border-l-2 border-l-primary rounded-[4px] p-3 shadow-inner">
+          <div className="mb-4 bg-muted/30 border border-border border-l-2 border-l-primary rounded-[4px] p-3 shadow-inner">
             <div
               className="text-[var(--ui-text-sm)] text-foreground font-medium leading-relaxed break-words overflow-hidden"
               style={{
@@ -443,7 +443,7 @@ const VanguardAdCard = memo(
           </div>
         )}
 
-        <div className="flex flex-col w-full flex-1 relative z-10 gap-[var(--gap-md)]">
+        <div className="flex flex-col w-full flex-1 relative z-10 gap-4">
           {isInventory ? (
             <FixedSlotGrid
               items={ad.give_items}
@@ -473,7 +473,7 @@ const VanguardAdCard = memo(
           )}
         </div>
 
-        <div className="mt-auto pt-[var(--gap-md)] border-t border-border flex flex-col gap-3 relative z-10">
+        <div className="mt-auto pt-4 border-t border-border flex flex-col gap-3 relative z-10">
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-0.5 bg-muted rounded-[4px] border border-border p-0.5">
               <button
@@ -685,7 +685,7 @@ export function TradingAdsChannel() {
               triggerHaptic("light");
               setTypeFilter(t.id);
             }}
-            className={`flex-1 sm:flex-none px-4 rounded-[4px] text-[var(--ui-text-xs)] font-bold uppercase tracking-wider transition-all focus-visible:outline-none cursor-pointer whitespace-nowrap active:scale-95 flex items-center justify-center ${
+            className={`flex-1 sm:flex-none px-4 rounded-[4px] text-sm font-medium transition-all focus-visible:outline-none cursor-pointer whitespace-nowrap active:scale-95 flex items-center justify-center ${
               typeFilter === t.id
                 ? "bg-foreground text-background shadow-sm"
                 : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
@@ -716,7 +716,7 @@ export function TradingAdsChannel() {
         <button
           type="button"
           onClick={handleCreateAdClick}
-          className="flex items-center justify-center gap-1.5 px-4 w-full sm:w-auto h-[var(--ui-height-btn)] rounded-[4px] bg-primary hover:bg-primary/90 text-primary-foreground text-[var(--ui-text-sm)] font-bold uppercase tracking-wider transition-all focus-visible:outline-none shrink-0 shadow-sm cursor-pointer active:scale-95 border border-primary"
+          className="flex items-center justify-center gap-1.5 px-4 w-full sm:w-auto h-[var(--ui-height-btn)] rounded-[4px] bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-all focus-visible:outline-none shrink-0 shadow-sm cursor-pointer active:scale-95 border border-primary"
         >
           <Plus className="w-4 h-4" />
           <span>Create Ad</span>
@@ -728,7 +728,7 @@ export function TradingAdsChannel() {
             triggerHaptic("medium");
             loginWithDiscord();
           }}
-          className="flex items-center justify-center gap-1.5 px-4 w-full sm:w-auto h-[var(--ui-height-btn)] rounded-[4px] bg-muted border border-border text-foreground text-[var(--ui-text-sm)] font-bold uppercase tracking-wider transition-all hover:bg-card focus-visible:outline-none shrink-0 cursor-pointer active:scale-95"
+          className="flex items-center justify-center gap-1.5 px-4 w-full sm:w-auto h-[var(--ui-height-btn)] rounded-[4px] bg-muted border border-border text-foreground text-sm font-semibold transition-all hover:bg-card focus-visible:outline-none shrink-0 cursor-pointer active:scale-95"
         >
           <GiLockedFortress className="w-4 h-4 text-primary" />
           <span>Login</span>
@@ -747,11 +747,11 @@ export function TradingAdsChannel() {
       />
 
       <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col bg-transparent relative z-10">
-        <div className="w-full h-full max-w-[1400px] mx-auto pb-24 p-[var(--page-p)]">
+        <div className="w-full h-full max-w-[1400px] mx-auto pb-24 p-6">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
               <GiTornado className="w-8 h-8 animate-pulse text-primary" />
-              <span className="text-[var(--ui-text-sm)] font-bold uppercase tracking-widest">
+              <span className="text-sm font-medium text-muted-foreground">
                 Connecting to live market...
               </span>
             </div>
@@ -777,7 +777,10 @@ export function TradingAdsChannel() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 w-full animate-fade-in gap-[var(--gap-lg)]">
+            <div 
+              className="grid w-full animate-fade-in gap-6" 
+              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))" }}
+            >
               {filteredAndSortedAds.map((ad) => (
                 <VanguardAdCard
                   key={ad.id}

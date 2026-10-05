@@ -8,9 +8,18 @@ import {
   TIER_CONFIG,
   getObtainability,
   GRID_STATUS_CFG,
+  THEORY_RARITY_SCALE,
+  THEORY_LIQUIDITY_SCALE,
 } from "../../../../data";
 import { UnitAvatar } from "../../shared/UnitAvatar";
 import { useTradeStore } from "../../../../store/useTradeStore";
+
+if (typeof window !== "undefined") {
+  const img = new Image();
+  img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+  (window as any).__blankDragImg = img;
+}
+
 import { useHistoryModalStore } from "../../../../store/useHistoryModalStore";
 import { triggerHaptic } from "../../../../data/helpers";
 import { useAuthStore } from "../../../../store/useAuthStore";
@@ -112,7 +121,7 @@ export function GridStatusBadge({ status }: { status: string }) {
       >
         <StatusIcon status={status} />
 
-        <span className="text-[10px] font-bold tracking-wide uppercase transition-colors leading-none">
+        <span className="text-xs font-semibold transition-colors leading-none">
           {c.label}
         </span>
       </div>
@@ -175,7 +184,11 @@ export function GridStatFooter({
   const liqDisplay =
     liqStr.toLowerCase() === "black marketed"
       ? "BM"
-      : liqStr.toUpperCase();
+      : liqStr;
+
+  const rarityColor = THEORY_RARITY_SCALE.find(r => r.val === Math.round(numVal))?.color || "var(--foreground)";
+  const liqColorObj = THEORY_LIQUIDITY_SCALE.find(l => l.val.toLowerCase() === liqStr.toLowerCase());
+  const liqColor = liqColorObj ? liqColorObj.color : "var(--foreground)";
 
   return (
     <div className="grid grid-cols-2 gap-2 pt-3 mt-3 border-t border-border/80 w-full font-mono">
@@ -184,7 +197,7 @@ export function GridStatFooter({
           Rarity
         </span>
 
-        <span className="text-[13px] font-black text-foreground">
+        <span className="text-[13px] font-black" style={{ color: rarityColor }}>
           {rarityDisplay}
         </span>
       </div>
@@ -194,7 +207,7 @@ export function GridStatFooter({
           Liquidity
         </span>
 
-        <span className="text-[12px] font-black text-foreground truncate">
+        <span className="text-[12px] font-black truncate" style={{ color: liqColor }}>
           {liqDisplay}
         </span>
       </div>
@@ -366,10 +379,10 @@ export const TierGridCard = memo(function TierGridCard({
           onDragStart={handleDragStart}
           onClick={handleCardClick}
           onContextMenu={(e) => e.preventDefault()}
-          className={`flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10 will-change-transform specular-card bg-card border transition-all duration-300 ${
+          className={`flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10   bg-card border transition-all duration-300 ${
             isSelected
               ? "border-primary ring-2 ring-primary"
-              : "hover:-translate-y-1 hover:shadow-xl"
+              : "hover:-translate-y-2 hover:shadow-2xl hover:scale-[1.02] ease-out"
           }`}
           style={
             {
@@ -410,7 +423,7 @@ export const TierGridCard = memo(function TierGridCard({
                 <div className="bg-[#23a559] text-white rounded-full p-2 shadow-lg mb-1 border border-white/10">
                   <Check className="w-5 h-5 stroke-[4]" />
                 </div>
-                <span className="text-[10px] font-black tracking-[0.2em] uppercase text-white">
+                <span className="text-xs font-semibold text-white">
                   In Trade
                 </span>
               </div>
@@ -435,7 +448,7 @@ export const TierGridCard = memo(function TierGridCard({
           {/* Card Content                                                      */}
           {/* ---------------------------------------------------------------- */}
 
-          <div className="flex flex-col flex-1 p-[var(--card-p)] relative z-10 bg-card">
+          <div className="flex flex-col flex-1 p-5 relative z-10 bg-card">
             {/* -------------------------------------------------------------- */}
             {/* Header                                                           */}
             {/* -------------------------------------------------------------- */}
@@ -456,7 +469,7 @@ export const TierGridCard = memo(function TierGridCard({
                 )}
               </div>
 
-              <p className="text-[12px] font-bold uppercase tracking-wider leading-none mt-1 truncate text-muted-foreground">
+              <p className="text-sm font-medium mt-1 truncate text-muted-foreground">
                 <HighlightText
                   text={unit.subtitle || ""}
                   query={searchQuery}
@@ -466,11 +479,11 @@ export const TierGridCard = memo(function TierGridCard({
               {/* Obtainability */}
               <div className="flex mt-1.5">
                 {obtainability === "UNOB" ? (
-                  <span className="text-[8px] font-bold uppercase text-muted-foreground bg-popover px-1.5 py-0.5 rounded-[2px] border border-transparent tracking-widest leading-none">
+                  <span className="text-xs font-semibold text-muted-foreground bg-popover px-1.5 py-0.5 rounded-[4px] border border-transparent leading-none">
                     UNOB
                   </span>
                 ) : (
-                  <span className="text-[8px] font-bold uppercase text-foreground bg-white/5 px-1.5 py-0.5 rounded-[2px] border border-transparent tracking-widest leading-none">
+                  <span className="text-xs font-semibold text-foreground bg-white/5 px-1.5 py-0.5 rounded-[4px] border border-transparent leading-none">
                     OBN
                   </span>
                 )}
@@ -537,7 +550,7 @@ export const TierGridCard = memo(function TierGridCard({
                       {unit.name}
                     </span>
 
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground truncate">
+                    <span className="text-xs font-semibold text-muted-foreground truncate">
                       {unit.subtitle}
                     </span>
                   </div>

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, memo, useMemo } from "react";
-import { useAutoAnimate } from "@formkit/auto-animate/react";
+
 import { Search, X } from "lucide-react";
 import { TradeCard } from "../../../types";
 import { useUnits } from "../../../context/UnitContext";
@@ -34,11 +34,11 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
   onInputFocus,
   onInputBlur,
 }: TradeSectionPanelProps) {
-  const [animationParent] = useAutoAnimate<HTMLDivElement>();
+  
   const { units: ALL_UNITS } = useUnits();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -66,21 +66,23 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
       window.removeEventListener("focus-trade-search", handleFocusSearch);
   }, [type]);
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "copy";
-    setIsDraggingOver(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      setIsDraggingOver(false);
+    if (e.dataTransfer.types.includes("unit")) {
+      e.dataTransfer.dropEffect = "copy";
     }
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    
+  };
+
+  
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDraggingOver(false);
+    
     const raw = e.dataTransfer.getData("unit");
     if (!raw) return;
     try {
@@ -150,7 +152,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
     minHeight: items.length === 0 ? "90px" : "auto",
   };
 
-  if (isDraggingOver) {
+  if (isDraggingGlobal) {
     dropZoneClasses += "bg-popover border-2";
     dropZoneStyle.borderColor = accentColorHex;
   } else if (items.length === 0) {
@@ -322,15 +324,16 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
       <div
         style={dropZoneStyle}
         className={dropZoneClasses}
+        onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
+        
         onDrop={handleDrop}
       >
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center pointer-events-none gap-0.5 py-4">
             <p
               className="text-[13px] font-bold"
-              style={{ color: isDraggingOver ? "var(--foreground)" : "var(--muted-foreground)" }}
+              style={{ color: isDraggingGlobal ? "var(--foreground)" : "var(--muted-foreground)" }}
             >
               {isDraggingGlobal ? "Drop unit here" : "Empty Section"}
             </p>
@@ -342,7 +345,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
             )}
           </div>
         ) : (
-          <div ref={animationParent} className="flex flex-col gap-[var(--gap-sm)]">
+          <div className="flex flex-col gap-[var(--gap-sm)]">
             {items.map((card) => (
               <div key={card.id}>
                 <ActiveCardRow

@@ -40,7 +40,7 @@ export function GridStatBox({
     displayValue =
       stringVal.toLowerCase() === "black marketed"
         ? "BM"
-        : stringVal.toUpperCase();
+        : liqKey;
     tipTitle = `Liquidity: ${liqKey}`;
     tipBody = LIQUIDITY_SCALE[liqKey] ?? "Unknown trading difficulty.";
 
@@ -74,11 +74,11 @@ export function GridStatBox({
       onMouseLeave={() => setTipPos(null)}
       onClick={toggleTip}
     >
-      <span className="text-[8px] md:text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">
+      <span className="text-xs font-semibold text-muted-foreground mb-1">
         {label}
       </span>
       <span
-        className="text-[10px] md:text-[14px] font-black tracking-wide truncate"
+        className="text-sm font-semibold truncate"
         style={{ color: textColor }}
       >
         {displayValue === "BM" ? (

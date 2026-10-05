@@ -66,7 +66,7 @@ export const ListHeaderRow = memo(function ListHeaderRow({
   };
 
   return (
-    <div className="hidden md:flex items-center text-muted-foreground text-[10px] font-bold uppercase tracking-widest select-none w-full gap-4">
+    <div className="hidden md:flex items-center text-muted-foreground text-sm font-semibold select-none w-full gap-4">
       {!isCompact && <div className="w-10" />}
       <div className="flex-1">Unit</div>
       
@@ -131,7 +131,7 @@ export const UnitListRow = memo(function UnitListRow({
                <HighlightText text={unit.name} query={searchQuery} />
             </span>
             {!isCompact && unit.subtitle && (
-              <span className="text-[var(--ui-text-xs)] text-muted-foreground uppercase tracking-wider truncate">
+              <span className="text-sm font-medium text-muted-foreground truncate">
                 <HighlightText text={unit.subtitle} query={searchQuery} />
               </span>
             )}
@@ -148,7 +148,7 @@ export const UnitListRow = memo(function UnitListRow({
                {unit.rarity}
             </div>
             <div className="w-16 flex justify-center text-[12px] font-bold" style={{ color: getStatColor("L", unit.liquidity || 'average') }}>
-               {(unit.liquidity || 'Average').substring(0,3).toUpperCase()}
+               {(unit.liquidity || 'Average').substring(0,3)}
             </div>
           </div>
 
@@ -174,7 +174,7 @@ export const UnitListRow = memo(function UnitListRow({
                 <span className="text-[var(--ui-text-base)] font-extrabold text-foreground truncate">
                    <HighlightText text={unit.name} query={searchQuery} />
                 </span>
-                <span className="text-[var(--ui-text-xs)] font-bold uppercase text-muted-foreground truncate">
+                <span className="text-sm font-medium text-muted-foreground truncate">
                    <HighlightText text={unit.subtitle || "Official Unit"} query={searchQuery} />
                 </span>
               </div>
@@ -187,7 +187,7 @@ export const UnitListRow = memo(function UnitListRow({
           <div className="flex items-center gap-3 text-[var(--ui-text-sm)] font-mono border-t border-border/50 pt-2">
             <span className="text-muted-foreground">R <span style={{ color: getStatColor("R", unit.rarity) }}>{unit.rarity}</span></span>
             <span className="text-border">|</span>
-            <span className="text-muted-foreground">L <span style={{ color: getStatColor("L", unit.liquidity || 'average') }}>{(unit.liquidity || 'Avg').substring(0,3).toUpperCase()}</span></span>
+            <span className="text-muted-foreground">L <span style={{ color: getStatColor("L", unit.liquidity || 'average') }}>{(unit.liquidity || 'Avg').substring(0,3)}</span></span>
             {unit.notice && <span className="flex-1 text-right text-muted-foreground italic truncate ml-auto">{unit.notice}</span>}
           </div>
         </div>

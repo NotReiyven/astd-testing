@@ -14,10 +14,12 @@ export function useTradeGlobalInput() {
 
     window.addEventListener("dragstart", handleDragStart);
     window.addEventListener("dragend", handleDragEnd);
+    window.addEventListener("drop", handleDragEnd);
 
     return () => {
       window.removeEventListener("dragstart", handleDragStart);
       window.removeEventListener("dragend", handleDragEnd);
+      window.removeEventListener("drop", handleDragEnd);
     };
   }, []);
 

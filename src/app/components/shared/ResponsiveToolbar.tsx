@@ -24,10 +24,10 @@ export function ResponsiveToolbar({
   const [isCollapsed, setIsCollapsed] = useState(true);
 
   return (
-    <div className={`flex flex-col z-40 relative bg-card border-b border-border shadow-sm px-[var(--panel-p)] py-[calc(var(--panel-p)*0.75)] gap-[var(--gap-sm)] ${className}`}>
+    <div className={`flex flex-col z-40 relative bg-card border-b border-border shadow-sm px-4 py-3 gap-[var(--gap-sm)] ${className}`}>
       {/* Mobile Header (Only shows on small viewports) */}
       <div className="flex md:hidden items-center justify-between pb-1">
-        <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+        <span className="text-sm font-semibold text-foreground">
           {title}
         </span>
         <button
@@ -35,7 +35,7 @@ export function ResponsiveToolbar({
             triggerHaptic("light");
             setIsCollapsed(!isCollapsed);
           }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-xs font-bold uppercase tracking-wider cursor-pointer focus-visible:outline-none"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-sm font-medium cursor-pointer focus-visible:outline-none"
         >
           <SlidersHorizontal className="w-3.5 h-3.5" />
           <span>{isCollapsed ? "Filters" : "Collapse"}</span>
@@ -47,11 +47,11 @@ export function ResponsiveToolbar({
       <div
         className={`flex flex-col transition-all duration-300 overflow-hidden ${
           isCollapsed
-            ? "max-h-0 opacity-0 md:max-h-none md:opacity-100 py-0 gap-0 md:gap-[var(--gap-md)]"
-            : "max-h-[800px] opacity-100 gap-[var(--gap-md)]"
+            ? "max-h-0 opacity-0 md:max-h-none md:opacity-100 py-0 gap-0 md:gap-4"
+            : "max-h-[800px] opacity-100 gap-4"
         }`}
       >
-        <div className="flex flex-col md:flex-row md:items-center gap-[var(--gap-md)] w-full pt-2 md:pt-0 border-t border-border/60 md:border-none">
+        <div className="flex flex-col md:flex-row md:items-center gap-4 w-full pt-2 md:pt-0 border-t border-border/60 md:border-none">
           
           {searchNode && (
             <div className="flex-1 w-full min-w-0">
