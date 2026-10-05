@@ -1,16 +1,21 @@
 import React, { useRef, useState } from "react";
+import { motion, useMotionValue, useMotionTemplate } from "framer-motion";
 
 export function SpotlightCard({ children, color, className = "" }: { children: React.ReactNode, color: string, className?: string }) {
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
   const [isHovering, setIsHovering] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
     const rect = cardRef.current.getBoundingClientRect();
-    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    mouseX.set(e.clientX - rect.left);
+    mouseY.set(e.clientY - rect.top);
     setIsHovering(true);
   };
+
+  const background = useMotionTemplate`radial-gradient(circle at ${mouseX}px ${mouseY}px, ${color}25 0%, transparent 70%)`;
 
   return (
     <div 
@@ -19,11 +24,10 @@ export function SpotlightCard({ children, color, className = "" }: { children: R
       onMouseLeave={() => setIsHovering(false)}
       className={`bg-[#2B2D31] border border-[rgba(255,255,255,0.06)] rounded-[12px] flex flex-col shadow-sm relative overflow-hidden group transition-all hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.2)] duration-300 ${className}`}
     >
-      <div 
-        className="absolute pointer-events-none transition-opacity duration-300 z-0 mix-blend-screen"
+      <motion.div 
+        className="absolute inset-0 pointer-events-none transition-opacity duration-300 z-0 mix-blend-screen"
         style={{
-          top: mousePos.y - 150, left: mousePos.x - 150, width: 300, height: 300,
-          background: `radial-gradient(circle, ${color}25 0%, transparent 70%)`,
+          background,
           opacity: isHovering ? 1 : 0
         }}
       />

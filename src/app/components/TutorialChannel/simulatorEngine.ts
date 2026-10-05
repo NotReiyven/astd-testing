@@ -83,7 +83,7 @@ export const buildScenariosList = (ALL_UNITS: MasterUnit[]): Scenario[] => {
       );
       title = "The Falling Knife";
       desc =
-        "They are overpaying with a dropping asset. Does the raw value justify the risk?";
+        "They are offering a higher value with a dropping asset. Does the raw value justify the risk?";
     } else if (type === 1) {
       g1 = getByCondition((u) => u.status === "stable");
       match = findPairedUnit(
@@ -95,7 +95,7 @@ export const buildScenariosList = (ALL_UNITS: MasterUnit[]): Scenario[] => {
       );
       title = "The Inflated Bait";
       desc =
-        "A trader is using an inflated/highballed unit to overpay. Check the true value metrics.";
+        "A trader is using an inflated/highballed unit to increase value. Check the true value metrics.";
     } else if (type === 2) {
       g1 = getByCondition(
         (u) => u.status === "gatekept" || getLiq(u) === "low"
@@ -108,7 +108,7 @@ export const buildScenariosList = (ALL_UNITS: MasterUnit[]): Scenario[] => {
         0.95
       );
       title = "The Liquidity Flip";
-      desc = "Taking a raw value underpay to get rid of a hard-to-trade unit.";
+      desc = "Taking a raw value loss to get rid of a hard-to-trade unit.";
     } else if (type === 3) {
       g1 = getByCondition(
         (u) => u.status === "unstable" || u.status === "hyped"

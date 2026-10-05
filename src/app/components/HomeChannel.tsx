@@ -45,22 +45,21 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
   const { globalCompactMode } = useLayoutStore();
 
   useEffect(() => {
-    const handleScroll = () => {
-      const sections = ["info", "updates", "credits"];
-      const scrollPos = document.getElementById("home-content")?.scrollTop || 0;
-
-      for (const section of sections) {
-        const el = document.getElementById(`section-${section}`);
-        if (el && el.offsetTop <= scrollPos + 150) {
-          setActiveSection(section);
-        }
-      }
-    };
-
-    const container = document.getElementById("home-content");
-    container?.addEventListener("scroll", handleScroll);
-    return () => container?.removeEventListener("scroll", handleScroll);
+    // Replaced addEventListener with direct onScroll prop below
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const sections = ["info", "updates", "credits"];
+    const scrollPos = e.currentTarget.scrollTop;
+
+    for (const section of sections) {
+      const el = document.getElementById(`section-${section}`);
+      if (el && el.offsetTop <= scrollPos + 150) {
+        setActiveSection(section);
+      }
+    }
+  };
 
   const scrollTo = (id: string) => {
     const container = document.getElementById("home-content");
@@ -85,7 +84,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
     "The cult of Fire ZIO will never be forgotten...",
     "DENJI AND TOSHIRO ARE NEVER GETTING THEIR EVO",
     "Stop trying to impregnate the calculator Alu",
-    "GRRs were duped stopped trying to overpay for them"
+    "GRRs were duped stopped trying to trade so much for them"
   ];
 
   const handleSecretClick = () => {
@@ -125,7 +124,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
 
   return (
     <div className="flex-1 w-full h-full font-sans relative overflow-hidden flex flex-col bg-background">
-      <div className={`flex flex-col md:flex-row ${globalCompactMode ? 'gap-4 p-3 md:p-4' : 'gap-8 p-6 md:p-8'} max-w-6xl mx-auto w-full h-full overflow-hidden`}>
+      <div className={`flex flex-col md:flex-row gap-4 p-3 md:p-4 max-w-6xl mx-auto w-full h-full overflow-hidden`}>
 
         {/* Inner Nav now hides on lg (1024px) screens to make room for calculator overlay */}
         <nav className="hidden lg:flex flex-col w-56 shrink-0 sticky top-0 self-start pt-2 z-10">
@@ -169,7 +168,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
         </nav>
 
         {/* Added min-w-0 to prevent flexbox from crushing text elements */}
-        <div id="home-content" className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-16 flex flex-col gap-12 z-10 min-w-0">
+        <div id="home-content" onScroll={handleScroll} className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-16 flex flex-col gap-12 z-10 min-w-0">
 
           <div className="flex flex-col gap-3">
             <h1 className={`${globalCompactMode ? 'text-[20px] md:text-[24px]' : 'text-[28px] md:text-[32px]'} font-black text-foreground tracking-tight`}>ASTD Value List</h1>

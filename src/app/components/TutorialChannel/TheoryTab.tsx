@@ -11,23 +11,21 @@ export function TheoryTab() {
   const [activeSection, setActiveSection] = useState<string>("tags");
 
   useEffect(() => {
-    const handleScroll = () => {
-      const sections = ["tags", "rarity", "liquidity"];
-      const scrollPos =
-        document.getElementById("theory-content")?.scrollTop || 0;
-
-      for (const section of sections) {
-        const el = document.getElementById(`section-${section}`);
-        if (el && el.offsetTop <= scrollPos + 100) {
-          setActiveSection(section);
-        }
-      }
-    };
-
-    const container = document.getElementById("theory-content");
-    container?.addEventListener("scroll", handleScroll);
-    return () => container?.removeEventListener("scroll", handleScroll);
+    // Replaced addEventListener with direct onScroll prop below
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const sections = ["tags", "rarity", "liquidity"];
+    const scrollPos = e.currentTarget.scrollTop;
+
+    for (const section of sections) {
+      const el = document.getElementById(`section-${section}`);
+      if (el && el.offsetTop <= scrollPos + 100) {
+        setActiveSection(section);
+      }
+    }
+  };
 
   const scrollTo = (id: string) => {
     const container = document.getElementById("theory-content");
@@ -84,6 +82,7 @@ export function TheoryTab() {
       {/* Added min-w-0 to prevent flexbox crushing */}
       <div
         id="theory-content"
+        onScroll={handleScroll}
         className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-16 flex flex-col gap-12 min-w-0"
       >
         {/* Intro */}

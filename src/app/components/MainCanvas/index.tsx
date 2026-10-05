@@ -8,6 +8,7 @@ import {
   useRef,
 } from "react";
 import { ArrowUp } from "lucide-react";
+import { motion } from "framer-motion";
 import { useVirtualizer, defaultRangeExtractor } from "@tanstack/react-virtual";
 import { FilterKey } from "../../../types";
 import { TIER_CONFIG } from "../../../data";
@@ -103,15 +104,15 @@ export const MainCanvas = memo(function MainCanvas({
   const [cols, setCols] = useState(1);
 
   useEffect(() => {
-    const updateCols = () => {
-      const container = document.getElementById("main-scroll-container");
-      let w = container ? container.clientWidth : window.innerWidth;
+    const container = document.getElementById("main-scroll-container");
+    if (!container) return;
+
+    const updateCols = (entry?: ResizeObserverEntry) => {
+      let w = entry ? entry.contentRect.width : container.clientWidth;
       
       let padding = 0;
-      if (container) {
-          const styles = window.getComputedStyle(container);
-          padding = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
-      }
+      const styles = window.getComputedStyle(container);
+      padding = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
       w = w - padding;
 
       const isMobile = window.innerWidth < 768;
@@ -121,9 +122,13 @@ export const MainCanvas = memo(function MainCanvas({
       const c = Math.max(1, Math.floor((w + gap) / (minCardWidth + gap)));
       setCols(c);
     };
+
     updateCols();
-    window.addEventListener("resize", updateCols);
-    return () => window.removeEventListener("resize", updateCols);
+    const observer = new ResizeObserver((entries) => {
+      if (entries[0]) updateCols(entries[0]);
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -343,7 +348,13 @@ export const MainCanvas = memo(function MainCanvas({
                   )}
 
                   {item.type === "grid-row" && (
-                    <div className={`w-full ${item.isLast ? "pb-[var(--gap-lg)]" : "pb-[var(--gap-md)]"}`}>
+                    <motion.div 
+                      className={`w-full ${item.isLast ? "pb-[var(--gap-lg)]" : "pb-[var(--gap-md)]"}`}
+                      initial={{ opacity: 0, y: 15 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "50px" }}
+                      style={{ willChange: "transform, opacity" }}
+                    >
                        <div 
                          className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-[var(--gap-md)] w-full"
                          
@@ -359,18 +370,24 @@ export const MainCanvas = memo(function MainCanvas({
                            />
                          ))}
                        </div>
-                    </div>
+                    </motion.div>
                   )}
 
                   {item.type === "list-row" && (
-                    <div className="py-[1px]">
+                    <motion.div 
+                      className="py-[1px]"
+                      initial={{ opacity: 0, y: 15 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "50px" }}
+                      style={{ willChange: "transform, opacity" }}
+                    >
                       <UnitListRow
                         unit={item.unit}
                         isLast={item.isLast}
                         searchQuery={item.searchQuery}
                         viewMode={viewMode}
                       />
-                    </div>
+                    </motion.div>
                   )}
                 </div>
               );

@@ -21,10 +21,15 @@ export function useAppBoot() {
   // Layout & Auth Initialization
   useEffect(() => {
     initializeAuth();
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    const checkMobile = (width: number) => setIsMobile(width < 768);
+    checkMobile(window.innerWidth);
+    
+    const observer = new ResizeObserver((entries) => {
+      if (entries[0]) checkMobile(entries[0].contentRect.width);
+    });
+    observer.observe(document.body);
+    
+    return () => observer.disconnect();
   }, [initializeAuth]);
 
   // Inventory & Wishlist Sync

@@ -19,7 +19,7 @@ const TTL_OPTIONS = [
 const PRESET_NOTES = [
   "Upgrading only",
   "Downgrading only",
-  "Taking underpays",
+  "Accepting lower value",
   "Strictly fair trades",
   "DM on Discord to offer",
   "NLF: Low demand units",

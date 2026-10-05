@@ -11,19 +11,19 @@ const STATUS_DEFS: Record<string, string> = {
   inflated:
     "If a unit has this tag, they are inflated and cost way more than they should be worth.",
   rising:
-    "If a unit is rising, it means the unit is being consistently overpaid.",
+    "If a unit is rising, it means the unit is consistently gaining value in trades.",
   dropping:
-    "If a unit is dropping, it means owners are constantly taking underpays.",
+    "If a unit is dropping, it means owners are consistently taking a loss in value.",
   lowballed:
-    "If a unit has this tag, it can get fair at most, but also gets lowballs.",
+    "If a unit has this tag, it typically trades at fair value or below.",
   highballed:
-    "If a unit has this tag, it can get fair at minimum, but also gets highballs.",
+    "If a unit has this tag, it typically trades at fair value or above.",
   gatekept:
-    "If a unit is gatekept, it means owners are refusing to trade this unit for any reason, waiting for rise.",
+    "If a unit is gatekept, it means owners are refusing to trade this unit for any reason, waiting for a gain in value.",
   "black-marketed":
     "If a unit has this tag, it means that people who buy units with outside-game currency are heavily impacting it.",
   varies:
-    "If a unit varies, then it can get fair but it can also get lowballs or highballs.",
+    "If a unit varies, then it can trade fairly but it can also fluctuate significantly.",
 };
 
 export function TradeNotices({

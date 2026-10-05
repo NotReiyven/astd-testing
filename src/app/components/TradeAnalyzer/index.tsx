@@ -86,10 +86,15 @@ export function TradeAnalyzerPanel({
   } = useTradeGlobalInput();
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    const checkMobile = (width: number) => setIsMobile(width < 768);
+    checkMobile(window.innerWidth);
+    
+    const observer = new ResizeObserver((entries) => {
+      if (entries[0]) checkMobile(entries[0].contentRect.width);
+    });
+    observer.observe(document.body);
+    
+    return () => observer.disconnect();
   }, []);
 
   const closeSheet = useCallback(() => {
@@ -536,7 +541,7 @@ export function TradeAnalyzerPanel({
       <>
         {/* Minimized bottom tab */}
         <div
-          className={`fixed left-0 right-0 bottom-0 bg-card border-t border-border transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer pb-safe
+          className={`fixed left-0 right-0 bottom-0 bg-card border-t border-border transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] pb-safe
           ${
             isOpen
               ? "translate-y-[100%] opacity-0 pointer-events-none z-[80]"
@@ -547,26 +552,40 @@ export function TradeAnalyzerPanel({
               ? "!z-[100005] ring-2 ring-primary shadow-lg"
               : "z-[80]"
           }`}
-          onClick={openSheet}
         >
-          <div className="flex items-center justify-between px-4 py-3 pb-safe">
-            <div className="flex flex-col min-w-0 flex-1 border-r border-border pr-3">
-              <span className="text-[12px] font-medium text-muted-foreground mb-0.5 flex items-center gap-1.5">
+          <div 
+            className="flex items-center justify-between px-3 py-2 pb-safe cursor-pointer"
+            onClick={openSheet}
+          >
+            <div className="flex flex-col min-w-0 flex-1 border-r border-border pr-2">
+              <span className="text-[11px] font-medium text-muted-foreground mb-[1px] flex items-center gap-1.5 uppercase tracking-wider">
                 <div className="w-1.5 h-1.5 rounded-[2px] bg-[#FAA61A]" /> Give
               </span>
-              <span className="text-[14px] font-black text-foreground font-mono truncate">
+              <span className="text-[13px] font-black text-foreground font-mono truncate">
                 <RollingNumber value={giveTotal} />
               </span>
             </div>
 
-            <div className="flex flex-col min-w-0 flex-1 pl-3">
-              <span className="text-[12px] font-medium text-muted-foreground mb-0.5 flex items-center gap-1.5">
+            <div className="flex flex-col min-w-0 flex-1 pl-3 pr-2">
+              <span className="text-[11px] font-medium text-muted-foreground mb-[1px] flex items-center gap-1.5 uppercase tracking-wider">
                 <div className="w-1.5 h-1.5 rounded-[2px] bg-primary" /> Get
               </span>
-              <span className="text-[14px] font-black text-foreground font-mono truncate">
+              <span className="text-[13px] font-black text-foreground font-mono truncate">
                 <RollingNumber value={getTotal} />
               </span>
             </div>
+
+            <button 
+              onClick={(e) => {
+                 e.stopPropagation();
+                 triggerHaptic("medium");
+                 handleSafeClear();
+              }}
+              className="w-10 h-10 flex flex-shrink-0 items-center justify-center bg-muted text-muted-foreground hover:bg-destructive hover:text-destructive-foreground rounded-[6px] border border-border"
+              title="Clear Trade"
+            >
+              {confirmClear ? <Check className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
+            </button>
           </div>
         </div>
 

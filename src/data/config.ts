@@ -113,7 +113,7 @@ export const GRID_STATUS_CFG: Record<
   },
   dropping: {
     label: "Dropping",
-    tip: "If a unit is dropping, it means owners are constantly taking underpays.",
+    tip: "If a unit is dropping, it means owners are consistently taking a loss in value.",
     bg: "rgba(30, 33, 36, 0.95)",
     border: "rgba(230, 10, 24, 0.3)",
     color: "#f87171",
@@ -318,14 +318,14 @@ export const THEORY_STATUS_TAGS = [
     bg: "rgba(30, 33, 36, 0.95)",
     border: "rgba(48, 161, 99, 0.3)",
     color: "#30a163",
-    def: "If a unit is rising, it means the unit is being consistently overpaid.",
+    def: "If a unit is rising, it means the unit is consistently gaining value in trades.",
   },
   {
     tag: "Dropping",
     bg: "rgba(30, 33, 36, 0.95)",
     border: "rgba(230, 10, 24, 0.3)",
     color: "#f87171",
-    def: "If a unit is dropping, it means owners are constantly taking underpays.",
+    def: "If a unit is dropping, it means owners are consistently taking a loss in value.",
   },
   {
     tag: "Inflated",
@@ -346,21 +346,21 @@ export const THEORY_STATUS_TAGS = [
     bg: "rgba(30, 33, 36, 0.95)",
     border: "rgba(155, 141, 232, 0.3)",
     color: "#a78bfa",
-    def: "If a unit varies, then it can get fair but it can also get lowballs or highballs.",
+    def: "If a unit varies, then it can trade fairly but it can also fluctuate significantly.",
   },
   {
     tag: "Lowballed",
     bg: "rgba(30, 33, 36, 0.95)",
     border: "rgba(230, 108, 25, 0.3)",
     color: "#fb923c",
-    def: "If a unit has this tag, it can get fair at most, but also gets lowballs.",
+    def: "If a unit has this tag, it typically trades at fair value or below.",
   },
   {
     tag: "Highballed",
     bg: "rgba(30, 33, 36, 0.95)",
     border: "rgba(1, 239, 253, 0.3)",
     color: "#38bdf8",
-    def: "If a unit has this tag, it can get fair at minimum, but also gets highballs.",
+    def: "If a unit has this tag, it typically trades at fair value or above.",
   },
 ];
 
@@ -377,7 +377,7 @@ export const THEORY_SECONDARY_TAGS = [
     bg: "rgba(30, 33, 36, 0.95)",
     border: "rgba(175, 120, 168, 0.3)",
     color: "#c084fc",
-    def: "If a unit is gatekept, it means owners are refusing to trade this unit for any reason, waiting for a rise or huge overpay, usually.",
+    def: "If a unit is gatekept, it means owners are refusing to trade this unit for any reason, waiting for a gain in value.",
   },
   {
     tag: "Black Market",

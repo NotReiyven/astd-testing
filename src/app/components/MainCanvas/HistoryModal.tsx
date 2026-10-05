@@ -61,7 +61,7 @@ export function HistoryModal() {
     if (isOpen) {
       document.body.style.overflow = "hidden";
       window.addEventListener("keydown", handleKeyDown);
-      setActiveMetric("value");
+      setActiveMetric(initialMetric || "value");
       setIsScrolled(false);
       if (scrollRef.current) scrollRef.current.scrollTop = 0;
     } else {

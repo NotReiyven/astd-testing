@@ -8,7 +8,9 @@ export function useTradeGlobalInput() {
   // Global Drag & Drop Listener
   useEffect(() => {
     const handleDragStart = (e: DragEvent) => {
-      if (e.dataTransfer?.types.includes("unit")) setIsGlobalDragging(true);
+      if (e.dataTransfer && Array.from(e.dataTransfer.types).includes("unit")) {
+        setIsGlobalDragging(true);
+      }
     };
     const handleDragEnd = () => setIsGlobalDragging(false);
 

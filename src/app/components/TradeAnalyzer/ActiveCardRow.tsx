@@ -224,9 +224,9 @@ export const ActiveCardRow = memo(function ActiveCardRow({
         {qtyOpen && (
           <motion.div
             key="mobile-qty"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
             className="overflow-hidden @[36rem]/analyzer:hidden"
           >
@@ -255,9 +255,9 @@ export const ActiveCardRow = memo(function ActiveCardRow({
         {!qtyOpen && (
           <motion.div
             key="mobile-collapsed"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.18, ease: "easeInOut" }}
             className="overflow-hidden @[36rem]/analyzer:hidden"
           >

@@ -1,5 +1,6 @@
 import React, { useState, memo, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { motion, useReducedMotion } from "framer-motion";
 import { X, Loader2, Check } from "lucide-react";
 import { GiPayMoney, GiReceiveMoney, GiHourglass, GiChest } from "react-icons/gi";
 import { PopupUnit, GridUnit, MasterUnit } from "../../../../types";
@@ -130,7 +131,7 @@ export function GridStatusBadge({ status }: { status: string }) {
         createPortal(
           <>
             <div
-              className="md:hidden fixed inset-0 z-[99998]"
+              className="md:hidden fixed inset-0 z-[99998] pointer-events-none"
               onClick={(e) => {
                 e.stopPropagation();
                 setTipPos(null);
@@ -196,7 +197,10 @@ export function GridStatFooter({
 
   return (
     <div className="grid grid-cols-2 gap-2 pt-3 mt-3 border-t border-border/80 w-full font-mono">
-      <div className="flex flex-col bg-muted border border-transparent rounded-[6px] px-2.5 py-1.5 transition-colors hover:border-muted-foreground">
+      <div 
+        onClick={onRarityClick}
+        className="flex flex-col bg-muted border border-transparent rounded-[6px] px-2.5 py-1.5 transition-colors hover:border-muted-foreground cursor-pointer"
+      >
         <span className="text-[11px] font-medium text-muted-foreground mb-0.5">
           Rarity
         </span>
@@ -206,7 +210,10 @@ export function GridStatFooter({
         </span>
       </div>
 
-      <div className="flex flex-col bg-muted border border-transparent rounded-[6px] px-2.5 py-1.5 transition-colors hover:border-muted-foreground">
+      <div 
+        onClick={onLiquidityClick}
+        className="flex flex-col bg-muted border border-transparent rounded-[6px] px-2.5 py-1.5 transition-colors hover:border-muted-foreground cursor-pointer"
+      >
         <span className="text-[11px] font-medium text-muted-foreground mb-0.5">
           Liquidity
         </span>
@@ -340,6 +347,11 @@ export const TierGridCard = memo(function TierGridCard({
     );
 
     e.dataTransfer.effectAllowed = "copy";
+    
+    // Prevent the browser from generating a heavy ghost image which freezes the UI
+    let ghost = document.getElementById("drag-ghost"); if (!ghost) { ghost = document.createElement("div"); ghost.id = "drag-ghost"; ghost.style.position = "absolute"; ghost.style.top = "-1000px"; ghost.style.width = "1px"; ghost.style.height = "1px"; document.body.appendChild(ghost); } if (typeof window !== "undefined") {
+      e.dataTransfer.setDragImage(ghost, 0, 0);
+    }
   };
 
   /* ------------------------------------------------------------------------ */
@@ -375,14 +387,19 @@ export const TierGridCard = memo(function TierGridCard({
   /* Render                                                                    */
   /* ------------------------------------------------------------------------ */
 
+  const prefersReducedMotion = useReducedMotion();
+
   return (
     <>
       <div className="h-full touch-manipulation">
-        <div
+        <motion.div
+          // @ts-expect-error Framer motion types omit draggable in favor of its own drag prop, but we use native HTML5 drag
           draggable={!isSelectMode}
-          onDragStart={handleDragStart}
+          onDragStart={handleDragStart as any}
           onClick={handleCardClick}
           onContextMenu={(e) => e.preventDefault()}
+          whileTap={!prefersReducedMotion ? { scale: 0.98 } : undefined}
+          transition={{ type: "spring", stiffness: 400, damping: 25 }}
           className={`flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10   bg-card border transition-all duration-300 ${
             isSelected
               ? "border-primary ring-2 ring-primary"
@@ -421,18 +438,6 @@ export const TierGridCard = memo(function TierGridCard({
             {/* Bottom fade */}
             <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-card via-card/50 to-transparent pointer-events-none z-20" />
 
-            {/* Already in Trade overlay */}
-            {isInTrade && !isSelectMode && (
-              <div className="absolute inset-0 bg-background/80 z-[25] flex flex-col items-center justify-center pointer-events-none">
-                <div className="bg-[#23a559] text-white rounded-full p-2 shadow-lg mb-1 border border-white/10">
-                  <Check className="w-5 h-5 stroke-[4]" />
-                </div>
-                <span className="text-xs font-semibold text-white">
-                  In Trade
-                </span>
-              </div>
-            )}
-
             {/* Status */}
             {unit.status && (
               <div className="absolute top-2 left-2 z-50">
@@ -452,7 +457,7 @@ export const TierGridCard = memo(function TierGridCard({
           {/* Card Content                                                      */}
           {/* ---------------------------------------------------------------- */}
 
-          <div className="flex flex-col flex-1 p-5 relative z-10 bg-card">
+          <div className="flex flex-col flex-1 p-3 relative z-10 bg-card">
             {/* -------------------------------------------------------------- */}
             {/* Header                                                           */}
             {/* -------------------------------------------------------------- */}
@@ -531,7 +536,18 @@ export const TierGridCard = memo(function TierGridCard({
               />
             </div>
           </div>
-        </div>
+          {/* Already in Trade overlay covering the whole card */}
+          {isInTrade && !isSelectMode && (
+            <div className="absolute inset-0 bg-background/80 z-[60] flex flex-col items-center justify-center pointer-events-none rounded-[8px]">
+              <div className="bg-[#23a559] text-white rounded-full p-2 shadow-lg mb-1 border border-white/10">
+                <Check className="w-5 h-5 stroke-[4]" />
+              </div>
+              <span className="text-xs font-semibold text-white">
+                In Trade
+              </span>
+            </div>
+          )}
+        </motion.div>
       </div>
 
       {/* -------------------------------------------------------------------- */}

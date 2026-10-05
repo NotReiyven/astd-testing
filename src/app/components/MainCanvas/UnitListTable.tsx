@@ -138,16 +138,16 @@ export const UnitListRow = memo(function UnitListRow({
           </div>
 
           <div className="flex items-center justify-end gap-2 w-[300px] shrink-0 font-mono">
-            <div className="flex-1 flex justify-end">
+            <div className="flex-1 flex justify-end cursor-pointer hover:opacity-80 transition-opacity" onClick={(e) => { e.stopPropagation(); useHistoryModalStore.getState().openModal(unit.id, "value"); }}>
                {/* Display Val logic */}
                <span className="text-[var(--ui-text-base)] font-black text-foreground">
                   {unit.valueDisplay || unit.value.toLocaleString()}
                </span>
             </div>
-            <div className="w-16 flex justify-center text-[12px] font-bold" style={{ color: getStatColor("R", unit.rarity) }}>
+            <div className="w-16 flex justify-center text-[12px] font-bold cursor-pointer hover:opacity-80 transition-opacity" style={{ color: getStatColor("R", unit.rarity) }} onClick={(e) => { e.stopPropagation(); useHistoryModalStore.getState().openModal(unit.id, "rarity"); }}>
                {unit.rarity}
             </div>
-            <div className="w-16 flex justify-center text-[12px] font-bold" style={{ color: getStatColor("L", unit.liquidity || 'average') }}>
+            <div className="w-16 flex justify-center text-[12px] font-bold cursor-pointer hover:opacity-80 transition-opacity" style={{ color: getStatColor("L", unit.liquidity || 'average') }} onClick={(e) => { e.stopPropagation(); useHistoryModalStore.getState().openModal(unit.id, "liquidity"); }}>
                {(unit.liquidity || 'Average').substring(0,3)}
             </div>
           </div>

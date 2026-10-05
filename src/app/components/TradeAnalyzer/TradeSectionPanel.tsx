@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, memo, useMemo } from "react";
+import { motion, useMotionValue, useTransform, useReducedMotion } from "framer-motion";
 
 import { Search, X } from "lucide-react";
 import { TradeCard } from "../../../types";
@@ -18,6 +19,44 @@ interface TradeSectionPanelProps {
   onTogglePin: (id: string) => void;
   onInputFocus?: () => void;
   onInputBlur?: () => void;
+}
+
+function MagneticCTA({ children, onClick, ariaLabel, isGive }: { children: React.ReactNode; onClick: () => void; ariaLabel: string, isGive: boolean }) {
+  const prefersReducedMotion = useReducedMotion();
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    mouseX.set(x);
+    mouseY.set(y);
+  };
+  
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
+
+  const x = useTransform(mouseX, (val) => prefersReducedMotion ? 0 : val * 0.2);
+  const y = useTransform(mouseY, (val) => prefersReducedMotion ? 0 : val * 0.2);
+
+  return (
+    <motion.button
+      className="text-[10px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none rounded-[4px] px-3 py-1.5 bg-muted border border-border hover:bg-destructive hover:text-destructive-foreground hover:border-destructive text-muted-foreground cursor-pointer"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      // @ts-expect-error Framer motion omits mouse events in favor of pointer events in its types, but native React mouse events still work
+      onMouseMove={handleMouseMove as any}
+      onMouseLeave={handleMouseLeave}
+      style={{ x, y }}
+      whileTap={!prefersReducedMotion ? { scale: 0.98 } : undefined}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+    >
+      {children}
+    </motion.button>
+  );
 }
 
 export const TradeSectionPanel = memo(function TradeSectionPanel({
@@ -68,7 +107,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
-    if (e.dataTransfer.types.includes("unit")) {
+    if (Array.from(e.dataTransfer.types).includes("unit")) {
       e.dataTransfer.dropEffect = "copy";
     }
   };
@@ -76,12 +115,11 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
-    
   };
 
-  
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     
     const raw = e.dataTransfer.getData("unit");
     if (!raw) return;
@@ -200,13 +238,13 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
 
         <div className="flex items-center gap-3">
           {items.length > 0 && (
-            <button
-              className="text-[10px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none rounded-[4px] px-3 py-1.5 bg-muted border border-border hover:bg-destructive hover:text-destructive-foreground hover:border-destructive text-muted-foreground active:scale-95 cursor-pointer"
+            <MagneticCTA
               onClick={onClear}
-              aria-label={`Clear ${label} Section`}
+              ariaLabel={`Clear ${label} Section`}
+              isGive={isGive}
             >
               Clear {isGive ? "Give" : "Get"}
-            </button>
+            </MagneticCTA>
           )}
         </div>
       </div>
@@ -347,7 +385,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
         ) : (
           <div className="flex flex-col gap-[var(--gap-sm)]">
             {items.map((card) => (
-              <div key={card.id}>
+              <div key={card.id} style={{ contentVisibility: "auto" }}>
                 <ActiveCardRow
                   card={card}
                   onQtyChange={onQtyChange}

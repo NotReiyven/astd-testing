@@ -56,7 +56,7 @@ export function GridStatusBadge({ status }: { status: UnitStatus }) {
         createPortal(
           <>
             <div
-              className="md:hidden fixed inset-0 z-[99998]"
+              className="md:hidden fixed inset-0 z-[99998] pointer-events-none"
               onClick={(e) => {
                 e.stopPropagation();
                 setTipPos(null);
