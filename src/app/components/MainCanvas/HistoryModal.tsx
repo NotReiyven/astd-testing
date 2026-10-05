@@ -4,7 +4,6 @@ import {
   TrendingUp,
   History,
   BarChart2,
-  Sparkles,
   AlertCircle,
   ArrowUpRight,
   ArrowDownRight,
@@ -25,21 +24,16 @@ import { StatusIcon } from "./UnitGrid";
 import { triggerHaptic } from "../../../data/helpers";
 
 export function HistoryModal() {
-  const { isOpen, unitId, closeModal, initialMetric } = useHistoryModalStore();
+  const { isOpen, unitId, closeModal } = useHistoryModalStore();
   const { history, loading, error } = useUnitHistory(unitId);
   const { units } = useUnits();
 
-  const [activeMetric, setActiveMetric] = useState<"value" | "rarity" | "liquidity">(initialMetric || "value");
+  const [activeMetric, setActiveMetric] = useState<
+    "value" | "rarity" | "liquidity"
+  >("value");
   const [isScrolled, setIsScrolled] = useState(false);
   const [RechartsLib, setRechartsLib] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (isOpen && initialMetric) {
-      setActiveMetric(initialMetric);
-    }
-  }, [isOpen, initialMetric]);
-
 
   // Lazy load Recharts only when the modal opens to save massive bundle size
   useEffect(() => {
@@ -61,7 +55,7 @@ export function HistoryModal() {
     if (isOpen) {
       document.body.style.overflow = "hidden";
       window.addEventListener("keydown", handleKeyDown);
-      setActiveMetric(initialMetric || "value");
+      setActiveMetric("value");
       setIsScrolled(false);
       if (scrollRef.current) scrollRef.current.scrollTop = 0;
     } else {
@@ -449,7 +443,7 @@ export function HistoryModal() {
                     <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary" />
                   )}
                   <div className="flex items-center justify-between">
-                    <span className="text-[12px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">
                       Current Value
                     </span>
                     {displayHistory.length > 1 &&
@@ -496,7 +490,7 @@ export function HistoryModal() {
                   {activeMetric === "rarity" && (
                     <div className="absolute top-0 left-0 bottom-0 w-1 bg-[#4DB6AC]" />
                   )}
-                  <span className="text-[12px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">
                     Rarity (0-20)
                   </span>
                   <span className="text-[16px] font-black font-mono text-[#4DB6AC] mt-1.5">
@@ -518,7 +512,7 @@ export function HistoryModal() {
                   {activeMetric === "liquidity" && (
                     <div className="absolute top-0 left-0 bottom-0 w-1 bg-[#81C784]" />
                   )}
-                  <span className="text-[12px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">
                     Liquidity
                   </span>
                   <span className="text-[13px] font-black font-mono text-[#81C784] mt-1.5 uppercase">
@@ -546,7 +540,7 @@ export function HistoryModal() {
                   {currentUnit.secondaryTags &&
                     currentUnit.secondaryTags.length > 0 && (
                       <div className="flex flex-col gap-2 pt-2 border-t border-border mt-1">
-                        <span className="text-[12px] font-medium text-muted-foreground">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                           Market Tags:
                         </span>
                         <div className="flex flex-wrap gap-2">
@@ -567,9 +561,39 @@ export function HistoryModal() {
 
             <div className="flex-1 flex flex-col gap-6 min-w-0">
               {loading ? (
-                <div className="h-[280px] flex flex-col items-center justify-center text-muted-foreground animate-pulse gap-3 font-medium text-sm bg-popover rounded-[8px] border border-border">
-                  <Sparkles className="w-6 h-6 animate-spin text-primary" />
-                  Syncing historical snapshots...
+                <div className="h-[280px] bg-popover border border-border rounded-[8px] p-4 flex flex-col gap-4 overflow-hidden">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="h-3.5 w-28 rounded bg-muted animate-pulse" />
+                    <div className="flex items-center gap-2">
+                      <div className="hidden sm:block h-2.5 w-16 rounded bg-muted animate-pulse" />
+                      <div className="h-5 w-24 rounded-[4px] bg-muted animate-pulse" />
+                    </div>
+                  </div>
+
+                  <div className="flex-1 min-h-0 rounded-[6px] border border-border bg-black/20 p-3 relative overflow-hidden">
+                    <div className="absolute inset-0 animate-pulse">
+                      <div className="absolute inset-x-0 top-1/4 border-t border-border/40" />
+                      <div className="absolute inset-x-0 top-2/4 border-t border-border/40" />
+                      <div className="absolute inset-x-0 top-3/4 border-t border-border/40" />
+
+                      <div className="absolute bottom-6 left-[8%] h-[28%] w-2 rounded-t bg-muted/70" />
+                      <div className="absolute bottom-6 left-[18%] h-[42%] w-2 rounded-t bg-muted/70" />
+                      <div className="absolute bottom-6 left-[28%] h-[34%] w-2 rounded-t bg-muted/70" />
+                      <div className="absolute bottom-6 left-[38%] h-[58%] w-2 rounded-t bg-muted/70" />
+                      <div className="absolute bottom-6 left-[48%] h-[46%] w-2 rounded-t bg-muted/70" />
+                      <div className="absolute bottom-6 left-[58%] h-[68%] w-2 rounded-t bg-muted/70" />
+                      <div className="absolute bottom-6 left-[68%] h-[54%] w-2 rounded-t bg-muted/70" />
+                      <div className="absolute bottom-6 left-[78%] h-[76%] w-2 rounded-t bg-muted/70" />
+                      <div className="absolute bottom-6 left-[88%] h-[62%] w-2 rounded-t bg-muted/70" />
+                    </div>
+
+                    <div className="absolute bottom-2 left-3 right-3 flex justify-between">
+                      <div className="h-2 w-8 rounded bg-muted/60 animate-pulse" />
+                      <div className="h-2 w-8 rounded bg-muted/60 animate-pulse" />
+                      <div className="h-2 w-8 rounded bg-muted/60 animate-pulse" />
+                      <div className="h-2 w-8 rounded bg-muted/60 animate-pulse" />
+                    </div>
+                  </div>
                 </div>
               ) : error ? (
                 <div className="text-destructive text-sm text-center py-8 bg-popover rounded-[8px] border border-destructive/20">
@@ -911,4 +935,6 @@ export function HistoryModal() {
     </div>
   );
 }
+
+
 

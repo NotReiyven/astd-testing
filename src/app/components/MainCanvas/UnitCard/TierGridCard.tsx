@@ -8,19 +8,14 @@ import {
   getTier,
   TIER_CONFIG,
   getObtainability,
+  getProxyImage,
   GRID_STATUS_CFG,
   THEORY_RARITY_SCALE,
   THEORY_LIQUIDITY_SCALE,
+  UNIT_IMAGES,
 } from "../../../../data";
-import { UnitAvatar } from "../../shared/UnitAvatar";
+import { getAvatarStyle, getInitials } from "../../TradeAnalyzer/summaryUtils";
 import { useTradeStore } from "../../../../store/useTradeStore";
-
-if (typeof window !== "undefined") {
-  const img = new Image();
-  img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-  (window as any).__blankDragImg = img;
-}
-
 import { useHistoryModalStore } from "../../../../store/useHistoryModalStore";
 import { triggerHaptic } from "../../../../data/helpers";
 import { useAuthStore } from "../../../../store/useAuthStore";
@@ -28,11 +23,107 @@ import { useInventoryStore } from "../../../../store/useInventoryStore";
 import {
   HighlightText,
   NoticeTooltip,
-  JargonWrap,
   StatusIcon,
 } from "../../shared/Formatters";
 import { GridValueDisplay } from "./GridValueDisplay";
 import { useToastStore } from "../../../../store/useToastStore";
+
+/* -------------------------------------------------------------------------- */
+/* Image fallback (module-level, zero React state)                            */
+/* -------------------------------------------------------------------------- */
+
+const BLANK_PIXEL =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
+/**
+ * URLs that have already 404'd this session. Lives outside React so virtualized
+ * cards that unmount/remount never re-request (or re-flash) a known-bad image.
+ */
+const FAILED_IMAGE_URLS = new Set<string>();
+
+/** Uncompressed Fandom source, or a blank pixel if no source exists. */
+const getFallbackUrl = (unitId: string): string => {
+  const raw = UNIT_IMAGES[unitId];
+  if (!raw || raw === "PLACEHOLDER_URL") return BLANK_PIXEL;
+  const base = raw.replace(/&amp;/g, "&").split("/revision/")[0];
+  return `${base}/revision/latest/scale-to-width-down/150`;
+};
+
+/**
+ * Mutates the <img> directly. No setState, so no re-render mid-scroll.
+ * data-fb: undefined = primary, "1" = on fallback, "2" = gave up.
+ */
+function handleCardImageError(
+  e: React.SyntheticEvent<HTMLImageElement>,
+  primaryUrl: string,
+  fallbackUrl: string
+) {
+  const img = e.currentTarget;
+  const stage = img.dataset.fb;
+
+  if (stage === "2") return;
+
+  if (stage === "1") {
+    // Fallback failed too.
+    FAILED_IMAGE_URLS.add(fallbackUrl);
+    img.dataset.fb = "2";
+    img.style.opacity = "0";
+    img.src = BLANK_PIXEL;
+    return;
+  }
+
+  FAILED_IMAGE_URLS.add(primaryUrl);
+  img.dataset.fb = "1";
+  if (fallbackUrl === BLANK_PIXEL) img.style.opacity = "0";
+  img.src = fallbackUrl;
+}
+
+const CardImage = memo(function CardImage({
+  unitId,
+  unitName,
+  initialsClassName = "text-4xl md:text-6xl",
+}: {
+  unitId: string;
+  unitName: string;
+  initialsClassName?: string;
+}) {
+  const primary = getProxyImage(unitId) as string;
+  const fallback = getFallbackUrl(unitId);
+  const primaryFailed = FAILED_IMAGE_URLS.has(primary);
+
+  // Known-bad URL: skip straight to the fallback on first paint.
+  const src = !primaryFailed
+    ? primary
+    : FAILED_IMAGE_URLS.has(fallback)
+    ? BLANK_PIXEL
+    : fallback;
+
+  return (
+    <>
+      <div
+        aria-hidden="true"
+        className={`absolute inset-0 flex items-center justify-center text-white font-black tracking-tight z-0 opacity-20 select-none pointer-events-none ${initialsClassName}`}
+        style={getAvatarStyle(unitName)}
+      >
+        {getInitials(unitName)}
+      </div>
+      <img
+        src={src}
+        alt={unitName}
+        width={150}
+        height={150}
+        decoding="async"
+        data-fb={primaryFailed ? "1" : undefined}
+        onError={(e) => handleCardImageError(e, primary, fallback)}
+        className="absolute inset-0 w-full h-full object-cover z-10 bg-[#0b0c0e]"
+        style={{
+          objectPosition: "center 15%",
+          opacity: src === BLANK_PIXEL ? 0 : undefined,
+        }}
+      />
+    </>
+  );
+});
 
 /* -------------------------------------------------------------------------- */
 /* Status Badge                                                               */
@@ -41,44 +132,37 @@ import { useToastStore } from "../../../../store/useToastStore";
 export function GridStatusBadge({ status }: { status: string }) {
   const c = GRID_STATUS_CFG[status as keyof typeof GRID_STATUS_CFG];
 
-  if (!c) return null;
-
   const badgeRef = useRef<HTMLDivElement>(null);
   const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
-      if (hoverTimer.current) {
-        clearTimeout(hoverTimer.current);
-      }
-
-      setTipPos(null);
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
     };
   }, []);
 
+  // Hooks above, early return below (Rules of Hooks).
+  if (!c) return null;
+
   const openTip = () => {
     const r = badgeRef.current?.getBoundingClientRect();
+    if (!r) return;
 
-    if (r) {
-      const tipWidth = 240;
-      const padding = 16;
-      let startX = r.left + r.width / 2;
-      
-      const leftEdge = startX - tipWidth / 2;
-      const rightEdge = startX + tipWidth / 2;
-      
-      if (leftEdge < padding) {
-        startX += (padding - leftEdge);
-      } else if (rightEdge > window.innerWidth - padding) {
-        startX -= (rightEdge - (window.innerWidth - padding));
-      }
+    const tipWidth = 240;
+    const padding = 16;
+    let startX = r.left + r.width / 2;
 
-      setTipPos({
-        x: startX,
-        y: r.top - 8,
-      });
+    const leftEdge = startX - tipWidth / 2;
+    const rightEdge = startX + tipWidth / 2;
+
+    if (leftEdge < padding) {
+      startX += padding - leftEdge;
+    } else if (rightEdge > window.innerWidth - padding) {
+      startX -= rightEdge - (window.innerWidth - padding);
     }
+
+    setTipPos({ x: startX, y: r.top - 8 });
   };
 
   const toggleTip = (e?: React.MouseEvent | React.TouchEvent) => {
@@ -86,12 +170,8 @@ export function GridStatusBadge({ status }: { status: string }) {
       e.preventDefault();
       e.stopPropagation();
     }
-
-    if (tipPos) {
-      setTipPos(null);
-    } else {
-      openTip();
-    }
+    if (tipPos) setTipPos(null);
+    else openTip();
   };
 
   return (
@@ -100,14 +180,10 @@ export function GridStatusBadge({ status }: { status: string }) {
       className="relative inline-flex cursor-help"
       onMouseEnter={() => {
         if (!window.matchMedia("(hover: hover)").matches) return;
-
         hoverTimer.current = setTimeout(openTip, 200);
       }}
       onMouseLeave={() => {
-        if (hoverTimer.current) {
-          clearTimeout(hoverTimer.current);
-        }
-
+        if (hoverTimer.current) clearTimeout(hoverTimer.current);
         setTipPos(null);
       }}
       onClick={toggleTip}
@@ -121,7 +197,6 @@ export function GridStatusBadge({ status }: { status: string }) {
         }}
       >
         <StatusIcon status={status} />
-
         <span className="text-xs font-semibold transition-colors leading-none">
           {c.label}
         </span>
@@ -141,7 +216,6 @@ export function GridStatusBadge({ status }: { status: string }) {
                 setTipPos(null);
               }}
             />
-
             <div
               className="rounded-xl px-3 py-2 pointer-events-none fixed z-[99999] animate-fade-in shadow-[0_8px_24px_rgba(0,0,0,0.6)] -translate-x-1/2 -translate-y-full"
               style={{
@@ -180,44 +254,40 @@ export function GridStatFooter({
   onLiquidityClick?: (e: React.MouseEvent) => void;
 }) {
   const numVal = Number(rarity) || 0;
-
-  const rarityDisplay =
-    numVal % 1 === 0 ? String(numVal) : numVal.toFixed(1);
+  const rarityDisplay = numVal % 1 === 0 ? String(numVal) : numVal.toFixed(1);
 
   const liqStr = String(liquidity || "Average");
+  const liqDisplay = liqStr.toLowerCase() === "black marketed" ? "BM" : liqStr;
 
-  const liqDisplay =
-    liqStr.toLowerCase() === "black marketed"
-      ? "BM"
-      : liqStr;
-
-  const rarityColor = THEORY_RARITY_SCALE.find(r => r.val === Math.round(numVal))?.color || "var(--foreground)";
-  const liqColorObj = THEORY_LIQUIDITY_SCALE.find(l => l.val.toLowerCase() === liqStr.toLowerCase());
+  const rarityColor =
+    THEORY_RARITY_SCALE.find((r) => r.val === Math.round(numVal))?.color ||
+    "var(--foreground)";
+  const liqColorObj = THEORY_LIQUIDITY_SCALE.find(
+    (l) => l.val.toLowerCase() === liqStr.toLowerCase()
+  );
   const liqColor = liqColorObj ? liqColorObj.color : "var(--foreground)";
 
   return (
     <div className="grid grid-cols-2 gap-2 pt-3 mt-3 border-t border-border/80 w-full font-mono">
-      <div 
+      <div
         onClick={onRarityClick}
         className="flex flex-col bg-muted border border-transparent rounded-[6px] px-2.5 py-1.5 transition-colors hover:border-muted-foreground cursor-pointer"
       >
         <span className="text-[11px] font-medium text-muted-foreground mb-0.5">
           Rarity
         </span>
-
         <span className="text-[13px] font-black" style={{ color: rarityColor }}>
           {rarityDisplay}
         </span>
       </div>
 
-      <div 
+      <div
         onClick={onLiquidityClick}
         className="flex flex-col bg-muted border border-transparent rounded-[6px] px-2.5 py-1.5 transition-colors hover:border-muted-foreground cursor-pointer"
       >
         <span className="text-[11px] font-medium text-muted-foreground mb-0.5">
           Liquidity
         </span>
-
         <span className="text-[12px] font-black truncate" style={{ color: liqColor }}>
           {liqDisplay}
         </span>
@@ -230,43 +300,39 @@ export function GridStatFooter({
 /* Tier Grid Card                                                             */
 /* -------------------------------------------------------------------------- */
 
-export const TierGridCard = memo(function TierGridCard({
-  unit,
-  searchQuery,
-  isSelectMode,
-  isSelected,
-  onToggleSelect,
-  index,
-}: {
+interface TierGridCardProps {
   unit: GridUnit;
   searchQuery?: string;
   isSelectMode?: boolean;
   isSelected?: boolean;
   onToggleSelect?: (id: string) => void;
   index?: number;
-}) {
+}
+
+function TierGridCardImpl({
+  unit,
+  searchQuery,
+  isSelectMode,
+  isSelected,
+  onToggleSelect,
+}: TierGridCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  /* ------------------------------------------------------------------------ */
-  /* Stores                                                                   */
-  /* ------------------------------------------------------------------------ */
-
   const addCard = useTradeStore((state) => state.addCard);
-
-  const openModal = useHistoryModalStore(
-    (state) => state.openModal
-  );
-
+  const openModal = useHistoryModalStore((state) => state.openModal);
   const profile = useAuthStore((state) => state.profile);
+  const addOrUpdateUnit = useInventoryStore((state) => state.addOrUpdateUnit);
 
-  const addOrUpdateUnit = useInventoryStore(
-    (state) => state.addOrUpdateUnit
+  // Boolean selector: only re-renders when THIS card's membership flips,
+  // not on every trade-array change.
+  const isInTrade = useTradeStore(
+    (s) =>
+      s.giveItems.some((c) => c.id === unit.id) ||
+      s.getItems.some((c) => c.id === unit.id)
   );
 
-  /* ------------------------------------------------------------------------ */
-  /* Inventory                                                                 */
-  /* ------------------------------------------------------------------------ */
+  const prefersReducedMotion = useReducedMotion();
 
   const handleSaveToInventory = async () => {
     if (!profile) {
@@ -276,27 +342,18 @@ export const TierGridCard = memo(function TierGridCard({
           "Please log in with Discord first to save items to your inventory.",
           "warning"
         );
-
       return;
     }
 
     setIsSaving(true);
-
     try {
       await addOrUpdateUnit(profile.id, unit.id, 1);
-
-      useToastStore
-        .getState()
-        .addToast(`Added ${unit.name} to Vault`, "success");
+      useToastStore.getState().addToast(`Added ${unit.name} to Vault`, "success");
     } finally {
       setIsSaving(false);
       setMenuOpen(false);
     }
   };
-
-  /* ------------------------------------------------------------------------ */
-  /* Popup / Trade Data                                                       */
-  /* ------------------------------------------------------------------------ */
 
   const numericValue =
     typeof unit.value === "number"
@@ -314,80 +371,45 @@ export const TierGridCard = memo(function TierGridCard({
 
   const obtainability = getObtainability(unit as MasterUnit);
 
-  /* ------------------------------------------------------------------------ */
-  /* Trade Actions                                                            */
-  /* ------------------------------------------------------------------------ */
-
   const handleAdd = (type: "give" | "get") => {
-    addCard(type, {
-      ...popupUnit,
-      qty: 1,
-    });
-
+    addCard(type, { ...popupUnit, qty: 1 });
     window.dispatchEvent(
       new CustomEvent("trade-added", {
-        detail: {
-          name: popupUnit.name,
-          type,
-        },
+        detail: { name: popupUnit.name, type },
       })
     );
-
     setMenuOpen(false);
   };
 
-  /* ------------------------------------------------------------------------ */
-  /* Drag & Drop                                                              */
-  /* ------------------------------------------------------------------------ */
-
   const handleDragStart = (e: React.DragEvent) => {
-    e.dataTransfer.setData(
-      "unit",
-      JSON.stringify(popupUnit)
-    );
-
+    e.dataTransfer.setData("unit", JSON.stringify(popupUnit));
     e.dataTransfer.effectAllowed = "copy";
-    
-    // Prevent the browser from generating a heavy ghost image which freezes the UI
-    let ghost = document.getElementById("drag-ghost"); if (!ghost) { ghost = document.createElement("div"); ghost.id = "drag-ghost"; ghost.style.position = "absolute"; ghost.style.top = "-1000px"; ghost.style.width = "1px"; ghost.style.height = "1px"; document.body.appendChild(ghost); } if (typeof window !== "undefined") {
-      e.dataTransfer.setDragImage(ghost, 0, 0);
-    }
-  };
 
-  /* ------------------------------------------------------------------------ */
-  /* Card Interaction                                                         */
-  /* ------------------------------------------------------------------------ */
+    // Skip the heavy browser-generated ghost image.
+    let ghost = document.getElementById("drag-ghost");
+    if (!ghost) {
+      ghost = document.createElement("div");
+      ghost.id = "drag-ghost";
+      ghost.style.position = "absolute";
+      ghost.style.top = "-1000px";
+      ghost.style.width = "1px";
+      ghost.style.height = "1px";
+      document.body.appendChild(ghost);
+    }
+    e.dataTransfer.setDragImage(ghost, 0, 0);
+  };
 
   const handleCardClick = () => {
     triggerHaptic("light");
-
     if (isSelectMode && onToggleSelect) {
       onToggleSelect(unit.id);
       return;
     }
-
     setMenuOpen(true);
   };
 
-  /* ------------------------------------------------------------------------ */
-  /* Tier                                                                      */
-  /* ------------------------------------------------------------------------ */
-
   const tierKey = getTier(unit as MasterUnit);
-
-  const tierColor =
-    TIER_CONFIG[tierKey]?.badgeColor ||
-    "var(--primary)";
-
-  const giveItems = useTradeStore((state) => state.giveItems);
-  const getItems = useTradeStore((state) => state.getItems);
-  const isInTrade = giveItems.some((c) => c.id === unit.id) || getItems.some((c) => c.id === unit.id);
-
-  /* ------------------------------------------------------------------------ */
-  /* Render                                                                    */
-  /* ------------------------------------------------------------------------ */
-
-  const prefersReducedMotion = useReducedMotion();
+  const tierColor = TIER_CONFIG[tierKey]?.badgeColor || "var(--primary)";
 
   return (
     <>
@@ -400,22 +422,18 @@ export const TierGridCard = memo(function TierGridCard({
           onContextMenu={(e) => e.preventDefault()}
           whileTap={!prefersReducedMotion ? { scale: 0.98 } : undefined}
           transition={{ type: "spring", stiffness: 400, damping: 25 }}
-          className={`flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10   bg-card border transition-all duration-300 ${
+          className={`flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10 bg-card border [contain:layout_style] transition-[transform,box-shadow,border-color] duration-300 ${
             isSelected
               ? "border-primary ring-2 ring-primary"
               : "hover:-translate-y-2 hover:shadow-2xl hover:scale-[1.02] ease-out"
           }`}
           style={
             {
-              
               borderColor: !isSelected ? `${tierColor}50` : undefined,
             } as React.CSSProperties
           }
         >
-          {/* ---------------------------------------------------------------- */}
-          {/* Image                                                             */}
-          {/* ---------------------------------------------------------------- */}
-
+          {/* Image: square box is reserved before the bitmap arrives */}
           <div
             className="relative w-full overflow-hidden flex-shrink-0 border-b border-border bg-[#0b0c0e]"
             style={{
@@ -424,28 +442,17 @@ export const TierGridCard = memo(function TierGridCard({
               borderColor: `${tierColor}30`,
             }}
           >
-            <UnitAvatar
-              unitId={unit.id}
-              unitName={unit.name}
-              imageUrl={unit.imageUrl}
-              fallbackClassName="absolute inset-0 flex items-center justify-center text-white font-black text-4xl md:text-6xl tracking-tight z-0"
-              imageClassName="absolute inset-0 w-full h-full object-cover z-10 bg-transparent"
-            />
+            <CardImage unitId={unit.id} unitName={unit.name} />
 
-            {/* Subtle vignette */}
             <div className="absolute inset-0 pointer-events-none z-20 shadow-[inset_0_0_24px_rgba(0,0,0,0.4)]" />
-
-            {/* Bottom fade */}
             <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-card via-card/50 to-transparent pointer-events-none z-20" />
 
-            {/* Status */}
             {unit.status && (
               <div className="absolute top-2 left-2 z-50">
                 <GridStatusBadge status={unit.status} />
               </div>
             )}
 
-            {/* Selection */}
             {isSelected && (
               <div className="absolute top-2 right-2 z-50 bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center shadow-md">
                 <Check className="w-4 h-4 stroke-[3]" />
@@ -453,22 +460,13 @@ export const TierGridCard = memo(function TierGridCard({
             )}
           </div>
 
-          {/* ---------------------------------------------------------------- */}
-          {/* Card Content                                                      */}
-          {/* ---------------------------------------------------------------- */}
-
+          {/* Content: every row has a fixed height so cards never resize */}
           <div className="flex flex-col flex-1 p-3 relative z-10 bg-card">
-            {/* -------------------------------------------------------------- */}
-            {/* Header                                                           */}
-            {/* -------------------------------------------------------------- */}
-
             <div className="flex flex-col">
               <div className="flex items-start gap-2">
-                <h3 className="text-[var(--ui-text-base)] font-extrabold tracking-tight leading-snug flex-1 min-w-0 line-clamp-2 text-foreground min-h-[2.5em]">
-                  <HighlightText
-                    query={searchQuery}
-                    text={unit.name}
-                  />
+                {/* 2 lines x leading-snug (1.375em) = 2.75em, locked */}
+                <h3 className="text-[var(--ui-text-base)] font-extrabold tracking-tight leading-snug flex-1 min-w-0 line-clamp-2 text-foreground h-[2.75em]">
+                  <HighlightText query={searchQuery} text={unit.name} />
                 </h3>
 
                 {unit.notice && (
@@ -478,15 +476,11 @@ export const TierGridCard = memo(function TierGridCard({
                 )}
               </div>
 
-              <p className="text-sm font-medium mt-1 truncate text-muted-foreground">
-                <HighlightText
-                  text={unit.subtitle || ""}
-                  query={searchQuery}
-                />
+              <p className="text-sm font-medium mt-1 h-5 truncate text-muted-foreground">
+                <HighlightText text={unit.subtitle || ""} query={searchQuery} />
               </p>
 
-              {/* Obtainability */}
-              <div className="flex mt-1.5">
+              <div className="flex items-center mt-1.5 h-[18px]">
                 {obtainability === "UNOB" ? (
                   <span className="text-xs font-semibold text-muted-foreground bg-popover px-1.5 py-0.5 rounded-[4px] border border-transparent leading-none">
                     UNOB
@@ -499,25 +493,16 @@ export const TierGridCard = memo(function TierGridCard({
               </div>
             </div>
 
-            {/* -------------------------------------------------------------- */}
-            {/* Value + Stats                                                    */}
-            {/* -------------------------------------------------------------- */}
-
             <div className="flex flex-col mt-auto pt-3 w-full">
               <div
-                className="pl-2 border-l-[3px] w-full min-w-0 mb-1 hover:bg-white/5 cursor-pointer rounded-r transition-colors py-0.5"
+                className="pl-2 border-l-[3px] w-full min-w-0 mb-1 h-9 flex items-center hover:bg-white/5 cursor-pointer rounded-r transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
-                  const { openModal } = useHistoryModalStore.getState();
                   openModal(unit.id, "value");
                 }}
-                style={{
-                  borderColor: tierColor,
-                }}
+                style={{ borderColor: tierColor }}
               >
-                <GridValueDisplay
-                  unit={unit as GridUnit}
-                />
+                <GridValueDisplay unit={unit as GridUnit} />
               </div>
 
               <GridStatFooter
@@ -525,58 +510,46 @@ export const TierGridCard = memo(function TierGridCard({
                 liquidity={unit.liquidity || "Average"}
                 onRarityClick={(e) => {
                   e.stopPropagation();
-                  const { openModal } = useHistoryModalStore.getState();
                   openModal(unit.id, "rarity");
                 }}
                 onLiquidityClick={(e) => {
                   e.stopPropagation();
-                  const { openModal } = useHistoryModalStore.getState();
                   openModal(unit.id, "liquidity");
                 }}
               />
             </div>
           </div>
-          {/* Already in Trade overlay covering the whole card */}
+
           {isInTrade && !isSelectMode && (
             <div className="absolute inset-0 bg-background/80 z-[60] flex flex-col items-center justify-center pointer-events-none rounded-[8px]">
               <div className="bg-[#23a559] text-white rounded-full p-2 shadow-lg mb-1 border border-white/10">
                 <Check className="w-5 h-5 stroke-[4]" />
               </div>
-              <span className="text-xs font-semibold text-white">
-                In Trade
-              </span>
+              <span className="text-xs font-semibold text-white">In Trade</span>
             </div>
           )}
         </motion.div>
       </div>
 
-      {/* -------------------------------------------------------------------- */}
-      {/* Action Modal                                                          */}
-      {/* -------------------------------------------------------------------- */}
-
       {menuOpen &&
         !isSelectMode &&
         createPortal(
           <div className="fixed inset-0 z-[1000000] flex flex-col justify-end md:justify-center md:items-center">
-            {/* Backdrop */}
             <div
               className="absolute inset-0 bg-black/90"
               onClick={() => setMenuOpen(false)}
             />
 
-            {/* Modal */}
             <div className="relative w-full md:max-w-sm bg-popover rounded-t-[12px] md:rounded-[6px] p-5 shadow-2xl border-t md:border border-border animate-slide-up md:animate-fade-in">
-              {/* Mobile grab handle */}
               <div className="md:hidden absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-border rounded-full" />
 
-              {/* Header */}
               <div className="flex items-center justify-between mb-5 mt-2 md:mt-0">
                 <div className="flex items-center gap-3 min-w-0 pr-4">
                   <div className="w-12 h-12 rounded-[4px] overflow-hidden bg-muted border border-border shrink-0 relative">
-                    <UnitAvatar
+                    <CardImage
                       unitId={unit.id}
                       unitName={unit.name}
-                      imageUrl={unit.imageUrl}
+                      initialsClassName="text-sm"
                     />
                   </div>
 
@@ -584,7 +557,6 @@ export const TierGridCard = memo(function TierGridCard({
                     <span className="text-[16px] font-black text-foreground tracking-tight truncate">
                       {unit.name}
                     </span>
-
                     <span className="text-xs font-semibold text-muted-foreground truncate">
                       {unit.subtitle}
                     </span>
@@ -593,15 +565,14 @@ export const TierGridCard = memo(function TierGridCard({
 
                 <button
                   onClick={() => setMenuOpen(false)}
+                  aria-label="Close menu"
                   className="w-11 h-11 md:w-8 md:h-8 rounded-[4px] border border-transparent hover:border-border hover:bg-muted flex items-center justify-center text-muted-foreground shrink-0 focus-visible:outline-none"
                 >
                   <X className="w-6 h-6 md:w-4 md:h-4" />
                 </button>
               </div>
 
-              {/* Actions */}
               <div className="flex flex-col gap-2">
-                {/* Give */}
                 <button
                   onClick={() => handleAdd("give")}
                   className="w-full flex items-center justify-center gap-2 bg-[#FAA61A] hover:bg-[#d98b14] transition-colors text-white text-[13px] font-bold h-[44px] rounded-[4px] focus-visible:outline-none"
@@ -610,7 +581,6 @@ export const TierGridCard = memo(function TierGridCard({
                   Add to 'You Give'
                 </button>
 
-                {/* Get */}
                 <button
                   onClick={() => handleAdd("get")}
                   className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/80 transition-colors text-primary-foreground text-[13px] font-bold h-[44px] rounded-[4px] focus-visible:outline-none"
@@ -619,7 +589,6 @@ export const TierGridCard = memo(function TierGridCard({
                   Add to 'You Get'
                 </button>
 
-                {/* Inventory */}
                 <button
                   onClick={handleSaveToInventory}
                   disabled={isSaving}
@@ -630,13 +599,9 @@ export const TierGridCard = memo(function TierGridCard({
                   ) : (
                     <GiChest className="w-4 h-4" />
                   )}
-
-                  {isSaving
-                    ? "Saving..."
-                    : "Save to My Inventory"}
+                  {isSaving ? "Saving…" : "Save to My Inventory"}
                 </button>
 
-                {/* History */}
                 <button
                   onClick={() => {
                     setMenuOpen(false);
@@ -649,7 +614,6 @@ export const TierGridCard = memo(function TierGridCard({
                 </button>
               </div>
 
-              {/* Safe area */}
               <div className="w-full h-[env(safe-area-inset-bottom)] md:hidden mt-2" />
             </div>
           </div>,
@@ -657,6 +621,32 @@ export const TierGridCard = memo(function TierGridCard({
         )}
     </>
   );
-});
+}
 
+/**
+ * Re-render only when something this card actually displays changes.
+ * onToggleSelect is included because a changed identity would leave a stale
+ * closure; it is stable (useCallback) in MainCanvas, so this costs nothing.
+ */
+function areCardPropsEqual(prev: TierGridCardProps, next: TierGridCardProps) {
+  const a = prev.unit;
+  const b = next.unit;
+  return (
+    a.id === b.id &&
+    a.value === b.value &&
+    a.valueMin === b.valueMin &&
+    a.valueDisplay === b.valueDisplay &&
+    a.status === b.status &&
+    a.rarity === b.rarity &&
+    a.liquidity === b.liquidity &&
+    a.notice === b.notice &&
+    a.name === b.name &&
+    a.subtitle === b.subtitle &&
+    prev.isSelected === next.isSelected &&
+    prev.isSelectMode === next.isSelectMode &&
+    prev.searchQuery === next.searchQuery &&
+    prev.onToggleSelect === next.onToggleSelect
+  );
+}
 
+export const TierGridCard = memo(TierGridCardImpl, areCardPropsEqual);
