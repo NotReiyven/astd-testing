@@ -170,9 +170,13 @@ export function GridStatusBadge({ status }: { status: string }) {
 export function GridStatFooter({
   rarity,
   liquidity,
+  onRarityClick,
+  onLiquidityClick,
 }: {
   rarity: number | string;
   liquidity: number | string;
+  onRarityClick?: (e: React.MouseEvent) => void;
+  onLiquidityClick?: (e: React.MouseEvent) => void;
 }) {
   const numVal = Number(rarity) || 0;
 
@@ -496,7 +500,12 @@ export const TierGridCard = memo(function TierGridCard({
 
             <div className="flex flex-col mt-auto pt-3 w-full">
               <div
-                className="pl-2 border-l-[3px] w-full min-w-0 mb-1"
+                className="pl-2 border-l-[3px] w-full min-w-0 mb-1 hover:bg-white/5 cursor-pointer rounded-r transition-colors py-0.5"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const { openModal } = useHistoryModalStore.getState();
+                  openModal(unit.id, "value");
+                }}
                 style={{
                   borderColor: tierColor,
                 }}
@@ -509,6 +518,16 @@ export const TierGridCard = memo(function TierGridCard({
               <GridStatFooter
                 rarity={unit.rarity}
                 liquidity={unit.liquidity || "Average"}
+                onRarityClick={(e) => {
+                  e.stopPropagation();
+                  const { openModal } = useHistoryModalStore.getState();
+                  openModal(unit.id, "rarity");
+                }}
+                onLiquidityClick={(e) => {
+                  e.stopPropagation();
+                  const { openModal } = useHistoryModalStore.getState();
+                  openModal(unit.id, "liquidity");
+                }}
               />
             </div>
           </div>

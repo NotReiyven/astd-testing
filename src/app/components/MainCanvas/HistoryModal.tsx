@@ -25,16 +25,21 @@ import { StatusIcon } from "./UnitGrid";
 import { triggerHaptic } from "../../../data/helpers";
 
 export function HistoryModal() {
-  const { isOpen, unitId, closeModal } = useHistoryModalStore();
+  const { isOpen, unitId, closeModal, initialMetric } = useHistoryModalStore();
   const { history, loading, error } = useUnitHistory(unitId);
   const { units } = useUnits();
 
-  const [activeMetric, setActiveMetric] = useState<
-    "value" | "rarity" | "liquidity"
-  >("value");
+  const [activeMetric, setActiveMetric] = useState<"value" | "rarity" | "liquidity">(initialMetric || "value");
   const [isScrolled, setIsScrolled] = useState(false);
   const [RechartsLib, setRechartsLib] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen && initialMetric) {
+      setActiveMetric(initialMetric);
+    }
+  }, [isOpen, initialMetric]);
+
 
   // Lazy load Recharts only when the modal opens to save massive bundle size
   useEffect(() => {
