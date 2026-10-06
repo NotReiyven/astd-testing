@@ -5,7 +5,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 export interface AppNotification {
   id: string;
   user_id: string;
-  actor_id: string | null;
+  actor_id: string;
   ad_id: string | null;
   comment_id: string | null;
   type: "comment" | "reply" | "warning" | "upvote" | "system";
@@ -15,7 +15,7 @@ export interface AppNotification {
   actor?: {
     username: string;
     avatar_url: string;
-  };
+  } | null;
 }
 
 interface NotificationState {
@@ -27,259 +27,385 @@ interface NotificationState {
   markAllAsRead: (userId: string) => Promise<void>;
   subscribe: (userId: string) => void;
   unsubscribe: () => void;
-  createNotification: (notification: Partial<AppNotification>) => Promise<void>;
+  createNotification: (
+    notification: Partial<AppNotification>
+  ) => Promise<void>;
   deleteNotification: (id: string) => Promise<void>;
 }
 
 let activeChannel: RealtimeChannel | null = null;
 let activeUserId: string | null = null;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let reconnectAttempt = 0;
+let subscriptionToken = 0;
 
-export const useNotificationStore = create<NotificationState>((set, get) => ({
-  notifications: [],
-  unreadCount: 0,
-  isLoading: false,
+const MAX_RECONNECT_DELAY = 30000;
+const DUPLICATE_WINDOW_MS = 2000;
+const recentNotifications = new Map<string, number>();
 
-  createNotification: async (notification) => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+const scheduleReconnect = (userId: string, token: number) => {
+  if (
+    reconnectTimer ||
+    activeUserId !== userId ||
+    subscriptionToken !== token
+  ) {
+    return;
+  }
 
-    const sessionUserId = session?.user.id ?? null;
-    const userId = notification.user_id || sessionUserId;
+  const delay = Math.min(
+    1000 * 2 ** reconnectAttempt,
+    MAX_RECONNECT_DELAY
+  );
 
-    if (!userId) return;
+  reconnectAttempt += 1;
 
-    const payload = {
-      user_id: userId,
-      actor_id: notification.actor_id || sessionUserId || null,
-      ad_id: notification.ad_id || null,
-      comment_id: notification.comment_id || null,
-      type: notification.type || "system",
-      message: notification.message || null,
-    };
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
 
-    const { error } = await supabase.from("notifications").insert(payload);
-
-    if (error) {
-      console.error("Failed to create notification:", error);
+    if (
+      activeUserId !== userId ||
+      subscriptionToken !== token
+    ) {
       return;
     }
 
-    // Refresh immediately for self-notifications even if Realtime is unavailable.
-    if (sessionUserId === userId) {
-      void get().fetchNotifications(userId);
-    }
-  },
+    const state = useNotificationStore.getState();
+    state.subscribe(userId);
+  }, delay);
+};
 
-  deleteNotification: async (id) => {
-    const previous = get().notifications;
-    const target = previous.find((notification) => notification.id === id);
+const cleanupChannel = () => {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
 
-    if (!target) return;
+  if (activeChannel) {
+    void supabase.removeChannel(activeChannel);
+    activeChannel = null;
+  }
+};
 
-    set((state) => ({
-      notifications: state.notifications.filter(
-        (notification) => notification.id !== id
-      ),
-      unreadCount: target.is_read
-        ? state.unreadCount
-        : Math.max(0, state.unreadCount - 1),
-    }));
+export const useNotificationStore = create<NotificationState>(
+  (set, get) => ({
+    notifications: [],
+    unreadCount: 0,
+    isLoading: false,
 
-    const { error } = await supabase
-      .from("notifications")
-      .delete()
-      .eq("id", id);
+    createNotification: async (notification) => {
+      let userId = notification.user_id ?? null;
 
-    if (error) {
-      console.error("Failed to delete notification:", error);
-      if (activeUserId) {
-        void get().fetchNotifications(activeUserId);
+      if (!userId) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        userId = session?.user?.id ?? null;
       }
-    }
-  },
 
-  fetchNotifications: async (userId: string) => {
-    if (!userId) return;
+      if (!userId) return;
 
-    set({ isLoading: true });
+      const dedupeKey = [
+        userId,
+        notification.type ?? "system",
+        notification.message ?? "",
+        notification.ad_id ?? "",
+        notification.comment_id ?? "",
+      ].join("|");
 
-    const { data, error } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(50);
+      const now = Date.now();
+      const previous = recentNotifications.get(dedupeKey);
 
-    if (error) {
-      console.error("Failed to fetch notifications:", error.message);
-      if (activeUserId === userId) {
-        set({ isLoading: false });
+      if (
+        previous &&
+        now - previous < DUPLICATE_WINDOW_MS
+      ) {
+        return;
       }
-      return;
-    }
 
-    if (activeUserId !== null && activeUserId !== userId) {
-      return;
-    }
+      recentNotifications.set(dedupeKey, now);
 
-    const rows = (data || []) as AppNotification[];
-    const actorIds = [
-      ...new Set(
-        rows
-          .map((notification) => notification.actor_id)
-          .filter((id): id is string => Boolean(id))
-      ),
-    ];
+      for (const [key, timestamp] of recentNotifications) {
+        if (now - timestamp > DUPLICATE_WINDOW_MS) {
+          recentNotifications.delete(key);
+        }
+      }
 
-    let actorsById: Record<
-      string,
-      { username: string; avatar_url: string }
-    > = {};
+      const payload = {
+        user_id: userId,
+        actor_id: notification.actor_id ?? userId,
+        ad_id: notification.ad_id ?? null,
+        comment_id: notification.comment_id ?? null,
+        type: notification.type ?? "system",
+        message: notification.message ?? null,
+      };
 
-    if (actorIds.length > 0) {
-      const { data: actorRows, error: actorError } = await supabase
-        .from("profiles")
-        .select("id, username, avatar_url")
-        .in("id", actorIds);
+      const { error } = await supabase
+        .from("notifications")
+        .insert(payload);
 
-      if (actorError) {
+      if (error) {
         console.error(
-          "Failed to fetch notification actors:",
-          actorError.message
+          "Failed to create notification:",
+          error
         );
-      } else if (actorRows) {
-        actorsById = Object.fromEntries(
-          actorRows.map((actor) => [
-            actor.id,
-            {
-              username: actor.username,
-              avatar_url: actor.avatar_url,
-            },
-          ])
-        );
+
+        recentNotifications.delete(dedupeKey);
+        return;
       }
-    }
 
-    const notifications = rows.map((notification) => ({
-      ...notification,
-      actor: notification.actor_id
-        ? actorsById[notification.actor_id]
-        : undefined,
-    }));
+      // Refresh immediately so notifications still appear
+      // even when the realtime WebSocket is unavailable.
+      await get().fetchNotifications(userId);
+    },
 
-    if (activeUserId === null || activeUserId === userId) {
+    deleteNotification: async (id) => {
+      const notification = get().notifications.find(
+        (n) => n.id === id
+      );
+
+      set((state) => ({
+        notifications: state.notifications.filter(
+          (n) => n.id !== id
+        ),
+        unreadCount: notification?.is_read
+          ? state.unreadCount
+          : Math.max(0, state.unreadCount - 1),
+      }));
+
+      const { error } = await supabase
+        .from("notifications")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error(
+          "Failed to delete notification:",
+          error
+        );
+
+        if (notification) {
+          await get().fetchNotifications(
+            activeUserId ?? notification.user_id
+          );
+        }
+      }
+    },
+
+    fetchNotifications: async (userId) => {
+      if (!userId) {
+        set({
+          notifications: [],
+          unreadCount: 0,
+          isLoading: false,
+        });
+        return;
+      }
+
+      set({ isLoading: true });
+
+      const { data, error } = await supabase
+        .from("notifications")
+        .select(
+          `
+          *,
+          actor:actor_id (username, avatar_url)
+        `
+        )
+        .eq("user_id", userId)
+        .order("created_at", {
+          ascending: false,
+        })
+        .limit(50);
+
+      if (activeUserId !== userId) {
+        return;
+      }
+
+      if (error) {
+        console.error(
+          "Failed to fetch notifications:",
+          error
+        );
+
+        set({ isLoading: false });
+        return;
+      }
+
+      const formattedData = (data ?? []).map(
+        (notification: any) => ({
+          ...notification,
+          actor: Array.isArray(notification.actor)
+            ? notification.actor[0] ?? null
+            : notification.actor ?? null,
+        })
+      ) as AppNotification[];
+
       set({
-        notifications,
-        unreadCount: notifications.filter(
-          (notification) => !notification.is_read
+        notifications: formattedData,
+        unreadCount: formattedData.filter(
+          (n) => !n.is_read
         ).length,
         isLoading: false,
       });
-    }
-  },
+    },
 
-  markAsRead: async (notificationId: string) => {
-    const target = get().notifications.find(
-      (notification) => notification.id === notificationId
-    );
+    markAsRead: async (notificationId) => {
+      const notification = get().notifications.find(
+        (n) => n.id === notificationId
+      );
 
-    if (!target || target.is_read) return;
-
-    set((state) => ({
-      notifications: state.notifications.map((notification) =>
-        notification.id === notificationId
-          ? { ...notification, is_read: true }
-          : notification
-      ),
-      unreadCount: Math.max(0, state.unreadCount - 1),
-    }));
-
-    const { error } = await supabase
-      .from("notifications")
-      .update({ is_read: true })
-      .eq("id", notificationId);
-
-    if (error) {
-      console.error("Failed to mark notification as read:", error.message);
-      if (activeUserId) {
-        void get().fetchNotifications(activeUserId);
+      if (!notification || notification.is_read) {
+        return;
       }
-    }
-  },
 
-  markAllAsRead: async (userId: string) => {
-    if (!userId || get().unreadCount === 0) return;
+      set((state) => ({
+        notifications: state.notifications.map((n) =>
+          n.id === notificationId
+            ? {
+                ...n,
+                is_read: true,
+              }
+            : n
+        ),
+        unreadCount: Math.max(
+          0,
+          state.unreadCount - 1
+        ),
+      }));
 
-    set((state) => ({
-      notifications: state.notifications.map((notification) => ({
-        ...notification,
-        is_read: true,
-      })),
-      unreadCount: 0,
-    }));
+      const { error } = await supabase
+        .from("notifications")
+        .update({
+          is_read: true,
+        })
+        .eq("id", notificationId);
 
-    const { error } = await supabase
-      .from("notifications")
-      .update({ is_read: true })
-      .eq("user_id", userId)
-      .eq("is_read", false);
+      if (error) {
+        console.error(
+          "Failed to mark notification as read:",
+          error
+        );
 
-    if (error) {
-      console.error("Failed to mark all notifications as read:", error.message);
+        await get().fetchNotifications(
+          activeUserId ?? notification.user_id
+        );
+      }
+    },
+
+    markAllAsRead: async (userId) => {
+      if (!userId) return;
+
+      set((state) => ({
+        notifications: state.notifications.map(
+          (n) => ({
+            ...n,
+            is_read: true,
+          })
+        ),
+        unreadCount: 0,
+      }));
+
+      const { error } = await supabase
+        .from("notifications")
+        .update({
+          is_read: true,
+        })
+        .eq("user_id", userId)
+        .eq("is_read", false);
+
+      if (error) {
+        console.error(
+          "Failed to mark all notifications as read:",
+          error
+        );
+
+        await get().fetchNotifications(userId);
+      }
+    },
+
+    subscribe: (userId) => {
+      if (!userId) return;
+
+      if (
+        activeUserId === userId &&
+        activeChannel
+      ) {
+        return;
+      }
+
+      cleanupChannel();
+
+      activeUserId = userId;
+      reconnectAttempt = 0;
+      subscriptionToken += 1;
+
+      const token = subscriptionToken;
+      const channelName = `notifications-${userId}`;
+
       void get().fetchNotifications(userId);
-    }
-  },
 
-  subscribe: (userId: string) => {
-    if (!userId) return;
+      const channel = supabase
+        .channel(channelName)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${userId}`,
+          },
+          () => {
+            if (
+              activeUserId === userId &&
+              subscriptionToken === token
+            ) {
+              void get().fetchNotifications(
+                userId
+              );
+            }
+          }
+        );
 
-    if (activeChannel && activeUserId === userId) {
-      void get().fetchNotifications(userId);
-      return;
-    }
+      activeChannel = channel;
 
-    if (activeChannel) {
-      void supabase.removeChannel(activeChannel);
-      activeChannel = null;
-    }
-
-    activeUserId = userId;
-    void get().fetchNotifications(userId);
-
-    activeChannel = supabase
-      .channel(`notifications-${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          void get().fetchNotifications(userId);
+      channel.subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          reconnectAttempt = 0;
+          return;
         }
-      )
-      .subscribe((status, error) => {
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-          console.error("Notification realtime error:", error);
+
+        if (
+          status === "CHANNEL_ERROR" ||
+          status === "TIMED_OUT" ||
+          status === "CLOSED"
+        ) {
+          console.warn(
+            `Notification realtime status: ${status}`
+          );
+
+          if (activeChannel === channel) {
+            void supabase.removeChannel(channel);
+            activeChannel = null;
+          }
+
+          scheduleReconnect(userId, token);
         }
       });
-  },
+    },
 
-  unsubscribe: () => {
-    if (activeChannel) {
-      void supabase.removeChannel(activeChannel);
-      activeChannel = null;
-    }
+    unsubscribe: () => {
+      subscriptionToken += 1;
+      activeUserId = null;
+      reconnectAttempt = 0;
 
-    activeUserId = null;
+      cleanupChannel();
 
-    set({
-      notifications: [],
-      unreadCount: 0,
-      isLoading: false,
-    });
-  },
-}));
+      set({
+        notifications: [],
+        unreadCount: 0,
+        isLoading: false,
+      });
+    },
+  })
+);
