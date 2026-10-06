@@ -283,6 +283,36 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
       isActionPending: false,
     }));
 
+    let recipientId: string | null = null;
+
+    if (parentId) {
+      const { data: parentComment } = await supabase
+        .from("ad_comments")
+        .select("user_id")
+        .eq("id", parentId)
+        .maybeSingle();
+
+      recipientId = parentComment?.user_id ?? null;
+    } else {
+      const { data: ad } = await supabase
+        .from("trading_ads")
+        .select("user_id")
+        .eq("id", adId)
+        .maybeSingle();
+
+      recipientId = ad?.user_id ?? null;
+    }
+
+    if (recipientId && recipientId !== userProfile.id) {
+      void useNotificationStore.getState().createNotification({
+        user_id: recipientId,
+        actor_id: userProfile.id,
+        ad_id: adId,
+        comment_id: data.id,
+        type: parentId ? "reply" : "comment",
+      });
+    }
+
     return true;
   },
 
@@ -328,9 +358,18 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
         .delete()
         .match({ ad_id: adId, user_id: userId });
     } else {
-      await supabase
+      const { error } = await supabase
         .from("ad_votes")
         .upsert({ ad_id: adId, user_id: userId, vote_value: newValue });
+
+      if (!error && newValue === 1 && adOwnerId && adOwnerId !== userId) {
+        void useNotificationStore.getState().createNotification({
+          user_id: adOwnerId,
+          actor_id: userId,
+          ad_id: adId,
+          type: "upvote",
+        });
+      }
     }
   },
 
@@ -376,5 +415,3 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
     }
   },
 }));
-
-

@@ -17,6 +17,7 @@ import { getAvatarStyle, getInitials } from "./TradeAnalyzer/summaryUtils";
 import { triggerHaptic } from "../../data/helpers";
 import { CustomDropdown } from "./MainCanvas/CustomDropdown";
 import { useAdInteractionStore } from "../../store/useAdInteractionStore";
+import { useNotificationStore } from "../../store/useNotificationStore";
 import { AdInteractionModal } from "./AdInteractionModal";
 import { HoldToConfirmButton } from "./shared/Formatters";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
@@ -312,9 +313,18 @@ const VanguardAdCard = memo(
           .delete()
           .match({ ad_id: ad.id, user_id: currentUserId });
       } else {
-        await supabase
+        const { error } = await supabase
           .from("ad_votes")
           .upsert({ ad_id: ad.id, user_id: currentUserId, vote_value: newVal });
+
+        if (!error && newVal === 1 && ad.user_id !== currentUserId) {
+          void useNotificationStore.getState().createNotification({
+            user_id: ad.user_id,
+            actor_id: currentUserId,
+            ad_id: ad.id,
+            type: "upvote",
+          });
+        }
       }
     };
 

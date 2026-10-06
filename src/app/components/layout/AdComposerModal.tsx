@@ -146,7 +146,7 @@ export function AdComposerModal() {
       if (result?.error) throw result.error;
 
       window.dispatchEvent(new Event("academy-posted-ad"));
-      useNotificationStore.getState().createNotification({ type: "system", message: "Your trade ad was published successfully." });
+      void useNotificationStore.getState().createNotification({ type: "system", message: "Your trade ad was published successfully." });
 
       triggerHaptic("medium");
       setComposerOpen(false);
@@ -157,7 +157,7 @@ export function AdComposerModal() {
       );
     } catch {
       setError("Something went wrong. Please try again.");
-useNotificationStore.getState().createNotification({ type: "warning", message: "Failed to post ad. You may be rate limited." });
+void useNotificationStore.getState().createNotification({ type: "warning", message: "Failed to post ad. You may be rate limited." });
       setTimeout(() => setError(""), 6000);
     } finally {
       setIsPublishing(false);
@@ -166,7 +166,6 @@ useNotificationStore.getState().createNotification({ type: "warning", message: "
 
   const handleClose = () => {
     triggerHaptic("light");
-      useNotificationStore.getState().createNotification({ type: "system", message: "Your trade ad was published successfully." });
     setComposerOpen(false);
   };
 

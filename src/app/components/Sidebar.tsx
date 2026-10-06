@@ -35,6 +35,7 @@ import { getTier } from "../../data";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useProfileStore } from "../../store/useProfileStore";
 import { triggerHaptic } from "../../data/helpers";
+import { useNotificationStore } from "../../store/useNotificationStore";
 
 type ChannelConfig = {
   id: string;
@@ -118,6 +119,7 @@ export function Sidebar({
   >({});
   const { units } = useUnits();
   const { profile } = useAuthStore();
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
   const setViewingProfile = useProfileStore((s) => s.setViewingProfile);
 
   const role = profile?.role;
@@ -285,6 +287,14 @@ export function Sidebar({
                               <span className="text-[13px] leading-none pb-[1px] truncate">
                                 {channel.label}
                               </span>
+                              {channel.id === "notifications" && unreadCount > 0 && (
+                                <span
+                                  className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-black leading-[18px] text-center"
+                                  aria-label={`${unreadCount} unread notifications`}
+                                >
+                                  {unreadCount > 99 ? "99+" : unreadCount}
+                                </span>
+                              )}
                             </div>
                           </button>
 
@@ -358,5 +368,3 @@ export function Sidebar({
     </div>
   );
 }
-
-

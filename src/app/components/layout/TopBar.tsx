@@ -158,12 +158,24 @@ export function TopBar({
   }, [isProfileMenuOpen, isNotifMenuOpen]);
 
   const handleNotificationClick = (notif: any) => {
-    if (!notif.is_read) markAsRead(notif.id);
+    if (!notif.is_read) void markAsRead(notif.id);
     setIsNotifMenuOpen(false);
-    openAdContext(notif.ad_id, profile?.id);
-    // Explicitly navigate to the trading ads route so the modal context is correct
+
+    if (
+      notif.ad_id &&
+      (notif.type === "comment" ||
+        notif.type === "reply" ||
+        notif.type === "upvote")
+    ) {
+      void openAdContext(notif.ad_id, profile?.id);
+      window.document.dispatchEvent(
+        new CustomEvent("navigate", { detail: "trading-ads" })
+      );
+      return;
+    }
+
     window.document.dispatchEvent(
-      new CustomEvent("navigate", { detail: "trading-ads" })
+      new CustomEvent("navigate", { detail: "notifications" })
     );
   };
 
@@ -286,13 +298,37 @@ export function TopBar({
                           />
                           <div className="flex flex-col min-w-0 flex-1">
                             <p className="text-[12.5px] text-foreground leading-snug">
-                              <strong className="font-bold">
-                                {n.actor?.username || "Someone"}
-                              </strong>{" "}
-                              {n.type === "reply"
-                                ? "replied to your comment"
-                                : "commented on your trade ad"}
-                              .
+                              {n.type === "warning" ? (
+                                <>
+                                  <strong className="font-bold text-destructive">
+                                    System Warning:
+                                  </strong>{" "}
+                                  {n.message || "A system warning requires your attention."}
+                                </>
+                              ) : n.type === "system" ? (
+                                <>
+                                  <strong className="font-bold text-success">
+                                    System:
+                                  </strong>{" "}
+                                  {n.message || "A system update was recorded."}
+                                </>
+                              ) : n.type === "upvote" ? (
+                                <>
+                                  <strong className="font-bold">
+                                    {n.actor?.username || "Someone"}
+                                  </strong>{" "}
+                                  upvoted your trade ad.
+                                </>
+                              ) : (
+                                <>
+                                  <strong className="font-bold">
+                                    {n.actor?.username || "Someone"}
+                                  </strong>{" "}
+                                  {n.type === "reply"
+                                    ? "replied to your comment."
+                                    : "commented on your trade ad."}
+                                </>
+                              )}
                             </p>
                             <span className="text-[10px] text-muted-foreground font-mono mt-1">
                               {new Date(n.created_at).toLocaleDateString()} at{" "}
@@ -308,6 +344,16 @@ export function TopBar({
                         </button>
                       ))
                     )}
+                  </div>
+
+                  <div className="p-2 border-t border-border bg-popover rounded-b-[6px]">
+                    <Link
+                      to="/notifications"
+                      onClick={() => setIsNotifMenuOpen(false)}
+                      className="block w-full text-center text-[12px] font-bold text-primary hover:text-white transition-colors p-2 bg-primary/10 hover:bg-primary/20 rounded-md"
+                    >
+                      View all notifications
+                    </Link>
                   </div>
                 </div>
               )}
@@ -525,6 +571,3 @@ export function TopBar({
     </div>
   );
 }
-
-
-
