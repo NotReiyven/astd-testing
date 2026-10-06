@@ -828,7 +828,7 @@ export function AdInteractionModal() {
                   onClick={() => {
                     if (profile) {
                       triggerHaptic("light");
-                      voteAd(activeAd.id, profile.id, 1);
+                      voteAd(activeAd.id, profile.id, 1, activeAd.user_id);
                     }
                   }}
                   className={`focus-visible:outline-none transition-colors hover:text-[#23a559] cursor-pointer ${

@@ -23,17 +23,26 @@ import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 import { StatusIcon } from "./UnitGrid";
 import { triggerHaptic } from "../../../data/helpers";
 
+type Metric = "value" | "rarity" | "liquidity";
+
 export function HistoryModal() {
-  const { isOpen, unitId, closeModal } = useHistoryModalStore();
+  const { isOpen, unitId, closeModal, activeMetric, setActiveMetric } = useHistoryModalStore();
   const { history, loading, error } = useUnitHistory(unitId);
   const { units } = useUnits();
 
-  const [activeMetric, setActiveMetric] = useState<
-    "value" | "rarity" | "liquidity"
-  >("value");
+  
   const [isScrolled, setIsScrolled] = useState(false);
   const [RechartsLib, setRechartsLib] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Single source of truth for the view reset. Runs whenever the modal opens
+  // or is re-targeted, and honors the metric the opener asked for.
+  // (Previously a second effect reset this to "value" and overwrote it.)
+  useEffect(() => {
+    if (!isOpen) return;
+    setIsScrolled(false);
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [isOpen, unitId]);
 
   // Lazy load Recharts only when the modal opens to save massive bundle size
   useEffect(() => {
@@ -44,7 +53,10 @@ export function HistoryModal() {
     }
   }, [isOpen, RechartsLib]);
 
+  // Scroll lock + Escape key only. No metric/scroll resets here.
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         triggerHaptic("light");
@@ -52,15 +64,8 @@ export function HistoryModal() {
       }
     };
 
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      window.addEventListener("keydown", handleKeyDown);
-      setActiveMetric("value");
-      setIsScrolled(false);
-      if (scrollRef.current) scrollRef.current.scrollTop = 0;
-    } else {
-      document.body.style.overflow = "auto";
-    }
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       document.body.style.overflow = "auto";
@@ -759,7 +764,8 @@ export function HistoryModal() {
                                 );
                               })}
                               <Area
-                                type="monotone" isAnimationActive={false}
+                                type="monotone"
+                                isAnimationActive={false}
                                 dataKey="value"
                                 stroke={currentConfig.color}
                                 strokeWidth={2}
@@ -935,6 +941,3 @@ export function HistoryModal() {
     </div>
   );
 }
-
-
-

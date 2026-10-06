@@ -4,6 +4,7 @@ import { GiAbacus, GiMagicPortal, GiSparkles, GiRingingBell, GiChatBubble } from
 import { LiveAvatars } from "./LiveAvatars";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useLayoutStore } from "../../../store/useLayoutStore";
+import { Link } from "react-router-dom";
 import { useNotificationStore } from "../../../store/useNotificationStore";
 import { useAdInteractionStore } from "../../../store/useAdInteractionStore";
 import { CommandPalette } from "./CommandPalette";

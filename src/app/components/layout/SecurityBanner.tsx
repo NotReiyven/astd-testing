@@ -70,6 +70,21 @@ export const SecurityBanner = () => {
 
   const Icon = alert.severity === "info" ? Info : AlertOctagon;
 
+  const getSafeUrl = (url: string | undefined) => {
+    if (!url) return undefined;
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        return parsed.href;
+      }
+      return undefined;
+    } catch {
+      return undefined;
+    }
+  };
+
+  const safeUrl = getSafeUrl(alert.link_url);
+
   return (
     <div className={`w-full px-4 py-3 flex items-center justify-center gap-3 shadow-md z-[100] ${bgColors[alert.severity]}`}>
       <Icon className="w-5 h-5 shrink-0 animate-pulse" />
@@ -77,9 +92,9 @@ export const SecurityBanner = () => {
         <p className="text-[13px] sm:text-[14px] font-bold tracking-wide">
           {alert.message}
         </p>
-        {alert.link_url && (
+        {safeUrl && (
           <a 
-            href={alert.link_url} 
+            href={safeUrl} 
             target="_blank" 
             rel="noopener noreferrer"
             className="text-[12px] underline font-black hover:opacity-80 transition-opacity whitespace-nowrap"

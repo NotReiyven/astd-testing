@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { get as getIdb, set as setIdb } from "idb-keyval";
 import { useToastStore } from "./useToastStore";
+import { useNotificationStore } from "./useNotificationStore";
 
 export interface AdComment {
   id: string;
@@ -43,7 +44,7 @@ interface AdInteractionState {
     parentId?: string | null
   ) => Promise<boolean>;
   deleteComment: (commentId: string) => Promise<boolean>;
-  voteAd: (adId: string, userId: string, value: number) => Promise<void>;
+  voteAd: (adId: string, userId: string, value: number, adOwnerId?: string) => Promise<void>;
   voteComment: (
     commentId: string,
     userId: string,
@@ -268,6 +269,10 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
         isActionPending: false,
       }));
       useToastStore.getState().addToast("Failed to post comment. Please try again.", "error");
+      useNotificationStore.getState().createNotification({
+        type: "warning",
+        message: "Failed to post comment. You may be rate limited.",
+      });
       return false;
     }
 
@@ -301,7 +306,7 @@ export const useAdInteractionStore = create<AdInteractionState>((set, get) => ({
     return true;
   },
 
-  voteAd: async (adId, userId, value) => {
+  voteAd: async (adId, userId, value, adOwnerId) => {
     const { adVotes } = get();
     const currentVote = adVotes.userVote;
     const isRemoving = currentVote === value;

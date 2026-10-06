@@ -63,19 +63,9 @@ export async function OPTIONS() {
 }
 
 export async function GET(request: Request) {
-  // ── 1. AUTH ──────────────────────────────────────────────────────────────
-  // Secret-gated so arbitrary bots cannot drain Google Sheets API quota.
-  // The frontend must attach the same secret via Authorization header.
-  const SYNC_SECRET = process.env.SYNC_SECRET;
-  if (!SYNC_SECRET) {
-    console.error("[syncSheet] SYNC_SECRET env var is not configured");
-    return jsonResponse(500, { error: "Server misconfiguration." });
-  }
-
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${SYNC_SECRET}`) {
-    return jsonResponse(401, { error: "Unauthorized." });
-  }
+  // 1. AUTH
+  // Endpoint is public for frontend fetching. Abuse is prevented by Upstash IP Rate Limiting
+  // and Vercel Edge caching (s-maxage=300).
 
   // ── 2. QUERY PARAM GUARD ─────────────────────────────────────────────────
   const url = new URL(request.url);

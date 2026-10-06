@@ -7,6 +7,7 @@ import { useAuthStore } from "../../../store/useAuthStore";
 import { useInventoryStore } from "../../../store/useInventoryStore";
 import { useUnits } from "../../../context/UnitContext";
 import { TradeCard } from "../../../types";
+import { useNotificationStore } from "../../../store/useNotificationStore";
 import { triggerHaptic } from "../../../data/helpers";
 
 const TTL_OPTIONS = [
@@ -145,6 +146,7 @@ export function AdComposerModal() {
       if (result?.error) throw result.error;
 
       window.dispatchEvent(new Event("academy-posted-ad"));
+      useNotificationStore.getState().createNotification({ type: "system", message: "Your trade ad was published successfully." });
 
       triggerHaptic("medium");
       setComposerOpen(false);
@@ -155,6 +157,7 @@ export function AdComposerModal() {
       );
     } catch {
       setError("Something went wrong. Please try again.");
+useNotificationStore.getState().createNotification({ type: "warning", message: "Failed to post ad. You may be rate limited." });
       setTimeout(() => setError(""), 6000);
     } finally {
       setIsPublishing(false);
@@ -163,6 +166,7 @@ export function AdComposerModal() {
 
   const handleClose = () => {
     triggerHaptic("light");
+      useNotificationStore.getState().createNotification({ type: "system", message: "Your trade ad was published successfully." });
     setComposerOpen(false);
   };
 

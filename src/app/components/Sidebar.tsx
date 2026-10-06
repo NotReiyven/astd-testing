@@ -10,6 +10,7 @@ import {
   Package,
   ShieldAlert,
   User,
+  BellRing,
 } from "lucide-react";
 import {
   GiCastle,
@@ -63,7 +64,8 @@ const BASE_CATEGORIES: CategoryConfig[] = [
     id: "trading",
     label: "trading",
     channels: [
-      { id: "profile", label: "my-profile", isLocked: true, icon: GiCharacter },
+      { id: "notifications", label: "notifications", isLocked: true, icon: BellRing },
+        { id: "profile", label: "my-profile", isLocked: true, icon: GiCharacter },
       { id: "inventory", label: "my-inventory", isLocked: true, icon: GiBackpack },
       {
         id: "trading-ads",

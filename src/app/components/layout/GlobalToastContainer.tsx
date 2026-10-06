@@ -107,7 +107,7 @@ export function GlobalToastContainer() {
   return (
     <div
       aria-label="Notifications"
-      className="fixed bottom-6 right-6 z-[300] flex flex-col items-end pointer-events-none w-[calc(100vw-48px)] md:w-auto h-[60px]"
+      className="fixed bottom-6 right-6 z-[999999] flex flex-col items-end pointer-events-none w-[calc(100vw-48px)] md:w-auto h-[60px]"
     >
       {reversedToasts.map((t, i) => (
         <ToastItem

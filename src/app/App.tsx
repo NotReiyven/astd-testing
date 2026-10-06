@@ -85,6 +85,7 @@ const AdminChannel = lazy(() =>
     default: module.AdminChannel,
   }))
 );
+const NotificationsChannel = lazy(() => import("./components/NotificationsChannel").then((module) => ({ default: module.NotificationsChannel })));
 const ProfileChannel = lazy(() =>
   import("./components/ProfileChannel").then((module) => ({
     default: module.ProfileChannel,
@@ -609,6 +610,7 @@ export default function App() {
                     </GranularErrorBoundary>
                   }
                 />
+                <Route path="/notifications" element={<NotificationsChannel />} />
                 <Route path="/profile" element={<ProfileChannel />} />
                 <Route
                   path="/trading-ads"
