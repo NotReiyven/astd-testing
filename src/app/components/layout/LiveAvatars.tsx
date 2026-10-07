@@ -1,5 +1,5 @@
 import { usePresence, PresenceState } from "../../../hooks/usePresence";
-import { handleImageError } from "../../../data";
+import { getUnitAssetUrl, handleImageError } from "../../../data";
 import { useProfileStore } from "../../../store/useProfileStore";
 
 const getInitials = (name: string) => {
@@ -50,7 +50,7 @@ export function LiveAvatars() {
 
             {/* unit image */}
             <img
-              src={`/units/${user.unitId}.webp`}
+              src={getUnitAssetUrl(user.unitId) || undefined}
               alt={user.name}
               className="w-full h-full object-cover rounded-full absolute inset-0 z-10"
               onError={(e) => handleImageError(e, user.unitId)}
@@ -75,3 +75,5 @@ export function LiveAvatars() {
     </div>
   );
 }
+
+

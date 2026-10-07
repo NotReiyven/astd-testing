@@ -4,7 +4,7 @@ import { formatDistanceToNow } from "date-fns";
 import { BellRing, Check, Trash2 } from "lucide-react";
 import { useNotificationStore } from "../../store/useNotificationStore";
 import { useAuthStore } from "../../store/useAuthStore";
-import { triggerHaptic } from "../../data/helpers";
+import { getUnitAssetUrl, triggerHaptic } from "../../data/helpers";
 
 export function NotificationsChannel() {
   const { profile } = useAuthStore();
@@ -135,7 +135,8 @@ export function NotificationsChannel() {
                     <img
                       src={
                         notification.actor?.avatar_url ||
-                        "/units/firezio.webp"
+                        getUnitAssetUrl("firezio") ||
+                        ""
                       }
                       alt=""
                       className="w-10 h-10 rounded-full border border-border object-cover shrink-0 bg-muted"
@@ -218,3 +219,5 @@ export function NotificationsChannel() {
     </div>
   );
 }
+
+

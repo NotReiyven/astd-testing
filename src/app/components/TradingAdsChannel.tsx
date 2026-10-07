@@ -12,7 +12,7 @@ import { useLayoutStore } from "../../store/useLayoutStore";
 import { useUnits } from "../../context/UnitContext";
 import { useHistoryModalStore } from "../../store/useHistoryModalStore";
 import { TradeCard, MasterUnit } from "../../types";
-import { getProxyImage, handleImageError } from "../../data";
+import { getProxyImage, getUnitAssetUrl, handleImageError } from "../../data";
 import { getAvatarStyle, getInitials } from "./TradeAnalyzer/summaryUtils";
 import { triggerHaptic } from "../../data/helpers";
 import { CustomDropdown } from "./MainCanvas/CustomDropdown";
@@ -403,7 +403,7 @@ const VanguardAdCard = memo(
               title="View Profile"
             >
               <img
-                src={ad.profiles?.avatar_url || "/units/firezio.webp"}
+                src={ad.profiles?.avatar_url || getUnitAssetUrl("firezio") || ""}
                 className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-muted object-cover border border-border"
                 alt=""
               />
@@ -812,3 +812,4 @@ export function TradingAdsChannel() {
     </div>
   );
 }
+

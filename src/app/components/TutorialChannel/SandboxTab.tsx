@@ -4,13 +4,13 @@ import { GiAbacus, GiLockedFortress, GiFairyWand, GiShieldEchoes, GiScrollUnfurl
 import { useTradeStore } from "../../../store/useTradeStore";
 import { useInventoryStore } from "../../../store/useInventoryStore";
 import { useAuthStore } from "../../../store/useAuthStore";
-import { triggerHaptic } from "../../../data/helpers";
+import { getUnitAssetUrl, triggerHaptic } from "../../../data/helpers";
 
 interface SandboxTabProps {
   completedGuides: Record<string, boolean>;
 }
 
-const FIRE_ZIO_AVATAR = "/units/firezio.webp";
+const FIRE_ZIO_AVATAR = getUnitAssetUrl("firezio") || "";
 
 export function SandboxTab({ completedGuides }: SandboxTabProps) {
   const { giveItems, getItems, pinnedIds, presets } = useTradeStore();
@@ -485,4 +485,6 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
     </div>
   );
 }
+
+
 

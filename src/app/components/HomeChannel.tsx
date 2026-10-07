@@ -8,8 +8,9 @@ import { GiMeepleGroup, GiSpanner, GiSpellBook, GiMagicPortal, GiChatBubble, GiO
 import { useUnits } from "../../context/UnitContext";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
 import { useLayoutStore } from "../../store/useLayoutStore";
+import { getUnitAssetUrl } from "../../data/helpers";
 
-const FIRE_ZIO_AVATAR = "/units/firezio.webp";
+const FIRE_ZIO_AVATAR = getUnitAssetUrl("firezio") || "";
 
 function CreditBadge({ name, color }: { name: string; color: string }) {
   const [copied, setCopied] = useState(false);
@@ -120,7 +121,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
     "Ded_Sen", "Crimson Desire", "Brysans", "SquidyMotion", "Luk", "Hero", "soupermunki", "dennis.67", "hopper duper", "Poxie", "Iridescent Equinox", "Pchongle", "unobium", "Demonfox", "GorillaTactics92", "MicroJillyWilly", "Doggod", "kosu", "Paker", "Kiwami", "brogee", "Leo", "arkss", "Trvz", "Up", "Vantagehgc", "fortnitekid", "Mikoto", "En Thobias12", "Miro_y", "arkysesh", "brickz7", "Venus", "AdamSBDG7", "halw", "NathanPlayz", "orangehairfunnyman", "olivia.rodrigo", "Felta", "VerotObelyn", "Kyo"
   ];
 
-  const creditsBottomImage = "/units/all-star.webp";
+  const creditsBottomImage = getUnitAssetUrl("all-star") || "";
 
   return (
     <div className="flex-1 w-full h-full font-sans relative overflow-hidden flex flex-col bg-background">
@@ -273,7 +274,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
 
             <div className={`bg-card border rounded-[8px] flex flex-col sm:flex-row items-center sm:items-start p-6 gap-6 shadow-sm transition-colors ${guideState?.type === "developer" ? "border-primary" : "border-border"}`}>
               <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full border border-border overflow-hidden shrink-0 bg-muted">
-                <img src="/units/reiyven.webp" alt="Reiyven" draggable={false} className="w-full h-full object-cover" />
+                <img src={getUnitAssetUrl("reiyven") || ""} alt="Reiyven" draggable={false} className="w-full h-full object-cover" />
               </div>
               <div className="flex flex-col items-center sm:items-start text-center sm:text-left flex-1">
                 <div className="flex flex-wrap justify-center sm:justify-start items-center gap-2 mb-1.5">
@@ -339,3 +340,5 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
     </div>
   );
 }
+
+

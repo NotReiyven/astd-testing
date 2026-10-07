@@ -6,10 +6,10 @@ import {
   learnSlang,
   removeSlang,
 } from "../TradeAnalyzer/smartParser";
-import { getProxyImage, handleImageError } from "../../../data";
+import { getProxyImage, getUnitAssetUrl, handleImageError } from "../../../data";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 
-const FIRE_ZIO_AVATAR = "/units/firezio.webp";
+const FIRE_ZIO_AVATAR = getUnitAssetUrl("firezio") || "";
 
 export function DictionaryTab() {
   const { units: ALL_UNITS } = useUnits();
@@ -306,3 +306,5 @@ export function DictionaryTab() {
     </div>
   );
 }
+
+

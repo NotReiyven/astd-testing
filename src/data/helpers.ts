@@ -1,6 +1,5 @@
 import { MasterUnit } from "../types";
 import { RARITY_SCALE } from "./config";
-import { UNIT_IMAGES } from "./images";
 
 export function triggerHaptic(type: 'light' | 'medium' | 'heavy' | 'success') {
   if (typeof window !== "undefined" && navigator.vibrate) {
@@ -38,30 +37,28 @@ export function getRarityLabel(v: number) {
   return entry ? entry.label : "Unknown";
 }
 
-export function getProxyImage(unitId: string, fallbackUrl?: string) {
+const ASSET_CDN_BASE_URL =
+  import.meta.env.VITE_ASSET_CDN_BASE_URL?.replace(/\/+$/, "");
+
+export function getUnitAssetUrl(unitId: string) {
   if (!unitId) return null;
-  return `/units/${unitId}.webp?v=2`;
+  if (ASSET_CDN_BASE_URL) return `${ASSET_CDN_BASE_URL}/units/${unitId}.webp`;
+  return `/units/${unitId}.webp`;
 }
 
-export function handleImageError(e: React.SyntheticEvent<HTMLImageElement, Event>, id: string) {
+export function getProxyImage(unitId: string, _fallbackUrl?: string) {
+  return getUnitAssetUrl(unitId);
+}
+
+export function handleImageError(
+  e: React.SyntheticEvent<HTMLImageElement, Event>,
+  _id: string
+) {
   const target = e.currentTarget;
-  const stage = target.getAttribute('data-fallback-stage');
-
-  if (!stage) {
-    // Stage 1: Try to load the uncompressed Fandom source
-    target.setAttribute('data-fallback-stage', '1');
-    const rawUrl = UNIT_IMAGES[id];
-    
-    if (rawUrl && rawUrl !== "PLACEHOLDER_URL") {
-      const cleanUrl = rawUrl.replace(/&amp;/g, '&').split("/revision/")[0];
-      target.src = `${cleanUrl}/revision/latest/scale-to-width-down/150?cb=${Date.now()}`;
-      return;
-    }
-  }
-
-  // Stage 2: Ultimate fallback to prevent infinite error loops if the Fandom source is also 404
-  target.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-  target.style.opacity = '0';
+  target.setAttribute("data-fallback-stage", "1");
+  target.src =
+    "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+  target.style.opacity = "0";
 }
 
 export function getObtainability(unit?: MasterUnit): "OBT" | "UNOB" {
@@ -83,3 +80,4 @@ export function getObtainability(unit?: MasterUnit): "OBT" | "UNOB" {
 
   return "UNOB";
 }
+

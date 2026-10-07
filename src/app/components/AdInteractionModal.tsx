@@ -28,7 +28,7 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { useTradeStore } from "../../store/useTradeStore";
 import { useProfileStore } from "../../store/useProfileStore";
 import { useUnits } from "../../context/UnitContext";
-import { getProxyImage, handleImageError } from "../../data";
+import { getProxyImage, getUnitAssetUrl, handleImageError } from "../../data";
 import { triggerHaptic } from "../../data/helpers";
 import { getUnitConservativeValue } from "./InventoryChannel/inventoryUtils";
 import {
@@ -301,7 +301,7 @@ export function AdInteractionModal() {
       >
         <div className="flex items-start gap-3 group">
           <img
-            src={comment.profiles.avatar_url || "/units/firezio.webp"}
+            src={comment.profiles.avatar_url || getUnitAssetUrl("firezio") || ""}
             className="w-8 h-8 rounded-full bg-muted object-cover shrink-0 cursor-pointer hover:opacity-80 transition-opacity mt-0.5 border border-border"
             alt=""
             onClick={(e) => {
@@ -584,7 +584,7 @@ export function AdInteractionModal() {
               <div className="flex items-center justify-between bg-muted p-3.5 rounded-[6px] border border-border shadow-sm">
                 <div className="flex items-center gap-3 min-w-0">
                   <img
-                    src={activeAd.profiles?.avatar_url || "/units/firezio.webp"}
+                    src={activeAd.profiles?.avatar_url || getUnitAssetUrl("firezio") || ""}
                     className="w-11 h-11 rounded-full bg-background object-cover cursor-pointer hover:opacity-80 transition-opacity shrink-0 border border-border"
                     alt=""
                     onClick={(e) => {
@@ -931,7 +931,7 @@ export function AdInteractionModal() {
                 >
                   <div className="flex items-center gap-2 mb-1 shrink-0">
                     <img
-                      src={profile.avatar_url || "/units/firezio.webp"}
+                      src={profile.avatar_url || getUnitAssetUrl("firezio") || ""}
                       className="w-8 h-8 rounded-full bg-card object-cover border border-border"
                       alt=""
                     />
@@ -982,3 +982,5 @@ export function AdInteractionModal() {
     </div>
   );
 }
+
+

@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { useNotificationStore } from "../../../store/useNotificationStore";
 import { useAdInteractionStore } from "../../../store/useAdInteractionStore";
 import { CommandPalette } from "./CommandPalette";
+import { getUnitAssetUrl } from "../../../data/helpers";
 
 interface TopBarProps {
   calcHeaderZ: string;
@@ -292,7 +293,7 @@ export function TopBar({
                           }`}
                         >
                           <img
-                            src={n.actor?.avatar_url || "/units/firezio.webp"}
+                            src={n.actor?.avatar_url || getUnitAssetUrl("firezio") || ""}
                             className="w-8 h-8 rounded-full border border-border bg-muted object-cover shrink-0"
                             alt=""
                           />
@@ -571,3 +572,4 @@ export function TopBar({
     </div>
   );
 }
+

@@ -29,7 +29,7 @@ import {
 import { useInventoryStore } from "../../store/useInventoryStore";
 import { useProfileStore } from "../../store/useProfileStore";
 import { useAdminIntel } from "../../hooks/useAdminIntel";
-import { triggerHaptic } from "../../data/helpers";
+import { getUnitAssetUrl, triggerHaptic } from "../../data/helpers";
 
 export function AdminChannel() {
   const { setViewingUser } = useInventoryStore();
@@ -441,7 +441,7 @@ export function AdminChannel() {
                       >
                         <div className="relative shrink-0">
                           <img
-                            src={u.avatar_url || "/units/firezio.webp"}
+                            src={u.avatar_url || getUnitAssetUrl("firezio") || ""}
                             className="w-10 h-10 rounded-full bg-muted object-cover border border-border shadow-inner"
                             alt=""
                           />
@@ -545,7 +545,7 @@ export function AdminChannel() {
                 >
                   <div className="absolute -bottom-10 left-[var(--page-p)]">
                     <img
-                      src={selectedUser.avatar_url || "/units/firezio.webp"}
+                      src={selectedUser.avatar_url || getUnitAssetUrl("firezio") || ""}
                       className="w-[96px] h-[96px] rounded-full object-cover border-[5px] border-background bg-card shadow-md"
                       alt=""
                     />
@@ -993,3 +993,5 @@ export function AdminChannel() {
     </div>
   );
 }
+
+

@@ -1,4 +1,5 @@
 import { MasterUnit } from "../types";
+import { getUnitAssetUrl } from "./helpers";
 
 export interface UnitMeta {
   name?: string;
@@ -440,7 +441,8 @@ export const ALL_UNITS: MasterUnit[] = Object.entries(UNIT_METADATA).map(([id, m
   aliases: meta.aliases || [],
   notice: meta.notice || "",
   obtainability: meta.obtainability || "UNOB",
-  imageUrl: `/units/${id}.webp`
+  imageUrl: getUnitAssetUrl(id) || undefined
 }));
 
 export const ROSTER = ALL_UNITS;
+

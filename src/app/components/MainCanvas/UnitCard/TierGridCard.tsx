@@ -12,7 +12,6 @@ import {
   GRID_STATUS_CFG,
   THEORY_RARITY_SCALE,
   THEORY_LIQUIDITY_SCALE,
-  UNIT_IMAGES,
 } from "../../../../data";
 import { getAvatarStyle, getInitials } from "../../TradeAnalyzer/summaryUtils";
 import { useTradeStore } from "../../../../store/useTradeStore";
@@ -41,13 +40,8 @@ const BLANK_PIXEL =
  */
 const FAILED_IMAGE_URLS = new Set<string>();
 
-/** Uncompressed Fandom source, or a blank pixel if no source exists. */
-const getFallbackUrl = (unitId: string): string => {
-  const raw = UNIT_IMAGES[unitId];
-  if (!raw || raw === "PLACEHOLDER_URL") return BLANK_PIXEL;
-  const base = raw.replace(/&amp;/g, "&").split("/revision/")[0];
-  return `${base}/revision/latest/scale-to-width-down/150`;
-};
+/** Local visual fallback. Never retries another external image host. */
+const getFallbackUrl = (_unitId: string): string => BLANK_PIXEL;
 
 /**
  * Mutates the <img> directly. No setState, so no re-render mid-scroll.
@@ -56,16 +50,13 @@ const getFallbackUrl = (unitId: string): string => {
 function handleCardImageError(
   e: React.SyntheticEvent<HTMLImageElement>,
   primaryUrl: string,
-  fallbackUrl: string
+  _fallbackUrl: string
 ) {
   const img = e.currentTarget;
   const stage = img.dataset.fb;
 
-  if (stage === "2") return;
-
   if (stage === "1") {
-    // Fallback failed too.
-    FAILED_IMAGE_URLS.add(fallbackUrl);
+    FAILED_IMAGE_URLS.add(primaryUrl);
     img.dataset.fb = "2";
     img.style.opacity = "0";
     img.src = BLANK_PIXEL;
@@ -74,8 +65,8 @@ function handleCardImageError(
 
   FAILED_IMAGE_URLS.add(primaryUrl);
   img.dataset.fb = "1";
-  if (fallbackUrl === BLANK_PIXEL) img.style.opacity = "0";
-  img.src = fallbackUrl;
+  img.style.opacity = "0";
+  img.src = BLANK_PIXEL;
 }
 
 const CardImage = memo(function CardImage({
@@ -650,3 +641,4 @@ function areCardPropsEqual(prev: TierGridCardProps, next: TierGridCardProps) {
 }
 
 export const TierGridCard = memo(TierGridCardImpl, areCardPropsEqual);
+

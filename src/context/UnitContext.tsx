@@ -5,7 +5,7 @@ import {
   ALL_UNITS as LOCAL_FALLBACK_UNITS,
   UNIT_METADATA,
 } from "../data/units";
-import { getObtainability } from "../data/helpers";
+import { getObtainability, getUnitAssetUrl } from "../data/helpers";
 
 type UnitContextType = {
   units: MasterUnit[];
@@ -45,7 +45,7 @@ export const UnitProvider = ({ children }: { children: React.ReactNode }) => {
           notice: apiUnit.notice || meta.notice || "",
           aliases: meta.aliases || apiUnit.aliases || [],
           obtainability: meta.obtainability || getObtainability(apiUnit),
-          imageUrl: `/units/${apiUnit.id}.webp`,
+          imageUrl: getUnitAssetUrl(apiUnit.id) || undefined,
         };
       });
 
@@ -79,3 +79,5 @@ export const UnitProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const useUnits = () => useContext(UnitContext);
+
+

@@ -13,7 +13,7 @@ import {
   UserCircle,
 } from "lucide-react";
 import { useProfileStore } from "../../../store/useProfileStore";
-import { triggerHaptic } from "../../../data/helpers";
+import { getUnitAssetUrl, triggerHaptic } from "../../../data/helpers";
 
 const STATUS_COLORS = {
   online: "#23a559",
@@ -140,7 +140,7 @@ export function MiniProfilePopout() {
               >
                 <div className="relative">
                   <img
-                    src={profile.avatar_url || "/units/firezio.webp"}
+                    src={profile.avatar_url || getUnitAssetUrl("firezio") || ""}
                     alt={profile.username}
                     className="w-16 h-16 rounded-[4px] border-4 border-popover object-cover bg-muted shadow-sm"
                   />
@@ -250,3 +250,5 @@ export function MiniProfilePopout() {
     document.body
   );
 }
+
+

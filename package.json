@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "fetch-images": "node scripts/fetch-images.mjs",
-    "build": "npm run fetch-images && npx vite build",
+    "build": "npx vite build",
     "dev": "vite --open"
   },
   "dependencies": {
@@ -89,3 +89,5 @@
     }
   }
 }
+
+

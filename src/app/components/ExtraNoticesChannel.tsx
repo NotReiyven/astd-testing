@@ -11,8 +11,9 @@ import {
   Filter,
 } from "lucide-react";
 import { useUnits } from "../../context/UnitContext";
+import { getUnitAssetUrl } from "../../data/helpers";
 
-const FIRE_ZIO_AVATAR = "/units/firezio.webp";
+const FIRE_ZIO_AVATAR = getUnitAssetUrl("firezio") || "";
 
 export function ExtraNoticesChannel() {
   const { notices } = useUnits();
@@ -238,3 +239,5 @@ export function ExtraNoticesChannel() {
     </div>
   );
 }
+
+

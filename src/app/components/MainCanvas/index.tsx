@@ -24,8 +24,9 @@ import { CanvasControls } from "./CanvasControls";
 import { GuideType } from "../guides/AquaGuideOverlay";
 import { useCanvasVirtualization } from "./useCanvasVirtualization";
 import { useCanvasScroll } from "../../../hooks/useCanvasScroll";
+import { getUnitAssetUrl } from "../../../data/helpers";
 
-const FIRE_ZIO_AVATAR = "/units/firezio.webp";
+const FIRE_ZIO_AVATAR = getUnitAssetUrl("firezio") || "";
 
 export const MainCanvas = memo(function MainCanvas({
   activeTierFilter,
@@ -414,6 +415,8 @@ export const MainCanvas = memo(function MainCanvas({
     </div>
   );
 });
+
+
 
 
 

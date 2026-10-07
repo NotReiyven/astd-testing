@@ -19,7 +19,7 @@ import {
 import { StaticStatusBadge } from "./TutorialUI";
 import { useUnits } from "../../../context/UnitContext";
 import { MasterUnit } from "../../../types";
-import { getProxyImage, handleImageError } from "../../../data";
+import { getProxyImage, getUnitAssetUrl, handleImageError } from "../../../data";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { buildScenariosList, Scenario } from "./simulatorEngine";
@@ -293,7 +293,7 @@ export function SimulatorTab() {
 
               <div className="bg-popover border-l-4 border-l-destructive border-y border-y-border border-r border-r-border rounded-r-[8px] p-4 shadow-inner flex items-start gap-4">
                 <img
-                  src="/units/firezio.webp"
+                  src={getUnitAssetUrl("firezio") || ""}
                   className="w-10 h-10 rounded-full border border-destructive object-cover shrink-0 bg-popover"
                   alt="Fire Zio"
                 />
@@ -547,3 +547,5 @@ export function SimulatorTab() {
     </div>
   );
 }
+
+
