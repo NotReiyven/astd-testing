@@ -5,6 +5,7 @@ import { useProfileStore, UserProfileData } from "../../store/useProfileStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useTradingAdsStore } from "../../store/useTradingAdsStore";
 import { useInventoryStore } from "../../store/useInventoryStore";
+import { getUnitAssetUrl } from "../../data/helpers";
 import {
   useLayoutStore,
   ThemeMode,
@@ -561,7 +562,7 @@ export function ProfileChannel() {
             <div className="flex flex-col md:flex-row md:items-end gap-5">
               <div className="relative shrink-0">
                 <img
-                  src={profileData.avatar_url || "/units/firezio.webp"}
+                  src={profileData.avatar_url || getUnitAssetUrl("firezio") || ""}
                   alt={profileData.username}
                   className={`${
                     globalCompactMode
