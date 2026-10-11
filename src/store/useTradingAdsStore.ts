@@ -32,6 +32,23 @@ interface TradingAdsState {
   createAd: (adData: any) => Promise<{ error: any | null }>;
 }
 
+const containsPhishingOrLink = (text: string) => {
+  const normalized = text.normalize("NFKD").toLowerCase();
+  const stripped = normalized
+    .replace(/[\u200B-\u200D\uFEFF\u200E\u200F\u202A-\u202E]/g, "")
+    .replace(/(\s|\[|\]|\(|\)|\{|\}|\*|_|-|~|`|\||\\|\/)+/g, "")
+    .replace(/[аа]/g, "a")
+    .replace(/[оо]/g, "o")
+    .replace(/[ее]/g, "e")
+    .replace(/[сс]/g, "c")
+    .replace(/dot/g, ".");
+
+  const aggressivePattern =
+    /(https?:|www\.|[a-z0-9]+\.(com|net|org|gg|ru|io|me|co|xyz|to|link|tk)|discord\.gg|discordgg|t\.me|bit\.ly)/i;
+
+  return aggressivePattern.test(stripped);
+};
+
 export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
   ads: [],
   isLoading: true,
@@ -127,20 +144,40 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
   },
 
   createAd: async (adData: any) => {
-    const payload: any = {};
-    payload.user_id = adData.user_id || adData.userId;
-    if (!payload.user_id) {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user) payload.user_id = session.user.id;
+    const rawNote = String(adData.note || "").slice(0, 500);
+    if (containsPhishingOrLink(rawNote)) {
+      useToastStore
+        .getState()
+        .addToast(
+          "External links and invite URLs are strictly prohibited in trade notes.",
+          "error"
+        );
+      return { error: new Error("Phishing or external link detected in note.") };
     }
 
-    payload.ad_type = adData.ad_type || adData.adType || "standard";
-    payload.give_items = adData.give_items || adData.giveItems || [];
-    payload.get_items = adData.get_items || adData.getItems || [];
+    const payload: any = {};
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    payload.user_id = session?.user?.id || adData.user_id || adData.userId;
 
-    payload.note = DOMPurify.sanitize(adData.note || "", {
+    const validTypes = ["standard", "lf_offers", "inventory"];
+    const requestedType = adData.ad_type || adData.adType || "standard";
+    payload.ad_type = validTypes.includes(requestedType)
+      ? requestedType
+      : "standard";
+
+    const rawGive = Array.isArray(adData.give_items || adData.giveItems)
+      ? adData.give_items || adData.giveItems
+      : [];
+    const rawGet = Array.isArray(adData.get_items || adData.getItems)
+      ? adData.get_items || adData.getItems
+      : [];
+
+    payload.give_items = rawGive.slice(0, 20);
+    payload.get_items = rawGet.slice(0, 20);
+
+    payload.note = DOMPurify.sanitize(rawNote, {
       ALLOWED_TAGS: [], // Strip all HTML tags entirely
       ALLOWED_ATTR: [],
     });
@@ -149,7 +186,10 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
     if (rawExpires) {
       payload.expires_at = rawExpires;
     } else {
-      const hours = Number(adData.ttlHours || adData.ttl || 24);
+      const hours = Math.min(
+        24,
+        Math.max(1, Number(adData.ttlHours || adData.ttl || 24))
+      );
       const exp = new Date();
       exp.setHours(exp.getHours() + hours);
       payload.expires_at = exp.toISOString();

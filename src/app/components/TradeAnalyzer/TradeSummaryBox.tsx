@@ -5,13 +5,10 @@ import {
   getLiquidityScore,
 } from "./summaryUtils";
 import { TradeCard, MasterUnit } from "../../../types";
-import {
-  TrendingUp,
-  Clock,
-  AlertTriangle,
-  ChevronDown,
-} from "lucide-react";
+import { GiUpgrade, GiHourglass } from "react-icons/gi";
 import { RollingNumber } from "../shared/Formatters";
+import { useTradeStore, DEFAULT_ANALYZER_SETTINGS } from "../../../store/useTradeStore";
+import { triggerHaptic } from "../../../data/helpers";
 
 interface TradeSummaryBoxProps {
   isAnalyzerTarget: boolean;
@@ -37,7 +34,21 @@ export function TradeSummaryBox({
   isCompact = false,
 }: TradeSummaryBoxProps) {
   const [activeTip, currentTip] = useState<string | null>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const rawSettings = useTradeStore((s) => s.analyzerSettings);
+  const updateAnalyzerSettings = useTradeStore((s) => s.updateAnalyzerSettings);
+
+  const settings = {
+    ...DEFAULT_ANALYZER_SETTINGS,
+    ...(rawSettings || {}),
+  };
+
+  const isMetricsVisible = settings.showSummaryMetrics;
+  const visibleMetricCount = [
+    settings.showStFlip,
+    settings.showLtHold,
+    settings.showRarity,
+    settings.showLiquidity,
+  ].filter(Boolean).length;
 
   const forecast = getTradeForecast(
     giveItems,
@@ -82,7 +93,10 @@ export function TradeSummaryBox({
   };
 
   const handleToggleExpanded = () => {
-    setIsExpanded((prev) => !prev);
+    triggerHaptic("light");
+    updateAnalyzerSettings({
+      showSummaryMetrics: !isMetricsVisible,
+    });
   };
 
   const valDiff = getTotal - giveTotal;
@@ -137,17 +151,23 @@ export function TradeSummaryBox({
     );
   }
 
+  const gridColsClass =
+    visibleMetricCount === 1
+      ? "grid-cols-1"
+      : visibleMetricCount === 2
+      ? "grid-cols-2"
+      : visibleMetricCount === 3
+      ? "grid-cols-3"
+      : "grid-cols-2 lg:grid-cols-4";
 
   return (
     <div
-      className={`flex-shrink-0 mx-[var(--panel-p)] mt-[var(--gap-md)] rounded-[8px] p-[var(--panel-p)] relative bg-card border transition-all duration-300 z-20 shadow-sm flex flex-col gap-[var(--gap-md)] ${
+      className={`flex-shrink-0 mx-[var(--panel-p)] mt-[var(--gap-md)] rounded-[8px] p-[var(--panel-p)] relative bg-card border transition-all duration-300 z-20 shadow-sm flex flex-col gap-2.5 ${
         isAnalyzerTarget
           ? "border-primary shadow-[0_0_20px_var(--primary)] ring-4 ring-primary/30 z-[100005]"
           : "border-border"
       }`}
     >
-
-
       <div className="flex items-start justify-between w-full">
         {/* Total Give */}
         <div className="flex-1 min-w-0 text-left">
@@ -220,7 +240,6 @@ export function TradeSummaryBox({
         </div>
       </div>
 
-
       <div className="flex w-full h-[6px] gap-1.5 rounded-full overflow-hidden bg-popover">
         {isOcPresent ? (
           <div className="w-full h-full bg-muted transition-all duration-500" />
@@ -253,206 +272,201 @@ export function TradeSummaryBox({
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={handleToggleExpanded}
-        className="md:hidden flex items-center justify-center gap-1.5 w-full -mb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[4px] py-1.5 cursor-pointer transition-colors"
-        aria-expanded={isExpanded}
-        aria-label={
-          isExpanded
-            ? "Hide trade details"
-            : "Show trade details"
-        }
-      >
-        <span>
-          {isExpanded ? "Hide Details" : "View Details"}
-        </span>
-
-        <ChevronDown
-          className={`w-3.5 h-3.5 transition-transform duration-200 ${
-            isExpanded ? "rotate-180" : ""
-          }`}
-        />
-      </button>
-
-      <div
-        className={`grid grid-cols-2 lg:grid-cols-4 gap-[var(--gap-sm)] w-full ${
-          isExpanded ? "grid" : "hidden"
-        } md:grid`}
-      >
-
-        <div
-          className="flex flex-col items-center p-2 rounded-[6px] bg-black/20 border border-border/50 hover:bg-black/30 transition-colors cursor-help relative"
-          onMouseEnter={() => handleEnter("st")}
-          onMouseLeave={handleLeave}
-        >
-          <div className="flex items-center gap-1.5 mb-1">
-            <TrendingUp className="w-3.5 h-3.5 text-[#FAA61A]" />
-
-            <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-              ST Flip
-            </span>
-          </div>
-
-          <span
-            className={`text-[13px] font-black font-mono leading-none ${
-              forecast.st > 0
-                ? "text-[#23a559]"
-                : forecast.st < 0
-                ? "text-rose-400"
-                : "text-foreground"
-            }`}
+      {visibleMetricCount > 0 && (
+        <>
+          <button
+            type="button"
+            onClick={handleToggleExpanded}
+            className="flex items-center justify-between w-full -my-0.5 px-1 py-1 text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground focus-visible:outline-none rounded-[4px] cursor-pointer transition-colors"
+            aria-expanded={isMetricsVisible}
+            aria-label={
+              isMetricsVisible
+                ? "Collapse trade metrics"
+                : "Expand trade metrics"
+            }
           >
-            {forecast.calculable
-              ? `${forecast.st > 0 ? "+" : ""}${forecast.st.toFixed(
-                  1
-                )}`
-              : "-"}
-          </span>
-
-          <div
-            className={`absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[180px] bg-popover border border-border text-foreground text-[11px] p-2.5 rounded-[6px] shadow-lg pointer-events-none transition-opacity z-[100] text-center ${
-              activeTip === "st"
-                ? "opacity-100"
-                : "opacity-0"
-            }`}
-          >
-            <strong className="text-[#FAA61A] block mb-1">
-              Short-Term Flip
-            </strong>
-
-            Scores &gt; 0 are wins. Calculated using Raw Value,
-            Liquidity, and immediate Market Tag momentum.
-          </div>
-        </div>
-
-        <div
-          className="flex flex-col items-center p-2 rounded-[6px] bg-black/20 border border-border/50 hover:bg-black/30 transition-colors cursor-help relative"
-          onMouseEnter={() => handleEnter("lt")}
-          onMouseLeave={handleLeave}
-        >
-          <div className="flex items-center gap-1.5 mb-1">
-            <Clock className="w-3.5 h-3.5 text-primary" />
-
-            <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-              LT Hold
-            </span>
-          </div>
-
-          <span
-            className={`text-[13px] font-black font-mono leading-none ${
-              forecast.lt > 0
-                ? "text-[#23a559]"
-                : forecast.lt < 0
-                ? "text-rose-400"
-                : "text-foreground"
-            }`}
-          >
-            {forecast.calculable
-              ? `${forecast.lt > 0 ? "+" : ""}${forecast.lt.toFixed(
-                  1
-                )}`
-              : "-"}
-          </span>
-
-          <div
-            className={`absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[180px] bg-popover border border-border text-foreground text-[11px] p-2.5 rounded-[6px] shadow-lg pointer-events-none transition-opacity z-[100] text-center ${
-              activeTip === "lt"
-                ? "opacity-100"
-                : "opacity-0"
-            }`}
-          >
-            <strong className="text-primary block mb-1">
-              Long-Term Hold
-            </strong>
-
-            Scores &gt; 0 are wins. Weighs Rarity heavily and
-            mathematically punishes "Hyped" or "Unstable" units.
-          </div>
-        </div>
-
-        <div
-          className="flex flex-col items-center p-2 rounded-[6px] bg-black/20 border border-border/50 hover:bg-black/30 transition-colors cursor-help relative"
-          onMouseEnter={() => handleEnter("rarity")}
-          onMouseLeave={handleLeave}
-        >
-          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
-            Rarity
-          </span>
-
-          <span className="text-[12px] font-bold text-foreground font-mono flex items-center gap-1">
-            {avgStat(
-              giveItems,
-              "rarity",
-              ALL_UNITS
-            )}
-
-            <span className="text-muted-foreground text-[9px]">
-              ➔
+            <span>
+              {isMetricsVisible
+                ? "Forecast & Metrics"
+                : "Show Metrics (ST • LT • Rarity • Liq)"}
             </span>
 
-            {avgStat(
-              getItems,
-              "rarity",
-              ALL_UNITS
-            )}
-          </span>
+            <svg
+              viewBox="0 0 16 16"
+              fill="none"
+              className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                isMetricsVisible ? "rotate-180" : ""
+              }`}
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M4 6L8 10L12 6" />
+            </svg>
+          </button>
 
-          <div
-            className={`absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[160px] bg-popover border border-border text-foreground text-[11px] p-2.5 rounded-[6px] shadow-lg pointer-events-none transition-opacity z-[100] text-center ${
-              activeTip === "rarity"
-                ? "opacity-100"
-                : "opacity-0"
-            }`}
-          >
-            <strong className="text-foreground block mb-1">
-              Rarity (0-20)
-            </strong>
+          {isMetricsVisible && (
+            <div className={`grid ${gridColsClass} gap-1.5 w-full`}>
+              {settings.showStFlip && (
+                <div
+                  className="flex flex-col items-center justify-center min-w-0 p-2 rounded-[6px] bg-black/20 border border-border/50 hover:bg-black/30 transition-colors cursor-help relative"
+                  onMouseEnter={() => handleEnter("st")}
+                  onMouseLeave={handleLeave}
+                >
+                  <div className="flex items-center gap-1 mb-1 max-w-full">
+                    <GiUpgrade className="w-3 h-3 text-[#FAA61A] shrink-0" />
 
-            <span className="text-[#23a559] font-bold">
-              Higher is better.
-            </span>{" "}
-            Determines absolute scarcity.
-          </div>
-        </div>
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground truncate">
+                      ST Flip
+                    </span>
+                  </div>
 
-        <div
-          className="flex flex-col items-center p-2 rounded-[6px] bg-black/20 border border-border/50 hover:bg-black/30 transition-colors cursor-help relative"
-          onMouseEnter={() => handleEnter("liquidity")}
-          onMouseLeave={handleLeave}
-        >
-          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
-            Liquidity
-          </span>
+                  <span
+                    className={`text-[12px] font-black font-mono tabular-nums leading-none truncate max-w-full ${
+                      forecast.st > 0
+                        ? "text-[#23a559]"
+                        : forecast.st < 0
+                        ? "text-rose-400"
+                        : "text-foreground"
+                    }`}
+                  >
+                    {forecast.calculable
+                      ? `${forecast.st > 0 ? "+" : ""}${forecast.st.toFixed(1)}`
+                      : "-"}
+                  </span>
 
-          <span className="text-[12px] font-bold text-foreground font-mono flex items-center gap-1">
-            {getLiqLabel(giveItems)}
+                  <div
+                    className={`absolute top-full mt-2 left-0 w-[180px] bg-popover border border-border text-foreground text-[11px] p-2.5 rounded-[6px] shadow-lg pointer-events-none transition-opacity z-[100] text-center ${
+                      activeTip === "st" ? "opacity-100" : "opacity-0"
+                    }`}
+                  >
+                    <strong className="text-[#FAA61A] block mb-1">
+                      Short-Term Flip
+                    </strong>
+                    Scores &gt; 0 are wins. Calculated using Raw Value,
+                    Liquidity, and immediate Market Tag momentum.
+                  </div>
+                </div>
+              )}
 
-            <span className="text-muted-foreground text-[9px]">
-              ➔
-            </span>
+              {settings.showLtHold && (
+                <div
+                  className="flex flex-col items-center justify-center min-w-0 p-2 rounded-[6px] bg-black/20 border border-border/50 hover:bg-black/30 transition-colors cursor-help relative"
+                  onMouseEnter={() => handleEnter("lt")}
+                  onMouseLeave={handleLeave}
+                >
+                  <div className="flex items-center gap-1 mb-1 max-w-full">
+                    <GiHourglass className="w-3 h-3 text-primary shrink-0" />
 
-            {getLiqLabel(getItems)}
-          </span>
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground truncate">
+                      LT Hold
+                    </span>
+                  </div>
 
-          <div
-            className={`absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[160px] bg-popover border border-border text-foreground text-[11px] p-2.5 rounded-[6px] shadow-lg pointer-events-none transition-opacity z-[100] text-center ${
-              activeTip === "liquidity"
-                ? "opacity-100"
-                : "opacity-0"
-            }`}
-          >
-            <strong className="text-foreground block mb-1">
-              Liquidity
-            </strong>
+                  <span
+                    className={`text-[12px] font-black font-mono tabular-nums leading-none truncate max-w-full ${
+                      forecast.lt > 0
+                        ? "text-[#23a559]"
+                        : forecast.lt < 0
+                        ? "text-rose-400"
+                        : "text-foreground"
+                    }`}
+                  >
+                    {forecast.calculable
+                      ? `${forecast.lt > 0 ? "+" : ""}${forecast.lt.toFixed(1)}`
+                      : "-"}
+                  </span>
 
-            <span className="text-[#23a559] font-bold">
-              High is better.
-            </span>{" "}
-            How fast you can find a buyer.
-          </div>
-        </div>
-      </div>
+                  <div
+                    className={`absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[180px] bg-popover border border-border text-foreground text-[11px] p-2.5 rounded-[6px] shadow-lg pointer-events-none transition-opacity z-[100] text-center ${
+                      activeTip === "lt" ? "opacity-100" : "opacity-0"
+                    }`}
+                  >
+                    <strong className="text-primary block mb-1">
+                      Long-Term Hold
+                    </strong>
+                    Scores &gt; 0 are wins. Weighs Rarity heavily and
+                    mathematically punishes &ldquo;Hyped&rdquo; or &ldquo;Unstable&rdquo; units.
+                  </div>
+                </div>
+              )}
+
+              {settings.showRarity && (
+                <div
+                  className="flex flex-col items-center justify-center min-w-0 p-2 rounded-[6px] bg-black/20 border border-border/50 hover:bg-black/30 transition-colors cursor-help relative"
+                  onMouseEnter={() => handleEnter("rarity")}
+                  onMouseLeave={handleLeave}
+                >
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1 truncate max-w-full">
+                    Rarity
+                  </span>
+
+                  <span className="text-[11px] font-bold text-foreground font-mono tabular-nums leading-none flex items-center justify-center gap-0.5 max-w-full whitespace-nowrap overflow-hidden">
+                    <span className="truncate">
+                      {avgStat(giveItems, "rarity", ALL_UNITS)}
+                    </span>
+                    <span className="text-muted-foreground text-[8px] shrink-0">
+                      ➔
+                    </span>
+                    <span className="truncate">
+                      {avgStat(getItems, "rarity", ALL_UNITS)}
+                    </span>
+                  </span>
+
+                  <div
+                    className={`absolute top-full mt-2 right-0 w-[160px] bg-popover border border-border text-foreground text-[11px] p-2.5 rounded-[6px] shadow-lg pointer-events-none transition-opacity z-[100] text-center ${
+                      activeTip === "rarity" ? "opacity-100" : "opacity-0"
+                    }`}
+                  >
+                    <strong className="text-foreground block mb-1">
+                      Rarity (0–20)
+                    </strong>
+                    <span className="text-[#23a559] font-bold">
+                      Higher is better.
+                    </span>{" "}
+                    Determines absolute scarcity.
+                  </div>
+                </div>
+              )}
+
+              {settings.showLiquidity && (
+                <div
+                  className="flex flex-col items-center justify-center min-w-0 p-2 rounded-[6px] bg-black/20 border border-border/50 hover:bg-black/30 transition-colors cursor-help relative"
+                  onMouseEnter={() => handleEnter("liquidity")}
+                  onMouseLeave={handleLeave}
+                >
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1 truncate max-w-full">
+                    Liquidity
+                  </span>
+
+                  <span className="text-[11px] font-bold text-foreground font-mono tabular-nums leading-none flex items-center justify-center gap-0.5 max-w-full whitespace-nowrap overflow-hidden">
+                    <span className="truncate">{getLiqLabel(giveItems)}</span>
+                    <span className="text-muted-foreground text-[8px] shrink-0">
+                      ➔
+                    </span>
+                    <span className="truncate">{getLiqLabel(getItems)}</span>
+                  </span>
+
+                  <div
+                    className={`absolute top-full mt-2 right-0 w-[160px] bg-popover border border-border text-foreground text-[11px] p-2.5 rounded-[6px] shadow-lg pointer-events-none transition-opacity z-[100] text-center ${
+                      activeTip === "liquidity" ? "opacity-100" : "opacity-0"
+                    }`}
+                  >
+                    <strong className="text-foreground block mb-1">
+                      Liquidity
+                    </strong>
+                    <span className="text-[#23a559] font-bold">
+                      High is better.
+                    </span>{" "}
+                    How fast you can find a buyer.
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

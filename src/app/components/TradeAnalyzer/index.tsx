@@ -1,17 +1,19 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  Calculator,
   RotateCcw,
   Share2,
   Check,
   ArrowUpDown,
-  Wand2,
   X,
-  Megaphone,
-  ArrowLeft,
-  Bookmark,
   Trash2,
 } from "lucide-react";
+import {
+  GiAbacus,
+  GiFairyWand,
+  GiBookmark,
+  GiSettingsKnobs,
+  GiMegaphone,
+} from "react-icons/gi";
 import { TradeSectionPanel } from "./TradeSectionPanel";
 import { TradeNotices } from "./TradeNotices";
 import { SmartParserMenu } from "./SmartParserMenu";
@@ -20,7 +22,11 @@ import { usePanelResize } from "../../../hooks/usePanelResize";
 import { getShareText } from "./summaryUtils";
 import { useUnits } from "../../../context/UnitContext";
 import { GuideType } from "../guides/AquaGuideOverlay";
-import { useTradeStore } from "../../../store/useTradeStore";
+import {
+  useTradeStore,
+  DEFAULT_ANALYZER_SETTINGS,
+  AnalyzerSettings,
+} from "../../../store/useTradeStore";
 import { triggerHaptic } from "../../../data/helpers";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useTradeUndo } from "../../../hooks/useTradeUndo";
@@ -60,13 +66,21 @@ export function TradeAnalyzerPanel({
     savePreset,
     deletePreset,
     loadPreset,
+    analyzerSettings: rawSettings,
+    updateAnalyzerSettings,
   } = useTradeStore();
+
+  const settings: AnalyzerSettings = {
+    ...DEFAULT_ANALYZER_SETTINGS,
+    ...(rawSettings || {}),
+  };
 
   const [copied, setCopied] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
 
   const [isPresetsOpen, setIsPresetsOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [newPresetName, setNewPresetName] = useState("");
 
   const { panelWidth, startResize, panelRef } = usePanelResize(360, 320, 600);
@@ -116,6 +130,10 @@ export function TradeAnalyzerPanel({
           setIsPresetsOpen(false);
           return;
         }
+        if (isSettingsOpen) {
+          setIsSettingsOpen(false);
+          return;
+        }
         if (isOpen && onClose && document.activeElement?.tagName !== "INPUT") {
           closeSheet();
         }
@@ -123,7 +141,14 @@ export function TradeAnalyzerPanel({
     };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
-  }, [isOpen, onClose, smartMenuOpen, isPresetsOpen, closeSheet]);
+  }, [
+    isOpen,
+    onClose,
+    smartMenuOpen,
+    isPresetsOpen,
+    isSettingsOpen,
+    closeSheet,
+  ]);
 
   const { giveTotal, getTotal, givePercent, getPercent } = useMemo(() => {
     const gTotal = giveItems.reduce((s, c) => s + c.value * c.qty, 0);
@@ -200,127 +225,192 @@ export function TradeAnalyzerPanel({
   const isClearTarget = false;
   const isElevated = isGuestStep2 || isGuestStep3;
 
+  const renderToggleRow = (
+    label: string,
+    sub: string,
+    checked: boolean,
+    onToggle: () => void,
+    disabled = false
+  ) => (
+    <button
+      type="button"
+      onClick={() => {
+        if (disabled) return;
+        triggerHaptic("light");
+        onToggle();
+      }}
+      disabled={disabled}
+      className={`flex items-center justify-between gap-3 w-full p-2.5 rounded-[6px] border text-left transition-colors cursor-pointer focus-visible:outline-none ${
+        disabled
+          ? "opacity-40 cursor-not-allowed bg-popover/30 border-border/50"
+          : "bg-popover hover:bg-muted/60 border-border"
+      }`}
+    >
+      <div className="flex flex-col min-w-0 pr-2">
+        <span className="text-[12.5px] font-bold text-foreground leading-tight">
+          {label}
+        </span>
+        <span className="text-[10.5px] text-muted-foreground font-medium mt-0.5 leading-snug">
+          {sub}
+        </span>
+      </div>
+      <div
+        className={`w-8 h-4.5 rounded-full p-0.5 transition-colors shrink-0 flex items-center ${
+          checked ? "bg-primary justify-end" : "bg-muted border border-border justify-start"
+        }`}
+      >
+        <div
+          className={`w-3.5 h-3.5 rounded-full transition-transform ${
+            checked ? "bg-primary-foreground" : "bg-muted-foreground"
+          }`}
+        />
+      </div>
+    </button>
+  );
+
   const renderCalculatorContent = () => (
     <>
       <div className="flex-shrink-0 flex items-center gap-1 px-2 @[28rem]/analyzer:px-3 py-2 border-b border-border relative z-20 bg-popover min-w-0">
         <div className="w-7 h-7 flex-shrink-0 rounded-[4px] flex items-center justify-center bg-card border border-border">
-          <Calculator className="w-3.5 h-3.5 text-foreground" />
+          <GiAbacus className="w-4 h-4 text-foreground" />
         </div>
 
-          <div className="hidden @[36rem]/analyzer:flex items-center min-w-0 flex-1 pr-2">
-            <span className="text-[var(--ui-text-base)] font-bold text-foreground select-none whitespace-nowrap truncate">
-              Trade Analyzer
-            </span>
-          </div>
-          
-          <div className="@[36rem]/analyzer:hidden flex-1 min-w-0" />
+        <div className="hidden @[36rem]/analyzer:flex items-center min-w-0 flex-1 pr-2">
+          <span className="text-[var(--ui-text-base)] font-bold text-foreground select-none whitespace-nowrap truncate">
+            Trade Analyzer
+          </span>
+        </div>
 
-          <>
-            {undoCache && (
-              <button
-                onClick={() => {
-                  triggerHaptic("medium");
-                  handleUndo();
-                }}
-                className="flex-shrink-0 flex items-center gap-1.5 px-2 h-9 rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-95 text-destructive-foreground bg-destructive hover:bg-destructive/80 focus-visible:outline-none relative z-35 pointer-events-auto shadow-sm mr-1 cursor-pointer"
-                title="Undo Clear"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />{" "}
-                <span className="hidden sm:inline">Undo Clear</span>
-              </button>
-            )}
+        <div className="@[36rem]/analyzer:hidden flex-1 min-w-0" />
 
-            <button
-              onClick={() => {
-                triggerHaptic("light");
-                setSmartMenuOpen(!smartMenuOpen);
-                setIsPresetsOpen(false);
-              }}
-              className={`flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
-                isWandTarget
-                  ? "bg-primary text-primary-foreground border-primary z-[100005] animate-pulse shadow-[0_0_15px_var(--primary)]"
-                  : smartMenuOpen
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-muted border-border text-muted-foreground hover:bg-card hover:text-foreground"
-              }`}
-              title="Context Recognition"
-            >
-              <Wand2 className="w-[18px] h-[18px]" />
-            </button>
-
-            <button
-              onClick={() => {
-                triggerHaptic("light");
-                setIsPresetsOpen(!isPresetsOpen);
-                setSmartMenuOpen(false);
-              }}
-              className={`flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
-                isPresetsOpen
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-muted border-border text-muted-foreground hover:bg-card hover:text-foreground"
-              }`}
-              title="Trade Presets"
-            >
-              <Bookmark className="w-[18px] h-[18px]" />
-            </button>
-
+        <>
+          {undoCache && (
             <button
               onClick={() => {
                 triggerHaptic("medium");
-                handleSafeClear();
+                handleUndo();
               }}
-              className={`flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
-                isClearTarget
-                  ? "bg-destructive text-destructive-foreground border-destructive z-[100005] animate-pulse"
-                  : confirmClear
-                  ? "bg-destructive text-destructive-foreground border-destructive animate-pulse"
-                  : "bg-muted border-border text-muted-foreground hover:bg-card hover:text-foreground"
-              }`}
-              title={confirmClear ? "Click again to confirm" : "Clear trade"}
+              className="flex-shrink-0 flex items-center gap-1.5 px-2 h-8 rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-95 text-destructive-foreground bg-destructive hover:bg-destructive/80 focus-visible:outline-none relative z-35 pointer-events-auto shadow-sm mr-0.5 cursor-pointer"
+              title="Undo Clear"
             >
-              {confirmClear ? (
-                <Check className="w-[18px] h-[18px]" />
-              ) : (
-                <X className="w-[18px] h-[18px]" />
-              )}
+              <RotateCcw className="w-3.5 h-3.5" />{" "}
+              <span className="hidden sm:inline">Undo</span>
             </button>
-            <button
-              onClick={handleShare}
-              className="flex-shrink-0 flex items-center justify-center gap-1.5 px-2 h-9 min-w-9 rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-95 text-foreground focus-visible:outline-none relative z-35 pointer-events-auto cursor-pointer"
-              style={{
-                background: copied ? "#23a559" : "var(--muted)",
-                border: "1px solid var(--border)",
-              }}
-              title="Share formatted trade string"
-              aria-label={copied ? "Copied" : "Share"}
-            >
-              {copied ? (
-                <Check className="w-4 h-4 text-white" />
-              ) : (
-                <Share2 className="w-4 h-4 text-muted-foreground" />
-              )}
-              <span className="hidden @[40rem]/analyzer:inline">
-                {copied ? "Copied!" : "Share"}
-              </span>
-            </button>
-            <button
-              onClick={handleAdvertise}
-              className="flex-shrink-0 flex items-center justify-center gap-1.5 px-2 h-9 min-w-9 rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-95 text-primary-foreground bg-primary hover:bg-primary/90 focus-visible:outline-none border border-primary relative z-35 pointer-events-auto shadow-sm cursor-pointer"
-              title="Post this trade as an advertisement"
-              aria-label="Advertise"
-            >
-              <Megaphone className="w-4 h-4" />
-              <span className="hidden @[40rem]/analyzer:inline">Advertise</span>
-            </button>
-          </>
+          )}
+
+          <button
+            onClick={() => {
+              triggerHaptic("light");
+              setSmartMenuOpen(!smartMenuOpen);
+              setIsPresetsOpen(false);
+              setIsSettingsOpen(false);
+            }}
+            className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
+              isWandTarget
+                ? "bg-primary text-primary-foreground border-primary z-[100005] animate-pulse shadow-[0_0_15px_var(--primary)]"
+                : smartMenuOpen
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-muted border-border text-muted-foreground hover:bg-card hover:text-foreground"
+            }`}
+            title="Smart Parser"
+          >
+            <GiFairyWand className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic("light");
+              setIsPresetsOpen(!isPresetsOpen);
+              setSmartMenuOpen(false);
+              setIsSettingsOpen(false);
+            }}
+            className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
+              isPresetsOpen
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-muted border-border text-muted-foreground hover:bg-card hover:text-foreground"
+            }`}
+            title="Saved Loadouts"
+          >
+            <GiBookmark className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic("light");
+              setIsSettingsOpen(!isSettingsOpen);
+              setSmartMenuOpen(false);
+              setIsPresetsOpen(false);
+            }}
+            className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
+              isSettingsOpen
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-muted border-border text-muted-foreground hover:bg-card hover:text-foreground"
+            }`}
+            title="Analyzer Layout Settings"
+            aria-label="Analyzer Layout Settings"
+          >
+            <GiSettingsKnobs className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic("medium");
+              handleSafeClear();
+            }}
+            className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] transition-colors active:scale-95 focus-visible:outline-none border relative z-35 pointer-events-auto cursor-pointer ${
+              isClearTarget
+                ? "bg-destructive text-destructive-foreground border-destructive z-[100005] animate-pulse"
+                : confirmClear
+                ? "bg-destructive text-destructive-foreground border-destructive animate-pulse"
+                : "bg-muted border-border text-muted-foreground hover:bg-card hover:text-foreground"
+            }`}
+            title={confirmClear ? "Click again to confirm" : "Clear trade"}
+          >
+            {confirmClear ? (
+              <Check className="w-4 h-4" />
+            ) : (
+              <X className="w-4 h-4" />
+            )}
+          </button>
+
+          <button
+            onClick={handleShare}
+            className="flex-shrink-0 flex items-center justify-center gap-1.5 px-2 h-8 min-w-8 rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-95 text-foreground focus-visible:outline-none relative z-35 pointer-events-auto cursor-pointer"
+            style={{
+              background: copied ? "#23a559" : "var(--muted)",
+              border: "1px solid var(--border)",
+            }}
+            title="Share formatted trade string"
+            aria-label={copied ? "Copied" : "Share"}
+          >
+            {copied ? (
+              <Check className="w-3.5 h-3.5 text-white" />
+            ) : (
+              <Share2 className="w-3.5 h-3.5 text-muted-foreground" />
+            )}
+            <span className="hidden @[40rem]/analyzer:inline">
+              {copied ? "Copied!" : "Share"}
+            </span>
+          </button>
+
+          <button
+            onClick={handleAdvertise}
+            className="flex-shrink-0 flex items-center justify-center gap-1.5 px-2 h-8 min-w-8 rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-95 text-primary-foreground bg-primary hover:bg-primary/90 focus-visible:outline-none border border-primary relative z-35 pointer-events-auto shadow-sm cursor-pointer"
+            title="Post this trade as an advertisement"
+            aria-label="Advertise"
+          >
+            <GiMegaphone className="w-4 h-4" />
+            <span className="hidden @[40rem]/analyzer:inline">Advertise</span>
+          </button>
+        </>
 
         {onClose && (
           <button
             onClick={closeSheet}
-            className="flex-shrink-0 w-[var(--ui-height-btn)] h-[var(--ui-height-btn)] max-w-10 flex items-center justify-center rounded-[4px] text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors focus-visible:outline-none border border-transparent hover:border-destructive relative z-35 pointer-events-auto cursor-pointer ml-1"
+            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors focus-visible:outline-none border border-transparent hover:border-destructive relative z-35 pointer-events-auto cursor-pointer ml-0.5"
             title="Close Analyzer"
           >
-            <X className="w-[18px] h-[18px]" />
+            <X className="w-4 h-4" />
           </button>
         )}
       </div>
@@ -328,98 +418,239 @@ export function TradeAnalyzerPanel({
       <div className="flex-1 min-h-0 flex flex-col relative bg-card">
         {smartMenuOpen && (
           <SmartParserMenu
-              ALL_UNITS={ALL_UNITS}
-              onClose={() => {
-                setSmartMenuOpen(false);
-                setInitialParserText("");
-              }}
-              onSaveUndo={saveUndoState}
-              initialText={initialParserText}
-            />
-          )}
+            ALL_UNITS={ALL_UNITS}
+            onClose={() => {
+              setSmartMenuOpen(false);
+              setInitialParserText("");
+            }}
+            onSaveUndo={saveUndoState}
+            initialText={initialParserText}
+          />
+        )}
 
-          {isPresetsOpen && (
-            <div className="absolute top-[var(--gap-sm)] left-[var(--gap-sm)] right-[var(--gap-sm)] z-50 p-[var(--panel-p)] bg-card border border-border rounded-[8px] animate-fade-in shadow-[0_15px_40px_rgba(0,0,0,0.6)] flex flex-col gap-4 max-h-[calc(100vh-160px)] overflow-y-auto custom-scrollbar">
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <span className="text-[var(--ui-text-sm)] font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
-                  <Bookmark className="w-4 h-4 text-primary" /> Saved Loadouts
-                </span>
-                <button
-                  onClick={() => setIsPresetsOpen(false)}
-                  className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none rounded-[3px] p-1 cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="flex gap-2">
-                <input
-                  value={newPresetName}
-                  onChange={(e) => setNewPresetName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSavePreset()}
-                  placeholder="Name this loadout..."
-                  className="flex-1 bg-input border border-border rounded-[4px] px-3 py-2 text-[var(--ui-text-base)] text-foreground outline-none placeholder-muted-foreground focus:ring-1 focus:ring-primary transition-all shadow-inner"
-                  maxLength={30}
-                />
-                <button
-                  onClick={handleSavePreset}
-                  disabled={
-                    !newPresetName.trim() ||
-                    (giveItems.length === 0 && getItems.length === 0)
-                  }
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none shadow-sm"
-                >
-                  Save
-                </button>
-              </div>
-
-              <div className="flex flex-col gap-2 flex-1 overflow-y-auto custom-scrollbar pr-1">
-                {presets.length === 0 ? (
-                  <p className="text-[var(--ui-text-sm)] text-muted-foreground italic text-center py-4 bg-muted rounded-[6px] border border-border">
-                    No saved loadouts.
-                  </p>
-                ) : (
-                  presets.map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex items-center justify-between bg-popover p-2.5 rounded-[6px] border border-border group hover:border-primary/50 transition-colors shadow-sm"
-                    >
-                      <div className="flex flex-col min-w-0 pr-2">
-                        <span className="text-[var(--ui-text-base)] font-bold text-foreground truncate">
-                          {p.name}
-                        </span>
-                        <span className="text-[var(--ui-text-xs)] font-medium text-muted-foreground truncate">
-                          {p.give.length} Give • {p.get.length} Get
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          onClick={() => {
-                            triggerHaptic("medium");
-                            loadPreset(p.id);
-                            setIsPresetsOpen(false);
-                          }}
-                          className="px-3 py-1.5 bg-muted hover:bg-primary hover:text-primary-foreground text-foreground text-[var(--ui-text-sm)] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer border border-border hover:border-primary"
-                        >
-                          Load
-                        </button>
-                        <button
-                          onClick={() => {
-                            triggerHaptic("light");
-                            deletePreset(p.id);
-                          }}
-                          className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
-                          title="Delete Preset"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+        {isPresetsOpen && (
+          <div className="absolute top-[var(--gap-sm)] left-[var(--gap-sm)] right-[var(--gap-sm)] z-50 p-[var(--panel-p)] bg-card border border-border rounded-[8px] animate-fade-in shadow-[0_15px_40px_rgba(0,0,0,0.6)] flex flex-col gap-4 max-h-[calc(100vh-160px)] overflow-y-auto custom-scrollbar">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <span className="text-[var(--ui-text-sm)] font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <GiBookmark className="w-4 h-4 text-primary" /> Saved Loadouts
+              </span>
+              <button
+                onClick={() => setIsPresetsOpen(false)}
+                className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none rounded-[3px] p-1 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-          )}
+
+            <div className="flex gap-2">
+              <input
+                value={newPresetName}
+                onChange={(e) => setNewPresetName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSavePreset()}
+                placeholder="Name this loadout..."
+                className="flex-1 bg-input border border-border rounded-[4px] px-3 py-2 text-[var(--ui-text-base)] text-foreground outline-none placeholder-muted-foreground focus:ring-1 focus:ring-primary transition-all shadow-inner"
+                maxLength={30}
+              />
+              <button
+                onClick={handleSavePreset}
+                disabled={
+                  !newPresetName.trim() ||
+                  (giveItems.length === 0 && getItems.length === 0)
+                }
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none shadow-sm"
+              >
+                Save
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2 flex-1 overflow-y-auto custom-scrollbar pr-1">
+              {presets.length === 0 ? (
+                <p className="text-[var(--ui-text-sm)] text-muted-foreground italic text-center py-4 bg-muted rounded-[6px] border border-border">
+                  No saved loadouts.
+                </p>
+              ) : (
+                presets.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between bg-popover p-2.5 rounded-[6px] border border-border group hover:border-primary/50 transition-colors shadow-sm"
+                  >
+                    <div className="flex flex-col min-w-0 pr-2">
+                      <span className="text-[var(--ui-text-base)] font-bold text-foreground truncate">
+                        {p.name}
+                      </span>
+                      <span className="text-[var(--ui-text-xs)] font-medium text-muted-foreground truncate">
+                        {p.give.length} Give • {p.get.length} Get
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => {
+                          triggerHaptic("medium");
+                          loadPreset(p.id);
+                          setIsPresetsOpen(false);
+                        }}
+                        className="px-3 py-1.5 bg-muted hover:bg-primary hover:text-primary-foreground text-foreground text-[var(--ui-text-sm)] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer border border-border hover:border-primary"
+                      >
+                        Load
+                      </button>
+                      <button
+                        onClick={() => {
+                          triggerHaptic("light");
+                          deletePreset(p.id);
+                        }}
+                        className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
+                        title="Delete Preset"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {isSettingsOpen && (
+          <div className="absolute top-[var(--gap-sm)] left-[var(--gap-sm)] right-[var(--gap-sm)] z-50 p-4 bg-card border border-border rounded-[8px] animate-fade-in shadow-[0_15px_40px_rgba(0,0,0,0.65)] flex flex-col gap-4 max-h-[calc(100vh-140px)] overflow-y-auto custom-scrollbar">
+            <div className="flex items-center justify-between border-b border-border pb-2.5">
+              <span className="text-[12px] font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <GiSettingsKnobs className="w-4 h-4 text-primary" /> Analyzer
+                Display
+              </span>
+              <button
+                onClick={() => setIsSettingsOpen(false)}
+                className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none rounded-[4px] p-1 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Unit Rows Section */}
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
+                Unit Cards
+              </span>
+              {renderToggleRow(
+                "Compact Unit Rows",
+                "Collapse unit QTY & controls into a single compact line",
+                settings.collapseUnitsByDefault,
+                () =>
+                  updateAnalyzerSettings({
+                    collapseUnitsByDefault: !settings.collapseUnitsByDefault,
+                  })
+              )}
+            </div>
+
+            {/* Forecast & Metrics Section */}
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
+                Summary Metrics
+              </span>
+              {renderToggleRow(
+                "Forecast & Metrics Row",
+                "Show ST Flip, LT Hold, Rarity, and Liquidity below totals",
+                settings.showSummaryMetrics,
+                () =>
+                  updateAnalyzerSettings({
+                    showSummaryMetrics: !settings.showSummaryMetrics,
+                  })
+              )}
+
+              {settings.showSummaryMetrics && (
+                <div className="grid grid-cols-4 gap-1.5 pt-0.5">
+                  {(
+                    [
+                      { key: "showStFlip", label: "ST Flip" },
+                      { key: "showLtHold", label: "LT Hold" },
+                      { key: "showRarity", label: "Rarity" },
+                      { key: "showLiquidity", label: "Liquidity" },
+                    ] as const
+                  ).map((m) => {
+                    const active = settings[m.key];
+                    return (
+                      <button
+                        key={m.key}
+                        type="button"
+                        onClick={() => {
+                          triggerHaptic("light");
+                          updateAnalyzerSettings({ [m.key]: !active });
+                        }}
+                        className={`py-1.5 px-2 rounded-[5px] text-[10.5px] font-bold border transition-colors cursor-pointer ${
+                          active
+                            ? "bg-primary/15 border-primary text-primary"
+                            : "bg-popover border-border text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {m.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Trade Notices Section */}
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
+                Trade Notices
+              </span>
+              {renderToggleRow(
+                "Show Trade Notices",
+                "Master toggle for the entire Trade Notices box",
+                settings.showTradeNotices,
+                () =>
+                  updateAnalyzerSettings({
+                    showTradeNotices: !settings.showTradeNotices,
+                  })
+              )}
+
+              {renderToggleRow(
+                "Status Momentum Summary",
+                "Show the Give ➔ Get market status tag counts",
+                settings.showMomentumSummary,
+                () =>
+                  updateAnalyzerSettings({
+                    showMomentumSummary: !settings.showMomentumSummary,
+                  }),
+                !settings.showTradeNotices
+              )}
+
+              {renderToggleRow(
+                "You Give Notices",
+                "Show unit copy counts & notes for your Offering side",
+                settings.showGiveNotices,
+                () =>
+                  updateAnalyzerSettings({
+                    showGiveNotices: !settings.showGiveNotices,
+                  }),
+                !settings.showTradeNotices
+              )}
+
+              {renderToggleRow(
+                "You Get Notices",
+                "Show unit copy counts & notes for your Requesting side",
+                settings.showGetNotices,
+                () =>
+                  updateAnalyzerSettings({
+                    showGetNotices: !settings.showGetNotices,
+                  }),
+                !settings.showTradeNotices
+              )}
+
+              {renderToggleRow(
+                "Terms in this Trade",
+                "Show definitions for market tags present in the trade",
+                settings.showTermsInTrade,
+                () =>
+                  updateAnalyzerSettings({
+                    showTermsInTrade: !settings.showTermsInTrade,
+                  }),
+                !settings.showTradeNotices
+              )}
+            </div>
+          </div>
+        )}
 
           <TradeSummaryBox
             isAnalyzerTarget={isGuestStep3}
@@ -433,7 +664,7 @@ export function TradeAnalyzerPanel({
             isCompact={isMobile && isInputFocused}
           />
 
-          <div className="flex-1 min-h-0 overflow-y-auto py-1 custom-scrollbar overscroll-y-contain pb-safe flex flex-col">
+          <div className="flex-1 min-h-0 overflow-y-auto py-1 custom-scrollbar overscroll-y-contain pb-safe flex flex-col [&>*]:shrink-0">
             <div
               className={`relative transition-all duration-300 ${
                 isClearTarget

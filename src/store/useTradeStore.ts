@@ -9,6 +9,34 @@ export interface TradePreset {
   get: TradeCard[];
 }
 
+export interface AnalyzerSettings {
+  showSummaryMetrics: boolean;
+  showStFlip: boolean;
+  showLtHold: boolean;
+  showRarity: boolean;
+  showLiquidity: boolean;
+  collapseUnitsByDefault: boolean;
+  showTradeNotices: boolean;
+  showMomentumSummary: boolean;
+  showGiveNotices: boolean;
+  showGetNotices: boolean;
+  showTermsInTrade: boolean;
+}
+
+export const DEFAULT_ANALYZER_SETTINGS: AnalyzerSettings = {
+  showSummaryMetrics: true,
+  showStFlip: true,
+  showLtHold: true,
+  showRarity: true,
+  showLiquidity: true,
+  collapseUnitsByDefault: false,
+  showTradeNotices: true,
+  showMomentumSummary: true,
+  showGiveNotices: true,
+  showGetNotices: true,
+  showTermsInTrade: true,
+};
+
 interface TradeState {
   giveItems: TradeCard[];
   getItems: TradeCard[];
@@ -16,6 +44,7 @@ interface TradeState {
   isComposerOpen: boolean;
   composerMode: "standard" | "lf_offers" | "inventory";
   presets: TradePreset[];
+  analyzerSettings: AnalyzerSettings;
 
   addCard: (col: "give" | "get", card: TradeCard) => void;
   changeQty: (col: "give" | "get", id: string, qty: number) => void;
@@ -29,6 +58,7 @@ interface TradeState {
     isOpen: boolean,
     mode?: "standard" | "lf_offers" | "inventory"
   ) => void;
+  updateAnalyzerSettings: (patch: Partial<AnalyzerSettings>) => void;
 
   savePreset: (name: string) => void;
   deletePreset: (id: string) => void;
@@ -44,9 +74,19 @@ export const useTradeStore = create<TradeState>()(
       isComposerOpen: false,
       composerMode: "standard",
       presets: [],
+      analyzerSettings: DEFAULT_ANALYZER_SETTINGS,
 
       setComposerOpen: (isOpen, mode = "standard") =>
         set({ isComposerOpen: isOpen, composerMode: mode }),
+
+      updateAnalyzerSettings: (patch) =>
+        set((state) => ({
+          analyzerSettings: {
+            ...DEFAULT_ANALYZER_SETTINGS,
+            ...state.analyzerSettings,
+            ...patch,
+          },
+        })),
 
       addCard: (col, card) =>
         set((state) => {
@@ -160,9 +200,8 @@ export const useTradeStore = create<TradeState>()(
     }),
     {
       name: "astd_trade_storage",
-      version: 3,
+      version: 4,
       migrate: (persistedState: any, version: number) => {
-        // Safe migration fallback if local storage schemas drift
         if (version < 3) {
           persistedState.giveItems = Array.isArray(persistedState.giveItems)
             ? persistedState.giveItems
@@ -179,6 +218,10 @@ export const useTradeStore = create<TradeState>()(
             ? persistedState.presets
             : [];
         }
+        persistedState.analyzerSettings = {
+          ...DEFAULT_ANALYZER_SETTINGS,
+          ...(persistedState.analyzerSettings || {}),
+        };
         return persistedState as TradeState;
       },
     }

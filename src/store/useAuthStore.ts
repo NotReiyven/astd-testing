@@ -23,11 +23,24 @@ interface AuthState {
   updateStatus: (status: UserProfile["status"]) => Promise<void>;
 }
 
+import { del as delIdb } from "idb-keyval";
+
+const OFFLINE_QUEUE_KEYS = [
+  "astd_offline_profile",
+  "astd_offline_wishlist",
+  "astd_offline_inventory",
+  "astd_offline_comments",
+  "astd_offline_ads",
+];
+
 const clearLocalAuthCache = () => {
-  for (let key in localStorage) {
+  for (const key of Object.keys(localStorage)) {
     if (key.startsWith("sb-")) {
       localStorage.removeItem(key);
     }
+  }
+  for (const qKey of OFFLINE_QUEUE_KEYS) {
+    void delIdb(qKey).catch(() => {});
   }
 };
 
@@ -36,17 +49,33 @@ let activeProfileChannel: RealtimeChannel | null = null;
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-// SECURITY FIX: Sanitize the Supabase session object to prevent Discord provider_token leakage
-// If the raw session is stored in global state, an XSS attack could steal the Discord access token
-// and completely take over the user's Discord account.
+// SECURITY FIX: Sanitize the Supabase session object in both memory AND localStorage
+// to prevent Discord provider_token / provider_refresh_token leakage via XSS.
 const sanitizeSession = (rawSession: Session | null): Session | null => {
   if (!rawSession) return null;
   const safeSession = { ...rawSession };
-  
-  // Strip dangerous OAuth tokens
+
+  // Strip dangerous OAuth tokens from memory state
   delete safeSession.provider_token;
   delete safeSession.provider_refresh_token;
-  
+
+  // Also scrub any persisted sb-* session token in localStorage
+  try {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith("sb-") && key.endsWith("-auth-token")) {
+        const raw = localStorage.getItem(key);
+        if (raw && (raw.includes("provider_token") || raw.includes("provider_refresh_token"))) {
+          const parsed = JSON.parse(raw);
+          delete parsed.provider_token;
+          delete parsed.provider_refresh_token;
+          localStorage.setItem(key, JSON.stringify(parsed));
+        }
+      }
+    }
+  } catch {
+    // Ignore storage parse errors
+  }
+
   return safeSession;
 };
 

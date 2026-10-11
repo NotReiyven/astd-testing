@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, memo, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import {
   X,
   MessageSquare,
@@ -27,8 +27,14 @@ import { useTradingAdsStore } from "../../store/useTradingAdsStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useTradeStore } from "../../store/useTradeStore";
 import { useProfileStore } from "../../store/useProfileStore";
+import { useHistoryModalStore } from "../../store/useHistoryModalStore";
 import { useUnits } from "../../context/UnitContext";
-import { getProxyImage, getUnitAssetUrl, handleImageError } from "../../data";
+import {
+  getProxyImage,
+  getUnitAssetUrl,
+  handleImageError,
+  GRID_STATUS_CFG,
+} from "../../data";
 import { triggerHaptic } from "../../data/helpers";
 import { getUnitConservativeValue } from "./InventoryChannel/inventoryUtils";
 import {
@@ -37,6 +43,7 @@ import {
   getTradeForecast,
   avgStat,
 } from "./TradeAnalyzer/summaryUtils";
+import { StatusIcon } from "./shared/Formatters";
 import { TradeCard, MasterUnit } from "../../types";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
 
@@ -50,67 +57,240 @@ function getTimeAgoShort(dateStr: string) {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
+const TOOLTIP_WIDTH = 232;
+
 const ItemTile = memo(
-  ({ item, ALL_UNITS }: { item: TradeCard; ALL_UNITS: MasterUnit[] }) => {
-    const [showTooltip, setShowTooltip] = useState(false);
+  ({
+    item,
+    ALL_UNITS,
+    onInspectUnit,
+  }: {
+    item: TradeCard;
+    ALL_UNITS: MasterUnit[];
+    onInspectUnit: (unitId: string) => void;
+  }) => {
+    const tileRef = useRef<HTMLButtonElement>(null);
+    const [tipPos, setTipPos] = useState<{
+      left: number;
+      top: number;
+      placeBelow: boolean;
+      arrowLeft: number;
+    } | null>(null);
+
     const master = ALL_UNITS.find((u) => u.id === item.id);
     const proxyUrl = master ? getProxyImage(master.id, master.imageUrl) : null;
-    const conservativeVal = master
-      ? getUnitConservativeValue(master) * item.qty
-      : item.value * item.qty;
+    const singleVal = master ? getUnitConservativeValue(master) : item.value;
+    const conservativeVal = singleVal * item.qty;
     const rarity = master?.rarity ?? "N/A";
+    const liquidity = master?.liquidity || "Average";
+    const liqLower = String(liquidity).toLowerCase();
+    const liqColor = liqLower.includes("high")
+      ? "#23a559"
+      : liqLower.includes("low")
+      ? "#ef4444"
+      : "#FAA61A";
+    const liqShort = liqLower.includes("high")
+      ? "High"
+      : liqLower.includes("low")
+      ? "Low"
+      : "Avg";
+
+    const statusCfg = master?.status
+      ? GRID_STATUS_CFG[master.status as keyof typeof GRID_STATUS_CFG]
+      : null;
+
+    const unitValDisplay =
+      master?.value === "owner" || master?.valueDisplay === "O/C"
+        ? "O/C"
+        : singleVal > 0
+        ? singleVal.toLocaleString()
+        : master?.valueDisplay || "N/A";
+
+    const updateTooltipPosition = () => {
+      const rect = tileRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const pad = 14;
+      const centerX = rect.left + rect.width / 2;
+      const idealLeft = centerX - TOOLTIP_WIDTH / 2;
+      const clampedLeft = Math.max(
+        pad,
+        Math.min(window.innerWidth - TOOLTIP_WIDTH - pad, idealLeft)
+      );
+      const arrowLeft = Math.max(
+        16,
+        Math.min(TOOLTIP_WIDTH - 16, centerX - clampedLeft)
+      );
+      const placeBelow = rect.top < 185;
+      const top = placeBelow ? rect.bottom + 8 : rect.top - 8;
+
+      setTipPos({ left: clampedLeft, top, placeBelow, arrowLeft });
+    };
+
+    useEffect(() => {
+      if (!tipPos) return;
+      const handleScrollOrResize = () => setTipPos(null);
+      window.addEventListener("scroll", handleScrollOrResize, true);
+      window.addEventListener("resize", handleScrollOrResize);
+      return () => {
+        window.removeEventListener("scroll", handleScrollOrResize, true);
+        window.removeEventListener("resize", handleScrollOrResize);
+      };
+    }, [tipPos]);
 
     return (
-      <div
-        className="flex flex-col items-center gap-1 group relative cursor-pointer"
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
-      >
-        <div className="relative w-16 h-16 rounded-[4px] bg-muted border border-border flex items-center justify-center overflow-hidden shadow-sm group-hover:border-foreground transition-colors">
-          <div
-            className="absolute inset-0 flex items-center justify-center text-white font-black text-[12px] z-0"
-            style={getAvatarStyle(item.name)}
-          >
-            {getInitials(item.name)}
-          </div>
-          {proxyUrl && (
-            <img
-              src={proxyUrl}
-              alt={item.name}
-              className="absolute inset-0 w-full h-full object-cover z-10 bg-muted transition-transform group-hover:scale-105"
-              onError={(e) => handleImageError(e, item.id)}
-            />
-          )}
-          {item.qty > 1 && (
-            <div className="absolute bottom-0 right-0 bg-popover text-foreground text-[10px] font-black px-1.5 py-0.5 rounded-tl-[4px] z-20 border-t border-l border-border leading-none font-mono">
-              x{item.qty}
-            </div>
-          )}
-        </div>
-        <span
-          className="text-[11px] font-bold text-muted-foreground group-hover:text-foreground truncate w-full text-center"
-          title={item.name}
+      <>
+        <button
+          ref={tileRef}
+          type="button"
+          onClick={() => {
+            triggerHaptic("light");
+            setTipPos(null);
+            onInspectUnit(item.id);
+          }}
+          onMouseEnter={updateTooltipPosition}
+          onMouseLeave={() => setTipPos(null)}
+          onFocus={updateTooltipPosition}
+          onBlur={() => setTipPos(null)}
+          className="flex flex-col items-center gap-1.5 group relative cursor-pointer w-full min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[6px]"
+          aria-label={`Inspect ${item.name} history`}
         >
-          {item.name}
-        </span>
+          <div className="relative w-full aspect-square rounded-[6px] bg-card border border-border group-hover:border-primary/80 flex items-center justify-center overflow-hidden shadow-sm transition-colors">
+            <div
+              className="absolute inset-0 flex items-center justify-center text-white font-black text-[12px] z-0"
+              style={getAvatarStyle(item.name)}
+            >
+              {getInitials(item.name)}
+            </div>
+            {proxyUrl && (
+              <img
+                src={proxyUrl}
+                alt={item.name}
+                className="absolute inset-0 w-full h-full object-cover z-10 bg-muted transition-transform duration-200 group-hover:scale-105"
+                style={{ objectPosition: "center 15%" }}
+                onError={(e) => handleImageError(e, item.id)}
+              />
+            )}
 
-        {showTooltip && master && (
-          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-popover border border-border text-foreground text-[11px] p-3 rounded-[4px] shadow-2xl pointer-events-none z-50 w-48 animate-fade-in flex flex-col gap-1">
-            <div className="font-extrabold text-foreground truncate">
-              {master.name}
-            </div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
-              {master.subtitle || "Official Unit"}
-            </div>
-            <div className="flex justify-between items-center mt-1 pt-1 border-t border-border font-mono">
-              <span className="text-[#4DB6AC]">R: {rarity}</span>
-              <span className="text-foreground font-bold">
-                {conservativeVal.toLocaleString()}
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/45 to-transparent z-20 pointer-events-none" />
+            <div className="absolute inset-x-1 bottom-1 z-30 flex items-center justify-between pointer-events-none">
+              <span className="text-[9.5px] font-black font-mono text-white/95 leading-none truncate drop-shadow">
+                {unitValDisplay}
               </span>
             </div>
+
+            {item.qty > 1 && (
+              <div className="absolute top-1 right-1 bg-background/95 text-foreground text-[9.5px] font-black px-1.5 py-0.5 rounded-[4px] z-30 border border-border leading-none font-mono shadow-sm">
+                ×{item.qty}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+          <span className="text-[11px] font-bold text-muted-foreground group-hover:text-foreground truncate w-full text-center leading-tight transition-colors">
+            {item.name}
+          </span>
+        </button>
+
+        {tipPos &&
+          master &&
+          createPortal(
+            <div
+              className={`fixed z-[100050] pointer-events-none bg-popover border border-border text-foreground p-3 rounded-[8px] shadow-[0_14px_36px_rgba(0,0,0,0.75)] flex flex-col gap-2 animate-fade-in ${
+                tipPos.placeBelow ? "" : "-translate-y-full"
+              }`}
+              style={{
+                left: tipPos.left,
+                top: tipPos.top,
+                width: TOOLTIP_WIDTH,
+              }}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[12.5px] font-extrabold text-foreground leading-tight truncate">
+                    {master.name}
+                  </span>
+                  <span className="text-[9.5px] font-bold text-muted-foreground uppercase tracking-wider truncate mt-0.5">
+                    {master.subtitle || "Official Unit"}
+                  </span>
+                </div>
+                {statusCfg && (
+                  <span
+                    className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-[4px] border shrink-0 inline-flex items-center gap-1 leading-none"
+                    style={{
+                      backgroundColor: statusCfg.bg,
+                      color: statusCfg.color,
+                      borderColor: statusCfg.border,
+                    }}
+                  >
+                    <StatusIcon status={master.status} />
+                    {statusCfg.label}
+                  </span>
+                )}
+              </div>
+
+              <div
+                className="grid grid-cols-3 gap-1.5 bg-card/90 p-2 rounded-[6px] border border-border font-mono"
+                style={{ fontVariantNumeric: "tabular-nums" }}
+              >
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[8.5px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Value
+                  </span>
+                  <span className="text-[11px] font-black text-foreground truncate mt-0.5">
+                    {unitValDisplay}
+                  </span>
+                </div>
+                <div className="flex flex-col min-w-0 border-l border-border/70 pl-1.5">
+                  <span className="text-[8.5px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Rarity
+                  </span>
+                  <span className="text-[11px] font-black text-[#4DB6AC] truncate mt-0.5">
+                    {rarity}
+                  </span>
+                </div>
+                <div className="flex flex-col min-w-0 border-l border-border/70 pl-1.5">
+                  <span className="text-[8.5px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Demand
+                  </span>
+                  <span
+                    className="text-[11px] font-black truncate mt-0.5"
+                    style={{ color: liqColor }}
+                  >
+                    {liqShort}
+                  </span>
+                </div>
+              </div>
+
+              {item.qty > 1 && (
+                <div
+                  className="flex items-center justify-between text-[10.5px] font-mono px-0.5"
+                  style={{ fontVariantNumeric: "tabular-nums" }}
+                >
+                  <span className="text-muted-foreground font-semibold">
+                    Stack Total (×{item.qty})
+                  </span>
+                  <span className="font-black text-foreground">
+                    {conservativeVal.toLocaleString()}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-1.5 border-t border-border/60 text-[9.5px] font-bold text-primary">
+                <span>Click to view price history</span>
+                <span>→</span>
+              </div>
+
+              {/* Pointer Arrow */}
+              <div
+                className={`absolute w-2.5 h-2.5 bg-popover rotate-45 ${
+                  tipPos.placeBelow
+                    ? "-top-[6px] border-t border-l border-border"
+                    : "-bottom-[6px] border-b border-r border-border"
+                }`}
+                style={{ left: tipPos.arrowLeft - 5 }}
+              />
+            </div>,
+            document.body
+          )}
+      </>
     );
   }
 );
@@ -135,6 +315,7 @@ export function AdInteractionModal() {
   const { overwrite } = useTradeStore();
   const { units: ALL_UNITS } = useUnits();
   const openPopout = useProfileStore((s) => s.openPopout);
+  const openHistoryModal = useHistoryModalStore((s) => s.openModal);
 
   const activeAd = ads.find((a) => a.id === activeAdId);
 
@@ -159,6 +340,7 @@ export function AdInteractionModal() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        if (useHistoryModalStore.getState().isOpen) return;
         triggerHaptic("light");
         closeAdContext();
       }
@@ -581,7 +763,7 @@ export function AdInteractionModal() {
             }`}
           >
             <div className="p-[var(--panel-p)] flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-[var(--gap-md)]">
-              <div className="flex items-center justify-between bg-muted p-3.5 rounded-[6px] border border-border shadow-sm">
+              <div className="flex items-center justify-between gap-2 bg-muted p-3.5 rounded-[6px] border border-border shadow-sm">
                 <div className="flex items-center gap-3 min-w-0">
                   <img
                     src={activeAd.profiles?.avatar_url || getUnitAssetUrl("firezio") || ""}
@@ -604,7 +786,7 @@ export function AdInteractionModal() {
                     >
                       {activeAd.profiles?.username || "Trader"}
                     </span>
-                    <span className="text-[11px] font-mono text-muted-foreground">
+                    <span className="text-[11px] font-mono text-muted-foreground truncate">
                       {activeAd.profiles?.discord_id
                         ? `@${activeAd.profiles.discord_id}`
                         : "Verified User"}
@@ -626,8 +808,8 @@ export function AdInteractionModal() {
               </div>
 
               {activeAd.note && (
-                <blockquote className="border-l-2 border-primary pl-4 py-2 italic text-base md:text-sm text-foreground/90 bg-muted rounded-r-[6px] border border-border shadow-inner">
-                  "{activeAd.note}"
+                <blockquote className="border-l-2 border-primary pl-4 pr-3 py-2 italic text-base md:text-sm text-foreground/90 bg-muted rounded-r-[6px] border border-border shadow-inner break-words">
+                  “{activeAd.note}”
                 </blockquote>
               )}
 
@@ -636,19 +818,20 @@ export function AdInteractionModal() {
                   <div className="flex flex-col gap-2">
                     <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
                       <span>Showcase Assets</span>
-                      <span className="font-mono text-foreground font-black">
+                      <span className="font-mono text-foreground font-black tabular-nums">
                         Value: {totalGiveVal.toLocaleString()}
                       </span>
                     </div>
-                    <div
-                      className="grid gap-2 pt-2"
-                      style={{
-                        gridTemplateColumns:
-                          "repeat(auto-fill, minmax(56px, 1fr))",
-                      }}
-                    >
+                    <div className="grid grid-cols-4 gap-2.5 pt-2">
                       {activeAd.give_items.map((item, i) => (
-                        <ItemTile key={i} item={item} ALL_UNITS={ALL_UNITS} />
+                        <ItemTile
+                          key={i}
+                          item={item}
+                          ALL_UNITS={ALL_UNITS}
+                          onInspectUnit={(unitId) =>
+                            openHistoryModal(unitId, "value")
+                          }
+                        />
                       ))}
                     </div>
                   </div>
@@ -657,19 +840,20 @@ export function AdInteractionModal() {
                     <div className="flex flex-col gap-2">
                       <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
                         <span>Offering</span>
-                        <span className="font-mono font-black text-foreground">
+                        <span className="font-mono font-black text-foreground tabular-nums">
                           {totalGiveVal.toLocaleString()}
                         </span>
                       </div>
-                      <div
-                        className="grid gap-2 pt-2"
-                        style={{
-                          gridTemplateColumns:
-                            "repeat(auto-fill, minmax(56px, 1fr))",
-                        }}
-                      >
+                      <div className="grid grid-cols-4 gap-2.5 pt-2">
                         {activeAd.give_items.map((item, i) => (
-                          <ItemTile key={i} item={item} ALL_UNITS={ALL_UNITS} />
+                          <ItemTile
+                            key={i}
+                            item={item}
+                            ALL_UNITS={ALL_UNITS}
+                            onInspectUnit={(unitId) =>
+                              openHistoryModal(unitId, "value")
+                            }
+                          />
                         ))}
                       </div>
                     </div>
@@ -691,19 +875,20 @@ export function AdInteractionModal() {
                     <div className="flex flex-col gap-2">
                       <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
                         <span>Offering</span>
-                        <span className="font-mono font-black text-foreground">
+                        <span className="font-mono font-black text-foreground tabular-nums">
                           {totalGiveVal.toLocaleString()}
                         </span>
                       </div>
-                      <div
-                        className="grid gap-2 pt-1"
-                        style={{
-                          gridTemplateColumns:
-                            "repeat(auto-fill, minmax(56px, 1fr))",
-                        }}
-                      >
+                      <div className="grid grid-cols-4 gap-2.5 pt-1">
                         {activeAd.give_items.map((item, i) => (
-                          <ItemTile key={i} item={item} ALL_UNITS={ALL_UNITS} />
+                          <ItemTile
+                            key={i}
+                            item={item}
+                            ALL_UNITS={ALL_UNITS}
+                            onInspectUnit={(unitId) =>
+                              openHistoryModal(unitId, "value")
+                            }
+                          />
                         ))}
                       </div>
                     </div>
@@ -715,21 +900,22 @@ export function AdInteractionModal() {
                     <div className="flex flex-col gap-2">
                       <div className="flex justify-between items-center text-[12px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
                         <span>Requesting</span>
-                        <span className="font-mono font-black text-foreground">
+                        <span className="font-mono font-black text-foreground tabular-nums">
                           {totalGetVal > 0
                             ? totalGetVal.toLocaleString()
                             : "Negotiable"}
                         </span>
                       </div>
-                      <div
-                        className="grid gap-2 pt-1"
-                        style={{
-                          gridTemplateColumns:
-                            "repeat(auto-fill, minmax(56px, 1fr))",
-                        }}
-                      >
+                      <div className="grid grid-cols-4 gap-2.5 pt-1">
                         {activeAd.get_items.map((item, i) => (
-                          <ItemTile key={i} item={item} ALL_UNITS={ALL_UNITS} />
+                          <ItemTile
+                            key={i}
+                            item={item}
+                            ALL_UNITS={ALL_UNITS}
+                            onInspectUnit={(unitId) =>
+                              openHistoryModal(unitId, "value")
+                            }
+                          />
                         ))}
                       </div>
                     </div>
