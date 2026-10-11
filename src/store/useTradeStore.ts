@@ -61,7 +61,9 @@ interface TradeState {
   updateAnalyzerSettings: (patch: Partial<AnalyzerSettings>) => void;
 
   savePreset: (name: string) => void;
+  renamePreset: (id: string, name: string) => void;
   deletePreset: (id: string) => void;
+  restorePreset: (preset: TradePreset, index: number) => void;
   loadPreset: (id: string) => void;
 }
 
@@ -185,10 +187,28 @@ export const useTradeStore = create<TradeState>()(
           return { presets: [newPreset, ...state.presets] };
         }),
 
+      renamePreset: (id, name) =>
+        set((state) => ({
+          presets: state.presets.map((p) =>
+            p.id === id ? { ...p, name } : p
+          ),
+        })),
+
       deletePreset: (id) =>
         set((state) => ({
           presets: state.presets.filter((p) => p.id !== id),
         })),
+
+      restorePreset: (preset, index) =>
+        set((state) => {
+          if (state.presets.some((p) => p.id === preset.id)) {
+            return {};
+          }
+          const next = [...state.presets];
+          const clampedIdx = Math.max(0, Math.min(index, next.length));
+          next.splice(clampedIdx, 0, preset);
+          return { presets: next };
+        }),
 
       loadPreset: (id) =>
         set((state) => {

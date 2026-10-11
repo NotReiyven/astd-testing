@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   RotateCcw,
   Share2,
@@ -26,19 +26,24 @@ import {
   useTradeStore,
   DEFAULT_ANALYZER_SETTINGS,
   AnalyzerSettings,
+  TradePreset,
 } from "../../../store/useTradeStore";
-import { triggerHaptic } from "../../../data/helpers";
+import { triggerHaptic, copyTextWithFallback } from "../../../data/helpers";
 import { useAuthStore } from "../../../store/useAuthStore";
+import { useToastStore } from "../../../store/useToastStore";
 import { useTradeUndo } from "../../../hooks/useTradeUndo";
 import { useTradeGlobalInput } from "../../../hooks/useTradeGlobalInput";
 import { RollingNumber } from "../shared/Formatters";
 import { useBottomSheet } from "../../../hooks/useBottomSheet";
+import { InlineHint } from "../ui/InlineHint";
+
+const MAX_PRESET_NAME_LENGTH = 30;
 
 export function TradeAnalyzerPanel({
   isOpen = true,
   onClose,
   guideState,
-  startGuide,
+  startGuide: _startGuide,
   analyzerZ = "z-[60]",
 }: {
   isOpen?: boolean;
@@ -48,27 +53,29 @@ export function TradeAnalyzerPanel({
   analyzerZ?: string;
 }) {
   const { units: ALL_UNITS } = useUnits();
-  const { profile, loginWithDiscord } = useAuthStore();
+  const profile = useAuthStore((s) => s.profile);
+  const loginWithDiscord = useAuthStore((s) => s.loginWithDiscord);
+  const addToast = useToastStore((s) => s.addToast);
 
-  const {
-    giveItems,
-    getItems,
-    changeQty,
-    removeCard,
-    clearSection,
-    addCard,
-    swap,
-    pinnedIds,
-    togglePin,
-    isComposerOpen,
-    setComposerOpen,
-    presets,
-    savePreset,
-    deletePreset,
-    loadPreset,
-    analyzerSettings: rawSettings,
-    updateAnalyzerSettings,
-  } = useTradeStore();
+  const giveItems = useTradeStore((s) => s.giveItems);
+  const getItems = useTradeStore((s) => s.getItems);
+  const changeQty = useTradeStore((s) => s.changeQty);
+  const removeCard = useTradeStore((s) => s.removeCard);
+  const clearSection = useTradeStore((s) => s.clearSection);
+  const addCard = useTradeStore((s) => s.addCard);
+  const swap = useTradeStore((s) => s.swap);
+  const overwrite = useTradeStore((s) => s.overwrite);
+  const pinnedIds = useTradeStore((s) => s.pinnedIds);
+  const togglePin = useTradeStore((s) => s.togglePin);
+  const setComposerOpen = useTradeStore((s) => s.setComposerOpen);
+  const presets = useTradeStore((s) => s.presets);
+  const savePreset = useTradeStore((s) => s.savePreset);
+  const renamePreset = useTradeStore((s) => s.renamePreset);
+  const deletePreset = useTradeStore((s) => s.deletePreset);
+  const restorePreset = useTradeStore((s) => s.restorePreset);
+  const loadPreset = useTradeStore((s) => s.loadPreset);
+  const rawSettings = useTradeStore((s) => s.analyzerSettings);
+  const updateAnalyzerSettings = useTradeStore((s) => s.updateAnalyzerSettings);
 
   const settings: AnalyzerSettings = {
     ...DEFAULT_ANALYZER_SETTINGS,
@@ -82,6 +89,13 @@ export function TradeAnalyzerPanel({
   const [isPresetsOpen, setIsPresetsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [newPresetName, setNewPresetName] = useState("");
+  const [presetNameError, setPresetNameError] = useState<string | null>(null);
+  const presetInputRef = useRef<HTMLInputElement>(null);
+
+  const [renamingPresetId, setRenamingPresetId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [renameError, setRenameError] = useState<string | null>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
 
   const { panelWidth, startResize, panelRef } = usePanelResize(360, 320, 600);
   const {
@@ -102,12 +116,12 @@ export function TradeAnalyzerPanel({
   useEffect(() => {
     const checkMobile = (width: number) => setIsMobile(width < 768);
     checkMobile(window.innerWidth);
-    
+
     const observer = new ResizeObserver((entries) => {
       if (entries[0]) checkMobile(entries[0].contentRect.width);
     });
     observer.observe(document.body);
-    
+
     return () => observer.disconnect();
   }, []);
 
@@ -122,6 +136,11 @@ export function TradeAnalyzerPanel({
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape" || e.key === "Esc") {
+        if (renamingPresetId) {
+          setRenamingPresetId(null);
+          setRenameError(null);
+          return;
+        }
         if (smartMenuOpen) {
           setSmartMenuOpen(false);
           return;
@@ -147,6 +166,7 @@ export function TradeAnalyzerPanel({
     smartMenuOpen,
     isPresetsOpen,
     isSettingsOpen,
+    renamingPresetId,
     closeSheet,
   ]);
 
@@ -172,43 +192,172 @@ export function TradeAnalyzerPanel({
       getTotal,
       ALL_UNITS
     );
-    const tryWrite = async () => {
-      try {
-        await navigator.clipboard.writeText(text);
-      } catch {
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        ta.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0";
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
+    void copyTextWithFallback(text).then((ok) => {
+      if (ok) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        addToast("Copied formatted trade summary to clipboard.", "success", {
+          dedupeKey: "trade-share-copied",
+        });
+      } else {
+        addToast(
+          "Could not copy trade summary automatically. Check browser clipboard permissions.",
+          "error"
+        );
       }
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    };
-    tryWrite();
-  }, [giveItems, getItems, giveTotal, getTotal, ALL_UNITS]);
+    });
+  }, [giveItems, getItems, giveTotal, getTotal, ALL_UNITS, addToast]);
 
   const handleAdvertise = () => {
     triggerHaptic("medium");
     if (!profile) {
-      loginWithDiscord();
+      addToast(
+        "Sign in with Discord to post trade advertisements.",
+        "warning",
+        {
+          dedupeKey: "advertise-auth-gate",
+          action: {
+            label: "Login",
+            onClick: () => {
+              void loginWithDiscord();
+            },
+          },
+        }
+      );
       return;
     }
     setComposerOpen(true, getItems.length === 0 ? "lf_offers" : "standard");
   };
 
+  const validatePresetName = (
+    rawName: string,
+    excludeId?: string
+  ): string | null => {
+    const trimmed = rawName.trim();
+    if (!trimmed) {
+      return "Enter a name for this loadout.";
+    }
+    if (trimmed.length > MAX_PRESET_NAME_LENGTH) {
+      return `Loadout name must be ${MAX_PRESET_NAME_LENGTH}\u00A0characters or fewer (currently ${trimmed.length}).`;
+    }
+    const isDuplicate = presets.some(
+      (p) =>
+        p.id !== excludeId &&
+        p.name.trim().toLowerCase() === trimmed.toLowerCase()
+    );
+    if (isDuplicate) {
+      return `A loadout named “${trimmed}” already exists. Choose a unique name.`;
+    }
+    return null;
+  };
+
   const handleSavePreset = () => {
-    if (
-      !newPresetName.trim() ||
-      (giveItems.length === 0 && getItems.length === 0)
-    )
+    if (giveItems.length === 0 && getItems.length === 0) {
+      setPresetNameError(
+        "Add at least 1 unit to Give or Get before saving a loadout."
+      );
+      presetInputRef.current?.focus();
       return;
+    }
+
+    const err = validatePresetName(newPresetName);
+    if (err) {
+      setPresetNameError(err);
+      presetInputRef.current?.focus();
+      return;
+    }
+
+    const trimmed = newPresetName.trim();
     triggerHaptic("medium");
-    savePreset(newPresetName.trim());
+    savePreset(trimmed);
     setNewPresetName("");
+    setPresetNameError(null);
+    addToast(`Saved loadout “${trimmed}”.`, "success");
+  };
+
+  const handleStartRename = (preset: TradePreset) => {
+    triggerHaptic("light");
+    setRenamingPresetId(preset.id);
+    setRenameValue(preset.name);
+    setRenameError(null);
+    window.setTimeout(() => {
+      renameInputRef.current?.focus();
+      renameInputRef.current?.select();
+    }, 20);
+  };
+
+  const handleConfirmRename = (preset: TradePreset) => {
+    const err = validatePresetName(renameValue, preset.id);
+    if (err) {
+      setRenameError(err);
+      renameInputRef.current?.focus();
+      return;
+    }
+    const trimmed = renameValue.trim();
+    triggerHaptic("medium");
+    renamePreset(preset.id, trimmed);
+    setRenamingPresetId(null);
+    setRenameError(null);
+    addToast(`Renamed loadout to “${trimmed}”.`, "success");
+  };
+
+  const handleDeletePresetWithUndo = (preset: TradePreset, index: number) => {
+    triggerHaptic("light");
+    if (renamingPresetId === preset.id) {
+      setRenamingPresetId(null);
+      setRenameError(null);
+    }
+    const snapshot: TradePreset = {
+      ...preset,
+      give: [...preset.give],
+      get: [...preset.get],
+    };
+    deletePreset(preset.id);
+    addToast(`Deleted loadout “${preset.name}”.`, "info", {
+      dedupeKey: `delete-preset-${preset.id}`,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          restorePreset(snapshot, index);
+          addToast(`Restored loadout “${snapshot.name}”.`, "info");
+        },
+      },
+    });
+  };
+
+  const handleLoadPreset = (preset: TradePreset) => {
+    triggerHaptic("medium");
+    const hasExistingCards = giveItems.length > 0 || getItems.length > 0;
+    const prevGive = [...giveItems];
+    const prevGet = [...getItems];
+
+    if (hasExistingCards) {
+      saveUndoState();
+    }
+
+    loadPreset(preset.id);
+    setIsPresetsOpen(false);
+
+    if (hasExistingCards) {
+      addToast(
+        `Loaded loadout “${preset.name}” (replaced current trade).`,
+        "success",
+        {
+          dedupeKey: `load-preset-${preset.id}`,
+          action: {
+            label: "Undo",
+            onClick: () => {
+              overwrite(prevGive, prevGet);
+              addToast("Restored previous trade items.", "info");
+            },
+          },
+        }
+      );
+    } else {
+      addToast(`Loaded loadout “${preset.name}”.`, "success", {
+        dedupeKey: `load-preset-${preset.id}`,
+      });
+    }
   };
 
   const openSheet = () => {
@@ -224,6 +373,7 @@ export function TradeAnalyzerPanel({
   const isWandTarget = isGuestStep2;
   const isClearTarget = false;
   const isElevated = isGuestStep2 || isGuestStep3;
+  const hasActiveTrade = giveItems.length > 0 || getItems.length > 0;
 
   const renderToggleRow = (
     label: string,
@@ -256,7 +406,9 @@ export function TradeAnalyzerPanel({
       </div>
       <div
         className={`w-8 h-4.5 rounded-full p-0.5 transition-colors shrink-0 flex items-center ${
-          checked ? "bg-primary justify-end" : "bg-muted border border-border justify-start"
+          checked
+            ? "bg-primary justify-end"
+            : "bg-muted border border-border justify-start"
         }`}
       >
         <div
@@ -286,6 +438,7 @@ export function TradeAnalyzerPanel({
         <>
           {undoCache && (
             <button
+              type="button"
               onClick={() => {
                 triggerHaptic("medium");
                 handleUndo();
@@ -299,6 +452,7 @@ export function TradeAnalyzerPanel({
           )}
 
           <button
+            type="button"
             onClick={() => {
               triggerHaptic("light");
               setSmartMenuOpen(!smartMenuOpen);
@@ -313,11 +467,13 @@ export function TradeAnalyzerPanel({
                 : "bg-muted border-border text-muted-foreground hover:bg-card hover:text-foreground"
             }`}
             title="Smart Parser"
+            aria-label="Smart Parser"
           >
             <GiFairyWand className="w-4 h-4" />
           </button>
 
           <button
+            type="button"
             onClick={() => {
               triggerHaptic("light");
               setIsPresetsOpen(!isPresetsOpen);
@@ -330,11 +486,13 @@ export function TradeAnalyzerPanel({
                 : "bg-muted border-border text-muted-foreground hover:bg-card hover:text-foreground"
             }`}
             title="Saved Loadouts"
+            aria-label="Saved Loadouts"
           >
             <GiBookmark className="w-4 h-4" />
           </button>
 
           <button
+            type="button"
             onClick={() => {
               triggerHaptic("light");
               setIsSettingsOpen(!isSettingsOpen);
@@ -353,6 +511,7 @@ export function TradeAnalyzerPanel({
           </button>
 
           <button
+            type="button"
             onClick={() => {
               triggerHaptic("medium");
               handleSafeClear();
@@ -365,6 +524,7 @@ export function TradeAnalyzerPanel({
                 : "bg-muted border-border text-muted-foreground hover:bg-card hover:text-foreground"
             }`}
             title={confirmClear ? "Click again to confirm" : "Clear trade"}
+            aria-label={confirmClear ? "Confirm clear trade" : "Clear trade"}
           >
             {confirmClear ? (
               <Check className="w-4 h-4" />
@@ -374,6 +534,7 @@ export function TradeAnalyzerPanel({
           </button>
 
           <button
+            type="button"
             onClick={handleShare}
             className="flex-shrink-0 flex items-center justify-center gap-1.5 px-2 h-8 min-w-8 rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-95 text-foreground focus-visible:outline-none relative z-35 pointer-events-auto cursor-pointer"
             style={{
@@ -394,19 +555,30 @@ export function TradeAnalyzerPanel({
           </button>
 
           <button
+            type="button"
             onClick={handleAdvertise}
             className="flex-shrink-0 flex items-center justify-center gap-1.5 px-2 h-8 min-w-8 rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-95 text-primary-foreground bg-primary hover:bg-primary/90 focus-visible:outline-none border border-primary relative z-35 pointer-events-auto shadow-sm cursor-pointer"
-            title="Post this trade as an advertisement"
-            aria-label="Advertise"
+            title={
+              profile
+                ? "Post this trade as an advertisement"
+                : "Sign in with Discord to post this trade as an advertisement"
+            }
+            aria-label={
+              profile ? "Advertise" : "Advertise (Sign in required)"
+            }
           >
             <GiMegaphone className="w-4 h-4" />
-            <span className="hidden @[40rem]/analyzer:inline">Advertise</span>
+            <span className="hidden @[40rem]/analyzer:inline">
+              {profile ? "Advertise" : "Advertise · Sign In"}
+            </span>
           </button>
         </>
 
         {onClose && (
           <button
+            type="button"
             onClick={closeSheet}
+            aria-label="Close Analyzer"
             className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors focus-visible:outline-none border border-transparent hover:border-destructive relative z-35 pointer-events-auto cursor-pointer ml-0.5"
             title="Close Analyzer"
           >
@@ -414,6 +586,19 @@ export function TradeAnalyzerPanel({
           </button>
         )}
       </div>
+
+      {!profile && (
+        <div className="px-2 @[28rem]/analyzer:px-3 py-1.5 bg-popover/60 border-b border-border flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+          <span>Sign in with Discord to post trades to the public feed.</span>
+          <button
+            type="button"
+            onClick={() => void loginWithDiscord()}
+            className="font-bold text-primary hover:underline shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[3px] px-1 cursor-pointer"
+          >
+            Sign In
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 min-h-0 flex flex-col relative bg-card">
         {smartMenuOpen && (
@@ -429,83 +614,213 @@ export function TradeAnalyzerPanel({
         )}
 
         {isPresetsOpen && (
-          <div className="absolute top-[var(--gap-sm)] left-[var(--gap-sm)] right-[var(--gap-sm)] z-50 p-[var(--panel-p)] bg-card border border-border rounded-[8px] animate-fade-in shadow-[0_15px_40px_rgba(0,0,0,0.6)] flex flex-col gap-4 max-h-[calc(100vh-160px)] overflow-y-auto custom-scrollbar">
+          <div className="absolute top-[var(--gap-sm)] left-[var(--gap-sm)] right-[var(--gap-sm)] z-50 p-[var(--panel-p)] bg-card border border-border rounded-[8px] animate-fade-in shadow-[0_15px_40px_rgba(0,0,0,0.6)] flex flex-col gap-3.5 max-h-[calc(100vh-160px)] overflow-y-auto custom-scrollbar">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <span className="text-[var(--ui-text-sm)] font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <GiBookmark className="w-4 h-4 text-primary" /> Saved Loadouts
               </span>
               <button
+                type="button"
                 onClick={() => setIsPresetsOpen(false)}
+                aria-label="Close Saved Loadouts"
                 className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none rounded-[3px] p-1 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="flex gap-2">
-              <input
-                value={newPresetName}
-                onChange={(e) => setNewPresetName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSavePreset()}
-                placeholder="Name this loadout..."
-                className="flex-1 bg-input border border-border rounded-[4px] px-3 py-2 text-[var(--ui-text-base)] text-foreground outline-none placeholder-muted-foreground focus:ring-1 focus:ring-primary transition-all shadow-inner"
-                maxLength={30}
-              />
-              <button
-                onClick={handleSavePreset}
-                disabled={
-                  !newPresetName.trim() ||
-                  (giveItems.length === 0 && getItems.length === 0)
-                }
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none shadow-sm"
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSavePreset();
+              }}
+              noValidate
+              className="flex flex-col gap-1.5"
+            >
+              <label
+                htmlFor="new-preset-name-input"
+                className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground"
               >
-                Save
-              </button>
-            </div>
+                Save Current Trade as Loadout
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="new-preset-name-input"
+                  ref={presetInputRef}
+                  value={newPresetName}
+                  onChange={(e) => {
+                    setNewPresetName(e.target.value);
+                    if (presetNameError) setPresetNameError(null);
+                  }}
+                  placeholder="e.g. High Tier Offer…"
+                  aria-invalid={Boolean(presetNameError)}
+                  aria-describedby={
+                    presetNameError ? "preset-name-error" : undefined
+                  }
+                  className={`flex-1 bg-input border rounded-[4px] px-3 py-2 text-base md:text-[var(--ui-text-base)] text-foreground outline-none placeholder-muted-foreground focus:ring-1 transition-colors shadow-inner ${
+                    presetNameError
+                      ? "border-destructive focus:ring-destructive"
+                      : "border-border focus:ring-primary"
+                  }`}
+                />
+                <button
+                  type="submit"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm"
+                >
+                  Save Loadout
+                </button>
+              </div>
+              {presetNameError && (
+                <p
+                  id="preset-name-error"
+                  role="alert"
+                  className="text-[11.5px] font-medium text-destructive leading-snug"
+                >
+                  {presetNameError}
+                </p>
+              )}
+            </form>
+
+            {hasActiveTrade && presets.length > 0 && (
+              <InlineHint variant="warning">
+                Loading a loadout replaces your current trade (
+                {giveItems.length}&nbsp;Give, {getItems.length}&nbsp;Get). You
+                can undo immediately after loading.
+              </InlineHint>
+            )}
 
             <div className="flex flex-col gap-2 flex-1 overflow-y-auto custom-scrollbar pr-1">
               {presets.length === 0 ? (
                 <p className="text-[var(--ui-text-sm)] text-muted-foreground italic text-center py-4 bg-muted rounded-[6px] border border-border">
-                  No saved loadouts.
+                  No saved loadouts yet. Add units to Give or Get above and save
+                  a loadout for quick reuse.
                 </p>
               ) : (
-                presets.map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex items-center justify-between bg-popover p-2.5 rounded-[6px] border border-border group hover:border-primary/50 transition-colors shadow-sm"
-                  >
-                    <div className="flex flex-col min-w-0 pr-2">
-                      <span className="text-[var(--ui-text-base)] font-bold text-foreground truncate">
-                        {p.name}
-                      </span>
-                      <span className="text-[var(--ui-text-xs)] font-medium text-muted-foreground truncate">
-                        {p.give.length} Give • {p.get.length} Get
-                      </span>
+                presets.map((p, idx) => {
+                  const isRenaming = renamingPresetId === p.id;
+                  return (
+                    <div
+                      key={p.id}
+                      className="flex flex-col gap-2 bg-popover p-2.5 rounded-[6px] border border-border group hover:border-primary/50 transition-colors shadow-sm"
+                    >
+                      {isRenaming ? (
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            handleConfirmRename(p);
+                          }}
+                          noValidate
+                          className="flex flex-col gap-1.5"
+                        >
+                          <label
+                            htmlFor={`rename-preset-${p.id}`}
+                            className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground"
+                          >
+                            Rename Loadout
+                          </label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              id={`rename-preset-${p.id}`}
+                              ref={renameInputRef}
+                              value={renameValue}
+                              onChange={(e) => {
+                                setRenameValue(e.target.value);
+                                if (renameError) setRenameError(null);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Escape") {
+                                  e.stopPropagation();
+                                  setRenamingPresetId(null);
+                                  setRenameError(null);
+                                }
+                              }}
+                              placeholder="Loadout name…"
+                              aria-invalid={Boolean(renameError)}
+                              aria-describedby={
+                                renameError
+                                  ? `rename-preset-error-${p.id}`
+                                  : undefined
+                              }
+                              className={`flex-1 min-w-0 bg-input border rounded-[4px] px-2.5 py-1.5 text-base md:text-xs text-foreground outline-none focus:ring-1 ${
+                                renameError
+                                  ? "border-destructive focus:ring-destructive"
+                                  : "border-border focus:ring-primary"
+                              }`}
+                            />
+                            <button
+                              type="submit"
+                              className="px-2.5 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold rounded-[4px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer shrink-0"
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRenamingPresetId(null);
+                                setRenameError(null);
+                              }}
+                              className="px-2 py-1.5 bg-muted hover:bg-card text-muted-foreground hover:text-foreground text-xs font-bold rounded-[4px] border border-border transition-colors focus-visible:outline-none cursor-pointer shrink-0"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                          {renameError && (
+                            <p
+                              id={`rename-preset-error-${p.id}`}
+                              role="alert"
+                              className="text-[11px] font-medium text-destructive leading-snug"
+                            >
+                              {renameError}
+                            </p>
+                          )}
+                        </form>
+                      ) : (
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex flex-col min-w-0 pr-2">
+                            <span className="text-[var(--ui-text-base)] font-bold text-foreground truncate">
+                              {p.name}
+                            </span>
+                            <span className="text-[var(--ui-text-xs)] font-medium text-muted-foreground truncate tabular-nums">
+                              {p.give.length}&nbsp;Give • {p.get.length}
+                              &nbsp;Get
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleLoadPreset(p)}
+                              className="px-2.5 py-1.5 bg-muted hover:bg-primary hover:text-primary-foreground text-foreground text-[var(--ui-text-sm)] font-bold rounded-[4px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer border border-border hover:border-primary"
+                              title={
+                                hasActiveTrade
+                                  ? `Replace current trade with “${p.name}”`
+                                  : `Load “${p.name}”`
+                              }
+                            >
+                              {hasActiveTrade ? "Replace" : "Load"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleStartRename(p)}
+                              className="px-2 py-1.5 bg-card hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-bold rounded-[4px] border border-border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+                              title={`Rename “${p.name}”`}
+                            >
+                              Rename…
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeletePresetWithUndo(p, idx)}
+                              aria-label={`Delete loadout ${p.name}`}
+                              className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive cursor-pointer"
+                              title={`Delete “${p.name}”`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        onClick={() => {
-                          triggerHaptic("medium");
-                          loadPreset(p.id);
-                          setIsPresetsOpen(false);
-                        }}
-                        className="px-3 py-1.5 bg-muted hover:bg-primary hover:text-primary-foreground text-foreground text-[var(--ui-text-sm)] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer border border-border hover:border-primary"
-                      >
-                        Load
-                      </button>
-                      <button
-                        onClick={() => {
-                          triggerHaptic("light");
-                          deletePreset(p.id);
-                        }}
-                        className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
-                        title="Delete Preset"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
@@ -519,6 +834,8 @@ export function TradeAnalyzerPanel({
                 Display
               </span>
               <button
+                type="button"
+                aria-label="Close Analyzer Display Settings"
                 onClick={() => setIsSettingsOpen(false)}
                 className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none rounded-[4px] p-1 cursor-pointer"
               >
@@ -689,7 +1006,22 @@ export function TradeAnalyzerPanel({
                   changeQty("give", id, qty);
                 }}
                 onRemove={(id) => removeCard("give", id)}
-                onClear={() => clearSection("give")}
+                onClear={() => {
+                  const prevGive = [...giveItems];
+                  const prevGet = [...getItems];
+                  saveUndoState();
+                  clearSection("give");
+                  addToast("Cleared unpinned items from You Give.", "info", {
+                    dedupeKey: "clear-give",
+                    action: {
+                      label: "Undo",
+                      onClick: () => {
+                        overwrite(prevGive, prevGet);
+                        addToast("Restored You Give items.", "info");
+                      },
+                    },
+                  });
+                }}
                 onAdd={(card) => {
                   addCard("give", card);
                   window.dispatchEvent(
@@ -712,6 +1044,8 @@ export function TradeAnalyzerPanel({
                 <div className="w-full border-t border-border" />
               </div>
               <button
+                type="button"
+                aria-label="Swap Give and Get"
                 onClick={() => {
                   triggerHaptic("light");
                   swap();
@@ -740,7 +1074,22 @@ export function TradeAnalyzerPanel({
                 changeQty("get", id, qty);
               }}
               onRemove={(id) => removeCard("get", id)}
-              onClear={() => clearSection("get")}
+              onClear={() => {
+                const prevGive = [...giveItems];
+                const prevGet = [...getItems];
+                saveUndoState();
+                clearSection("get");
+                addToast("Cleared unpinned items from You Get.", "info", {
+                  dedupeKey: "clear-get",
+                  action: {
+                    label: "Undo",
+                    onClick: () => {
+                      overwrite(prevGive, prevGet);
+                      addToast("Restored You Get items.", "info");
+                    },
+                  },
+                });
+              }}
               onAdd={(card) => {
                 addCard("get", card);
                 window.dispatchEvent(

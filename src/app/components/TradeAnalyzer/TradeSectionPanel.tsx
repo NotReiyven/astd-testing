@@ -262,9 +262,11 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
           <input
             ref={searchInputRef}
             type="text"
+            autoComplete="off"
             value={query}
-            placeholder={`Search to add units...`}
-            className="flex-1 bg-transparent outline-none text-sm font-medium text-foreground placeholder-muted-foreground"
+            placeholder="Search to add units…"
+            aria-label={`Search to add units to ${label}`}
+            className="flex-1 bg-transparent outline-none text-base md:text-sm font-medium text-foreground placeholder-muted-foreground"
             style={{ caretColor: accentColorHex }}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -285,7 +287,9 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
             onKeyDown={(e) => {
               if (e.key === "ArrowDown") {
                 e.preventDefault();
-                setSelectedIndex((prev) => Math.min(prev + 1, results.length - 1));
+                setSelectedIndex((prev) =>
+                  Math.min(prev + 1, results.length - 1)
+                );
               } else if (e.key === "ArrowUp") {
                 e.preventDefault();
                 setSelectedIndex((prev) => (prev <= 0 ? -1 : prev - 1));
@@ -305,6 +309,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
           />
           {query.length > 0 && (
             <button
+              type="button"
               className="flex-shrink-0 focus-visible:outline-none rounded-[2px] p-2 hover:bg-muted transition-colors text-muted-foreground cursor-pointer"
               onMouseDown={(e) => {
                 e.preventDefault();
@@ -317,7 +322,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
           )}
         </div>
 
-        {open && results.length > 0 && (
+        {open && (results.length > 0 || query.trim().length > 0) && (
           <div
             className="absolute left-0 right-0 mt-1 rounded-[6px] overflow-hidden bg-card border border-border shadow-lg z-[999999]"
             onMouseDown={(e) => e.preventDefault()}
@@ -325,36 +330,45 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
             <p className="px-3 pt-2.5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted border-b border-border">
               Quick Add
             </p>
-            {results.map((u, i) => {
-              const isSelected = i === selectedIndex;
-              return (
-                <button
-                  key={u.id}
-                  onClick={() => handleAdd(u)}
-                  onMouseEnter={() => setSelectedIndex(i)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors text-left focus-visible:outline-none cursor-pointer ${
-                    isSelected ? "bg-muted" : "bg-transparent hover:bg-muted"
-                  }`}
-                  style={{ borderTop: i === 0 ? "none" : "1px solid var(--border)" }}
-                >
-                  <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <p className="text-[13px] font-bold leading-tight truncate text-foreground">
-                      <HighlightedText text={u.name} q={query} />
-                    </p>
-                    <p className="text-[10px] font-bold uppercase tracking-wider leading-tight mt-[1px] truncate text-muted-foreground">
-                      <HighlightedText text={u.subtitle || ""} q={query} />
-                    </p>
-                  </div>
-                  <span className="text-[12px] font-bold flex-shrink-0 text-muted-foreground font-mono">
-                    {typeof u.value === "number"
-                      ? u.value.toLocaleString()
-                      : u.value === "owner"
-                      ? "O/C"
-                      : u.valueDisplay || "???"}
-                  </span>
-                </button>
-              );
-            })}
+            {results.length === 0 ? (
+              <p className="px-3 py-3 text-[12px] text-muted-foreground italic">
+                No units match “{query.trim()}”. Check spelling.
+              </p>
+            ) : (
+              results.map((u, i) => {
+                const isSelected = i === selectedIndex;
+                return (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => handleAdd(u)}
+                    onMouseEnter={() => setSelectedIndex(i)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors text-left focus-visible:outline-none cursor-pointer ${
+                      isSelected ? "bg-muted" : "bg-transparent hover:bg-muted"
+                    }`}
+                    style={{
+                      borderTop: i === 0 ? "none" : "1px solid var(--border)",
+                    }}
+                  >
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <p className="text-[13px] font-bold leading-tight truncate text-foreground">
+                        <HighlightedText text={u.name} q={query} />
+                      </p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider leading-tight mt-[1px] truncate text-muted-foreground">
+                        <HighlightedText text={u.subtitle || ""} q={query} />
+                      </p>
+                    </div>
+                    <span className="text-[12px] font-bold flex-shrink-0 text-muted-foreground font-mono tabular-nums">
+                      {typeof u.value === "number"
+                        ? u.value.toLocaleString()
+                        : u.value === "owner"
+                        ? "O/C"
+                        : u.valueDisplay || "???"}
+                    </span>
+                  </button>
+                );
+              })
+            )}
           </div>
         )}
       </div>
