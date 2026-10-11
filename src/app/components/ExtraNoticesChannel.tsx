@@ -1,17 +1,55 @@
 import React, { useState, useMemo } from "react";
-import {
-  Info,
-  BookOpen,
-  ShieldAlert,
-  LucideIcon,
-  Inbox,
-  Search,
-  Pin,
-  Megaphone,
-  Filter,
-} from "lucide-react";
 import { useUnits } from "../../context/UnitContext";
 import { getUnitAssetUrl } from "../../data/helpers";
+
+// Inline SVG icons — no lucide-react
+const IconInfo = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <svg className={className} style={style} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="16" x2="12" y2="12" />
+    <line x1="12" y1="8" x2="12.01" y2="8" />
+  </svg>
+);
+const IconShield = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <svg className={className} style={style} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    <line x1="12" y1="8" x2="12" y2="12" />
+    <line x1="12" y1="16" x2="12.01" y2="16" />
+  </svg>
+);
+const IconBook = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <svg className={className} style={style} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+  </svg>
+);
+const IconInbox = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <svg className={className} style={style} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+    <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+  </svg>
+);
+const IconSearch = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <svg className={className} style={style} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+);
+const IconPin = ({ className, style, filled }: { className?: string; style?: React.CSSProperties; filled?: boolean }) => (
+  <svg className={className} style={style} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="17" x2="12" y2="22" />
+    <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z" />
+  </svg>
+);
+const IconMegaphone = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <svg className={className} style={style} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+  </svg>
+);
+
+type IconComponent = (props: { className?: string; style?: React.CSSProperties }) => React.ReactElement;
 
 const FIRE_ZIO_AVATAR = getUnitAssetUrl("firezio") || "";
 
@@ -48,15 +86,15 @@ export function ExtraNoticesChannel() {
 
   const getStyleForNotice = (
     title: string
-  ): { icon: LucideIcon; color: string } => {
+  ): { icon: IconComponent; color: string } => {
     const lower = title.toLowerCase();
     if (/(manipulat|cult|leak|scam|warn|drop|unstable|fake|trap)/.test(lower)) {
-      return { icon: ShieldAlert, color: "var(--destructive)" };
+      return { icon: IconShield, color: "var(--destructive)" };
     }
     if (/(demand|og|shiny|value|guide|info|convert|update)/.test(lower)) {
-      return { icon: Info, color: "var(--primary)" };
+      return { icon: IconInfo, color: "var(--primary)" };
     }
-    return { icon: BookOpen, color: "var(--muted-foreground)" };
+    return { icon: IconBook, color: "var(--muted-foreground)" };
   };
 
   return (
@@ -71,7 +109,7 @@ export function ExtraNoticesChannel() {
         {/* Sidebar Navigation now hides on lg (1024px) to make room for calculator overlay */}
         <nav className="hidden lg:flex flex-col w-64 shrink-0 sticky top-0 self-start pt-2 z-10">
           <div className="flex items-center gap-2.5 mb-6 text-foreground">
-            <Megaphone className="w-5 h-5 text-primary" />
+            <IconMegaphone className="w-5 h-5 text-primary" />
             <h2 className="text-[15px] font-black uppercase tracking-wider">
               Intelligence
             </h2>
@@ -79,7 +117,7 @@ export function ExtraNoticesChannel() {
 
           <div className="flex flex-col gap-6">
             <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 value={searchQuery}
@@ -156,7 +194,7 @@ export function ExtraNoticesChannel() {
           {processedNotices.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 border border-border rounded-[6px] bg-muted">
               <div className="w-12 h-12 bg-card rounded-[4px] border border-border flex items-center justify-center mb-3">
-                <Inbox className="w-6 h-6 text-muted-foreground" />
+                <IconInbox className="w-6 h-6 text-muted-foreground" />
               </div>
               <p className="text-foreground text-[15px] font-bold tracking-tight">
                 {notices.length === 0
@@ -216,10 +254,9 @@ export function ExtraNoticesChannel() {
                                 : "bg-transparent border-transparent text-muted-foreground hover:bg-muted hover:text-foreground hover:border-border"
                             }`}
                           >
-                            <Pin
-                              className={`w-4 h-4 ${
-                                isPinned ? "fill-current" : ""
-                              }`}
+                            <IconPin
+                              className="w-4 h-4"
+                              filled={isPinned}
                             />
                           </button>
                         </div>
