@@ -1,35 +1,159 @@
 import { BulkSelectionDock } from "./shared/BulkSelectionDock";
-import { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import {
-  Package,
-  Search,
-  Trash2,
-  Plus,
-  ArrowUpDown,
-  Settings2,
-  X,
-  Wand2,
-  UploadCloud,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  Copy,
-  ArrowUpCircle,
-  ArrowDownCircle,
-  MousePointerSquareDashed,
-  Lock as LockIcon,
-  TrendingUp,
-  TrendingDown,
-  Heart,
-  Info,
-  ArrowLeft,
-  Megaphone,
-  History,
-  Pin,
-  SlidersHorizontal,
-} from "lucide-react";
+  GiChest,
+  GiPadlock,
+  GiHeartInside,
+  GiFairyWand,
+} from "react-icons/gi";
 import { useUnits } from "../../context/UnitContext";
+
+// Inline SVG icons — no lucide-react
+const IconSearch = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+);
+const IconTrash = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <line x1="10" y1="11" x2="10" y2="17" />
+    <line x1="14" y1="11" x2="14" y2="17" />
+  </svg>
+);
+const IconPlus = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+const IconArrowUpDown = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="m21 16-4 4-4-4" />
+    <path d="M17 20V4" />
+    <path d="m3 8 4-4 4 4" />
+    <path d="M7 4v16" />
+  </svg>
+);
+const IconSettings = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 7h-9" />
+    <path d="M14 17H5" />
+    <circle cx="17" cy="17" r="3" />
+    <circle cx="7" cy="7" r="3" />
+  </svg>
+);
+const IconClose = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+const IconUploadCloud = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="16 16 12 12 8 16" />
+    <line x1="12" y1="12" x2="12" y2="21" />
+    <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+  </svg>
+);
+const IconCheck = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+const IconChevronDown = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
+const IconChevronUp = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="18 15 12 9 6 15" />
+  </svg>
+);
+const IconCopy = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </svg>
+);
+const IconArrowUpCircle = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="16 12 12 8 8 12" />
+    <line x1="12" y1="16" x2="12" y2="8" />
+  </svg>
+);
+const IconArrowDownCircle = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="8 12 12 16 16 12" />
+    <line x1="12" y1="8" x2="12" y2="16" />
+  </svg>
+);
+const IconBulkSelect = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M5 3a2 2 0 0 0-2 2" />
+    <path d="M19 3a2 2 0 0 1 2 2" />
+    <path d="M21 19a2 2 0 0 1-2 2" />
+    <path d="M5 21a2 2 0 0 1-2-2" />
+    <path d="M9 3h1" />
+    <path d="M9 21h1" />
+    <path d="M14 3h1" />
+    <path d="M14 21h1" />
+    <path d="M3 9v1" />
+    <path d="M21 9v1" />
+    <path d="M3 14v1" />
+    <path d="M21 14v1" />
+  </svg>
+);
+const IconTrendingUp = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+    <polyline points="17 6 23 6 23 12" />
+  </svg>
+);
+const IconTrendingDown = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
+    <polyline points="17 18 23 18 23 12" />
+  </svg>
+);
+const IconInfo = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="16" x2="12" y2="12" />
+    <line x1="12" y1="8" x2="12.01" y2="8" />
+  </svg>
+);
+const IconArrowLeft = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <line x1="19" y1="12" x2="5" y2="12" />
+    <polyline points="12 19 5 12 12 5" />
+  </svg>
+);
+const IconPin = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="17" x2="12" y2="22" />
+    <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z" />
+  </svg>
+);
+const IconSliders = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <line x1="4" y1="21" x2="4" y2="14" />
+    <line x1="4" y1="10" x2="4" y2="3" />
+    <line x1="12" y1="21" x2="12" y2="12" />
+    <line x1="12" y1="8" x2="12" y2="3" />
+    <line x1="20" y1="21" x2="20" y2="16" />
+    <line x1="20" y1="12" x2="20" y2="3" />
+    <line x1="1" y1="14" x2="7" y2="14" />
+    <line x1="9" y1="8" x2="15" y2="8" />
+    <line x1="17" y1="16" x2="23" y2="16" />
+  </svg>
+);
 import {
   getProxyImage,
   handleImageError,
@@ -102,6 +226,7 @@ export function InventoryChannel() {
     setViewingUser,
     profile,
     metrics,
+    vaultTotalValue,
     vaultLiquidValue,
     tierGroupedUnits,
     unownedSearchResults,
@@ -183,7 +308,7 @@ export function InventoryChannel() {
   if (!profile && !isReadOnly && !isVaultLoading) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-background p-6 text-center">
-        <Package className="w-12 h-12 text-muted-foreground mb-3" />
+        <GiChest className="w-12 h-12 text-muted-foreground mb-3" />
         <h2 className="text-[18px] font-bold text-foreground mb-1">
           Authentication Required
         </h2>
@@ -197,7 +322,7 @@ export function InventoryChannel() {
 
   const goalProgress =
     metrics.estimatedValue > 0
-      ? Math.min(100, (vaultLiquidValue / metrics.estimatedValue) * 100)
+      ? Math.min(100, (vaultTotalValue / metrics.estimatedValue) * 100)
       : 0;
 
   return (
@@ -216,9 +341,9 @@ export function InventoryChannel() {
           </div>
           <button
             onClick={handleCloseVault}
-            className="flex items-center gap-1.5 px-3 py-1 bg-background/10 hover:bg-background/20 rounded-[4px] text-[12px] font-bold transition-colors focus-visible:outline-none"
+            className="flex items-center gap-1.5 px-3 py-1 bg-background/10 hover:bg-background/20 rounded-[4px] text-[12px] font-bold transition-colors focus-visible:outline-none cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Return to My Vault
+            <IconArrowLeft className="w-3.5 h-3.5" /> Return to My Vault
           </button>
         </div>
       )}
@@ -256,12 +381,12 @@ export function InventoryChannel() {
             }}
             className="md:hidden flex items-center gap-1 px-3 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-[13px] font-medium text-muted-foreground cursor-pointer"
           >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <IconSliders className="w-3.5 h-3.5" />
             <span>{isControlsCollapsed ? "Filters" : "Collapse"}</span>
             {isControlsCollapsed ? (
-              <ChevronDown className="w-3.5 h-3.5" />
+              <IconChevronDown className="w-3.5 h-3.5" />
             ) : (
-              <ChevronUp className="w-3.5 h-3.5" />
+              <IconChevronUp className="w-3.5 h-3.5" />
             )}
           </button>
         </div>
@@ -304,8 +429,8 @@ export function InventoryChannel() {
                     : "bg-muted text-muted-foreground border-transparent hover:bg-card hover:border-border hover:text-foreground"
                 }`}
               >
-                <LockIcon
-                  className={`w-3.5 h-3.5 ${
+                <GiPadlock
+                  className={`w-3.5 h-3.5 fill-current ${
                     activeTierFilter === "Pinned"
                       ? "text-background"
                       : "text-[#FAA61A]"
@@ -346,13 +471,13 @@ export function InventoryChannel() {
                   }`}
                   title="Toggle Select Mode"
                 >
-                  <MousePointerSquareDashed className="w-3.5 h-3.5" />
+                  <IconBulkSelect className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Bulk Select</span>
                 </button>
               )}
               <div className="shrink-0">
                 <CustomDropdown
-                  icon={ArrowUpDown}
+                  icon={IconArrowUpDown}
                   value={sortMode}
                   options={SORT_OPTIONS}
                   onChange={setSortMode}
@@ -366,7 +491,7 @@ export function InventoryChannel() {
               ref={omniboxRef}
             >
               <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                 <input
                   ref={searchInputRef}
                   type="text"
@@ -398,7 +523,7 @@ export function InventoryChannel() {
                   vaultView === "wishlist" ? "Wishlist" : "Vault"
                 } Summary`}
               >
-                <Copy className="w-3.5 h-3.5" />
+                <IconCopy className="w-3.5 h-3.5" />
               </button>
 
               {!isReadOnly && vaultView !== "wishlist" && (
@@ -412,7 +537,7 @@ export function InventoryChannel() {
                     }`}
                     title="Inventory Options"
                   >
-                    <Settings2 className="w-3.5 h-3.5" />
+                    <IconSettings className="w-3.5 h-3.5" />
                   </button>
 
                   {manageOpen && (
@@ -461,7 +586,7 @@ export function InventoryChannel() {
                             className="w-full text-left px-3 py-2.5 rounded-[4px] text-[12.5px] font-bold text-foreground hover:bg-muted transition-colors focus-visible:outline-none flex items-center justify-between cursor-pointer"
                           >
                             Import from Text{" "}
-                            <Wand2 className="w-3.5 h-3.5 text-muted-foreground" />
+                            <GiFairyWand className="w-3.5 h-3.5 text-muted-foreground" />
                           </button>
                           <div className="w-full h-px bg-border my-1" />
                           <button
@@ -541,7 +666,7 @@ export function InventoryChannel() {
                               {u.name}
                             </span>
                           </div>
-                          <Plus
+                          <IconPlus
                             className={`w-3.5 h-3.5 shrink-0 ${
                               isSelected ? "opacity-100" : "opacity-0"
                             }`}
@@ -568,7 +693,7 @@ export function InventoryChannel() {
             <div className="flex flex-col items-center justify-center py-20 text-center px-4">
               {searchQuery ? (
                 <>
-                  <Search className="w-8 h-8 text-muted-foreground mb-3" />
+                  <IconSearch className="w-8 h-8 text-muted-foreground mb-3" />
                   <p className="text-[14px] font-bold text-foreground">
                     No matches found
                   </p>
@@ -578,7 +703,7 @@ export function InventoryChannel() {
                 </>
               ) : vaultView === "wishlist" ? (
                 <>
-                  <Heart className="w-10 h-10 text-muted-foreground mb-4" />
+                  <GiHeartInside className="w-10 h-10 text-muted-foreground mb-4" />
                   <h2 className="text-[20px] md:text-[24px] font-black text-foreground mb-2 tracking-tight">
                     {isReadOnly
                       ? `${viewingUsername}'s Wishlist is Empty`
@@ -593,7 +718,7 @@ export function InventoryChannel() {
               ) : !isSandbox && metrics.uniqueCount === 0 ? (
                 <div className="relative z-10 flex flex-col items-center w-full max-w-xl text-center px-2">
                   <div className="w-16 h-16 md:w-20 md:h-20 rounded-[8px] bg-muted border border-border flex items-center justify-center shadow-sm mb-5">
-                    <Package className="w-8 h-8 md:w-10 md:h-10 text-muted-foreground" />
+                    <GiChest className="w-8 h-8 md:w-10 md:h-10 text-muted-foreground" />
                   </div>
                   <h1 className="text-[22px] md:text-[32px] font-black text-foreground tracking-tight mb-2">
                     {isReadOnly
@@ -614,7 +739,7 @@ export function InventoryChannel() {
               {!isReadOnly && isSandbox && (
                 <div className="bg-card border-l-4 border-l-primary border border-border rounded-[6px] p-4 flex items-center justify-between mb-6 shadow-sm">
                   <div className="flex items-center gap-3">
-                    <Info className="w-5 h-5 text-primary shrink-0" />
+                    <IconInfo className="w-5 h-5 text-primary shrink-0" />
                     <div className="flex flex-col">
                       <span className="text-[13px] font-bold text-foreground">
                         Sandbox Mode Active
@@ -642,13 +767,13 @@ export function InventoryChannel() {
                       <div className="flex justify-between items-end mb-3">
                         <div className="flex flex-col">
                           <span className="text-[28px] md:text-[36px] font-black text-foreground font-mono leading-none">
-                            {vaultLiquidValue.toLocaleString()}{" "}
+                            {vaultTotalValue.toLocaleString()}{" "}
                             <span className="text-muted-foreground text-[16px] md:text-[20px]">
                               / {metrics.estimatedValue.toLocaleString()}
                             </span>
                           </span>
                           <span className="text-[11px] text-muted-foreground mt-2 font-medium">
-                            Vault Liquid Value vs Wishlist Target Value
+                            Vault Net Worth vs Wishlist Target Value
                           </span>
                         </div>
                         <span className="text-[24px] font-black text-foreground">
@@ -734,12 +859,12 @@ export function InventoryChannel() {
                               </span>
                             ) : metrics.marketMomentum.net > 0 ? (
                               <span className="text-[#23a559] flex items-center gap-1 bg-[#23a559]/10 px-2 py-0.5 rounded-[2px] border border-[#23a559]/20">
-                                <TrendingUp className="w-3 h-3" /> +
+                                <IconTrendingUp className="w-3 h-3" /> +
                                 {metrics.marketMomentum.net} Net Rising
                               </span>
                             ) : metrics.marketMomentum.net < 0 ? (
                               <span className="text-destructive flex items-center gap-1 bg-destructive/10 px-2 py-0.5 rounded-[2px] border border-destructive/20">
-                                <TrendingDown className="w-3 h-3" />{" "}
+                                <IconTrendingDown className="w-3 h-3" />{" "}
                                 {Math.abs(metrics.marketMomentum.net)} Net
                                 Dropping
                               </span>
@@ -965,9 +1090,10 @@ export function InventoryChannel() {
                               [tier]: !prev[tier],
                             }))
                           }
+                          aria-label={isCollapsed ? "Expand tier" : "Collapse tier"}
                           className="p-1 rounded-[4px] hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
                         >
-                          <ChevronDown
+                          <IconChevronDown
                             className={`w-4 h-4 transition-transform duration-200 ${
                               isCollapsed ? "-rotate-90" : ""
                             }`}
@@ -1041,16 +1167,17 @@ export function InventoryChannel() {
           <div className="bg-popover border border-border rounded-[8px] w-full max-w-lg shadow-[0_20px_60px_rgba(0,0,0,0.8)] relative z-10 flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-card">
               <div className="flex items-center gap-2 text-foreground">
-                <UploadCloud className="w-5 h-5 text-foreground" />
+                <IconUploadCloud className="w-5 h-5 text-foreground" />
                 <h3 className="text-[15px] font-bold tracking-tight">
                   Mass Import
                 </h3>
               </div>
               <button
                 onClick={() => setImportMenuOpen(false)}
+                aria-label="Close modal"
                 className="text-muted-foreground hover:text-foreground p-1 focus-visible:outline-none cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <IconClose className="w-4 h-4" />
               </button>
             </div>
 
@@ -1116,7 +1243,7 @@ export function InventoryChannel() {
                   "Importing..."
                 ) : (
                   <>
-                    <Check className="w-3.5 h-3.5" /> Import Items
+                    <IconCheck className="w-3.5 h-3.5" /> Import Items
                   </>
                 )}
               </button>
@@ -1213,9 +1340,10 @@ export function InventoryChannel() {
               </div>
               <button
                 onClick={() => setInspectTarget(null)}
+                aria-label="Close inspect modal"
                 className="p-1 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer self-start"
               >
-                <X className="w-5 h-5" />
+                <IconClose className="w-5 h-5" />
               </button>
             </div>
 
@@ -1298,14 +1426,14 @@ export function InventoryChannel() {
                   onClick={() => handleSendToAnalyzer("give")}
                   className="flex items-center justify-center gap-2 py-2 rounded-[4px] text-[12px] font-bold text-black bg-[#FAA61A] hover:bg-[#d98b14] disabled:bg-muted disabled:text-muted-foreground transition-colors focus-visible:outline-none cursor-pointer border border-transparent"
                 >
-                  <ArrowUpCircle className="w-4 h-4" /> To Give
+                  <IconArrowUpCircle className="w-4 h-4" /> To Give
                 </button>
                 <button
                   disabled={inspectTarget.item.is_pinned}
                   onClick={() => handleSendToAnalyzer("get")}
                   className="flex items-center justify-center gap-2 py-2 rounded-[4px] text-[12px] font-bold text-background bg-foreground hover:bg-foreground/90 disabled:bg-muted disabled:text-muted-foreground transition-colors focus-visible:outline-none cursor-pointer border border-transparent"
                 >
-                  <ArrowDownCircle className="w-4 h-4" /> To Get
+                  <IconArrowDownCircle className="w-4 h-4" /> To Get
                 </button>
               </div>
 
@@ -1319,7 +1447,7 @@ export function InventoryChannel() {
                       }}
                       className="flex items-center justify-center gap-2 py-2 rounded-[4px] text-[12px] font-bold text-background bg-foreground hover:bg-foreground/90 transition-colors focus-visible:outline-none cursor-pointer border border-transparent"
                     >
-                      <Package className="w-3.5 h-3.5" />
+                      <GiChest className="w-3.5 h-3.5" />
                       <span>Move to Vault</span>
                     </button>
                     <button
@@ -1328,7 +1456,7 @@ export function InventoryChannel() {
                       }
                       className="flex items-center justify-center gap-2 py-2 rounded-[4px] text-[12px] font-bold text-muted-foreground hover:text-destructive bg-muted hover:bg-destructive/10 border border-border hover:border-destructive transition-colors focus-visible:outline-none cursor-pointer"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <IconTrash className="w-3.5 h-3.5" />
                       <span>Remove</span>
                     </button>
                   </div>
@@ -1348,9 +1476,9 @@ export function InventoryChannel() {
                       }`}
                     >
                       {inspectTarget.item.is_pinned ? (
-                        <LockIcon className="w-3.5 h-3.5" />
+                        <GiPadlock className="w-3.5 h-3.5 fill-current" />
                       ) : (
-                        <Pin className="w-3.5 h-3.5" />
+                        <IconPin className="w-3.5 h-3.5" />
                       )}
                       <span>
                         {inspectTarget.item.is_pinned ? "Locked" : "Lock"}
@@ -1362,7 +1490,7 @@ export function InventoryChannel() {
                       }
                       className="flex items-center justify-center gap-2 py-2 rounded-[4px] text-[12px] font-bold text-muted-foreground hover:text-foreground bg-muted hover:bg-card border border-border hover:border-muted-foreground transition-colors focus-visible:outline-none cursor-pointer"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <IconTrash className="w-3.5 h-3.5" />
                       <span>Remove</span>
                     </button>
                   </div>
@@ -1395,9 +1523,10 @@ export function InventoryChannel() {
             )}
             <button
               onClick={() => setToast(null)}
+              aria-label="Dismiss toast"
               className="text-muted-foreground hover:text-foreground focus-visible:outline-none p-0.5 cursor-pointer"
             >
-              <X className="w-3.5 h-3.5" />
+              <IconClose className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>

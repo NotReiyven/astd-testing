@@ -202,6 +202,18 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     return items;
   }, [items, wishlistItems, vaultView]);
 
+  const vaultTotalValue = useMemo(() => {
+    let totalVal = 0;
+    const sourceItems = isReadOnly ? viewedItems : myItems;
+    sourceItems.forEach((item) => {
+      const master = unitMap.get(item.unit_id);
+      if (master) {
+        totalVal += getUnitConservativeValue(master) * item.quantity;
+      }
+    });
+    return totalVal;
+  }, [myItems, viewedItems, isReadOnly, unitMap]);
+
   const vaultLiquidValue = useMemo(() => {
     let liqVal = 0;
     const sourceItems = isReadOnly ? viewedItems : myItems;
@@ -638,6 +650,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     setViewingUser,
     profile,
     metrics,
+    vaultTotalValue,
     vaultLiquidValue,
     tierGroupedUnits,
     unownedSearchResults,

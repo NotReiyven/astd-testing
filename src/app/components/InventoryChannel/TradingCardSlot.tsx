@@ -1,5 +1,4 @@
 import React, { memo } from "react";
-import { Plus, Minus, Check } from "lucide-react";
 import { GiPadlock, GiChest } from "react-icons/gi";
 import { InventoryItem } from "../../../store/useInventoryStore";
 import { MasterUnit } from "../../../types";
@@ -8,6 +7,58 @@ import { getUnitConservativeValue } from "./inventoryUtils";
 import { StatusIcon, JargonWrap } from "../shared/Formatters";
 import { UnitAvatar } from "../shared/UnitAvatar";
 import { useTradeStore } from "../../../store/useTradeStore";
+
+const IconPlus = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2.5}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
+const IconMinus = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2.5}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
+const IconCheck = ({
+  className,
+  strokeWidth = 3,
+}: {
+  className?: string;
+  strokeWidth?: number;
+}) => (
+  <svg
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={strokeWidth}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
 
 interface TradingCardSlotProps {
   item: InventoryItem;
@@ -66,7 +117,9 @@ export const TradingCardSlot = memo(
 
     const giveItems = useTradeStore((state) => state.giveItems);
     const getItems = useTradeStore((state) => state.getItems);
-    const isInTrade = giveItems.some((c) => c.id === master.id) || getItems.some((c) => c.id === master.id);
+    const isInTrade =
+      giveItems.some((c) => c.id === master.id) ||
+      getItems.some((c) => c.id === master.id);
 
     const totalStaged = stagedGiveQty + stagedGetQty;
     const isFullyStaged = totalStaged >= item.quantity;
@@ -158,25 +211,27 @@ export const TradingCardSlot = memo(
           >
             <button
               onClick={() => onQtyChange(item.unit_id, 1)}
-              className="w-6 h-6 flex items-center justify-center bg-muted hover:bg-primary/20 hover:text-primary rounded-[4px] transition-colors focus-visible:outline-none"
+              aria-label="Increase quantity"
+              className="w-6 h-6 flex items-center justify-center bg-muted hover:bg-primary/20 hover:text-primary rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
+              <IconPlus className="w-4 h-4" />
             </button>
             <span className="font-mono font-bold text-[11px] text-foreground py-1">
               {item.quantity}
             </span>
             <button
               onClick={() => onQtyChange(item.unit_id, -1)}
-              className="w-6 h-6 flex items-center justify-center bg-muted hover:bg-destructive/20 hover:text-destructive rounded-[4px] transition-colors focus-visible:outline-none"
+              aria-label="Decrease quantity"
+              className="w-6 h-6 flex items-center justify-center bg-muted hover:bg-destructive/20 hover:text-destructive rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
             >
-              <Minus className="w-4 h-4" />
+              <IconMinus className="w-4 h-4" />
             </button>
           </div>
         )}
 
         {isSelected && (
           <div className="absolute top-2 right-2 z-50 bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center shadow-md">
-            <Check className="w-4 h-4 stroke-[3]" />
+            <IconCheck className="w-4 h-4" strokeWidth={3} />
           </div>
         )}
 
@@ -230,9 +285,9 @@ export const TradingCardSlot = memo(
           <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-card via-card/50 to-transparent pointer-events-none z-20" />
 
           {isInTrade && !isSelectMode && !isSandbox && (
-            <div className="absolute inset-0 bg-background/60 z-[25] flex flex-col items-center justify-center backdrop-blur-[1px] pointer-events-none">
+            <div className="absolute inset-0 bg-background/75 z-[25] flex flex-col items-center justify-center pointer-events-none">
               <div className="bg-[#23a559] text-white rounded-full p-2 shadow-lg mb-1 border border-white/10">
-                <Check className="w-5 h-5 stroke-[4]" />
+                <IconCheck className="w-5 h-5" strokeWidth={4} />
               </div>
               <span className="text-[10px] font-black tracking-[0.2em] uppercase text-white drop-shadow-md">
                 In Trade
@@ -247,7 +302,7 @@ export const TradingCardSlot = memo(
                   e.stopPropagation();
                   onQuickTransfer?.(item.unit_id);
                 }}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] font-bold py-2 rounded-[4px] shadow-sm flex items-center justify-center gap-1.5 transition-transform active:scale-95"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] font-bold py-2 rounded-[4px] shadow-sm flex items-center justify-center gap-1.5 transition-transform active:scale-95 cursor-pointer"
               >
                 <GiChest className="w-3.5 h-3.5" /> To Vault
               </button>
@@ -323,4 +378,3 @@ export const TradingCardSlot = memo(
     );
   }
 );
-

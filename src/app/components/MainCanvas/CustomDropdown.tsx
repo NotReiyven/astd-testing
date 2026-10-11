@@ -1,7 +1,38 @@
-import { useState, useRef, useEffect, KeyboardEvent } from "react";
+import React, { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronDown, LucideIcon } from "lucide-react";
 import { triggerHaptic } from "../../../data/helpers";
+
+const IconCheck = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2.5}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const IconChevronDown = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
 
 export function useClickOutside(
   ref: React.RefObject<HTMLElement | null>,
@@ -30,7 +61,7 @@ export function useClickOutside(
 }
 
 export interface CustomDropdownProps {
-  icon: LucideIcon;
+  icon: React.ComponentType<any>;
   value: string;
   options: Record<string, string>;
   onChange: (val: string) => void;
@@ -126,11 +157,10 @@ export function CustomDropdown({
             {value === "all" && defaultLabel ? defaultLabel : options[value]}
           </span>
         </div>
-        <ChevronDown
+        <IconChevronDown
           className={`w-3.5 h-3.5 text-muted-foreground ml-2 shrink-0 opacity-70 transition-transform duration-200 pointer-events-none ${
             isOpen ? "rotate-180" : ""
           }`}
-          aria-hidden="true"
         />
       </button>
 
@@ -166,10 +196,7 @@ export function CustomDropdown({
                   {options[k]}
                 </span>
                 {value === k && (
-                  <Check
-                    className="w-4 h-4 shrink-0 pointer-events-none"
-                    aria-hidden="true"
-                  />
+                  <IconCheck className="w-4 h-4 shrink-0 pointer-events-none" />
                 )}
               </div>
             ))}
@@ -179,4 +206,3 @@ export function CustomDropdown({
     </div>
   );
 }
-
