@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MasterUnit } from "../types";
 import {
@@ -18,19 +18,46 @@ type UnitContextType = {
   isError: boolean;
 };
 
+export type UnitSyncContextType = {
+  isSyncing: boolean;
+  isFetching: boolean;
+  isLoading: boolean;
+  isError: boolean;
+  lastUpdatedAt: number | null;
+  refetch: () => Promise<unknown>;
+};
+
+const DEFAULT_LAST_UPDATED = new Date().toISOString();
+
 const UnitContext = createContext<UnitContextType>({
   units: LOCAL_FALLBACK_UNITS,
   changelog: [],
   notices: [],
   sheetTitle: "ASTD Official Value List",
-  lastUpdated: new Date().toISOString(),
+  lastUpdated: DEFAULT_LAST_UPDATED,
   isLoading: true,
   isSyncing: false,
   isError: false,
 });
 
+const UnitSyncContext = createContext<UnitSyncContextType>({
+  isSyncing: false,
+  isFetching: false,
+  isLoading: true,
+  isError: false,
+  lastUpdatedAt: null,
+  refetch: async () => undefined,
+});
+
 export const UnitProvider = ({ children }: { children: React.ReactNode }) => {
-  const { data, isLoading, isError, isFetching } = useQuery({
+  const {
+    data,
+    isLoading,
+    isError,
+    isFetching,
+    dataUpdatedAt,
+    refetch: queryRefetch,
+  } = useQuery({
     queryKey: ["sheetData"],
     queryFn: async () => {
       const res = await fetch("/api/syncSheet");
@@ -64,20 +91,51 @@ export const UnitProvider = ({ children }: { children: React.ReactNode }) => {
     refetchOnWindowFocus: true,
   });
 
-  const value = {
-    units: data?.units?.length ? data.units : LOCAL_FALLBACK_UNITS,
-    changelog: data?.changelog || [],
-    notices: data?.notices || [],
-    sheetTitle: data?.sheetTitle || "ASTD Official Value List",
-    lastUpdated: data?.lastUpdated || new Date().toISOString(),
-    isLoading,
-    isSyncing: isFetching && !isLoading,
-    isError,
-  };
+  const handleRefetch = useCallback(async () => {
+    const result = await queryRefetch();
+    return result;
+  }, [queryRefetch]);
 
-  return <UnitContext.Provider value={value}>{children}</UnitContext.Provider>;
+  // Memoize units value strictly on data, isLoading, and isError so background refetches
+  // never re-render heavy consumers like MainCanvas.
+  const unitsValue = useMemo<UnitContextType>(
+    () => ({
+      units: data?.units?.length ? data.units : LOCAL_FALLBACK_UNITS,
+      changelog: data?.changelog || [],
+      notices: data?.notices || [],
+      sheetTitle: data?.sheetTitle || "ASTD Official Value List",
+      lastUpdated: data?.lastUpdated || DEFAULT_LAST_UPDATED,
+      isLoading,
+      isSyncing: false,
+      isError,
+    }),
+    [data, isLoading, isError]
+  );
+
+  // Separate memoized sync context for lightweight status indicators (SyncBanner, StatusPill, HomeChannel)
+  const syncValue = useMemo<UnitSyncContextType>(
+    () => ({
+      isSyncing: isFetching && !isLoading,
+      isFetching,
+      isLoading,
+      isError,
+      lastUpdatedAt: dataUpdatedAt > 0 ? dataUpdatedAt : null,
+      refetch: handleRefetch,
+    }),
+    [isFetching, isLoading, isError, dataUpdatedAt, handleRefetch]
+  );
+
+  return (
+    <UnitContext.Provider value={unitsValue}>
+      <UnitSyncContext.Provider value={syncValue}>
+        {children}
+      </UnitSyncContext.Provider>
+    </UnitContext.Provider>
+  );
 };
 
 export const useUnits = () => useContext(UnitContext);
+export const useUnitSync = () => useContext(UnitSyncContext);
+
 
 

@@ -8,6 +8,10 @@ import React, {
 import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 import { useUnitHistory, HistorySnapshot } from "../../../hooks/useUnitHistory";
 import { useUnits } from "../../../context/UnitContext";
+import { useAuthStore } from "../../../store/useAuthStore";
+import { useInventoryStore } from "../../../store/useInventoryStore";
+import { useToastStore } from "../../../store/useToastStore";
+import { useShowDelay } from "../../../hooks/useShowDelay";
 import {
   GRID_STATUS_CFG,
   TIER_CONFIG,
@@ -17,7 +21,7 @@ import {
 } from "../../../data";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 import { StatusIcon } from "./UnitGrid";
-import { triggerHaptic } from "../../../data/helpers";
+import { triggerHaptic, copyTextWithFallback } from "../../../data/helpers";
 
 type Metric = "value" | "rarity" | "liquidity";
 type RangeKey = "7D" | "30D" | "90D" | "ALL";
@@ -338,9 +342,26 @@ function SnapshotDiffList({
 }
 
 export function HistoryModal() {
-  const { isOpen, unitId, closeModal, activeMetric, setActiveMetric } =
-    useHistoryModalStore();
+  const isOpen = useHistoryModalStore((s) => s.isOpen);
+  const unitId = useHistoryModalStore((s) => s.unitId);
+  const closeModal = useHistoryModalStore((s) => s.closeModal);
+  const activeMetric = useHistoryModalStore((s) => s.activeMetric);
+  const setActiveMetric = useHistoryModalStore((s) => s.setActiveMetric);
+
+  const profile = useAuthStore((s) => s.profile);
+  const loginWithDiscord = useAuthStore((s) => s.loginWithDiscord);
+  const addOrUpdateUnit = useInventoryStore((s) => s.addOrUpdateUnit);
+  const toggleWishlist = useInventoryStore((s) => s.toggleWishlist);
+  const vaultQty = useInventoryStore((s) =>
+    unitId ? s.items.find((i) => i.unit_id === unitId)?.quantity ?? 0 : 0
+  );
+  const isWishlisted = useInventoryStore((s) =>
+    unitId ? s.wishlistItems.some((i) => i.unit_id === unitId) : false
+  );
+  const addToast = useToastStore((s) => s.addToast);
+
   const { history, loading, error } = useUnitHistory(unitId);
+  const showChartSkeleton = useShowDelay(loading);
   const { units } = useUnits();
 
   const [isScrolled, setIsScrolled] = useState(false);
@@ -358,12 +379,21 @@ export function HistoryModal() {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">(
     "idle"
   );
+  const [isVaultPending, setIsVaultPending] = useState(false);
+  const [isWishlistPending, setIsWishlistPending] = useState(false);
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const timelineRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     if (!isOpen) return;
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     setIsScrolled(false);
     setRangeFilter("ALL");
     setTimelineFilter("All");
@@ -372,6 +402,15 @@ export function HistoryModal() {
     setIsCompareOpen(false);
     setCopyState("idle");
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
+
+    const timer = window.setTimeout(() => {
+      closeBtnRef.current?.focus();
+    }, 30);
+
+    return () => {
+      window.clearTimeout(timer);
+      previousFocusRef.current?.focus();
+    };
   }, [isOpen, unitId]);
 
   useEffect(() => {
@@ -394,6 +433,36 @@ export function HistoryModal() {
         }
         triggerHaptic("light");
         closeModal();
+        return;
+      }
+
+      if (e.key === "Tab" && dialogRef.current) {
+        const focusable = Array.from(
+          dialogRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (
+            document.activeElement === first ||
+            !dialogRef.current.contains(document.activeElement)
+          ) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (
+            document.activeElement === last ||
+            !dialogRef.current.contains(document.activeElement)
+          ) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
 
@@ -831,6 +900,91 @@ export function HistoryModal() {
         timeline[0]?.prev ??
         null;
 
+  const handleAddToVault = async () => {
+    triggerHaptic("medium");
+    if (!profile) {
+      addToast("Sign in with Discord to save units to your Vault.", "warning", {
+        action: {
+          label: "Login",
+          onClick: () => {
+            void loginWithDiscord();
+          },
+        },
+      });
+      return;
+    }
+
+    if (isVaultPending) return;
+    setIsVaultPending(true);
+    try {
+      await addOrUpdateUnit(profile.id, currentUnit.id, 1);
+      addToast(`Added 1× ${currentUnit.name} to your Vault.`, "success", {
+        dedupeKey: `history-vault-${currentUnit.id}`,
+      });
+    } catch {
+      addToast(
+        `Could not save ${currentUnit.name} to your Vault. Change was rolled back.`,
+        "error",
+        {
+          action: {
+            label: "Retry",
+            onClick: () => {
+              void handleAddToVault();
+            },
+          },
+        }
+      );
+    } finally {
+      setIsVaultPending(false);
+    }
+  };
+
+  const handleToggleWishlist = async () => {
+    triggerHaptic("medium");
+    if (!profile) {
+      addToast("Sign in with Discord to manage your Wishlist.", "warning", {
+        action: {
+          label: "Login",
+          onClick: () => {
+            void loginWithDiscord();
+          },
+        },
+      });
+      return;
+    }
+
+    if (isWishlistPending) return;
+    const wasWishlisted = isWishlisted;
+    setIsWishlistPending(true);
+    try {
+      await toggleWishlist(profile.id, currentUnit.id);
+      addToast(
+        wasWishlisted
+          ? `Removed ${currentUnit.name} from Target Wishlist.`
+          : `Added ${currentUnit.name} to Target Wishlist.`,
+        "success",
+        {
+          dedupeKey: `history-wishlist-${currentUnit.id}`,
+        }
+      );
+    } catch {
+      addToast(
+        `Could not update Wishlist for ${currentUnit.name}. Change was rolled back.`,
+        "error",
+        {
+          action: {
+            label: "Retry",
+            onClick: () => {
+              void handleToggleWishlist();
+            },
+          },
+        }
+      );
+    } finally {
+      setIsWishlistPending(false);
+    }
+  };
+
   const handleCopySummary = async () => {
     const lines: string[] = [
       `${currentUnit.name} (${currentUnit.subtitle || "Official Unit"}) — Tier ${tierKey}`,
@@ -877,29 +1031,17 @@ export function HistoryModal() {
     }
 
     const text = lines.join("\n");
-    try {
-      await navigator.clipboard.writeText(text);
+    const ok = await copyTextWithFallback(text);
+    if (ok) {
       triggerHaptic("success");
       setCopyState("copied");
-    } catch {
-      try {
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        ta.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0";
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        const ok = document.execCommand("copy");
-        document.body.removeChild(ta);
-        if (ok) {
-          triggerHaptic("success");
-          setCopyState("copied");
-        } else {
-          setCopyState("error");
-        }
-      } catch {
-        setCopyState("error");
-      }
+      addToast("Copied market summary to clipboard.", "success");
+    } else {
+      setCopyState("error");
+      addToast(
+        "Could not copy market summary automatically. Check browser clipboard permissions.",
+        "error"
+      );
     }
     setTimeout(() => setCopyState("idle"), 2200);
   };
@@ -1072,9 +1214,11 @@ export function HistoryModal() {
 
   return (
     <div
+      ref={dialogRef}
       className="fixed inset-0 z-[1000000] flex items-center justify-center p-0 sm:p-4 md:p-6 animate-fade-in"
       role="dialog"
       aria-modal="true"
+      aria-label={`${currentUnit.name} market history`}
       aria-labelledby="history-modal-title"
     >
       <div
@@ -1099,76 +1243,141 @@ export function HistoryModal() {
               : "border-b border-border/80"
           }`}
         >
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5 min-w-0">
-              <div className="relative overflow-hidden bg-black/30 flex items-center justify-center border border-border w-12 h-12 rounded-[6px] shrink-0">
-                <div
-                  className="absolute inset-0 flex items-center justify-center text-white font-bold text-base z-0"
-                  style={getAvatarStyle(currentUnit.name)}
-                >
-                  {getInitials(currentUnit.name)}
-                </div>
-                {proxyUrl && (
-                  <img
-                    src={proxyUrl}
-                    alt={currentUnit.name}
-                    className="absolute inset-0 w-full h-full object-cover z-10"
-                    style={{ objectPosition: "center 15%" }}
-                    onError={(e) => handleImageError(e, currentUnit.id)}
-                  />
-                )}
-              </div>
-
-              <div className="flex flex-col min-w-0 gap-0.5">
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <h2
-                    id="history-modal-title"
-                    className="text-foreground text-[18px] sm:text-[20px] font-bold tracking-tight truncate leading-snug"
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+            <div className="flex items-center justify-between sm:justify-start gap-3.5 min-w-0">
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="relative overflow-hidden bg-black/30 flex items-center justify-center border border-border w-12 h-12 rounded-[6px] shrink-0">
+                  <div
+                    className="absolute inset-0 flex items-center justify-center text-white font-bold text-base z-0"
+                    style={getAvatarStyle(currentUnit.name)}
                   >
-                    {currentUnit.name}
-                  </h2>
-                  {statusCfg && (
-                    <span
-                      className="text-[11px] font-semibold capitalize px-2 py-0.5 rounded-[4px] border inline-flex items-center gap-1 leading-none"
-                      style={{
-                        backgroundColor: statusCfg.bg,
-                        color: statusCfg.color,
-                        borderColor: statusCfg.border,
-                      }}
+                    {getInitials(currentUnit.name)}
+                  </div>
+                  {proxyUrl && (
+                    <img
+                      src={proxyUrl}
+                      alt={currentUnit.name}
+                      className="absolute inset-0 w-full h-full object-cover z-10"
+                      style={{ objectPosition: "center 15%" }}
+                      onError={(e) => handleImageError(e, currentUnit.id)}
+                    />
+                  )}
+                </div>
+
+                <div className="flex flex-col min-w-0 gap-0.5">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h2
+                      id="history-modal-title"
+                      className="text-foreground text-[18px] sm:text-[20px] font-bold tracking-tight truncate leading-snug"
                     >
-                      <StatusIcon status={currentUnit.status} />
-                      {statusCfg.label}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground truncate">
-                  <span className="truncate">
-                    {currentUnit.subtitle || "Official Unit"}
-                  </span>
-                  <span className="text-border">·</span>
-                  <span
-                    className="font-semibold"
-                    style={{ color: tierCfg.badgeColor }}
-                  >
-                    Tier {tierKey}
-                  </span>
-                  {currentUnit.obtainability && (
-                    <>
-                      <span className="text-border">·</span>
-                      <span className="text-muted-foreground truncate">
-                        {currentUnit.obtainability}
+                      {currentUnit.name}
+                    </h2>
+                    {statusCfg && (
+                      <span
+                        className="text-[11px] font-semibold capitalize px-2 py-0.5 rounded-[4px] border inline-flex items-center gap-1 leading-none"
+                        style={{
+                          backgroundColor: statusCfg.bg,
+                          color: statusCfg.color,
+                          borderColor: statusCfg.border,
+                        }}
+                      >
+                        <StatusIcon status={currentUnit.status} />
+                        {statusCfg.label}
                       </span>
-                    </>
-                  )}
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground truncate">
+                    <span className="truncate">
+                      {currentUnit.subtitle || "Official Unit"}
+                    </span>
+                    <span className="text-border">·</span>
+                    <span
+                      className="font-semibold"
+                      style={{ color: tierCfg.badgeColor }}
+                    >
+                      Tier {tierKey}
+                    </span>
+                    {currentUnit.obtainability && (
+                      <>
+                        <span className="text-border">·</span>
+                        <span className="text-muted-foreground truncate">
+                          {currentUnit.obtainability}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic("light");
+                  closeModal();
+                }}
+                aria-label="Close"
+                className="sm:hidden text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-[6px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0 cursor-pointer"
+              >
+                <svg
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  className="w-4 h-4"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M4 4L12 12M12 4L4 12" />
+                </svg>
+              </button>
             </div>
 
             <div
-              className="flex items-center gap-2 shrink-0"
+              className="flex items-center gap-1.5 flex-wrap shrink-0"
               aria-live="polite"
             >
+              <button
+                type="button"
+                onClick={() => void handleAddToVault()}
+                disabled={isVaultPending}
+                className="px-2.5 py-1.5 rounded-[6px] border border-[#23a559]/40 bg-[#23a559]/15 hover:bg-[#23a559]/25 disabled:opacity-50 text-[#23a559] text-[12px] font-bold font-mono tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#23a559] cursor-pointer"
+                title={
+                  profile
+                    ? "Add 1 copy to your Vault"
+                    : "Sign in with Discord to save to your Vault"
+                }
+              >
+                {isVaultPending
+                  ? "Saving…"
+                  : `+Vault${vaultQty > 0 ? `\u00A0(${vaultQty})` : ""}`}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void handleToggleWishlist()}
+                disabled={isWishlistPending}
+                aria-pressed={isWishlisted}
+                className={`px-2.5 py-1.5 rounded-[6px] border text-[12px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer ${
+                  isWishlisted
+                    ? "border-purple-400/50 bg-purple-500/20 text-purple-300 hover:bg-purple-500/30"
+                    : "border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground"
+                }`}
+                title={
+                  profile
+                    ? isWishlisted
+                      ? "Remove from Target Wishlist"
+                      : "Add to Target Wishlist"
+                    : "Sign in with Discord to manage your Wishlist"
+                }
+              >
+                {isWishlistPending
+                  ? "Saving…"
+                  : isWishlisted
+                  ? "★ Wishlisted"
+                  : "☆ Wishlist"}
+              </button>
+
               <button
                 type="button"
                 onClick={handleCopySummary}
@@ -1199,19 +1408,20 @@ export function HistoryModal() {
                       <rect x="5" y="5" width="8" height="8" rx="1.5" />
                       <path d="M3 11V3.5C3 2.95 3.45 2.5 4 2.5H11" />
                     </svg>
-                    <span className="hidden sm:inline">Copy Summary</span>
+                    <span className="hidden md:inline">Copy Summary</span>
                   </>
                 )}
               </button>
 
               <button
+                ref={closeBtnRef}
                 type="button"
                 onClick={() => {
                   triggerHaptic("light");
                   closeModal();
                 }}
-                aria-label="Close history modal"
-                className="text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-[6px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0 cursor-pointer"
+                aria-label="Close"
+                className="hidden sm:inline-flex text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-[6px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0 cursor-pointer"
               >
                 <svg
                   viewBox="0 0 16 16"
@@ -1726,7 +1936,7 @@ export function HistoryModal() {
               {/* Unified Chart Frame + Snapshot Inspector Bar */}
               <div className="rounded-[8px] border border-border bg-popover overflow-hidden flex flex-col">
                 {/* Plotting Area */}
-                {loading ? (
+                {showChartSkeleton ? (
                   <div className="h-[290px] p-6 flex flex-col justify-between animate-pulse">
                     <div className="h-full w-full flex flex-col justify-evenly">
                       <div className="border-t border-border/40" />

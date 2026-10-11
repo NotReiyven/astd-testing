@@ -4,32 +4,63 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { ExternalLink, ChevronRight, Check } from "lucide-react";
-import { GiMeepleGroup, GiSpanner, GiSpellBook, GiMagicPortal, GiChatBubble, GiOpenBook, GiScrollUnfurled, GiTrophyCup, GiClockwork, GiCastle } from "react-icons/gi";
-import { useUnits } from "../../context/UnitContext";
+import {
+  GiMeepleGroup,
+  GiSpanner,
+  GiSpellBook,
+  GiMagicPortal,
+  GiChatBubble,
+  GiScrollUnfurled,
+  GiTrophyCup,
+  GiClockwork,
+  GiCastle,
+} from "react-icons/gi";
+import { useUnits, useUnitSync } from "../../context/UnitContext";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
 import { useLayoutStore } from "../../store/useLayoutStore";
-import { getUnitAssetUrl } from "../../data/helpers";
+import { useToastStore } from "../../store/useToastStore";
+import { useShowDelay } from "../../hooks/useShowDelay";
+import {
+  getUnitAssetUrl,
+  copyTextWithFallback,
+  triggerHaptic,
+} from "../../data/helpers";
+import { StatusPill } from "./ui/StatusPill";
+import { EmptyState } from "./ui/EmptyState";
 
 const FIRE_ZIO_AVATAR = getUnitAssetUrl("firezio") || "";
 
 function CreditBadge({ name, color }: { name: string; color: string }) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(name);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+  const handleCopy = async () => {
+    triggerHaptic("light");
+    const ok = await copyTextWithFallback(name);
+    if (ok) {
+      setCopied(true);
+      useToastStore
+        .getState()
+        .addToast(`Copied “${name}” to clipboard.`, "success", {
+          dedupeKey: `copy-credit-${name}`,
+        });
+      setTimeout(() => setCopied(false), 1500);
+    } else {
+      useToastStore
+        .getState()
+        .addToast(`Could not copy automatically: ${name}`, "error");
+    }
   };
 
   return (
-    <button 
-      onClick={handleCopy} 
-      title="Click to copy name" 
-      className="bg-popover hover:bg-muted border border-border px-2.5 py-1.5 rounded-[4px] text-[12px] font-bold shadow-sm transition-colors active:scale-95 flex items-center justify-center min-w-[60px]" 
-      style={{ 
-        color: copied ? "#000000" : "inherit", 
+    <button
+      type="button"
+      onClick={() => void handleCopy()}
+      title={`Copy ${name} to clipboard`}
+      className="bg-popover hover:bg-muted border border-border px-2.5 py-1.5 rounded-[4px] text-[12px] font-bold shadow-sm transition-colors active:scale-95 flex items-center justify-center min-w-[60px] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      style={{
+        color: copied ? "#000000" : "inherit",
         backgroundColor: copied ? color : undefined,
-        borderColor: copied ? color : undefined
+        borderColor: copied ? color : undefined,
       }}
     >
       <span className="flex items-center gap-1.5">
@@ -40,15 +71,17 @@ function CreditBadge({ name, color }: { name: string; color: string }) {
   );
 }
 
-export function HomeChannel({ guideState }: { guideState?: { type: string | null; step: number } }) {
+export function HomeChannel({
+  guideState,
+}: {
+  guideState?: { type: string | null; step: number };
+}) {
   const [activeSection, setActiveSection] = useState<string>("info");
   const { changelog } = useUnits();
-  const { globalCompactMode } = useLayoutStore();
-
-  useEffect(() => {
-    // Replaced addEventListener with direct onScroll prop below
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const { isLoading, isSyncing, isError, lastUpdatedAt, refetch } =
+    useUnitSync();
+  const showChangelogSkeleton = useShowDelay(isLoading);
+  const globalCompactMode = useLayoutStore((s) => s.globalCompactMode);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const sections = ["info", "updates", "credits"];
@@ -66,7 +99,7 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
     const container = document.getElementById("home-content");
     const el = document.getElementById(`section-${id}`);
     if (container && el) {
-      container.scrollTo({ top: el.offsetTop - 20, behavior: 'smooth' });
+      container.scrollTo({ top: el.offsetTop - 20, behavior: "smooth" });
     }
   };
 
@@ -85,15 +118,21 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
     "The cult of Fire ZIO will never be forgotten...",
     "DENJI AND TOSHIRO ARE NEVER GETTING THEIR EVO",
     "Stop trying to impregnate the calculator Alu",
-    "GRRs were duped stopped trying to trade so much for them"
+    "GRRs were duped stopped trying to trade so much for them",
   ];
 
   const handleSecretClick = () => {
+    triggerHaptic("light");
     const next = secretClicks + 1;
     setSecretClicks(next);
     if (next >= 5) {
       setSecretUnlocked(true);
       setSecretQuoteIndex((prev) => (prev + 1) % secretQuotes.length);
+      if (next === 5) {
+        useToastStore
+          .getState()
+          .addToast("Secret archive transmission unlocked.", "info");
+      }
     }
   };
 
@@ -105,7 +144,8 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
     for (let i = 0; i < changelog.length; i++) {
       const clean = changelog[i].trim();
       if (!clean || clean.match(/^[-_]{3,}$/)) continue;
-      const isHeader = i + 1 < changelog.length && changelog[i + 1].trim().match(/^[-_]{3,}$/);
+      const isHeader =
+        i + 1 < changelog.length && changelog[i + 1].trim().match(/^[-_]{3,}$/);
       if (isHeader) {
         if (currentBlock.lines.length > 0) blocks.push({ ...currentBlock });
         currentBlock = { title: clean, lines: [] };
@@ -118,107 +158,255 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
   }, [changelog]);
 
   const exStaffList = [
-    "Ded_Sen", "Crimson Desire", "Brysans", "SquidyMotion", "Luk", "Hero", "soupermunki", "dennis.67", "hopper duper", "Poxie", "Iridescent Equinox", "Pchongle", "unobium", "Demonfox", "GorillaTactics92", "MicroJillyWilly", "Doggod", "kosu", "Paker", "Kiwami", "brogee", "Leo", "arkss", "Trvz", "Up", "Vantagehgc", "fortnitekid", "Mikoto", "En Thobias12", "Miro_y", "arkysesh", "brickz7", "Venus", "AdamSBDG7", "halw", "NathanPlayz", "orangehairfunnyman", "olivia.rodrigo", "Felta", "VerotObelyn", "Kyo"
+    "Ded_Sen",
+    "Crimson Desire",
+    "Brysans",
+    "SquidyMotion",
+    "Luk",
+    "Hero",
+    "soupermunki",
+    "dennis.67",
+    "hopper duper",
+    "Poxie",
+    "Iridescent Equinox",
+    "Pchongle",
+    "unobium",
+    "Demonfox",
+    "GorillaTactics92",
+    "MicroJillyWilly",
+    "Doggod",
+    "kosu",
+    "Paker",
+    "Kiwami",
+    "brogee",
+    "Leo",
+    "arkss",
+    "Trvz",
+    "Up",
+    "Vantagehgc",
+    "fortnitekid",
+    "Mikoto",
+    "En Thobias12",
+    "Miro_y",
+    "arkysesh",
+    "brickz7",
+    "Venus",
+    "AdamSBDG7",
+    "halw",
+    "NathanPlayz",
+    "orangehairfunnyman",
+    "olivia.rodrigo",
+    "Felta",
+    "VerotObelyn",
+    "Kyo",
   ];
 
   const creditsBottomImage = getUnitAssetUrl("all-star") || "";
+  const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+  const syncState = isOffline
+    ? "offline"
+    : isError
+    ? "error"
+    : isSyncing
+    ? "syncing"
+    : "synced";
 
   return (
     <div className="flex-1 w-full h-full font-sans relative overflow-hidden flex flex-col bg-background">
-      <div className={`flex flex-col md:flex-row gap-4 p-3 md:p-4 max-w-6xl mx-auto w-full h-full overflow-hidden`}>
-
+      <div className="flex flex-col md:flex-row gap-4 p-3 md:p-4 max-w-6xl mx-auto w-full h-full overflow-hidden">
         {/* Inner Nav now hides on lg (1024px) screens to make room for calculator overlay */}
-        <nav className="hidden lg:flex flex-col w-56 shrink-0 sticky top-0 self-start pt-2 z-10">
+        <nav
+          aria-label="Home sections"
+          className="hidden lg:flex flex-col w-56 shrink-0 sticky top-0 self-start pt-2 z-10"
+        >
           <div className="flex items-center justify-between mb-6 text-foreground">
             <div className="flex items-center gap-2.5">
               <GiCastle className="w-5 h-5" />
-              <h2 className="text-[15px] font-black uppercase tracking-wider">Welcome</h2>
+              <h2 className="text-[15px] font-black uppercase tracking-wider">
+                Welcome
+              </h2>
             </div>
-            <button onClick={handleSecretClick} className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer">
+            <button
+              type="button"
+              aria-label="Activate secret portal"
+              onClick={handleSecretClick}
+              className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded p-1 cursor-pointer"
+            >
               <GiMagicPortal className="w-4 h-4" />
             </button>
           </div>
           <div className="flex flex-col gap-1 border-l-2 border-border pl-4">
-            <button 
-              onClick={() => scrollTo("info")} 
-              className={`text-left text-[13px] font-medium py-1.5 transition-colors focus-visible:outline-none flex items-center gap-2 cursor-pointer ${activeSection === "info" ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
+            <button
+              type="button"
+              onClick={() => scrollTo("info")}
+              className={`text-left text-[13px] font-medium py-1.5 transition-colors focus-visible:outline-none flex items-center gap-2 cursor-pointer ${
+                activeSection === "info"
+                  ? "text-primary font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
               General Info
             </button>
-            <button 
-              onClick={() => scrollTo("updates")} 
-              className={`text-left text-[13px] font-medium py-1.5 transition-colors focus-visible:outline-none flex items-center gap-2 cursor-pointer ${activeSection === "updates" ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
+            <button
+              type="button"
+              onClick={() => scrollTo("updates")}
+              className={`text-left text-[13px] font-medium py-1.5 transition-colors focus-visible:outline-none flex items-center gap-2 cursor-pointer ${
+                activeSection === "updates"
+                  ? "text-primary font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
               Patch Notes
             </button>
-            <button 
-              onClick={() => scrollTo("credits")} 
-              className={`text-left text-[13px] font-medium py-1.5 transition-colors focus-visible:outline-none flex items-center gap-2 cursor-pointer ${activeSection === "credits" ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
+            <button
+              type="button"
+              onClick={() => scrollTo("credits")}
+              className={`text-left text-[13px] font-medium py-1.5 transition-colors focus-visible:outline-none flex items-center gap-2 cursor-pointer ${
+                activeSection === "credits"
+                  ? "text-primary font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
               Credits
             </button>
           </div>
 
           {secretUnlocked && (
-            <div className="mt-8 bg-card border border-border p-3 rounded-[4px] text-[11px] font-mono shadow-sm">
+            <div
+              role="status"
+              aria-live="polite"
+              className="mt-8 bg-card border border-border p-3 rounded-[4px] text-[11px] font-mono shadow-sm"
+            >
               <div className="text-[#FAA61A] mb-1">&gt; SYSTEM MESSAGE</div>
-              <div className="text-muted-foreground">{secretQuotes[secretQuoteIndex]}</div>
-              <button onClick={() => setSecretUnlocked(false)} className="mt-2 text-primary hover:underline cursor-pointer">Close</button>
+              <div className="text-muted-foreground">
+                {secretQuotes[secretQuoteIndex]}
+              </div>
+              <button
+                type="button"
+                onClick={() => setSecretUnlocked(false)}
+                className="mt-2 text-primary hover:underline cursor-pointer"
+              >
+                Close
+              </button>
             </div>
           )}
         </nav>
 
         {/* Added min-w-0 to prevent flexbox from crushing text elements */}
-        <div id="home-content" onScroll={handleScroll} className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-16 flex flex-col gap-12 z-10 min-w-0">
-
+        <div
+          id="home-content"
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-16 flex flex-col gap-12 z-10 min-w-0"
+        >
           <div className="flex flex-col gap-3">
-            <h1 className={`${globalCompactMode ? 'text-[20px] md:text-[24px]' : 'text-[28px] md:text-[32px]'} font-black text-foreground tracking-tight`}>ASTD Value List</h1>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h1
+                className={`${
+                  globalCompactMode
+                    ? "text-[20px] md:text-[24px]"
+                    : "text-[28px] md:text-[32px]"
+                } font-black text-foreground tracking-tight`}
+              >
+                ASTD Value List
+              </h1>
+              <StatusPill
+                state={syncState}
+                lastUpdatedAt={lastUpdatedAt}
+                nextStepHint={"Auto-syncs every 5\u00A0min"}
+                onRetry={refetch}
+              />
+            </div>
             <p className="text-[15px] text-muted-foreground leading-relaxed max-w-3xl font-medium">
-              Live market estimates based on actual trading data. Verify tags and momentum before accepting offers.
+              Live market estimates based on actual trading data. Verify tags
+              and momentum before accepting offers.
             </p>
           </div>
 
           <section id="section-info" className="flex flex-col gap-6 pt-2">
             <div className="flex items-center gap-2 border-b border-border pb-3">
               <GiScrollUnfurled className="w-5 h-5 text-primary" />
-              <h2 className="text-[20px] font-black text-foreground">General Info</h2>
+              <h2 className="text-[20px] font-black text-foreground">
+                General Info
+              </h2>
             </div>
 
-            <div className={`bg-card border border-border rounded-[8px] flex items-start shadow-sm ${globalCompactMode ? 'p-3 gap-3' : 'p-5 gap-4'}`}>
-              <img src={FIRE_ZIO_AVATAR} className={`${globalCompactMode ? 'w-7 h-7' : 'w-10 h-10'} rounded-full object-cover shrink-0 border border-border`} alt="Fire Zio" />
+            <div
+              className={`bg-card border border-border rounded-[8px] flex items-start shadow-sm ${
+                globalCompactMode ? "p-3 gap-3" : "p-5 gap-4"
+              }`}
+            >
+              <img
+                src={FIRE_ZIO_AVATAR}
+                className={`${
+                  globalCompactMode ? "w-7 h-7" : "w-10 h-10"
+                } rounded-full object-cover shrink-0 border border-border`}
+                alt="Fire Zio"
+              />
               <div className="flex flex-col gap-1">
-                <span className="text-[12px] font-bold text-foreground uppercase tracking-widest">Fire Zio's Briefing</span>
+                <span className="text-[12px] font-bold text-foreground uppercase tracking-widest">
+                  Fire Zio’s Briefing
+                </span>
                 <p className="text-muted-foreground text-[14px] leading-relaxed italic">
-                  "Read the info before asking stupid questions in chat. Yes, values are estimates based on community trades. No, we aren't psychic. Use your brain. Verify trades before wrongly assuming a unit's status."
+                  “Read the info before asking stupid questions in chat. Yes,
+                  values are estimates based on community trades. No, we aren’t
+                  psychic. Use your brain. Verify trades before wrongly assuming
+                  a unit’s status.”
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="group bg-card border border-border rounded-[8px] p-5 flex flex-col h-full shadow-sm hover:shadow-md hover:border-border/80 transition-all duration-300">
+              <div className="group bg-card border border-border rounded-[8px] p-5 flex flex-col h-full shadow-sm hover:shadow-md hover:border-border/80 transition-[box-shadow,border-color] duration-300">
                 <h3 className="flex items-center gap-2 text-[15px] font-bold text-foreground mb-3">
-                  <GiScrollUnfurled className="w-4 h-4 text-primary group-hover:scale-110 transition-transform duration-300" /> Live Data Sync
+                  <GiScrollUnfurled className="w-4 h-4 text-primary group-hover:scale-110 transition-transform duration-300" />{" "}
+                  Live Data Sync
                 </h3>
                 <p className="text-[13px] leading-relaxed text-muted-foreground flex-1 font-medium">
-                  This site pulls directly from the official ASTD spreadsheet. When the value list updates, this site updates instantly-no manual refreshes needed.
+                  This site pulls directly from the official ASTD spreadsheet
+                  and auto-refreshes every 5&nbsp;minutes. When the value list
+                  updates, this site updates automatically.
                 </p>
-                <button onClick={() => safeOpenExternal("https://docs.google.com/spreadsheets/d/1Z20NUscF9Id2Sss-osT-Xq06gz9ooikt6Kjtianeg0I/edit?gid=163005933#gid=163005933")} className="mt-4 bg-muted hover:bg-primary hover:text-primary-foreground text-foreground px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 border border-border hover:border-primary cursor-pointer active:scale-[0.98]">
+                <button
+                  type="button"
+                  onClick={() =>
+                    safeOpenExternal(
+                      "https://docs.google.com/spreadsheets/d/1Z20NUscF9Id2Sss-osT-Xq06gz9ooikt6Kjtianeg0I/edit?gid=163005933#gid=163005933"
+                    )
+                  }
+                  className="mt-4 bg-muted hover:bg-primary hover:text-primary-foreground text-foreground px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 border border-border hover:border-primary cursor-pointer active:scale-[0.98]"
+                >
                   Open Official Spreadsheet <ExternalLink className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="group bg-card border border-border rounded-[8px] p-5 flex flex-col h-full shadow-sm hover:shadow-md hover:border-border/80 transition-all duration-300">
+              <div className="group bg-card border border-border rounded-[8px] p-5 flex flex-col h-full shadow-sm hover:shadow-md hover:border-border/80 transition-[box-shadow,border-color] duration-300">
                 <h3 className="flex items-center gap-2 text-[15px] font-bold text-foreground mb-3">
-                  <GiChatBubble className="w-4 h-4 text-primary group-hover:scale-110 transition-transform duration-300" /> Community & Feedback
+                  <GiChatBubble className="w-4 h-4 text-primary group-hover:scale-110 transition-transform duration-300" />{" "}
+                  Community & Feedback
                 </h3>
                 <p className="text-[13px] leading-relaxed text-muted-foreground flex-1 font-medium">
-                  Spotted a bad value? Want to complain about a scam? Join the Discord and talk to the team directly, or submit a report.
+                  Spotted a bad value? Want to complain about a scam? Join the
+                  Discord and talk to the team directly, or submit a report.
                 </p>
                 <div className="flex flex-col gap-2 mt-4">
-                  <button onClick={() => safeOpenExternal("https://discord.gg/Q7JTvPUEM")} className="bg-muted hover:bg-primary hover:text-primary-foreground text-foreground border border-border hover:border-primary px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      safeOpenExternal("https://discord.gg/Q7JTvPUEM")
+                    }
+                    className="bg-muted hover:bg-primary hover:text-primary-foreground text-foreground border border-border hover:border-primary px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                  >
                     Join Discord Server <ExternalLink className="w-4 h-4" />
                   </button>
-                  <button onClick={() => safeOpenExternal("https://docs.google.com/forms/d/e/1FAIpQLSeUAAvBHod23it13WYD8XK61K2C-BFCWJ8tGwJxA7c0sCCVvA/viewform")} className="bg-muted hover:bg-primary hover:text-primary-foreground text-foreground border border-border hover:border-primary px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      safeOpenExternal(
+                        "https://docs.google.com/forms/d/e/1FAIpQLSeUAAvBHod23it13WYD8XK61K2C-BFCWJ8tGwJxA7c0sCCVvA/viewform"
+                      )
+                    }
+                    className="bg-muted hover:bg-primary hover:text-primary-foreground text-foreground border border-border hover:border-primary px-4 py-2.5 rounded-[4px] text-[13px] font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                  >
                     Submit Feedback Form <ExternalLink className="w-4 h-4" />
                   </button>
                 </div>
@@ -229,30 +417,78 @@ export function HomeChannel({ guideState }: { guideState?: { type: string | null
           <section id="section-updates" className="flex flex-col gap-6 pt-2">
             <div className="flex items-center gap-2 border-b border-border pb-3">
               <GiClockwork className="w-5 h-5 text-primary" />
-              <h2 className="text-[20px] font-black text-foreground">Patch Notes</h2>
+              <h2 className="text-[20px] font-black text-foreground">
+                Patch Notes
+              </h2>
             </div>
             <p className="text-[14px] text-muted-foreground leading-relaxed font-medium">
-              A detailed ledger of all recent modifications to the value list, including unit additions, adjustments, and corrections. Check the logs before complaining about shifting values.
+              A detailed ledger of all recent modifications to the value list,
+              including unit additions, adjustments, and corrections. Check the
+              logs before complaining about shifting values.
             </p>
 
-            {parsedChangelog.length === 0 ? (
-              <div className="bg-card border border-border rounded-[8px] p-8 text-center text-muted-foreground text-[14px]">
-                No recent updates logged in the spreadsheet.
+            {showChangelogSkeleton ? (
+              <div className="flex flex-col gap-4 animate-pulse">
+                {[0, 1].map((idx) => (
+                  <div
+                    key={idx}
+                    className="bg-card border border-border rounded-[6px] overflow-hidden shadow-sm"
+                  >
+                    <div className="bg-muted px-4 py-3 border-b border-border h-11" />
+                    <div className="p-4 flex flex-col gap-2.5">
+                      <div className="h-4 bg-muted rounded w-3/4" />
+                      <div className="h-4 bg-muted rounded w-2/3" />
+                      <div className="h-4 bg-muted rounded w-1/2" />
+                    </div>
+                  </div>
+                ))}
               </div>
+            ) : parsedChangelog.length === 0 ? (
+              <EmptyState
+                title="No Patch Notes Logged"
+                description="No recent changelog entries were returned from the spreadsheet."
+                action={{
+                  label: "Refresh Sync",
+                  onClick: () => {
+                    void refetch();
+                  },
+                }}
+                secondaryAction={{
+                  label: "Open Spreadsheet",
+                  onClick: () =>
+                    safeOpenExternal(
+                      "https://docs.google.com/spreadsheets/d/1Z20NUscF9Id2Sss-osT-Xq06gz9ooikt6Kjtianeg0I/edit?gid=163005933#gid=163005933"
+                    ),
+                }}
+              />
             ) : (
               <div className="flex flex-col gap-4">
                 {parsedChangelog.map((block, idx) => (
-                  <div key={idx} className="bg-card border border-border rounded-[6px] overflow-hidden shadow-sm">
+                  <div
+                    key={idx}
+                    className="bg-card border border-border rounded-[6px] overflow-hidden shadow-sm"
+                  >
                     <div className="bg-muted px-4 py-3 border-b border-border flex items-center gap-2">
-                      {block.title.toLowerCase().includes("fix") ? <GiSpanner className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
-                      <h3 className="font-bold text-foreground text-[14px]">{block.title}</h3>
+                      {block.title.toLowerCase().includes("fix") ? (
+                        <GiSpanner className="w-4 h-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      )}
+                      <h3 className="font-bold text-foreground text-[14px]">
+                        {block.title}
+                      </h3>
                     </div>
                     <div className="p-4">
                       <ul className="flex flex-col gap-2.5">
                         {block.lines.map((line, lIdx) => (
-                          <li key={lIdx} className="flex gap-3 items-start text-[13px]">
+                          <li
+                            key={lIdx}
+                            className="flex gap-3 items-start text-[13px]"
+                          >
                             <span className="text-primary font-bold">•</span>
-                            <span className="text-muted-foreground leading-relaxed font-medium">{line.replace(/^-*\s*/, "")}</span>
+                            <span className="text-muted-foreground leading-relaxed font-medium">
+                              {line.replace(/^-*\s*/, "")}
+                            </span>
                           </li>
                         ))}
                       </ul>

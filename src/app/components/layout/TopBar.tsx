@@ -10,6 +10,12 @@ import { useAdInteractionStore } from "../../../store/useAdInteractionStore";
 import { CommandPalette } from "./CommandPalette";
 import { getUnitAssetUrl } from "../../../data/helpers";
 
+import { useToastStore } from "../../../store/useToastStore";
+import {
+  MOTION_TRANSITION,
+  usePrefersReducedMotion,
+} from "../../../lib/motionTokens";
+
 interface TopBarProps {
   calcHeaderZ: string;
   isRosterOpen: boolean;
@@ -41,32 +47,45 @@ export function TopBar({
   activeItemsCount,
   isDictionaryActive,
 }: TopBarProps) {
-  const {
-    globalSearchQuery,
-    setGlobalSearchQuery,
-    commandPaletteOpen,
-    setCommandPaletteOpen,
-  } = useLayoutStore();
+  const globalSearchQuery = useLayoutStore((s) => s.globalSearchQuery);
+  const setGlobalSearchQuery = useLayoutStore((s) => s.setGlobalSearchQuery);
+  const commandPaletteOpen = useLayoutStore((s) => s.commandPaletteOpen);
+  const setCommandPaletteOpen = useLayoutStore((s) => s.setCommandPaletteOpen);
 
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isNotifMenuOpen, setIsNotifMenuOpen] = useState(false);
+  const [badgeBump, setBadgeBump] = useState(false);
+  const prevItemsCountRef = useRef(activeItemsCount);
+  const reducedMotion = usePrefersReducedMotion();
 
   const mobileInputRef = useRef<HTMLInputElement>(null);
   const desktopSearchRef = useRef<HTMLInputElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notifMenuRef = useRef<HTMLDivElement>(null);
 
-  const {
-    profile,
-    loginWithDiscord,
-    logout,
-    updateStatus,
-    isLoading: isAuthLoading,
-  } = useAuthStore();
-  const { notifications, unreadCount, markAsRead, markAllAsRead } =
-    useNotificationStore();
-  const { openAdContext } = useAdInteractionStore();
+  const profile = useAuthStore((s) => s.profile);
+  const loginWithDiscord = useAuthStore((s) => s.loginWithDiscord);
+  const logout = useAuthStore((s) => s.logout);
+  const updateStatus = useAuthStore((s) => s.updateStatus);
+  const isAuthLoading = useAuthStore((s) => s.isLoading);
+
+  const notifications = useNotificationStore((s) => s.notifications);
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const markAsRead = useNotificationStore((s) => s.markAsRead);
+  const markAllAsRead = useNotificationStore((s) => s.markAllAsRead);
+  const openAdContext = useAdInteractionStore((s) => s.openAdContext);
+  const addToast = useToastStore((s) => s.addToast);
+
+  useEffect(() => {
+    if (activeItemsCount > prevItemsCountRef.current && !reducedMotion) {
+      setBadgeBump(true);
+      const timer = setTimeout(() => setBadgeBump(false), 220);
+      prevItemsCountRef.current = activeItemsCount;
+      return () => clearTimeout(timer);
+    }
+    prevItemsCountRef.current = activeItemsCount;
+  }, [activeItemsCount, reducedMotion]);
 
   const [dismissedTips, setDismissedTips] = useState<Record<string, boolean>>(
     () => {
@@ -199,6 +218,8 @@ export function TopBar({
               className="flex-1 bg-transparent outline-none text-foreground text-base px-2 h-full"
             />
             <button
+              type="button"
+              aria-label="Close search"
               onClick={() => {
                 setMobileSearchOpen(false);
                 setGlobalSearchQuery("");
@@ -249,6 +270,8 @@ export function TopBar({
           {!isAuthLoading && profile && (
             <div className="relative" ref={notifMenuRef}>
               <button
+                type="button"
+                aria-label="Notifications"
                 onClick={() => setIsNotifMenuOpen(!isNotifMenuOpen)}
                 className="flex items-center justify-center p-1 bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground rounded-[4px] transition-colors shrink-0 cursor-pointer focus-visible:outline-none min-h-[44px] min-w-[44px] relative"
                 title="Notifications"
@@ -267,7 +290,11 @@ export function TopBar({
                     </span>
                     {unreadCount > 0 && (
                       <button
-                        onClick={() => markAllAsRead(profile.id)}
+                        type="button"
+                        onClick={() => {
+                          void markAllAsRead(profile.id);
+                          addToast("Marked all notifications as read.", "success");
+                        }}
                         className="text-[10px] font-bold text-primary hover:underline cursor-pointer focus-visible:outline-none"
                       >
                         Mark all as read
@@ -365,6 +392,8 @@ export function TopBar({
             (profile ? (
               <div className="relative" ref={profileMenuRef}>
                 <button
+                  type="button"
+                  aria-label="Account settings"
                   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                   className="flex items-center justify-center p-1 bg-popover hover:bg-muted border border-border rounded-[4px] transition-colors shrink-0 cursor-pointer focus-visible:outline-none min-h-[44px] min-w-[44px]"
                   title="Account Settings"
@@ -388,8 +417,9 @@ export function TopBar({
                     </div>
 
                     <button
+                      type="button"
                       onClick={() => {
-                        updateStatus("online");
+                        void updateStatus("online");
                         setIsProfileMenuOpen(false);
                       }}
                       className="flex items-center justify-between w-full px-2 py-2 rounded-[4px] hover:bg-muted transition-colors group cursor-pointer"
@@ -406,8 +436,9 @@ export function TopBar({
                     </button>
 
                     <button
+                      type="button"
                       onClick={() => {
-                        updateStatus("dnd");
+                        void updateStatus("dnd");
                         setIsProfileMenuOpen(false);
                       }}
                       className="flex items-center justify-between w-full px-2 py-2 rounded-[4px] hover:bg-muted transition-colors group cursor-pointer"
@@ -424,8 +455,9 @@ export function TopBar({
                     </button>
 
                     <button
+                      type="button"
                       onClick={() => {
-                        updateStatus("invisible");
+                        void updateStatus("invisible");
                         setIsProfileMenuOpen(false);
                       }}
                       className="flex items-center justify-between w-full px-2 py-2 rounded-[4px] hover:bg-muted transition-colors group cursor-pointer"
@@ -444,6 +476,7 @@ export function TopBar({
                     <div className="w-full h-px bg-border my-1" />
 
                     <button
+                      type="button"
                       onClick={() => {
                         setIsProfileMenuOpen(false);
                         window.document.dispatchEvent(
@@ -459,8 +492,9 @@ export function TopBar({
                     </button>
 
                     <button
+                      type="button"
                       onClick={() => {
-                        logout();
+                        void logout();
                         setIsProfileMenuOpen(false);
                       }}
                       className="flex items-center gap-2 w-full px-2 py-2 rounded-[4px] hover:bg-destructive/10 hover:text-destructive transition-colors group cursor-pointer mt-0.5"
@@ -475,7 +509,9 @@ export function TopBar({
               </div>
             ) : (
               <button
-                onClick={loginWithDiscord}
+                type="button"
+                aria-label="Login with Discord"
+                onClick={() => void loginWithDiscord()}
                 className="flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:bg-primary/80 text-primary-foreground rounded-[4px] text-[12px] font-bold transition-colors border border-transparent shrink-0 cursor-pointer min-h-[44px]"
               >
                 <LogIn className="w-4 h-4" />
@@ -484,20 +520,27 @@ export function TopBar({
             ))}
 
           <button
+            type="button"
+            aria-label="Open Command Palette"
             onClick={() => setCommandPaletteOpen(true)}
             className="flex items-center justify-center gap-2 px-3 py-2 md:px-2.5 rounded-[4px] bg-input border border-border hover:border-muted-foreground text-muted-foreground transition-colors text-[12px] font-bold focus-visible:outline-none shrink-0 cursor-pointer min-h-[44px]"
             title="Open Command Palette"
           >
             <GiMagicPortal className="w-4 h-4 sm:hidden flex-shrink-0" />
             <span className="hidden sm:flex items-center gap-2 text-[12px] font-mono tracking-wider">
-              Search...{" "}
-              <span className="bg-popover border border-border rounded px-1 text-[10px]">
+              Search…{" "}
+              <span
+                translate="no"
+                className="bg-popover border border-border rounded px-1 text-[10px]"
+              >
                 ⌘K
               </span>
             </span>
           </button>
 
           <button
+            type="button"
+            aria-label="Search units"
             onClick={() => setMobileSearchOpen(true)}
             className="md:hidden flex-shrink-0 w-11 h-11 flex items-center justify-center rounded-[4px] border border-border bg-input text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
           >
@@ -512,18 +555,20 @@ export function TopBar({
             <input
               ref={desktopSearchRef}
               type="text"
-              placeholder="Filter units..."
+              placeholder="Filter units…"
               value={globalSearchQuery}
               onChange={(e) => setGlobalSearchQuery(e.target.value)}
               className="bg-transparent text-[13px] text-foreground w-full h-full outline-none placeholder-muted-foreground font-medium"
             />
             {globalSearchQuery && (
               <button
+                type="button"
+                aria-label="Clear search filter"
                 onClick={(e) => {
                   e.stopPropagation();
                   setGlobalSearchQuery("");
                 }}
-                className="p-1 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
+                className="p-1 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer min-w-[24px] min-h-[24px] flex items-center justify-center"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -531,6 +576,8 @@ export function TopBar({
           </div>
 
           <button
+            type="button"
+            aria-label="Toggle Trade Analyzer"
             onClick={handleToggleAnalyzer}
             className={`hidden md:flex relative items-center gap-2 px-3 py-1.5 rounded-[4px] transition-colors font-bold text-[12px] focus-visible:outline-none cursor-pointer border shrink-0 ${
               isAnalyzerOpen
@@ -546,7 +593,13 @@ export function TopBar({
             <Calculator className="w-4 h-4 flex-shrink-0" />
             <span>Analyzer</span>
             {activeItemsCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-foreground text-background font-mono font-bold text-[9px] w-4 h-4 rounded-full flex items-center justify-center">
+              <span
+                className="absolute -top-1.5 -right-1.5 bg-foreground text-background font-mono font-bold text-[9px] w-4 h-4 rounded-full flex items-center justify-center tabular-nums"
+                style={{
+                  transform: badgeBump ? "scale(1.28)" : "scale(1)",
+                  transition: MOTION_TRANSITION.buttonPress,
+                }}
+              >
                 {activeItemsCount > 9 ? "9+" : activeItemsCount}
               </span>
             )}
@@ -560,8 +613,10 @@ export function TopBar({
             <GiSparkles className="w-4 h-4 shrink-0 text-primary" /> {currentTip}
           </span>
           <button
+            type="button"
+            aria-label="Dismiss tip"
             onClick={() => dismissTip(currentChannelInfo.title)}
-            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted shrink-0 ml-4"
+            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted shrink-0 ml-4 min-w-[24px] min-h-[24px] flex items-center justify-center"
           >
             <X className="w-4 h-4" />
           </button>

@@ -330,8 +330,16 @@ function TierGridCardImpl({
       useToastStore
         .getState()
         .addToast(
-          "Please log in with Discord first to save items to your inventory.",
-          "warning"
+          "Sign in with Discord to save units to your Vault.",
+          "warning",
+          {
+            action: {
+              label: "Login",
+              onClick: () => {
+                void useAuthStore.getState().loginWithDiscord();
+              },
+            },
+          }
         );
       return;
     }
@@ -339,10 +347,27 @@ function TierGridCardImpl({
     setIsSaving(true);
     try {
       await addOrUpdateUnit(profile.id, unit.id, 1);
-      useToastStore.getState().addToast(`Added ${unit.name} to Vault`, "success");
+      useToastStore
+        .getState()
+        .addToast(`Added 1× ${unit.name} to your Vault.`, "success");
+      setMenuOpen(false);
+    } catch {
+      useToastStore
+        .getState()
+        .addToast(
+          `Could not save ${unit.name} to your Vault. Try again.`,
+          "error",
+          {
+            action: {
+              label: "Retry",
+              onClick: () => {
+                void handleSaveToInventory();
+              },
+            },
+          }
+        );
     } finally {
       setIsSaving(false);
-      setMenuOpen(false);
     }
   };
 

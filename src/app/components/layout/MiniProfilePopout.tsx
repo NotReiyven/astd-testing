@@ -12,8 +12,14 @@ import {
   getBannerCssStyle,
   TradingStanceType,
 } from "../../../store/useProfileStore";
-import { getUnitAssetUrl, triggerHaptic } from "../../../data/helpers";
+import {
+  getUnitAssetUrl,
+  triggerHaptic,
+  copyTextWithFallback,
+} from "../../../data/helpers";
 import { safeOpenExternal } from "../../../store/useExternalLinkStore";
+import { useToastStore } from "../../../store/useToastStore";
+import { ErrorState } from "../ui/ErrorState";
 
 const STATUS_COLORS = {
   online: "#23a559",
@@ -62,20 +68,112 @@ const STANCE_LABELS: Record<
 };
 
 export function MiniProfilePopout() {
-  const {
-    popoutUserId,
-    popoutPosition,
-    cache,
-    closePopout,
-    setViewingProfile,
-  } = useProfileStore();
+  const popoutUserId = useProfileStore((s) => s.popoutUserId);
+  const popoutPosition = useProfileStore((s) => s.popoutPosition);
+  const profile = useProfileStore((s) =>
+    s.popoutUserId ? s.cache[s.popoutUserId]?.data ?? null : null
+  );
+  const closePopout = useProfileStore((s) => s.closePopout);
+  const setViewingProfile = useProfileStore((s) => s.setViewingProfile);
+  const fetchProfile = useProfileStore((s) => s.fetchProfile);
+  const addToast = useToastStore((s) => s.addToast);
 
   const [copied, setCopied] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [bounds, setBounds] = useState({ top: 0, left: 0 });
   const popoutRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
-  const profileCache = popoutUserId ? cache[popoutUserId] : null;
-  const profile = profileCache?.data;
+  useEffect(() => {
+    if (!popoutUserId) {
+      setFetchError(false);
+      setIsRetrying(false);
+      return;
+    }
+    if (profile) {
+      setFetchError(false);
+      return;
+    }
+
+    let cancelled = false;
+    setFetchError(false);
+
+    fetchProfile(popoutUserId).then((res) => {
+      if (!cancelled && !res) {
+        setFetchError(true);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [popoutUserId, profile, fetchProfile]);
+
+  useEffect(() => {
+    if (!popoutUserId) return;
+
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closePopout();
+        return;
+      }
+
+      if (e.key === "Tab" && popoutRef.current) {
+        const focusable = Array.from(
+          popoutRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+          )
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (
+            document.activeElement === first ||
+            !popoutRef.current.contains(document.activeElement)
+          ) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (
+            document.activeElement === last ||
+            !popoutRef.current.contains(document.activeElement)
+          ) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      previousFocusRef.current?.focus();
+    };
+  }, [popoutUserId, closePopout]);
+
+  useEffect(() => {
+    if (!popoutUserId || !popoutRef.current) return;
+    if (
+      popoutRef.current &&
+      !popoutRef.current.contains(document.activeElement)
+    ) {
+      const firstFocusable = popoutRef.current.querySelector<HTMLElement>(
+        'button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      firstFocusable?.focus();
+    }
+  }, [popoutUserId, profile, fetchError]);
 
   useEffect(() => {
     if (!popoutPosition || !popoutRef.current) return;
@@ -97,24 +195,50 @@ export function MiniProfilePopout() {
     y = Math.max(padding, y);
 
     setBounds({ left: x, top: y });
-  }, [popoutPosition, profile]);
+  }, [popoutPosition, profile, fetchError]);
 
   if (!popoutUserId || !popoutPosition) return null;
 
-  const handleCopyDiscord = () => {
-    if (!profile?.discord_id || profile.hide_discord_id) return;
-    navigator.clipboard.writeText(profile.discord_id);
-    setCopied(true);
-    triggerHaptic("light");
-    setTimeout(() => setCopied(false), 2000);
+  const handleRetryFetch = async () => {
+    setIsRetrying(true);
+    setFetchError(false);
+    const res = await fetchProfile(popoutUserId, true);
+    if (!res) {
+      setFetchError(true);
+    }
+    setIsRetrying(false);
   };
 
-  const handleContact = () => {
+  const handleCopyDiscord = async () => {
+    if (!profile?.discord_id || profile.hide_discord_id) return;
+    triggerHaptic("light");
+    const ok = await copyTextWithFallback(profile.discord_id);
+    if (ok) {
+      setCopied(true);
+      addToast("Copied Discord ID to clipboard.", "success");
+      setTimeout(() => setCopied(false), 2000);
+    } else {
+      addToast(
+        `Clipboard blocked by browser. Copy manually: ${profile.discord_id}`,
+        "error"
+      );
+    }
+  };
+
+  const handleContact = async () => {
     if (!profile?.discord_id) return;
     triggerHaptic("medium");
-    navigator.clipboard.writeText(
-      `Hey! Saw your profile on ASTD Value List. Are you around to trade?`
-    );
+    const greeting =
+      "Hey! Saw your profile on ASTD Value List. Are you around to trade?";
+    const ok = await copyTextWithFallback(greeting);
+    if (ok) {
+      addToast("Copied greeting message. Opening Discord…", "info");
+    } else {
+      addToast(
+        "Could not copy greeting to clipboard. Opening Discord profile…",
+        "warning"
+      );
+    }
     safeOpenExternal(`https://discord.com/users/${profile.discord_id}`);
     closePopout();
   };
@@ -147,6 +271,8 @@ export function MiniProfilePopout() {
 
       <div
         ref={popoutRef}
+        role="dialog"
+        aria-label={profile ? `${profile.username} profile card` : "Trader profile card"}
         className="fixed z-[100020] w-[320px] bg-popover rounded-[8px] shadow-2xl border border-border flex flex-col overflow-hidden animate-fade-in"
         style={{
           left: bounds.left,
@@ -157,12 +283,28 @@ export function MiniProfilePopout() {
         }}
       >
         {!profile ? (
-          <div className="h-[200px] flex flex-col items-center justify-center text-muted-foreground gap-3">
-            <GiTornado className="w-6 h-6 animate-pulse text-primary" />
-            <span className="text-[12px] tracking-widest">
-              Fetching Profile…
-            </span>
-          </div>
+          fetchError ? (
+            <ErrorState
+              compact
+              title="Profile Unavailable"
+              description="We couldn't load this trader's profile right now. Check your connection and try again."
+              isRetrying={isRetrying}
+              onRetry={handleRetryFetch}
+              secondaryAction={{ label: "Close", onClick: closePopout }}
+              className="border-none bg-transparent py-6"
+            />
+          ) : (
+            <div
+              role="status"
+              aria-live="polite"
+              className="h-[200px] flex flex-col items-center justify-center text-muted-foreground gap-3"
+            >
+              <GiTornado className="w-6 h-6 animate-pulse text-primary" />
+              <span className="text-[12px] tracking-widest">
+                Fetching Profile…
+              </span>
+            </div>
+          )
         ) : (
           <>
             {/* Customized Banner */}

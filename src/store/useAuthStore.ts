@@ -24,6 +24,14 @@ interface AuthState {
 }
 
 import { del as delIdb } from "idb-keyval";
+import { useToastStore } from "./useToastStore";
+
+const STATUS_DISPLAY_LABELS: Record<UserProfile["status"], string> = {
+  online: "Online",
+  dnd: "Do Not Disturb",
+  invisible: "Invisible",
+  offline: "Offline",
+};
 
 const OFFLINE_QUEUE_KEYS = [
   "astd_offline_profile",
@@ -85,6 +93,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: true,
 
   loginWithDiscord: async () => {
+    const { addToast, updateToast } = useToastStore.getState();
+    const toastId = addToast("Redirecting to Discord…", "loading", {
+      id: "discord-auth-login",
+    });
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "discord",
       options: {
@@ -93,13 +106,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
     if (error) {
       console.error("Discord Login Error:", error);
-      alert(
-        "Failed to initialize login. Please clear your browser cache and try again."
-      );
+      updateToast(toastId, {
+        message:
+          "Could not start Discord login. Clear your browser cache or try again.",
+        type: "error",
+        action: {
+          label: "Retry",
+          onClick: () => {
+            void get().loginWithDiscord();
+          },
+        },
+      });
     }
   },
 
   logout: async () => {
+    const { addToast, updateToast } = useToastStore.getState();
+    const toastId = addToast("Signing out…", "loading", {
+      id: "discord-auth-logout",
+    });
+
     if (activeProfileChannel) {
       supabase.removeChannel(activeProfileChannel);
       activeProfileChannel = null;
@@ -116,11 +142,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await supabase.auth.signOut();
     clearLocalAuthCache();
     set({ session: null, profile: null });
+    updateToast(toastId, {
+      message: "Signed out. Continuing in Guest mode.",
+      type: "info",
+    });
   },
 
   updateStatus: async (status) => {
     const { profile } = get();
     if (!profile || profile.status === status) return;
+
+    const previousStatus = profile.status;
 
     if (status === "dnd" || status === "invisible") {
       localStorage.setItem("astd_manual_status", status);
@@ -129,7 +161,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     set({ profile: { ...profile, status } });
-    await supabase.from("profiles").update({ status }).eq("id", profile.id);
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ status })
+      .eq("id", profile.id);
+
+    if (error) {
+      set({ profile: { ...profile, status: previousStatus } });
+      useToastStore.getState().addToast(
+        "Could not update your status. Try again.",
+        "error",
+        {
+          action: {
+            label: "Retry",
+            onClick: () => {
+              void get().updateStatus(status);
+            },
+          },
+        }
+      );
+      return;
+    }
+
+    useToastStore
+      .getState()
+      .addToast(
+        `Status set to ${STATUS_DISPLAY_LABELS[status] || status}.`,
+        "success"
+      );
   },
 
   fetchProfile: async (userId: string) => {

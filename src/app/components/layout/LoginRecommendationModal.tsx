@@ -1,6 +1,8 @@
+import { useEffect, useRef } from "react";
 import { X, LogIn } from "lucide-react";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { triggerHaptic } from "../../../data/helpers";
+import { AsyncButton } from "../ui/AsyncButton";
 
 export function LoginRecommendationModal({
   isOpen,
@@ -12,6 +14,67 @@ export function LoginRecommendationModal({
   channelName: string;
 }) {
   const loginWithDiscord = useAuthStore((s) => s.loginWithDiscord);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const initialFocusRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+
+    const timer = window.setTimeout(() => {
+      initialFocusRef.current?.focus();
+    }, 20);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        triggerHaptic("light");
+        onClose();
+        return;
+      }
+
+      if (e.key === "Tab" && dialogRef.current) {
+        const focusable = Array.from(
+          dialogRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (
+            document.activeElement === first ||
+            !dialogRef.current.contains(document.activeElement)
+          ) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (
+            document.activeElement === last ||
+            !dialogRef.current.contains(document.activeElement)
+          ) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("keydown", handleKeyDown);
+      previousFocusRef.current?.focus();
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -25,14 +88,23 @@ export function LoginRecommendationModal({
       : "You can browse active community listings while logged out, but logging in lets you post trades, comment in discussions, and message traders directly.";
 
   return (
-    <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in select-none font-sans">
+    <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Sign In Recommendation"
+      aria-labelledby="login-rec-title"
+      className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-black/80 animate-fade-in select-none font-sans"
+    >
       <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-2xl flex flex-col relative animate-slide-up">
         <button
+          type="button"
+          aria-label="Close"
           onClick={() => {
             triggerHaptic("light");
             onClose();
           }}
-          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-muted focus-visible:outline-none cursor-pointer"
+          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer min-w-[28px] min-h-[28px] flex items-center justify-center"
         >
           <X className="w-4 h-4" />
         </button>
@@ -42,7 +114,10 @@ export function LoginRecommendationModal({
             <LogIn className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h3 className="text-[15px] font-bold text-foreground tracking-tight">
+            <h3
+              id="login-rec-title"
+              className="text-[15px] font-bold text-foreground tracking-tight"
+            >
               Login Recommended
             </h3>
             <p className="text-[12px] text-muted-foreground font-mono">
@@ -57,25 +132,29 @@ export function LoginRecommendationModal({
 
         <div className="flex items-center justify-end gap-2.5">
           <button
+            ref={initialFocusRef}
+            type="button"
             onClick={() => {
               triggerHaptic("light");
               onClose();
             }}
-            className="px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground text-[12px] font-semibold transition-colors cursor-pointer focus-visible:outline-none"
+            className="px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground text-[12px] font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary min-h-[36px]"
           >
             Continue as Guest
           </button>
-          <button
-            onClick={() => {
+          <AsyncButton
+            onClick={async () => {
               triggerHaptic("medium");
-              loginWithDiscord();
+              await loginWithDiscord();
             }}
-            className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-[12px] font-semibold transition-colors shadow-sm focus-visible:outline-none cursor-pointer flex items-center gap-1.5 border border-primary"
+            className="px-4 py-2 rounded-lg text-[12px] font-semibold shadow-sm"
           >
             <LogIn className="w-4 h-4" /> Login with Discord
-          </button>
+          </AsyncButton>
         </div>
       </div>
     </div>
   );
 }
+
+

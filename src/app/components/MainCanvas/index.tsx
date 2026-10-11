@@ -5,16 +5,15 @@ import {
   useEffect,
   memo,
   useCallback,
-  useRef,
 } from "react";
 import { ArrowUp } from "lucide-react";
-import { motion } from "framer-motion";
 import { useVirtualizer, defaultRangeExtractor } from "@tanstack/react-virtual";
 import { FilterKey } from "../../../types";
 import { TIER_CONFIG } from "../../../data";
 import { useUnits } from "../../../context/UnitContext";
 import { useTradeStore } from "../../../store/useTradeStore";
-import { useLayoutStore } from "../../../store/useLayoutStore";
+import { useToastStore } from "../../../store/useToastStore";
+import { useShowDelay } from "../../../hooks/useShowDelay";
 
 import { TierGridCard } from "./UnitGrid";
 import { UnitListRow, ListHeaderRow } from "./UnitListTable";
@@ -24,9 +23,8 @@ import { CanvasControls } from "./CanvasControls";
 import { GuideType } from "../guides/AquaGuideOverlay";
 import { useCanvasVirtualization } from "./useCanvasVirtualization";
 import { useCanvasScroll } from "../../../hooks/useCanvasScroll";
-import { getUnitAssetUrl } from "../../../data/helpers";
-
-const FIRE_ZIO_AVATAR = getUnitAssetUrl("firezio") || "";
+import { triggerHaptic } from "../../../data/helpers";
+import { EmptyState } from "../ui/EmptyState";
 
 export const MainCanvas = memo(function MainCanvas({
   activeTierFilter,
@@ -34,8 +32,6 @@ export const MainCanvas = memo(function MainCanvas({
   searchQuery,
   setSearchQuery,
   scrollToSection,
-  startGuide,
-  guideState,
   isMobile,
 }: {
   activeTierFilter: FilterKey;
@@ -48,12 +44,13 @@ export const MainCanvas = memo(function MainCanvas({
   isMobile: boolean;
 }) {
   const { units: ALL_UNITS, isLoading } = useUnits();
+  const showSkeleton = useShowDelay(isLoading);
   const addCard = useTradeStore((s) => s.addCard);
 
-  const [showWelcome, setShowWelcome] = useState(() => {
+  const [showWelcome] = useState(() => {
     try {
       return localStorage.getItem("astd_welcome_dismissed") !== "true";
-    } catch (e) {
+    } catch {
       return true;
     }
   });
@@ -72,8 +69,6 @@ export const MainCanvas = memo(function MainCanvas({
     headerRef,
     scrollTopBtnRef,
     scrollToTop,
-    headerVisibleRef,
-    skipNextResetRef,
   } = useCanvasScroll(isMobile);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
@@ -110,16 +105,17 @@ export const MainCanvas = memo(function MainCanvas({
 
     const updateCols = (entry?: ResizeObserverEntry) => {
       let w = entry ? entry.contentRect.width : container.clientWidth;
-      
+
       let padding = 0;
       const styles = window.getComputedStyle(container);
-      padding = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
+      padding =
+        parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
       w = w - padding;
 
-      const isMobile = window.innerWidth < 768;
-      const minCardWidth = isMobile ? 150 : 200;
+      const isMobileViewport = window.innerWidth < 768;
+      const minCardWidth = isMobileViewport ? 150 : 200;
       const gap = 16;
-      
+
       const c = Math.max(1, Math.floor((w + gap) / (minCardWidth + gap)));
       setCols(c);
     };
@@ -141,12 +137,26 @@ export const MainCanvas = memo(function MainCanvas({
     return () => observer.disconnect();
   }, [headerRef]);
 
-  const handleResetFilters = () => {
+  const handleResetFilters = useCallback(() => {
+    triggerHaptic("light");
     setSearchQuery("");
     setStatusFilter("all");
-    setSortMode("value-desc");
     setActiveTierFilter("All");
-  };
+
+    window.setTimeout(() => {
+      const searchInput = document.querySelector<HTMLInputElement>(
+        'input[aria-label="Search units"]'
+      );
+      if (searchInput && searchInput.offsetParent !== null) {
+        searchInput.focus();
+        return;
+      }
+      const firstControl = headerRef.current?.querySelector<HTMLElement>(
+        "button:not([disabled])"
+      );
+      firstControl?.focus();
+    }, 20);
+  }, [setSearchQuery, setActiveTierFilter, headerRef]);
 
   const toggleSelectUnit = useCallback((unitId: string) => {
     setSelectedUnitIds((prev) => {
@@ -159,35 +169,92 @@ export const MainCanvas = memo(function MainCanvas({
 
   const handleBulkAddToTrade = (type: "give" | "get") => {
     if (selectedUnitIds.size === 0) return;
-    ALL_UNITS.filter((u) => selectedUnitIds.has(u.id)).forEach((u) => {
+
+    const selectedUnits = ALL_UNITS.filter((u) => selectedUnitIds.has(u.id));
+    if (selectedUnits.length === 0) return;
+
+    triggerHaptic("medium");
+    const addedUnitIds = selectedUnits.map((u) => u.id);
+
+    selectedUnits.forEach((u) => {
+      const numericVal =
+        typeof u.value === "number"
+          ? u.value
+          : typeof u.valueMin === "number" && u.valueMin > 0
+          ? u.valueMin
+          : 0;
       addCard(type, {
         id: u.id,
         name: u.name,
         subtitle: u.subtitle,
-        value: typeof u.value === "number" ? u.value : 0,
+        value: numericVal,
         qty: 1,
       });
-      window.dispatchEvent(
-        new CustomEvent("trade-added", {
-          detail: {
-            name: u.name,
-            type,
-          },
-        })
-      );
     });
+
     window.dispatchEvent(new Event("open-analyzer"));
     setIsSelectMode(false);
     setSelectedUnitIds(new Set());
+
+    const count = selectedUnits.length;
+    const sideLabel =
+      type === "give" ? "Your Offer (Give)" : "Their Offer (Get)";
+    const { addToast } = useToastStore.getState();
+
+    addToast(
+      `Added ${count}\u00A0${count === 1 ? "unit" : "units"} to ${sideLabel}.`,
+      "success",
+      {
+        dedupeKey: `bulk-trade-add-${type}`,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            const store = useTradeStore.getState();
+            let removedCount = 0;
+            for (const unitId of addedUnitIds) {
+              const currentList =
+                type === "give"
+                  ? useTradeStore.getState().giveItems
+                  : useTradeStore.getState().getItems;
+              const existing = currentList.find((c) => c.id === unitId);
+              if (!existing) continue;
+              removedCount++;
+              if (existing.qty > 1) {
+                store.changeQty(type, unitId, existing.qty - 1);
+              } else {
+                store.removeCard(type, unitId);
+              }
+            }
+            if (removedCount > 0) {
+              addToast(
+                `Removed ${removedCount}\u00A0${
+                  removedCount === 1 ? "unit" : "units"
+                } from ${sideLabel}.`,
+                "info"
+              );
+            }
+          },
+        },
+      }
+    );
   };
 
   const hasFiltersApplied =
     deferredSearchQuery !== "" ||
     statusFilter !== "all" ||
-    sortMode !== "value-desc" ||
     activeTierFilter !== "All";
 
-  // Note: cols is removed. Virtualizer now calculates size based on CSS layout.
+  const activeFilterParts: string[] = [];
+  if (deferredSearchQuery) {
+    activeFilterParts.push(`search “${deferredSearchQuery}”`);
+  }
+  if (activeTierFilter !== "All") {
+    activeFilterParts.push(`Tier\u00A0${activeTierFilter}`);
+  }
+  if (statusFilter !== "all") {
+    activeFilterParts.push(`status “${statusFilter}”`);
+  }
+
   const { flattenedItems } = useCanvasVirtualization({
     ALL_UNITS,
     showWelcome,
@@ -204,26 +271,35 @@ export const MainCanvas = memo(function MainCanvas({
     getScrollElement: () => scrollRef.current,
     getItemKey: (index) => flattenedItems[index]?.id ?? index,
     rangeExtractor: (range) => {
-        const r = defaultRangeExtractor(range);
-        if (draggedRowIndex !== null && !r.includes(draggedRowIndex)) {
-          r.push(draggedRowIndex);
-        }
-        return r;
-      },
-      estimateSize: (index) => {
+      const r = defaultRangeExtractor(range);
+      if (draggedRowIndex !== null && !r.includes(draggedRowIndex)) {
+        r.push(draggedRowIndex);
+      }
+      return r;
+    },
+    estimateSize: (index) => {
       const item = flattenedItems[index];
-      // Note: We use approximate heights. The measureElement ref handles exact sizing later.
       switch (item.type) {
-        case "space-top": return 20;
-        case "welcome": return 150;
-        case "search-stats": return 48;
-        case "no-results": return 250;
-        case "tier-banner": return 90;
-        case "sub-header": return 60;
-        case "grid-row": return 300; 
-        case "list-row": return viewMode === "compact" ? 40 : 70;
-        case "space-bottom": return 120;
-        default: return 50;
+        case "space-top":
+          return 20;
+        case "welcome":
+          return 150;
+        case "search-stats":
+          return 48;
+        case "no-results":
+          return 250;
+        case "tier-banner":
+          return 90;
+        case "sub-header":
+          return 60;
+        case "grid-row":
+          return 300;
+        case "list-row":
+          return viewMode === "compact" ? 40 : 70;
+        case "space-bottom":
+          return 120;
+        default:
+          return 50;
       }
     },
     overscan: 2,
@@ -231,35 +307,31 @@ export const MainCanvas = memo(function MainCanvas({
 
   useEffect(() => {
     if (!scrollToSection || flattenedItems.length === 0) return;
-    
-    // Defer slightly to ensure virtualizer layout is updated after filter change
+
     setTimeout(() => {
-      let targetId = scrollToSection.sectionId
+      const targetId = scrollToSection.sectionId
         ? `sub-${scrollToSection.tier}-${scrollToSection.sectionId}`
         : `banner-${scrollToSection.tier}`;
-        
+
       let index = flattenedItems.findIndex((item) => item.id === targetId);
-      
+
       if (index === -1) {
-        index = flattenedItems.findIndex((item) => item.id === `banner-${scrollToSection.tier}`);
+        index = flattenedItems.findIndex(
+          (item) => item.id === `banner-${scrollToSection.tier}`
+        );
       }
-      
+
       if (index !== -1) {
-        virtualizer.scrollToIndex(index, { align: "start", behavior: "smooth" });
+        virtualizer.scrollToIndex(index, {
+          align: "start",
+          behavior: "smooth",
+        });
       }
     }, 50);
   }, [scrollToSection, flattenedItems, virtualizer]);
 
-  const dismissWelcome = () => {
-    setShowWelcome(false);
-    try {
-      localStorage.setItem("astd_welcome_dismissed", "true");
-    } catch (e) {}
-  };
-
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-transparent relative z-10">
-      
       <div
         ref={headerRef}
         className="flex flex-col absolute top-0 left-0 right-0 w-full transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] z-30 shadow-sm translate-y-0 bg-card"
@@ -283,14 +355,16 @@ export const MainCanvas = memo(function MainCanvas({
           }}
         />
 
-        {(viewMode === "list" || viewMode === "compact") && !isLoading && (
+        {(viewMode === "list" || viewMode === "compact") && !showSkeleton && (
           <div className="w-full border-b border-border bg-popover px-[var(--panel-p)] py-2">
-             <ListHeaderRow sortMode={sortMode} setSortMode={setSortMode} viewMode={viewMode} />
+            <ListHeaderRow
+              sortMode={sortMode}
+              setSortMode={setSortMode}
+              viewMode={viewMode}
+            />
           </div>
         )}
       </div>
-
-      {/* Select Mode Toolbar... omitted for brevity */}
 
       <div
         id="main-scroll-container"
@@ -302,15 +376,20 @@ export const MainCanvas = memo(function MainCanvas({
           touchAction: "pan-y",
         }}
       >
-        {isLoading ? (
+        {showSkeleton ? (
           <div className="pt-[var(--gap-lg)]">
             <div className="relative z-20 mb-6 shadow-sm">
-              <TierBanner tier={TIER_CONFIG[activeTierFilter] ?? TIER_CONFIG["S"]} />
+              <TierBanner
+                tier={TIER_CONFIG[activeTierFilter] ?? TIER_CONFIG["S"]}
+              />
             </div>
             <CanvasSkeleton viewMode={viewMode} />
           </div>
         ) : (
-          <div className="relative" style={{ height: virtualizer.getTotalSize(), width: "100%" }}>
+          <div
+            className="relative"
+            style={{ height: virtualizer.getTotalSize(), width: "100%" }}
+          >
             {virtualizer.getVirtualItems().map((virtualRow) => {
               const item = flattenedItems[virtualRow.index];
 
@@ -323,12 +402,27 @@ export const MainCanvas = memo(function MainCanvas({
                   style={{ transform: `translateY(${virtualRow.start}px)` }}
                 >
                   {item.type === "space-top" && <div className="h-[20px]" />}
-                  {item.type === "space-bottom" && <div className="h-[120px]" />}
-                  {item.type === "welcome" && null /* Render welcome if needed */}
+                  {item.type === "space-bottom" && (
+                    <div className="h-[120px]" />
+                  )}
+                  {item.type === "welcome" && null}
                   {item.type === "search-stats" && null}
                   {item.type === "no-results" && (
-                    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                      No units found matching your search.
+                    <div className="py-10">
+                      <EmptyState
+                        title="No Matching Units"
+                        description={
+                          activeFilterParts.length > 0
+                            ? `No units match your active filters (${activeFilterParts.join(
+                                ", "
+                              )}).`
+                            : "No units match your current filter selection."
+                        }
+                        action={{
+                          label: "Clear Filters",
+                          onClick: handleResetFilters,
+                        }}
+                      />
                     </div>
                   )}
 
@@ -339,7 +433,7 @@ export const MainCanvas = memo(function MainCanvas({
                   )}
 
                   {item.type === "sub-header" && (
-                    <div className="pt-2 pb-2 sticky top-0 bg-background/95 backdrop-blur z-10 border-b border-border/50 -mx-[var(--page-p)] px-[var(--page-p)]">
+                    <div className="pt-2 pb-2 sticky top-0 bg-background z-10 border-b border-border/50 -mx-[var(--page-p)] px-[var(--page-p)]">
                       <TierSubHeader
                         label={item.label}
                         valueRange={item.range}
@@ -349,46 +443,37 @@ export const MainCanvas = memo(function MainCanvas({
                   )}
 
                   {item.type === "grid-row" && (
-                    <motion.div 
-                      className={`w-full ${item.isLast ? "pb-[var(--gap-lg)]" : "pb-[var(--gap-md)]"}`}
-                      initial={{ opacity: 0, y: 15 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, margin: "50px" }}
-                      style={{ willChange: "transform, opacity" }}
+                    <div
+                      className={`w-full ${
+                        item.isLast
+                          ? "pb-[var(--gap-lg)]"
+                          : "pb-[var(--gap-md)]"
+                      }`}
                     >
-                       <div 
-                         className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-[var(--gap-md)] w-full"
-                         
-                       >
-                         {item.units.map((u, i) => (
-                           <TierGridCard
-                             key={u.id}
-                             unit={u}
-                             searchQuery={item.searchQuery}
-                             isSelectMode={isSelectMode}
-                             isSelected={selectedUnitIds.has(u.id)}
-                             onToggleSelect={toggleSelectUnit}
-                           />
-                         ))}
-                       </div>
-                    </motion.div>
+                      <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-[var(--gap-md)] w-full">
+                        {item.units.map((u) => (
+                          <TierGridCard
+                            key={u.id}
+                            unit={u}
+                            searchQuery={item.searchQuery}
+                            isSelectMode={isSelectMode}
+                            isSelected={selectedUnitIds.has(u.id)}
+                            onToggleSelect={toggleSelectUnit}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   )}
 
                   {item.type === "list-row" && (
-                    <motion.div 
-                      className="py-[1px]"
-                      initial={{ opacity: 0, y: 15 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, margin: "50px" }}
-                      style={{ willChange: "transform, opacity" }}
-                    >
+                    <div className="py-[1px]">
                       <UnitListRow
                         unit={item.unit}
                         isLast={item.isLast}
                         searchQuery={item.searchQuery}
                         viewMode={viewMode}
                       />
-                    </motion.div>
+                    </div>
                   )}
                 </div>
               );
@@ -398,23 +483,30 @@ export const MainCanvas = memo(function MainCanvas({
       </div>
 
       {isSelectMode && selectedUnitIds.size > 0 && (
-          <BulkSelectionDock
-            selectedCount={selectedUnitIds.size}
-            onClearSelection={() => {
-              setIsSelectMode(false);
-              setSelectedUnitIds(new Set());
-            }}
-            onSendToGive={() => handleBulkAddToTrade("give")}
-            onSendToGet={() => handleBulkAddToTrade("get")}
-          />
-        )}
+        <BulkSelectionDock
+          selectedCount={selectedUnitIds.size}
+          onClearSelection={() => {
+            setIsSelectMode(false);
+            setSelectedUnitIds(new Set());
+          }}
+          onSendToGive={() => handleBulkAddToTrade("give")}
+          onSendToGet={() => handleBulkAddToTrade("get")}
+        />
+      )}
 
-      <button ref={scrollTopBtnRef} onClick={scrollToTop} className="absolute bottom-[90px] right-6 md:bottom-8 md:right-8 w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ease-out hover:bg-primary/80 hover:-translate-y-1 z-50 opacity-0 translate-y-8 pointer-events-none cursor-pointer focus-visible:outline-none">
+      <button
+        ref={scrollTopBtnRef}
+        type="button"
+        aria-label="Scroll to top"
+        onClick={scrollToTop}
+        className="absolute bottom-[90px] right-6 md:bottom-8 md:right-8 w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-lg transition-[transform,opacity] duration-300 ease-out hover:bg-primary/80 hover:-translate-y-1 z-50 opacity-0 translate-y-8 pointer-events-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
         <ArrowUp className="w-5 h-5" />
       </button>
     </div>
   );
 });
+
 
 
 
