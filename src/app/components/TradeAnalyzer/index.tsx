@@ -97,6 +97,25 @@ export function TradeAnalyzerPanel({
   const [renameError, setRenameError] = useState<string | null>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
 
+  const [isGuestHintDismissed, setIsGuestHintDismissed] = useState<boolean>(
+    () => {
+      try {
+        return sessionStorage.getItem("astd_dismiss_analyzer_guest_hint") === "1";
+      } catch {
+        return false;
+      }
+    }
+  );
+
+  const handleDismissGuestHint = useCallback(() => {
+    setIsGuestHintDismissed(true);
+    try {
+      sessionStorage.setItem("astd_dismiss_analyzer_guest_hint", "1");
+    } catch {
+      // Ignore storage errors in restricted environments
+    }
+  }, []);
+
   const { panelWidth, startResize, panelRef } = usePanelResize(360, 320, 600);
   const {
     undoCache,
@@ -312,12 +331,15 @@ export function TradeAnalyzerPanel({
       give: [...preset.give],
       get: [...preset.get],
     };
+    let didRestore = false;
     deletePreset(preset.id);
     addToast(`Deleted loadout “${preset.name}”.`, "info", {
       dedupeKey: `delete-preset-${preset.id}`,
       action: {
         label: "Undo",
         onClick: () => {
+          if (didRestore) return;
+          didRestore = true;
           restorePreset(snapshot, index);
           addToast(`Restored loadout “${snapshot.name}”.`, "info");
         },
@@ -587,16 +609,27 @@ export function TradeAnalyzerPanel({
         )}
       </div>
 
-      {!profile && (
+      {!profile && !isGuestHintDismissed && (
         <div className="px-2 @[28rem]/analyzer:px-3 py-1.5 bg-popover/60 border-b border-border flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
           <span>Sign in with Discord to post trades to the public feed.</span>
-          <button
-            type="button"
-            onClick={() => void loginWithDiscord()}
-            className="font-bold text-primary hover:underline shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[3px] px-1 cursor-pointer"
-          >
-            Sign In
-          </button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => void loginWithDiscord()}
+              className="font-bold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[3px] px-1.5 py-0.5 cursor-pointer"
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={handleDismissGuestHint}
+              aria-label="Dismiss sign-in hint for this session"
+              title="Dismiss for this session"
+              className="w-6 h-6 flex items-center justify-center rounded-[3px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
 

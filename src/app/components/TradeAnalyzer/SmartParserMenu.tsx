@@ -15,6 +15,7 @@ import {
   parseSmartTradeAsync,
   AmbiguousToken,
   getSlangCache,
+  restoreSlangCache,
   removeSlang,
   learnSlang,
 } from "./smartParser";
@@ -26,7 +27,7 @@ import { getProxyImage, handleImageError } from "../../../data";
 import { triggerHaptic } from "../../../data/helpers";
 import { InlineHint } from "../ui/InlineHint";
 
-const MAX_SMART_INPUT_LENGTH = 500;
+const MAX_SMART_INPUT_LENGTH = 5000;
 const MAX_SLANG_KEY_LENGTH = 24;
 
 function formatParserErrorWithNextStep(rawError: string): string {
@@ -142,7 +143,7 @@ export function SmartParserMenu({
       }
 
       if (trimmed.length > MAX_SMART_INPUT_LENGTH) {
-        const msg = `Input is too large (${trimmed.length}/${MAX_SMART_INPUT_LENGTH}\u00A0characters). Try fewer lines or split the trade into two imports.`;
+        const msg = `Input too large (${trimmed.length.toLocaleString()}/${MAX_SMART_INPUT_LENGTH.toLocaleString()}\u00A0characters, max 5,000). Paste a smaller trade block or split the trade into two imports.`;
         setSmartInputError(msg);
         setParseAnnouncement(msg);
         smartInputRef.current?.focus();
@@ -395,15 +396,8 @@ export function SmartParserMenu({
       action: {
         label: "Undo",
         onClick: () => {
-          try {
-            localStorage.setItem(
-              "astd_slang_cache",
-              JSON.stringify(prevSnapshot)
-            );
-          } catch (err) {
-            console.error("Failed to restore slang cache", err);
-          }
-          setSlangDict(getSlangCache());
+          const restored = restoreSlangCache(prevSnapshot);
+          setSlangDict(restored);
           addToast(`Restored slang “${key}” → ${targetName}.`, "info");
         },
       },

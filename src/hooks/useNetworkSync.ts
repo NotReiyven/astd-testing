@@ -353,7 +353,7 @@ export async function syncAllQueues(): Promise<void> {
           .from("user_wishlist")
           .upsert(
             { user_id: op.userId, unit_id: op.unitId },
-            { onConflict: "user_id, unit_id" }
+            { onConflict: "user_id,unit_id" }
           );
         throwIfError(res);
       } else if (op.action === "REMOVE") {
@@ -378,7 +378,7 @@ export async function syncAllQueues(): Promise<void> {
               quantity: op.quantity,
               is_pinned: false,
             },
-            { onConflict: "user_id, unit_id" }
+            { onConflict: "user_id,unit_id" }
           );
         throwIfError(res);
       } else if (op.action === "REMOVE") {
@@ -390,9 +390,13 @@ export async function syncAllQueues(): Promise<void> {
         throwIfError(res);
       } else if (op.action === "RESTORE") {
         if (op.item?.user_id === currentUserId) {
-          const res = await supabase
-            .from("user_inventory")
-            .upsert(op.item, { onConflict: "user_id, unit_id" });
+          const res = await supabase.from("user_inventory").insert(op.item);
+          const errCode = String(res.error?.code || "");
+          if (errCode === "23505" || res.status === 409) {
+            // Row already exists on server (already restored or updated with newer state);
+            // treat as success and drop silently without overwriting newer server data.
+            return;
+          }
           throwIfError(res);
         }
       } else if (op.action === "TOGGLE_PIN") {

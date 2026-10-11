@@ -165,41 +165,58 @@ const buildLexicon = (ALL_UNITS: MasterUnit[]) => {
   cachedUnits = ALL_UNITS;
 };
 
-export const learnSlang = (rawName: string, unitId: string) => {
-  try {
-    const cache = JSON.parse(localStorage.getItem("astd_slang_cache") || "{}");
-    const cleanRaw = rawName
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .trim();
-    if (!cleanRaw) return;
-    cache[cleanRaw] = unitId;
-    localStorage.setItem("astd_slang_cache", JSON.stringify(cache));
-  } catch (e) {
-    console.error("Failed to save slang", e);
-  }
-};
+let inMemorySlangCache: Record<string, string> | null = null;
 
-export const removeSlang = (rawName: string) => {
+const readPersistedSlangCache = (): Record<string, string> => {
   try {
-    const cache = JSON.parse(localStorage.getItem("astd_slang_cache") || "{}");
-    const cleanRaw = rawName
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .trim();
-    delete cache[cleanRaw];
-    localStorage.setItem("astd_slang_cache", JSON.stringify(cache));
-  } catch (e) {
-    console.error("Failed to remove slang", e);
+    const parsed = JSON.parse(localStorage.getItem("astd_slang_cache") || "{}");
+    if (parsed && typeof parsed === "object") {
+      return { ...(parsed as Record<string, string>) };
+    }
+  } catch {
+    // Fallback to in-memory cache if localStorage is unavailable
   }
+  return inMemorySlangCache ? { ...inMemorySlangCache } : {};
 };
 
 export const getSlangCache = (): Record<string, string> => {
+  const persisted = readPersistedSlangCache();
+  inMemorySlangCache = persisted;
+  return { ...persisted };
+};
+
+export const restoreSlangCache = (
+  snapshot: Record<string, string>
+): Record<string, string> => {
+  const next = { ...snapshot };
+  inMemorySlangCache = next;
   try {
-    return JSON.parse(localStorage.getItem("astd_slang_cache") || "{}");
-  } catch {
-    return {};
+    localStorage.setItem("astd_slang_cache", JSON.stringify(next));
+  } catch (e) {
+    console.error("Failed to restore slang cache", e);
   }
+  return { ...next };
+};
+
+export const learnSlang = (rawName: string, unitId: string) => {
+  const cleanRaw = rawName
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim();
+  if (!cleanRaw) return;
+  const cache = getSlangCache();
+  cache[cleanRaw] = unitId;
+  restoreSlangCache(cache);
+};
+
+export const removeSlang = (rawName: string) => {
+  const cleanRaw = rawName
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim();
+  const cache = getSlangCache();
+  delete cache[cleanRaw];
+  restoreSlangCache(cache);
 };
 
 const executeNERPipeline = (
@@ -593,6 +610,16 @@ export const parseSmartTrade = (
       getCards: [],
       ambiguous: [],
       error: "Input is empty.",
+    };
+  }
+
+  if (smartInput.length > 5000) {
+    return {
+      giveCards: [],
+      getCards: [],
+      ambiguous: [],
+      error:
+        "Input too large (max 5000 characters). Please paste a smaller trade block to prevent browser lockup.",
     };
   }
 

@@ -205,7 +205,8 @@ export const useTradeStore = create<TradeState>()(
             return {};
           }
           const next = [...state.presets];
-          const clampedIdx = Math.max(0, Math.min(index, next.length));
+          const rawIdx = Number.isFinite(index) ? Math.trunc(index) : 0;
+          const clampedIdx = Math.max(0, Math.min(rawIdx, next.length));
           next.splice(clampedIdx, 0, preset);
           return { presets: next };
         }),

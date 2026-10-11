@@ -424,7 +424,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
 
         const { error } = await supabase
           .from("user_wishlist")
-          .upsert(newItem, { onConflict: "user_id, unit_id" });
+          .upsert(newItem, { onConflict: "user_id,unit_id" });
         if (error) throw error;
       }
     } catch (error) {
