@@ -93,6 +93,8 @@ const containsPhishingOrLink = (text: string) => {
 };
 
 let activeInteractionChannel: RealtimeChannel | null = null;
+const inFlightAdVotes = new Set<string>();
+const inFlightCommentVotes = new Set<string>();
 
 const createWarningNotification = (
   message: string,
@@ -498,8 +500,16 @@ export const useAdInteractionStore =
         useToastStore
           .getState()
           .addToast(
-            "Failed to delete comment. Please try again.",
-            "error"
+            "Could not delete comment—try again.",
+            "error",
+            {
+              action: {
+                label: "Retry",
+                onClick: () => {
+                  void get().deleteComment(commentId);
+                },
+              },
+            }
           );
 
         createWarningNotification(
@@ -522,6 +532,9 @@ export const useAdInteractionStore =
       value,
       adOwnerId
     ) => {
+      if (inFlightAdVotes.has(adId)) return;
+      inFlightAdVotes.add(adId);
+
       const previousVotes =
         get().adVotes;
 
@@ -564,14 +577,53 @@ export const useAdInteractionStore =
         },
       });
 
-      if (isRemoving) {
+      try {
+        if (isRemoving) {
+          const { error } =
+            await supabase
+              .from("ad_votes")
+              .delete()
+              .match({
+                ad_id: adId,
+                user_id: userId,
+              });
+
+          if (error) {
+            set({
+              adVotes: previousVotes,
+            });
+
+            useToastStore
+              .getState()
+              .addToast(
+                "Could not remove your vote—try again.",
+                "error",
+                {
+                  action: {
+                    label: "Retry",
+                    onClick: () => {
+                      void get().voteAd(adId, userId, value, adOwnerId);
+                    },
+                  },
+                }
+              );
+
+            createWarningNotification(
+              "Failed to remove your vote. Please try again.",
+              userId
+            );
+          }
+
+          return;
+        }
+
         const { error } =
           await supabase
             .from("ad_votes")
-            .delete()
-            .match({
+            .upsert({
               ad_id: adId,
               user_id: userId,
+              vote_value: newValue,
             });
 
         if (error) {
@@ -582,61 +634,42 @@ export const useAdInteractionStore =
           useToastStore
             .getState()
             .addToast(
-              "Failed to remove your vote. Please try again.",
-              "error"
+              "Could not save your vote—try again.",
+              "error",
+              {
+                action: {
+                  label: "Retry",
+                  onClick: () => {
+                    void get().voteAd(adId, userId, value, adOwnerId);
+                  },
+                },
+              }
             );
 
           createWarningNotification(
-            "Failed to remove your vote. Please try again.",
+            "Failed to save your vote. Please try again.",
             userId
           );
+
+          return;
         }
 
-        return;
-      }
-
-      const { error } =
-        await supabase
-          .from("ad_votes")
-          .upsert({
-            ad_id: adId,
-            user_id: userId,
-            vote_value: newValue,
-          });
-
-      if (error) {
-        set({
-          adVotes: previousVotes,
-        });
-
-        useToastStore
-          .getState()
-          .addToast(
-            "Failed to save your vote. Please try again.",
-            "error"
-          );
-
-        createWarningNotification(
-          "Failed to save your vote. Please try again.",
-          userId
-        );
-
-        return;
-      }
-
-      if (
-        newValue === 1 &&
-        adOwnerId &&
-        adOwnerId !== userId
-      ) {
-        void useNotificationStore
-          .getState()
-          .createNotification({
-            user_id: adOwnerId,
-            actor_id: userId,
-            ad_id: adId,
-            type: "upvote",
-          });
+        if (
+          newValue === 1 &&
+          adOwnerId &&
+          adOwnerId !== userId
+        ) {
+          void useNotificationStore
+            .getState()
+            .createNotification({
+              user_id: adOwnerId,
+              actor_id: userId,
+              ad_id: adId,
+              type: "upvote",
+            });
+        }
+      } finally {
+        inFlightAdVotes.delete(adId);
       }
     },
 
@@ -645,6 +678,9 @@ export const useAdInteractionStore =
       userId,
       value
     ) => {
+      if (inFlightCommentVotes.has(commentId)) return;
+      inFlightCommentVotes.add(commentId);
+
       const { commentVotes } =
         get();
 
@@ -697,14 +733,56 @@ export const useAdInteractionStore =
         },
       });
 
-      if (isRemoving) {
+      try {
+        if (isRemoving) {
+          const { error } =
+            await supabase
+              .from("comment_votes")
+              .delete()
+              .match({
+                comment_id: commentId,
+                user_id: userId,
+              });
+
+          if (error) {
+            set({
+              commentVotes: {
+                ...get().commentVotes,
+                [commentId]: previousData,
+              },
+            });
+
+            useToastStore
+              .getState()
+              .addToast(
+                "Could not remove your vote—try again.",
+                "error",
+                {
+                  action: {
+                    label: "Retry",
+                    onClick: () => {
+                      void get().voteComment(commentId, userId, value);
+                    },
+                  },
+                }
+              );
+
+            createWarningNotification(
+              "Failed to remove your comment vote. Please try again.",
+              userId
+            );
+          }
+
+          return;
+        }
+
         const { error } =
           await supabase
             .from("comment_votes")
-            .delete()
-            .match({
+            .upsert({
               comment_id: commentId,
               user_id: userId,
+              vote_value: newValue,
             });
 
         if (error) {
@@ -718,74 +796,52 @@ export const useAdInteractionStore =
           useToastStore
             .getState()
             .addToast(
-              "Failed to remove your vote. Please try again.",
-              "error"
+              "Could not save your vote—try again.",
+              "error",
+              {
+                action: {
+                  label: "Retry",
+                  onClick: () => {
+                    void get().voteComment(commentId, userId, value);
+                  },
+                },
+              }
             );
 
           createWarningNotification(
-            "Failed to remove your comment vote. Please try again.",
+            "Failed to save your comment vote. Please try again.",
             userId
           );
+
+          return;
         }
 
-        return;
-      }
+        if (newValue === 1) {
+          const targetComment =
+            get().comments.find(
+              (comment) =>
+                comment.id === commentId
+            );
 
-      const { error } =
-        await supabase
-          .from("comment_votes")
-          .upsert({
-            comment_id: commentId,
-            user_id: userId,
-            vote_value: newValue,
-          });
-
-      if (error) {
-        set({
-          commentVotes: {
-            ...get().commentVotes,
-            [commentId]: previousData,
-          },
-        });
-
-        useToastStore
-          .getState()
-          .addToast(
-            "Failed to save your vote. Please try again.",
-            "error"
-          );
-
-        createWarningNotification(
-          "Failed to save your comment vote. Please try again.",
-          userId
-        );
-
-        return;
-      }
-
-      if (newValue === 1) {
-        const targetComment =
-          get().comments.find(
-            (comment) =>
-              comment.id === commentId
-          );
-
-        if (
-          targetComment &&
-          targetComment.user_id !== userId
-        ) {
-          void useNotificationStore
-            .getState()
-            .createNotification({
-              user_id:
-                targetComment.user_id,
-              actor_id: userId,
-              ad_id:
-                targetComment.ad_id,
-              comment_id: commentId,
-              type: "upvote",
-            });
+          if (
+            targetComment &&
+            targetComment.user_id !== userId
+          ) {
+            void useNotificationStore
+              .getState()
+              .createNotification({
+                user_id:
+                  targetComment.user_id,
+                actor_id: userId,
+                ad_id:
+                  targetComment.ad_id,
+                comment_id: commentId,
+                type: "upvote",
+              });
+          }
         }
+      } finally {
+        inFlightCommentVotes.delete(commentId);
       }
     },
   }));

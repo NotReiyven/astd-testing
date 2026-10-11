@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useInventoryStore, InventoryItem } from "../store/useInventoryStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { useTradeStore } from "../store/useTradeStore";
@@ -10,30 +10,31 @@ import {
 } from "../app/components/InventoryChannel/inventoryUtils";
 import { parseSmartTradeAsync } from "../app/components/TradeAnalyzer/smartParser";
 import { useStickyState } from "./useStickyState";
-import { triggerHaptic } from "../data/helpers";
+import { triggerHaptic, copyTextWithFallback } from "../data/helpers";
 import { useToastStore } from "../store/useToastStore";
 
 export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
-  const {
-    items: myItems,
-    wishlistItems: myWishlist,
-    viewedItems,
-    viewedWishlist,
-    addOrUpdateUnit,
-    removeUnit,
-    togglePin,
-    restoreItem,
-    clearInventory,
-    clearUnpinned,
-    toggleWishlist,
-    viewingUserId,
-    viewingUsername,
-    returnChannel,
-    setViewingUser,
-  } = useInventoryStore();
+  const myItems = useInventoryStore((s) => s.items);
+  const myWishlist = useInventoryStore((s) => s.wishlistItems);
+  const viewedItems = useInventoryStore((s) => s.viewedItems);
+  const viewedWishlist = useInventoryStore((s) => s.viewedWishlist);
+  const addOrUpdateUnit = useInventoryStore((s) => s.addOrUpdateUnit);
+  const removeUnit = useInventoryStore((s) => s.removeUnit);
+  const togglePin = useInventoryStore((s) => s.togglePin);
+  const restoreItem = useInventoryStore((s) => s.restoreItem);
+  const clearInventory = useInventoryStore((s) => s.clearInventory);
+  const clearUnpinned = useInventoryStore((s) => s.clearUnpinned);
+  const toggleWishlist = useInventoryStore((s) => s.toggleWishlist);
+  const viewingUserId = useInventoryStore((s) => s.viewingUserId);
+  const viewingUsername = useInventoryStore((s) => s.viewingUsername);
+  const returnChannel = useInventoryStore((s) => s.returnChannel);
+  const setViewingUser = useInventoryStore((s) => s.setViewingUser);
 
-  const { addCard, overwrite, setComposerOpen } = useTradeStore();
-  const { profile } = useAuthStore();
+  const addCard = useTradeStore((s) => s.addCard);
+  const overwrite = useTradeStore((s) => s.overwrite);
+  const setComposerOpen = useTradeStore((s) => s.setComposerOpen);
+  const profile = useAuthStore((s) => s.profile);
+  const addToast = useToastStore((s) => s.addToast);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTierFilter, setActiveTierFilter] = useState<
@@ -68,27 +69,10 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     null
   );
 
-  const [toast, setToast] = useState<{
-    id: number;
-    message: string;
-    isError: boolean;
-    itemToRestore?: InventoryItem;
-  } | null>(null);
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   // Performance: O(1) Cache Map
   const unitMap = useMemo(
     () => new Map(ALL_UNITS.map((u) => [u.id, u])),
     [ALL_UNITS]
-  );
-
-  const showToast = useCallback(
-    (message: string, isError = false, itemToRestore?: InventoryItem) => {
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-      setToast({ id: Date.now(), message, isError, itemToRestore });
-      toastTimerRef.current = setTimeout(() => setToast(null), 4000);
-    },
-    []
   );
 
   useEffect(() => {
@@ -120,22 +104,15 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     setSearchQuery("");
   };
 
-  const handleUndo = useCallback(async () => {
-    if (toast?.itemToRestore && profile && !isReadOnly) {
-      try {
-        await restoreItem(toast.itemToRestore);
-        triggerHaptic("light");
-        setToast(null);
-      } catch (e) {
-        showToast("Failed to restore unit.", true);
-      }
-    }
-  }, [toast, profile, restoreItem, showToast, isReadOnly]);
-
   const handleQtyChange = useCallback(
     async (unitId: string, delta: number) => {
       if (!profile || delta === 0 || isReadOnly || vaultView === "wishlist")
         return;
+      const existingItem = myItems.find((i) => i.unit_id === unitId);
+      const unitMaster = unitMap.get(unitId);
+      const unitName = unitMaster?.name || unitId;
+      const prevSnapshot = existingItem ? { ...existingItem } : null;
+
       try {
         await addOrUpdateUnit(profile.id, unitId, delta);
         triggerHaptic("light");
@@ -145,16 +122,49 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
           if (updatedQty <= 0) return null;
           return { ...prev, item: { ...prev.item, quantity: updatedQty } };
         });
+
+        if (prevSnapshot && prevSnapshot.quantity + delta <= 0) {
+          addToast(`Removed ${unitName} from Vault.`, "info", {
+            action: {
+              label: "Undo",
+              onClick: () => {
+                restoreItem(prevSnapshot);
+                addToast(`Restored ${unitName} to Vault.`, "success");
+              },
+            },
+          });
+        }
       } catch (e) {
-        showToast("Failed to update quantity.", true);
+        addToast(
+          `Could not update quantity for ${unitName}—check your connection and try again.`,
+          "error",
+          {
+            action: {
+              label: "Retry",
+              onClick: () => {
+                void handleQtyChange(unitId, delta);
+              },
+            },
+          }
+        );
       }
     },
-    [profile, addOrUpdateUnit, showToast, isReadOnly, vaultView]
+    [
+      profile,
+      addOrUpdateUnit,
+      restoreItem,
+      addToast,
+      isReadOnly,
+      vaultView,
+      myItems,
+      unitMap,
+    ]
   );
 
   const handleTogglePin = useCallback(
     async (unitId: string, status: boolean) => {
       if (!profile || isReadOnly) return;
+      const unitName = unitMap.get(unitId)?.name || unitId;
       try {
         await togglePin(profile.id, unitId, status);
         triggerHaptic("light");
@@ -164,33 +174,78 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
             : prev
         );
       } catch (e) {
-        showToast("Failed to pin unit.", true);
+        addToast(
+          `Could not ${status ? "unlock" : "lock"} ${unitName}—try again.`,
+          "error",
+          {
+            action: {
+              label: "Retry",
+              onClick: () => {
+                void handleTogglePin(unitId, status);
+              },
+            },
+          }
+        );
       }
     },
-    [profile, togglePin, showToast, isReadOnly]
+    [profile, togglePin, addToast, isReadOnly, unitMap]
   );
 
   const handleRemove = useCallback(
     async (item: InventoryItem, master: MasterUnit) => {
       if (!profile || isReadOnly) return;
+      const itemSnapshot = { ...item };
+      const isWishlistView = vaultView === "wishlist";
       try {
-        if (vaultView === "wishlist") {
+        if (isWishlistView) {
           await toggleWishlist(profile.id, item.unit_id);
         } else {
           await removeUnit(profile.id, item.unit_id);
         }
         triggerHaptic("light");
         setInspectTarget(null);
-        showToast(
-          `Removed ${master.name}`,
-          false,
-          vaultView === "wishlist" ? undefined : item
+        addToast(
+          `Removed ${master.name} from ${isWishlistView ? "Wishlist" : "Vault"}.`,
+          "info",
+          {
+            action: {
+              label: "Undo",
+              onClick: () => {
+                if (isWishlistView) {
+                  void toggleWishlist(profile.id, itemSnapshot.unit_id);
+                  addToast(`Restored ${master.name} to Wishlist.`, "success");
+                } else {
+                  void restoreItem(itemSnapshot);
+                  addToast(`Restored ${master.name} to Vault.`, "success");
+                }
+              },
+            },
+          }
         );
       } catch (e) {
-        showToast("Failed to remove unit.", true);
+        addToast(
+          `Could not remove ${master.name}—check your connection and try again.`,
+          "error",
+          {
+            action: {
+              label: "Retry",
+              onClick: () => {
+                void handleRemove(item, master);
+              },
+            },
+          }
+        );
       }
     },
-    [profile, removeUnit, toggleWishlist, showToast, isReadOnly, vaultView]
+    [
+      profile,
+      removeUnit,
+      toggleWishlist,
+      restoreItem,
+      addToast,
+      isReadOnly,
+      vaultView,
+    ]
   );
 
   const activeItems = useMemo(() => {
@@ -406,24 +461,38 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
 
   const handleClearAction = useCallback(async () => {
     if (!profile || !confirmClear || isReadOnly) return;
+    const mode = confirmClear;
     try {
-      if (confirmClear === "unpinned") await clearUnpinned(profile.id);
-      if (confirmClear === "all") await clearInventory(profile.id);
+      if (mode === "unpinned") await clearUnpinned(profile.id);
+      if (mode === "all") await clearInventory(profile.id);
       triggerHaptic("heavy");
       setConfirmClear(null);
+      addToast(
+        mode === "unpinned"
+          ? "Cleared all unlocked units from Vault."
+          : "Cleared entire Vault.",
+        "info"
+      );
     } catch (e) {
-      showToast("Failed to clear inventory.", true);
+      addToast("Could not clear inventory—try again.", "error", {
+        action: {
+          label: "Retry",
+          onClick: () => {
+            void handleClearAction();
+          },
+        },
+      });
     }
   }, [
     profile,
     confirmClear,
     clearUnpinned,
     clearInventory,
-    showToast,
+    addToast,
     isReadOnly,
   ]);
 
-  const handleCopyVault = useCallback(() => {
+  const handleCopyVault = useCallback(async () => {
     triggerHaptic("light");
     const header =
       isReadOnly && viewingUsername
@@ -441,15 +510,21 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
           (i) => `- ${i.quantity > 1 ? `${i.quantity}x ` : ""}${i.master.name}`
         )
         .join("\n");
-    navigator.clipboard.writeText(text);
-    useToastStore
-      .getState()
-      .addToast(
+
+    const ok = await copyTextWithFallback(text);
+    if (ok) {
+      addToast(
         `${
           vaultView === "wishlist" ? "Wishlist" : "Vault"
         } summary copied to clipboard!`,
         "success"
       );
+    } else {
+      addToast(
+        "Could not copy summary automatically—press Ctrl+C to copy manually.",
+        "error"
+      );
+    }
   }, [
     displayInventory,
     metrics.estimatedValue,
@@ -458,6 +533,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     isReadOnly,
     viewingUsername,
     vaultView,
+    addToast,
   ]);
 
   const handleSendToAnalyzer = (
@@ -465,8 +541,10 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     targetMaster?: MasterUnit
   ) => {
     triggerHaptic("medium");
+    const sideLabel = type === "give" ? "You Give" : "You Get";
+
     if (isSelectMode && selectedUnits.size > 0) {
-      let count = 0;
+      const addedDeltas: { id: string; qty: number }[] = [];
       selectedUnits.forEach((itemId) => {
         const invItem = displayInventory.find((i) => i.id === itemId);
         if (invItem && !invItem.is_pinned) {
@@ -478,17 +556,52 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
             value: numVal,
             qty: invItem.quantity,
           });
-          count++;
+          addedDeltas.push({ id: invItem.master.id, qty: invItem.quantity });
         }
       });
-      useToastStore
-        .getState()
-        .addToast(
-          `Added ${count} units to You ${type === "give" ? "Give" : "Get"}`
+
+      if (addedDeltas.length > 0) {
+        addToast(
+          `Added ${addedDeltas.length} ${
+            addedDeltas.length === 1 ? "unit" : "units"
+          } to ${sideLabel}`,
+          "success",
+          {
+            action: {
+              label: "Undo",
+              onClick: () => {
+                const currentStore = useTradeStore.getState();
+                const currentList =
+                  type === "give"
+                    ? currentStore.giveItems
+                    : currentStore.getItems;
+                for (const delta of addedDeltas) {
+                  const currentCard = currentList.find(
+                    (c) => c.id === delta.id
+                  );
+                  if (!currentCard) continue;
+                  const nextQty = currentCard.qty - delta.qty;
+                  if (nextQty <= 0) {
+                    currentStore.removeCard(type, delta.id);
+                  } else {
+                    currentStore.changeQty(type, delta.id, nextQty);
+                  }
+                }
+                addToast(
+                  `Removed ${addedDeltas.length} ${
+                    addedDeltas.length === 1 ? "unit" : "units"
+                  } from ${sideLabel}.`,
+                  "info"
+                );
+              },
+            },
+          }
         );
+      }
+
       setSelectedUnits(new Set());
       setIsSelectMode(false);
-      window.dispatchEvent(new Event('open-analyzer'));
+      window.dispatchEvent(new Event("open-analyzer"));
       return;
     }
 
@@ -504,15 +617,29 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
       value: numericValue,
       qty,
     });
-    useToastStore
-      .getState()
-      .addToast(
-        `Added ${master.name} to You ${type === "give" ? "Give" : "Get"}!`
-      );
+    addToast(`Added ${master.name} to ${sideLabel}!`, "success", {
+      action: {
+        label: "Undo",
+        onClick: () => {
+          const currentStore = useTradeStore.getState();
+          const currentList =
+            type === "give" ? currentStore.giveItems : currentStore.getItems;
+          const currentCard = currentList.find((c) => c.id === master.id);
+          if (!currentCard) return;
+          const nextQty = currentCard.qty - qty;
+          if (nextQty <= 0) {
+            currentStore.removeCard(type, master.id);
+          } else {
+            currentStore.changeQty(type, master.id, nextQty);
+          }
+          addToast(`Removed ${master.name} from ${sideLabel}.`, "info");
+        },
+      },
+    });
     window.dispatchEvent(
       new CustomEvent("trade-added", { detail: { name: master.name, type } })
     );
-    window.dispatchEvent(new Event('open-analyzer'));
+    window.dispatchEvent(new Event("open-analyzer"));
     if (!targetMaster) setInspectTarget(null);
   };
 
@@ -543,19 +670,39 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
 
   const handleQuickTransfer = async (unitId: string) => {
     if (!profile) return;
+    const unitName = unitMap.get(unitId)?.name || unitId;
     try {
       await toggleWishlist(profile.id, unitId);
       await addOrUpdateUnit(profile.id, unitId, 1);
       triggerHaptic("medium");
-      showToast("Moved unit to Vault successfully!", false);
+      addToast(`Moved ${unitName} from Wishlist to Vault.`, "success", {
+        action: {
+          label: "Undo",
+          onClick: () => {
+            void addOrUpdateUnit(profile.id, unitId, -1);
+            void toggleWishlist(profile.id, unitId);
+            addToast(`Moved ${unitName} back to Wishlist.`, "info");
+          },
+        },
+      });
     } catch (e) {
-      showToast("Failed to move unit.", true);
+      addToast(`Could not move ${unitName} to Vault—try again.`, "error", {
+        action: {
+          label: "Retry",
+          onClick: () => {
+            void handleQuickTransfer(unitId);
+          },
+        },
+      });
     }
   };
 
   const toggleSelectUnit = (item: InventoryItem) => {
     if (item.is_pinned) {
-      showToast("Cannot select locked units.", true);
+      addToast(
+        "Locked units cannot be bulk-selected. Unlock the unit first.",
+        "warning"
+      );
       return;
     }
     triggerHaptic("light");
@@ -569,19 +716,44 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
 
   const handleQuickAdd = async (master: MasterUnit) => {
     if (!profile || isReadOnly) return;
+    const isWishlistView = vaultView === "wishlist";
     try {
-      if (vaultView === "wishlist") await toggleWishlist(profile.id, master.id);
+      if (isWishlistView) await toggleWishlist(profile.id, master.id);
       else await addOrUpdateUnit(profile.id, master.id, 1);
       if (isSandbox) setSandboxDismissed(true);
       triggerHaptic("medium");
       setSearchQuery("");
-      showToast(
-        `Added ${master.name} to ${
-          vaultView === "wishlist" ? "Wishlist" : "Vault"
-        }.`
+      addToast(
+        `Added ${master.name} to ${isWishlistView ? "Wishlist" : "Vault"}.`,
+        "success",
+        {
+          action: {
+            label: "Undo",
+            onClick: () => {
+              if (isWishlistView) {
+                void toggleWishlist(profile.id, master.id);
+              } else {
+                void addOrUpdateUnit(profile.id, master.id, -1);
+              }
+              addToast(
+                `Removed ${master.name} from ${
+                  isWishlistView ? "Wishlist" : "Vault"
+                }.`,
+                "info"
+              );
+            },
+          },
+        }
       );
     } catch (e) {
-      showToast("Failed to add unit.", true);
+      addToast(`Could not add ${master.name}—try again.`, "error", {
+        action: {
+          label: "Retry",
+          onClick: () => {
+            void handleQuickAdd(master);
+          },
+        },
+      });
     }
   };
 
@@ -611,9 +783,12 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     setImportText("");
     if (successCount > 0) {
       triggerHaptic("success");
-      useToastStore
-        .getState()
-        .addToast(`Imported ${successCount} items successfully.`, "success");
+      addToast(
+        `Imported ${successCount} ${
+          successCount === 1 ? "unit" : "units"
+        } into Vault.`,
+        "success"
+      );
     }
   };
 
@@ -642,8 +817,6 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     isImporting,
     confirmClear,
     setConfirmClear,
-    toast,
-    setToast,
     isReadOnly,
     viewingUsername,
     returnChannel,
@@ -656,7 +829,6 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     unownedSearchResults,
     parsedImportItems,
     handleTabSwitch,
-    handleUndo,
     handleQtyChange,
     handleTogglePin,
     handleRemove,
@@ -671,4 +843,3 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     handleCloseVault,
   };
 }
-

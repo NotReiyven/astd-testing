@@ -1,6 +1,5 @@
 import { BulkSelectionDock } from "./shared/BulkSelectionDock";
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { useAutoAnimate } from "@formkit/auto-animate/react";
 import {
   GiChest,
   GiPadlock,
@@ -8,6 +7,9 @@ import {
   GiFairyWand,
 } from "react-icons/gi";
 import { useUnits } from "../../context/UnitContext";
+import { useShowDelay } from "../../hooks/useShowDelay";
+import { EmptyState } from "./ui/EmptyState";
+import { AsyncButton } from "./ui/AsyncButton";
 
 // Inline SVG icons — no lucide-react
 const IconSearch = ({ className }: { className?: string }) => (
@@ -184,15 +186,15 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { InventoryVaultSkeleton } from "./InventoryChannel/InventoryVaultSkeleton";
 
 export function InventoryChannel() {
-  const [animationParent] = useAutoAnimate<HTMLDivElement>();
   const { units: ALL_UNITS, isLoading: isUnitsLoading } = useUnits();
   const isInventoryLoading = useInventoryStore((s) => s.isLoading);
   const fetchInventory = useInventoryStore((s) => s.fetchInventory);
   const fetchWishlist = useInventoryStore((s) => s.fetchWishlist);
-  const { session, isLoading: isAuthLoading } = useAuthStore();
-  const openModal = useHistoryModalStore((state) => state.openModal);
-  const { giveItems, getItems, addCard, overwrite, setComposerOpen } =
-    useTradeStore();
+  const session = useAuthStore((s) => s.session);
+  const isAuthLoading = useAuthStore((s) => s.isLoading);
+  const loginWithDiscord = useAuthStore((s) => s.loginWithDiscord);
+  const giveItems = useTradeStore((s) => s.giveItems);
+  const getItems = useTradeStore((s) => s.getItems);
 
   const {
     vaultView,
@@ -219,11 +221,8 @@ export function InventoryChannel() {
     isImporting,
     confirmClear,
     setConfirmClear,
-    toast,
-    setToast,
     isReadOnly,
     viewingUsername,
-    setViewingUser,
     profile,
     metrics,
     vaultTotalValue,
@@ -232,7 +231,6 @@ export function InventoryChannel() {
     unownedSearchResults,
     parsedImportItems,
     handleTabSwitch,
-    handleUndo,
     handleQtyChange,
     handleTogglePin,
     handleRemove,
@@ -258,6 +256,9 @@ export function InventoryChannel() {
 
   const [importMenuOpen, setImportMenuOpen] = useState(false);
   const importInputRef = useRef<HTMLTextAreaElement>(null);
+  const importDialogRef = useRef<HTMLDivElement>(null);
+  const inspectDialogRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   const [manageOpen, setManageOpen] = useState(false);
   const manageRef = useRef<HTMLDivElement>(null);
@@ -265,6 +266,54 @@ export function InventoryChannel() {
     setManageOpen(false);
     setConfirmClear(null);
   });
+
+  useEffect(() => {
+    const activeDialog = importMenuOpen
+      ? importDialogRef.current
+      : inspectTarget
+      ? inspectDialogRef.current
+      : null;
+
+    if (!activeDialog) return;
+
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (importMenuOpen) setImportMenuOpen(false);
+        else if (inspectTarget) setInspectTarget(null);
+        return;
+      }
+
+      if (e.key === "Tab") {
+        const focusables = activeDialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), textarea:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      if (
+        previousFocusRef.current &&
+        typeof previousFocusRef.current.focus === "function"
+      ) {
+        previousFocusRef.current.focus();
+      }
+    };
+  }, [importMenuOpen, inspectTarget, setInspectTarget]);
 
   const handleOmniboxKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
@@ -305,17 +354,41 @@ export function InventoryChannel() {
     isUnitsLoading ||
     Boolean(!isReadOnly && session?.user?.id && !profile);
 
+  const showVaultSkeleton = useShowDelay(isVaultLoading);
+
+  const totalFilteredUnits = useMemo(
+    () =>
+      Object.values(tierGroupedUnits).reduce((sum, arr) => sum + arr.length, 0),
+    [tierGroupedUnits]
+  );
+
+  const activeFilterDescription = useMemo(() => {
+    const parts: string[] = [];
+    if (searchQuery.trim()) {
+      parts.push(`search “${searchQuery.trim()}”`);
+    }
+    if (activeTierFilter !== "All") {
+      parts.push(
+        `tier “${activeTierFilter === "Pinned" ? "Locked" : activeTierFilter}”`
+      );
+    }
+    return parts.join(" & ");
+  }, [searchQuery, activeTierFilter]);
+
   if (!profile && !isReadOnly && !isVaultLoading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-background p-6 text-center">
-        <GiChest className="w-12 h-12 text-muted-foreground mb-3" />
-        <h2 className="text-[18px] font-bold text-foreground mb-1">
-          Authentication Required
-        </h2>
-        <p className="text-muted-foreground text-[13px] max-w-sm">
-          Please log in with Discord using the top navigation bar to access your
-          personal vault.
-        </p>
+      <div className="flex-1 flex flex-col items-center justify-center bg-background p-6">
+        <div className="w-full max-w-md">
+          <EmptyState
+            icon={<GiChest className="w-6 h-6" />}
+            title="Sign In to Open Your Vault"
+            description="Connect your Discord account to track your unit collection, net worth, and wishlist targets across devices."
+            action={{
+              label: "Sign In with Discord",
+              onClick: loginWithDiscord,
+            }}
+          />
+        </div>
       </div>
     );
   }
@@ -688,49 +761,82 @@ export function InventoryChannel() {
       >
         <div className="p-4 md:p-8 pb-32">
           {isVaultLoading ? (
-            <InventoryVaultSkeleton />
+            showVaultSkeleton ? (
+              <InventoryVaultSkeleton />
+            ) : null
           ) : displayInventory.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-              {searchQuery ? (
-                <>
-                  <IconSearch className="w-8 h-8 text-muted-foreground mb-3" />
-                  <p className="text-[14px] font-bold text-foreground">
-                    No matches found
-                  </p>
-                  <p className="text-[12px] text-muted-foreground mt-1">
-                    Try adjusting your search or filters.
-                  </p>
-                </>
+            <div className="py-12 max-w-lg mx-auto">
+              {searchQuery.trim() ? (
+                <EmptyState
+                  icon={<IconSearch className="w-5 h-5" />}
+                  title="No Matching Units Found"
+                  description={`No units in this ${
+                    vaultView === "wishlist" ? "wishlist" : "vault"
+                  } match “${searchQuery.trim()}”.`}
+                  action={{
+                    label: "Clear Search",
+                    onClick: () => setSearchQuery(""),
+                  }}
+                />
               ) : vaultView === "wishlist" ? (
-                <>
-                  <GiHeartInside className="w-10 h-10 text-muted-foreground mb-4" />
-                  <h2 className="text-[20px] md:text-[24px] font-black text-foreground mb-2 tracking-tight">
-                    {isReadOnly
-                      ? `${viewingUsername}'s Wishlist is Empty`
-                      : "Your Wishlist is Empty"}
-                  </h2>
-                  <p className="text-muted-foreground text-[13px] md:text-[14px] max-w-md leading-relaxed font-medium">
-                    {isReadOnly
-                      ? "This trader hasn't added any units to their wishlist."
-                      : "Search for units using the bar above to set your trading targets. Track your progress automatically as your vault grows."}
-                  </p>
-                </>
+                <EmptyState
+                  icon={<GiHeartInside className="w-6 h-6" />}
+                  title={
+                    isReadOnly
+                      ? `${viewingUsername || "Trader"}'s Wishlist Is Empty`
+                      : "Your Wishlist Is Empty"
+                  }
+                  description={
+                    isReadOnly
+                      ? "This trader hasn't added any target units to their wishlist yet."
+                      : "Search for units using the bar above to set your trading targets and track your goal progress automatically."
+                  }
+                  action={
+                    !isReadOnly
+                      ? {
+                          label: "Search Units to Add",
+                          onClick: () => searchInputRef.current?.focus(),
+                        }
+                      : undefined
+                  }
+                />
               ) : !isSandbox && metrics.uniqueCount === 0 ? (
-                <div className="relative z-10 flex flex-col items-center w-full max-w-xl text-center px-2">
-                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-[8px] bg-muted border border-border flex items-center justify-center shadow-sm mb-5">
-                    <GiChest className="w-8 h-8 md:w-10 md:h-10 text-muted-foreground" />
-                  </div>
-                  <h1 className="text-[22px] md:text-[32px] font-black text-foreground tracking-tight mb-2">
-                    {isReadOnly
-                      ? `${viewingUsername}'s Vault is Empty`
-                      : "Welcome to your Vault"}
-                  </h1>
-                  <p className="text-muted-foreground text-[13px] md:text-[15px] mb-6 md:mb-8 leading-relaxed max-w-md mx-auto font-medium">
-                    {isReadOnly
+                <EmptyState
+                  icon={<GiChest className="w-6 h-6" />}
+                  title={
+                    isReadOnly
+                      ? `${viewingUsername || "Trader"}'s Vault Is Empty`
+                      : "Your Vault Is Empty"
+                  }
+                  description={
+                    isReadOnly
                       ? "This trader hasn't added any units to their collection yet."
-                      : "Search for your first unit to start tracking your net worth, or click Inventory Options to import your entire list at once."}
-                  </p>
-                </div>
+                      : "Search for your first unit to start tracking your net worth, or import your entire list from text at once."
+                  }
+                  action={
+                    !isReadOnly
+                      ? {
+                          label: "Search Units to Add",
+                          onClick: () => searchInputRef.current?.focus(),
+                        }
+                      : undefined
+                  }
+                  secondaryAction={
+                    !isReadOnly
+                      ? {
+                          label: "Import from Text…",
+                          variant: "outline",
+                          onClick: () => {
+                            setImportMenuOpen(true);
+                            setTimeout(
+                              () => importInputRef.current?.focus(),
+                              100
+                            );
+                          },
+                        }
+                      : undefined
+                  }
+                />
               ) : null}
             </div>
           ) : (
@@ -1032,139 +1138,168 @@ export function InventoryChannel() {
                 ))}
 
               {/* Unit Cards Grid */}
-              <div className="flex flex-col gap-6">
-                {TIER_ORDER.map((tier) => {
-                  const tierItems = tierGroupedUnits[tier] || [];
-                  if (tierItems.length === 0) return null;
-                  const isCollapsed = collapsedTiers[tier];
-                  const tierCfg = TIER_CONFIG[tier] || {
-                    badgeColor: "#5865F2",
-                    label: tier,
-                  };
+              {totalFilteredUnits === 0 ? (
+                <div className="py-12 max-w-lg mx-auto">
+                  <EmptyState
+                    icon={<IconSearch className="w-5 h-5" />}
+                    title="No Units Match Your Active Filters"
+                    description={
+                      activeFilterDescription
+                        ? `No units in your ${
+                            vaultView === "wishlist" ? "wishlist" : "vault"
+                          } match ${activeFilterDescription}.`
+                        : `No units match the current filter selection.`
+                    }
+                    action={{
+                      label: "Clear Filters",
+                      onClick: () => {
+                        setSearchQuery("");
+                        setActiveTierFilter("All");
+                      },
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col gap-6">
+                  {TIER_ORDER.map((tier) => {
+                    const tierItems = tierGroupedUnits[tier] || [];
+                    if (tierItems.length === 0) return null;
+                    const isCollapsed = collapsedTiers[tier];
+                    const tierCfg = TIER_CONFIG[tier] || {
+                      badgeColor: "#5865F2",
+                      label: tier,
+                    };
 
-                  const totalInTier = ALL_UNITS.filter(
-                    (u) => getTier(u) === tier
-                  ).length;
-                  const uniqueCollected = new Set(
-                    tierItems.map((i) => i.unit_id)
-                  ).size;
-                  const progressPct =
-                    totalInTier > 0 ? (uniqueCollected / totalInTier) * 100 : 0;
+                    const totalInTier = ALL_UNITS.filter(
+                      (u) => getTier(u) === tier
+                    ).length;
+                    const uniqueCollected = new Set(
+                      tierItems.map((i) => i.unit_id)
+                    ).size;
+                    const progressPct =
+                      totalInTier > 0 ? (uniqueCollected / totalInTier) * 100 : 0;
 
-                  return (
-                    <div key={tier} className="flex flex-col gap-3">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-[3px] h-[16px] rounded-full"
-                          style={{ backgroundColor: tierCfg.badgeColor }}
-                        />
-                        <h3 className="text-[15px] font-black uppercase tracking-wider text-foreground leading-none mt-0.5">
-                          {tierCfg.label}
-                        </h3>
-                        <span className="text-[11px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-[2px] border border-border ml-1">
-                          {tierItems.reduce((s, i) => s + i.quantity, 0)} Units
-                        </span>
+                    return (
+                      <div key={tier} className="flex flex-col gap-3">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-[3px] h-[16px] rounded-full"
+                            style={{ backgroundColor: tierCfg.badgeColor }}
+                          />
+                          <h3 className="text-[15px] font-black uppercase tracking-wider text-foreground leading-none mt-0.5">
+                            {tierCfg.label}
+                          </h3>
+                          <span className="text-[11px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-[2px] border border-border ml-1 tabular-nums">
+                            {tierItems.reduce((s, i) => s + i.quantity, 0)} Units
+                          </span>
 
-                        {!isSandbox && vaultView !== "wishlist" && (
-                          <div className="hidden md:flex items-center gap-2 ml-4">
-                            <span className="text-[10px] font-mono text-muted-foreground">
-                              {uniqueCollected} / {totalInTier} Collected
-                            </span>
-                            <div className="w-20 h-1.5 bg-muted rounded-[2px] overflow-hidden border border-border">
-                              <div
-                                className="h-full"
-                                style={{
-                                  width: `${progressPct}%`,
-                                  backgroundColor: tierCfg.badgeColor,
-                                }}
-                              />
+                          {!isSandbox && vaultView !== "wishlist" && (
+                            <div className="hidden md:flex items-center gap-2 ml-4">
+                              <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
+                                {uniqueCollected} / {totalInTier} Collected
+                              </span>
+                              <div className="w-20 h-1.5 bg-muted rounded-[2px] overflow-hidden border border-border">
+                                <div
+                                  className="h-full"
+                                  style={{
+                                    width: `${progressPct}%`,
+                                    backgroundColor: tierCfg.badgeColor,
+                                  }}
+                                />
+                              </div>
                             </div>
+                          )}
+
+                          <div className="flex-1 h-px bg-border ml-2" />
+                          <button
+                            onClick={() =>
+                              setCollapsedTiers((prev) => ({
+                                ...prev,
+                                [tier]: !prev[tier],
+                              }))
+                            }
+                            aria-label={isCollapsed ? "Expand tier" : "Collapse tier"}
+                            className="p-1 rounded-[4px] hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
+                          >
+                            <IconChevronDown
+                              className={`w-4 h-4 transition-transform duration-200 ${
+                                isCollapsed ? "-rotate-90" : ""
+                              }`}
+                            />
+                          </button>
+                        </div>
+
+                        {!isCollapsed && (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
+                            {tierItems.map((item, idx) => {
+                              const stagedGive =
+                                giveItems.find((g) => g.id === item.unit_id)
+                                  ?.qty || 0;
+                              const stagedGet =
+                                getItems.find((g) => g.id === item.unit_id)
+                                  ?.qty || 0;
+
+                              return (
+                                <TradingCardSlot
+                                  key={`${item.unit_id}-${idx}`}
+                                  item={item}
+                                  master={item.master}
+                                  onInspect={(it, mst) =>
+                                    setInspectTarget({ item: it, master: mst })
+                                  }
+                                  isSelectMode={isSelectMode}
+                                  isSelected={selectedUnits.has(item.id)}
+                                  toggleSelect={toggleSelectUnit}
+                                  stagedGiveQty={stagedGive}
+                                  stagedGetQty={stagedGet}
+                                  onQtyChange={handleQtyChange}
+                                  isSandbox={isSandbox}
+                                  isReadOnly={isReadOnly}
+                                  isWishlist={vaultView === "wishlist"}
+                                  onQuickTransfer={handleQuickTransfer}
+                                />
+                              );
+                            })}
                           </div>
                         )}
-
-                        <div className="flex-1 h-px bg-border ml-2" />
-                        <button
-                          onClick={() =>
-                            setCollapsedTiers((prev) => ({
-                              ...prev,
-                              [tier]: !prev[tier],
-                            }))
-                          }
-                          aria-label={isCollapsed ? "Expand tier" : "Collapse tier"}
-                          className="p-1 rounded-[4px] hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
-                        >
-                          <IconChevronDown
-                            className={`w-4 h-4 transition-transform duration-200 ${
-                              isCollapsed ? "-rotate-90" : ""
-                            }`}
-                          />
-                        </button>
                       </div>
-
-                      {!isCollapsed && (
-                        <div ref={animationParent} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
-                          {tierItems.map((item, idx) => {
-                            const stagedGive =
-                              giveItems.find((g) => g.id === item.unit_id)
-                                ?.qty || 0;
-                            const stagedGet =
-                              getItems.find((g) => g.id === item.unit_id)
-                                ?.qty || 0;
-
-                            return (
-                              <TradingCardSlot
-                                key={`${item.unit_id}-${idx}`}
-                                item={item}
-                                master={item.master}
-                                onInspect={(it, mst) =>
-                                  setInspectTarget({ item: it, master: mst })
-                                }
-                                isSelectMode={isSelectMode}
-                                isSelected={selectedUnits.has(item.id)}
-                                toggleSelect={toggleSelectUnit}
-                                stagedGiveQty={stagedGive}
-                                stagedGetQty={stagedGet}
-                                onQtyChange={handleQtyChange}
-                                isSandbox={isSandbox}
-                                isReadOnly={isReadOnly}
-                                isWishlist={vaultView === "wishlist"}
-                                onQuickTransfer={handleQuickTransfer}
-                              />
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </>
           )}
         </div>
       </div>
 
       {/* Persistent Action Dock for Selection Mode */}
-        {isSelectMode && selectedUnits.size > 0 && (
-          <BulkSelectionDock
-            selectedCount={selectedUnits.size}
-            onClearSelection={() => {
-              setIsSelectMode(false);
-              setSelectedUnits(new Set());
-            }}
-            onPostAsAd={handlePostAsAd}
-            onSendToGive={() => handleSendToAnalyzer("give")}
-            onSendToGet={() => handleSendToAnalyzer("get")}
-          />
-        )}
+      {isSelectMode && selectedUnits.size > 0 && (
+        <BulkSelectionDock
+          selectedCount={selectedUnits.size}
+          onClearSelection={() => {
+            setIsSelectMode(false);
+            setSelectedUnits(new Set());
+          }}
+          onPostAsAd={handlePostAsAd}
+          onSendToGive={() => handleSendToAnalyzer("give")}
+          onSendToGet={() => handleSendToAnalyzer("get")}
+        />
+      )}
 
-        {/* Mass Import Modal */}
+      {/* Mass Import Modal */}
       {importMenuOpen && !isReadOnly && (
         <div className="absolute inset-0 z-[100000] flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/80"
             onClick={() => setImportMenuOpen(false)}
           />
-          <div className="bg-popover border border-border rounded-[8px] w-full max-w-lg shadow-[0_20px_60px_rgba(0,0,0,0.8)] relative z-10 flex flex-col overflow-hidden">
+          <div
+            ref={importDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Mass Import Inventory"
+            className="bg-popover border border-border rounded-[8px] w-full max-w-lg shadow-[0_20px_60px_rgba(0,0,0,0.8)] relative z-10 flex flex-col overflow-hidden"
+          >
             <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-card">
               <div className="flex items-center gap-2 text-foreground">
                 <IconUploadCloud className="w-5 h-5 text-foreground" />
@@ -1174,7 +1309,7 @@ export function InventoryChannel() {
               </div>
               <button
                 onClick={() => setImportMenuOpen(false)}
-                aria-label="Close modal"
+                aria-label="Close Mass Import modal"
                 className="text-muted-foreground hover:text-foreground p-1 focus-visible:outline-none cursor-pointer"
               >
                 <IconClose className="w-4 h-4" />
@@ -1186,7 +1321,7 @@ export function InventoryChannel() {
                 Paste your inventory text below. The parser automatically
                 detects unit names and quantities (e.g.{" "}
                 <strong className="text-foreground">
-                  "3x Koku Drip, 1 Death"
+                  “3x Koku Drip, 1 Death”
                 </strong>
                 ).
               </p>
@@ -1195,7 +1330,19 @@ export function InventoryChannel() {
                 ref={importInputRef}
                 value={importText}
                 onChange={(e) => setImportText(e.target.value)}
-                placeholder="Paste items here..."
+                onKeyDown={(e) => {
+                  if (
+                    (e.metaKey || e.ctrlKey) &&
+                    e.key === "Enter" &&
+                    parsedImportItems.length > 0 &&
+                    !isImporting
+                  ) {
+                    e.preventDefault();
+                    void executeMassImport();
+                  }
+                }}
+                placeholder="Paste items here…"
+                aria-label="Inventory text to import"
                 className="w-full h-[120px] bg-input border border-border rounded-[4px] p-3 text-[13px] text-foreground outline-none focus:border-foreground resize-none custom-scrollbar"
               />
 
@@ -1204,7 +1351,7 @@ export function InventoryChannel() {
                   <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                     Live Parser Output
                   </span>
-                  <span className="text-[12px] font-mono font-bold text-foreground">
+                  <span className="text-[12px] font-mono font-bold text-foreground tabular-nums">
                     {parsedImportItems.length} Found
                   </span>
                 </div>
@@ -1221,7 +1368,7 @@ export function InventoryChannel() {
                   </div>
                 ) : (
                   <span className="text-[11px] text-muted-foreground italic mt-1">
-                    Waiting for valid input...
+                    Waiting for valid input…
                   </span>
                 )}
               </div>
@@ -1234,19 +1381,15 @@ export function InventoryChannel() {
               >
                 Cancel
               </button>
-              <button
+              <AsyncButton
                 onClick={executeMassImport}
+                isLoading={isImporting}
+                loadingAnnouncement="Importing…"
                 disabled={parsedImportItems.length === 0 || isImporting}
                 className="px-5 py-2 rounded-[4px] text-[12px] font-bold text-background bg-foreground hover:bg-foreground/90 disabled:bg-muted disabled:text-muted-foreground shadow-sm flex items-center gap-2 focus-visible:outline-none cursor-pointer"
               >
-                {isImporting ? (
-                  "Importing..."
-                ) : (
-                  <>
-                    <IconCheck className="w-3.5 h-3.5" /> Import Items
-                  </>
-                )}
-              </button>
+                <IconCheck className="w-3.5 h-3.5" /> Import Items
+              </AsyncButton>
             </div>
           </div>
         </div>
@@ -1259,7 +1402,13 @@ export function InventoryChannel() {
             className="absolute inset-0 bg-black/80"
             onClick={() => setInspectTarget(null)}
           />
-          <div className="relative w-full md:max-w-xl max-h-[88vh] overflow-y-auto custom-scrollbar bg-popover rounded-t-[8px] md:rounded-[6px] p-5 shadow-2xl border-t md:border border-border z-10 flex flex-col gap-4">
+          <div
+            ref={inspectDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Inspect ${inspectTarget.master.name}`}
+            className="relative w-full md:max-w-xl max-h-[88vh] overflow-y-auto custom-scrollbar bg-popover rounded-t-[8px] md:rounded-[6px] p-5 shadow-2xl border-t md:border border-border z-10 flex flex-col gap-4"
+          >
             <div className="md:hidden absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-border rounded-full" />
 
             <div className="flex items-center justify-between border-b border-border pb-3 mt-2 md:mt-0">
@@ -1352,7 +1501,7 @@ export function InventoryChannel() {
                 <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
                   Individual Unit Value
                 </span>
-                <span className="text-[18px] font-black font-mono text-foreground mt-1">
+                <span className="text-[18px] font-black font-mono text-foreground mt-1 tabular-nums">
                   {inspectTarget.master.valueDisplay ||
                     (typeof inspectTarget.master.value === "number"
                       ? inspectTarget.master.value.toLocaleString()
@@ -1361,7 +1510,7 @@ export function InventoryChannel() {
                 {vaultView !== "wishlist" && (
                   <span className="text-[11px] text-muted-foreground mt-1 font-medium">
                     Vault Subtotal:{" "}
-                    <strong className="text-foreground font-mono">
+                    <strong className="text-foreground font-mono tabular-nums">
                       {(
                         getUnitConservativeValue(inspectTarget.master) *
                         inspectTarget.item.quantity
@@ -1376,7 +1525,7 @@ export function InventoryChannel() {
                   <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
                     Rarity (0-20)
                   </span>
-                  <span className="text-[14px] font-black font-mono text-foreground mt-1">
+                  <span className="text-[14px] font-black font-mono text-foreground mt-1 tabular-nums">
                     {inspectTarget.master.rarity ?? "N/A"}
                   </span>
                 </div>
@@ -1409,7 +1558,7 @@ export function InventoryChannel() {
                       minQty={0}
                     />
                   ) : (
-                    <span className="font-mono font-bold text-foreground">
+                    <span className="font-mono font-bold text-foreground tabular-nums">
                       x{inspectTarget.item.quantity}
                     </span>
                   )}
@@ -1502,37 +1651,11 @@ export function InventoryChannel() {
         </div>
       )}
 
-      {/* Global Toast */}
-      {toast && (
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[1000] w-max max-w-[90vw]">
-          <div
-            className={`bg-popover border px-4 py-2.5 rounded-[6px] shadow-2xl flex items-center gap-4 ${
-              toast.isError ? "border-destructive" : "border-border"
-            }`}
-          >
-            <span className="text-[13px] font-bold text-foreground">
-              {toast.message}
-            </span>
-            {toast.itemToRestore && !isReadOnly && (
-              <button
-                onClick={handleUndo}
-                className="text-[12px] font-bold text-foreground hover:underline focus-visible:outline-none cursor-pointer"
-              >
-                Undo
-              </button>
-            )}
-            <button
-              onClick={() => setToast(null)}
-              aria-label="Dismiss toast"
-              className="text-muted-foreground hover:text-foreground focus-visible:outline-none p-0.5 cursor-pointer"
-            >
-              <IconClose className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      <ValueBreakdownModal isOpen={breakdownModalOpen} onClose={() => setBreakdownModalOpen(false)} items={Object.values(tierGroupedUnits).flat()} />
+      <ValueBreakdownModal
+        isOpen={breakdownModalOpen}
+        onClose={() => setBreakdownModalOpen(false)}
+        items={Object.values(tierGroupedUnits).flat()}
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   GiTrade,
   GiMegaphone,
@@ -13,9 +13,13 @@ import { useInventoryStore } from "../../../store/useInventoryStore";
 import { useUnits } from "../../../context/UnitContext";
 import { TradeCard } from "../../../types";
 import { useNotificationStore } from "../../../store/useNotificationStore";
+import { useToastStore } from "../../../store/useToastStore";
 import { triggerHaptic } from "../../../data/helpers";
 import { getProxyImage, handleImageError } from "../../../data";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
+import { AsyncButton } from "../ui/AsyncButton";
+
+const MAX_NOTE_LENGTH = 500;
 
 const TTL_OPTIONS = [
   { hours: 1, label: "1h" },
@@ -64,79 +68,200 @@ const FORMAT_OPTIONS = [
 ];
 
 export function AdComposerModal() {
-  const { profile } = useAuthStore();
+  const profile = useAuthStore((s) => s.profile);
+  const loginWithDiscord = useAuthStore((s) => s.loginWithDiscord);
 
-  const {
-    giveItems,
-    getItems,
-    composerMode,
-    isComposerOpen,
-    setComposerOpen,
-  } = useTradeStore();
+  const giveItems = useTradeStore((s) => s.giveItems);
+  const getItems = useTradeStore((s) => s.getItems);
+  const composerMode = useTradeStore((s) => s.composerMode);
+  const isComposerOpen = useTradeStore((s) => s.isComposerOpen);
+  const setComposerOpen = useTradeStore((s) => s.setComposerOpen);
 
-  const { createAd } = useTradingAdsStore();
-  const { items: inventoryItems } = useInventoryStore();
+  const createAd = useTradingAdsStore((s) => s.createAd);
+  const inventoryItems = useInventoryStore((s) => s.items);
+  const addToast = useToastStore((s) => s.addToast);
   const { units: ALL_UNITS } = useUnits();
 
   const [adType, setAdType] = useState<"standard" | "lf_offers" | "inventory">(
     "standard"
   );
 
-  useEffect(() => {
-    if (isComposerOpen) {
-      setAdType(composerMode);
-    }
-  }, [isComposerOpen, composerMode]);
-
   const [note, setNote] = useState("");
   const [ttl, setTtl] = useState(4);
   const [isPublishing, setIsPublishing] = useState(false);
   const [error, setError] = useState("");
+  const [itemsError, setItemsError] = useState("");
+  const [noteError, setNoteError] = useState("");
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+
+  const publishingLockRef = useRef(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const firstFormatBtnRef = useRef<HTMLButtonElement>(null);
+  const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (isComposerOpen) {
+      setAdType(composerMode);
+      setError("");
+      setItemsError("");
+      setNoteError("");
+      setShowDiscardConfirm(false);
+      previousFocusRef.current = document.activeElement as HTMLElement | null;
+      const focusTimer = setTimeout(() => {
+        firstFormatBtnRef.current?.focus();
+      }, 20);
+      return () => clearTimeout(focusTimer);
+    } else if (
+      previousFocusRef.current &&
+      typeof previousFocusRef.current.focus === "function"
+    ) {
+      previousFocusRef.current.focus();
+      previousFocusRef.current = null;
+    }
+  }, [isComposerOpen, composerMode]);
 
   const hasGiveItems = giveItems.length > 0;
   const hasGetItems = getItems.length > 0;
   const unpinnedInventory = inventoryItems.filter((i) => !i.is_pinned);
   const hasUnpinnedInventory = unpinnedInventory.length > 0;
 
-  let isReadyToPublish = true;
-  let validationHint = "Publish Listing";
+  // Clear inline item validation when items or adType satisfy requirements
+  useEffect(() => {
+    if (!itemsError) return;
+    if (adType === "standard" && hasGiveItems && hasGetItems) {
+      setItemsError("");
+    } else if (adType === "lf_offers" && hasGiveItems) {
+      setItemsError("");
+    } else if (adType === "inventory" && hasUnpinnedInventory) {
+      setItemsError("");
+    }
+  }, [adType, hasGiveItems, hasGetItems, hasUnpinnedInventory, itemsError]);
 
-  if (adType === "standard") {
-    if (!hasGiveItems && !hasGetItems) {
-      isReadyToPublish = false;
-      validationHint = "Add Give & Get Items";
-    } else if (!hasGiveItems) {
-      isReadyToPublish = false;
-      validationHint = "Add Give Items";
-    } else if (!hasGetItems) {
-      isReadyToPublish = false;
-      validationHint = "Add Get Items";
+  useEffect(() => {
+    if (noteError && note.trim().length <= MAX_NOTE_LENGTH) {
+      setNoteError("");
     }
-  } else if (adType === "lf_offers") {
-    if (!hasGiveItems) {
-      isReadyToPublish = false;
-      validationHint = "Add Give Items";
+  }, [note, noteError]);
+
+  const forceClose = () => {
+    triggerHaptic("light");
+    setShowDiscardConfirm(false);
+    setError("");
+    setItemsError("");
+    setNoteError("");
+    setNote("");
+    setComposerOpen(false);
+  };
+
+  const handleClose = () => {
+    if (isPublishing) return;
+    if (note.trim().length > 0 && !showDiscardConfirm) {
+      triggerHaptic("light");
+      setShowDiscardConfirm(true);
+      return;
     }
-  } else if (adType === "inventory") {
-    if (!hasUnpinnedInventory) {
-      isReadyToPublish = false;
-      validationHint = "Vault is Empty";
-    }
-  }
+    forceClose();
+  };
+
+  useEffect(() => {
+    if (!isComposerOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (showDiscardConfirm) {
+          setShowDiscardConfirm(false);
+        } else {
+          handleClose();
+        }
+        return;
+      }
+
+      if (e.key === "Tab" && dialogRef.current) {
+        const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), textarea:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  });
 
   const handlePublish = async () => {
-    if (!profile) {
-      setError("You must be logged in to post an ad.");
-      return;
-    }
+    if (publishingLockRef.current || isPublishing) return;
 
-    if (!isReadyToPublish) {
-      setError(validationHint);
-      return;
-    }
-
-    setIsPublishing(true);
     setError("");
+    setItemsError("");
+    setNoteError("");
+
+    if (!profile) {
+      setError("Sign in with Discord to publish a trade listing.");
+      addToast("Sign in with Discord to publish a trade listing.", "warning", {
+        action: {
+          label: "Login",
+          onClick: loginWithDiscord,
+        },
+      });
+      return;
+    }
+
+    let nextItemsError = "";
+    if (adType === "standard") {
+      if (!hasGiveItems && !hasGetItems) {
+        nextItemsError =
+          "Add at least 1 unit to both You Give and You Get in the Trade Analyzer before publishing a Specific Trade.";
+      } else if (!hasGiveItems) {
+        nextItemsError =
+          "Add at least 1 unit to You Give in the Trade Analyzer before publishing.";
+      } else if (!hasGetItems) {
+        nextItemsError =
+          "Add at least 1 unit to You Get in the Trade Analyzer, or switch Listing Type to Taking Offers.";
+      }
+    } else if (adType === "lf_offers") {
+      if (!hasGiveItems) {
+        nextItemsError =
+          "Add at least 1 unit to You Give in the Trade Analyzer before publishing an open-offer listing.";
+      }
+    } else if (adType === "inventory") {
+      if (!hasUnpinnedInventory) {
+        nextItemsError =
+          "Your Vault has no unlocked units to showcase. Add or unlock units in My Vault first.";
+      }
+    }
+
+    const trimmedNote = note.trim();
+    let nextNoteError = "";
+    if (note.length > MAX_NOTE_LENGTH) {
+      nextNoteError = `Trade note exceeds the ${MAX_NOTE_LENGTH}-character limit by ${
+        note.length - MAX_NOTE_LENGTH
+      } characters. Shorten your note to publish.`;
+    }
+
+    if (nextItemsError || nextNoteError) {
+      setItemsError(nextItemsError);
+      setNoteError(nextNoteError);
+      if (nextItemsError) {
+        firstFormatBtnRef.current?.focus();
+      } else if (nextNoteError) {
+        noteTextareaRef.current?.focus();
+      }
+      return;
+    }
+
+    publishingLockRef.current = true;
+    setIsPublishing(true);
 
     try {
       let submitGive = giveItems;
@@ -189,7 +314,7 @@ export function AdComposerModal() {
         giveItems: submitGive,
         getItems:
           adType === "lf_offers" || adType === "inventory" ? [] : getItems,
-        note,
+        note: trimmedNote,
         ttlHours: ttl,
         adType,
       });
@@ -206,7 +331,14 @@ export function AdComposerModal() {
         message: "Your trade ad was published successfully.",
       });
 
+      addToast(
+        "Published your listing to the Live Trading Board.",
+        "success"
+      );
+
       triggerHaptic("medium");
+      setNote("");
+      setShowDiscardConfirm(false);
       setComposerOpen(false);
 
       window.document.dispatchEvent(
@@ -214,29 +346,34 @@ export function AdComposerModal() {
           detail: "trading-ads",
         })
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to publish trade ad:", err);
 
-      const failureMessage =
-        "Failed to publish trade ad. You may be rate limited.";
+      const errMessage =
+        typeof err?.message === "string" && err.message.trim().length > 0
+          ? err.message
+          : "Could not publish trade ad—you may be rate limited. Try again in a moment.";
 
-      setError("Something went wrong. Please try again.");
+      setError(errMessage);
+
+      addToast(errMessage, "error", {
+        action: {
+          label: "Retry",
+          onClick: () => {
+            void handlePublish();
+          },
+        },
+      });
 
       void useNotificationStore.getState().createNotification({
         user_id: profile.id,
         type: "warning",
-        message: failureMessage,
+        message: "Failed to publish trade ad. You may be rate limited.",
       });
-
-      setTimeout(() => setError(""), 6000);
     } finally {
+      publishingLockRef.current = false;
       setIsPublishing(false);
     }
-  };
-
-  const handleClose = () => {
-    triggerHaptic("light");
-    setComposerOpen(false);
   };
 
   const renderItemPills = (items: TradeCard[], emptyText: string) => {
@@ -279,7 +416,7 @@ export function AdComposerModal() {
               </div>
               <span className="truncate max-w-[90px]">{item.name}</span>
               {item.qty > 1 && (
-                <span className="text-[10px] font-mono text-muted-foreground">
+                <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
                   x{item.qty}
                 </span>
               )}
@@ -287,7 +424,7 @@ export function AdComposerModal() {
           );
         })}
         {items.length > 6 && (
-          <span className="text-[11px] font-mono font-bold text-muted-foreground px-1.5 py-0.5 bg-card border border-border rounded-[4px]">
+          <span className="text-[11px] font-mono font-bold text-muted-foreground px-1.5 py-0.5 bg-card border border-border rounded-[4px] tabular-nums">
             +{items.length - 6} more
           </span>
         )}
@@ -295,13 +432,17 @@ export function AdComposerModal() {
     );
   };
 
+  const isNoteOverLimit = note.length > MAX_NOTE_LENGTH;
+
   return (
     <AnimatePresence>
       {isComposerOpen && (
         <div
-          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-sm select-none font-sans"
+          ref={dialogRef}
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6 bg-black/80 select-none font-sans"
           role="dialog"
           aria-modal="true"
+          aria-label="Publish Trade Ad"
           onClick={(e) => {
             if (e.target === e.currentTarget) handleClose();
           }}
@@ -322,8 +463,9 @@ export function AdComposerModal() {
               </div>
 
               <button
+                type="button"
                 onClick={handleClose}
-                aria-label="Close modal"
+                aria-label="Close Publish Trade Ad modal"
                 className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-[5px] hover:bg-muted focus-visible:outline-none cursor-pointer"
               >
                 <svg
@@ -341,8 +483,39 @@ export function AdComposerModal() {
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto custom-scrollbar p-5 flex flex-col gap-5">
+              {showDiscardConfirm && (
+                <div
+                  role="alert"
+                  className="bg-popover border border-[#FAA61A]/50 rounded-[8px] p-3.5 flex flex-col gap-2.5 shadow-sm"
+                >
+                  <span className="text-[12.5px] font-bold text-foreground leading-snug">
+                    Unsaved trade note draft. Discard your note and close?
+                  </span>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowDiscardConfirm(false)}
+                      className="px-3 py-1.5 rounded-[5px] text-[11.5px] font-bold bg-muted hover:bg-card text-foreground border border-border transition-colors cursor-pointer"
+                    >
+                      Keep Editing
+                    </button>
+                    <button
+                      type="button"
+                      onClick={forceClose}
+                      className="px-3 py-1.5 rounded-[5px] text-[11.5px] font-bold bg-destructive text-white hover:bg-destructive/90 transition-colors cursor-pointer"
+                    >
+                      Discard Draft
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {error && (
-                <div className="bg-destructive/15 border border-destructive/40 px-3.5 py-2.5 rounded-[6px] text-destructive text-[12px] font-bold flex items-center gap-2.5">
+                <div
+                  role="alert"
+                  aria-live="polite"
+                  className="bg-destructive/15 border border-destructive/40 px-3.5 py-2.5 rounded-[6px] text-destructive text-[12px] font-bold flex items-center gap-2.5"
+                >
                   <span className="w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
                   <span className="leading-snug">{error}</span>
                 </div>
@@ -355,12 +528,13 @@ export function AdComposerModal() {
                 </span>
 
                 <div className="grid grid-cols-3 gap-2">
-                  {FORMAT_OPTIONS.map((fmt) => {
+                  {FORMAT_OPTIONS.map((fmt, idx) => {
                     const Icon = fmt.icon;
                     const isSelected = adType === fmt.id;
                     return (
                       <button
                         key={fmt.id}
+                        ref={idx === 0 ? firstFormatBtnRef : undefined}
                         type="button"
                         onClick={() => {
                           triggerHaptic("light");
@@ -401,46 +575,62 @@ export function AdComposerModal() {
               </div>
 
               {/* Live Payload Summary Strip */}
-              <div className="bg-popover/70 border border-border rounded-[8px] p-3 flex flex-col gap-2.5">
-                {adType === "inventory" ? (
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                      Vault Units
-                    </span>
-                    <span className="text-[12px] font-mono font-bold text-foreground">
-                      {hasUnpinnedInventory
-                        ? `Top ${Math.min(10, unpinnedInventory.length)} unpinned units ready`
-                        : "No unpinned units in Vault"}
-                    </span>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#FAA61A]">
-                          Offering ({giveItems.reduce((s, i) => s + i.qty, 0)})
-                        </span>
-                      </div>
-                      {renderItemPills(
-                        giveItems,
-                        "No units in Give column — add units in calculator"
-                      )}
+              <div className="flex flex-col gap-1.5">
+                <div
+                  className={`bg-popover/70 border rounded-[8px] p-3 flex flex-col gap-2.5 ${
+                    itemsError ? "border-destructive" : "border-border"
+                  }`}
+                >
+                  {adType === "inventory" ? (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        Vault Units
+                      </span>
+                      <span className="text-[12px] font-mono font-bold text-foreground tabular-nums">
+                        {hasUnpinnedInventory
+                          ? `Top ${Math.min(10, unpinnedInventory.length)} unlocked units ready`
+                          : "No unlocked units in Vault"}
+                      </span>
                     </div>
-
-                    {adType === "standard" && (
-                      <div className="flex flex-col gap-1.5 pt-2 border-t border-border/60">
+                  ) : (
+                    <>
+                      <div className="flex flex-col gap-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
-                            Requesting ({getItems.reduce((s, i) => s + i.qty, 0)})
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#FAA61A] tabular-nums">
+                            Offering ({giveItems.reduce((s, i) => s + i.qty, 0)})
                           </span>
                         </div>
                         {renderItemPills(
-                          getItems,
-                          "No units in Get column — add units in calculator"
+                          giveItems,
+                          "No units in Give column — add units in calculator"
                         )}
                       </div>
-                    )}
-                  </>
+
+                      {adType === "standard" && (
+                        <div className="flex flex-col gap-1.5 pt-2 border-t border-border/60">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-primary tabular-nums">
+                              Requesting ({getItems.reduce((s, i) => s + i.qty, 0)})
+                            </span>
+                          </div>
+                          {renderItemPills(
+                            getItems,
+                            "No units in Get column — add units in calculator"
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {itemsError && (
+                  <p
+                    role="alert"
+                    aria-live="polite"
+                    className="text-[11.5px] font-semibold text-destructive leading-snug"
+                  >
+                    {itemsError}
+                  </p>
                 )}
               </div>
 
@@ -456,8 +646,14 @@ export function AdComposerModal() {
                       (optional)
                     </span>
                   </label>
-                  <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
-                    {note.length}/500
+                  <span
+                    className={`text-[10px] font-mono tabular-nums ${
+                      isNoteOverLimit
+                        ? "text-destructive font-bold"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {note.length}/{MAX_NOTE_LENGTH}
                   </span>
                 </div>
 
@@ -485,14 +681,37 @@ export function AdComposerModal() {
                 </div>
 
                 <textarea
+                  ref={noteTextareaRef}
                   id="ad-composer-note"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
+                  onKeyDown={(e) => {
+                    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                      e.preventDefault();
+                      void handlePublish();
+                    }
+                  }}
                   placeholder="Add context or specific conditions…"
-                  maxLength={500}
+                  aria-invalid={Boolean(noteError || isNoteOverLimit)}
+                  aria-describedby={noteError ? "ad-composer-note-error" : undefined}
                   rows={2}
-                  className="w-full min-h-[68px] max-h-[140px] resize-y rounded-[6px] border border-border bg-input px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-primary transition-colors"
+                  className={`w-full min-h-[68px] max-h-[140px] resize-y rounded-[6px] border bg-input px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground outline-none transition-colors ${
+                    noteError || isNoteOverLimit
+                      ? "border-destructive focus-visible:border-destructive"
+                      : "border-border focus-visible:border-primary"
+                  }`}
                 />
+
+                {noteError && (
+                  <p
+                    id="ad-composer-note-error"
+                    role="alert"
+                    aria-live="polite"
+                    className="text-[11.5px] font-semibold text-destructive leading-snug"
+                  >
+                    {noteError}
+                  </p>
+                )}
               </div>
 
               {/* Compact Duration Bar */}
@@ -511,7 +730,7 @@ export function AdComposerModal() {
                         triggerHaptic("light");
                         setTtl(option.hours);
                       }}
-                      className={`py-1 rounded-[4px] text-[11px] font-bold font-mono transition-colors cursor-pointer ${
+                      className={`py-1 rounded-[4px] text-[11px] font-bold font-mono transition-colors cursor-pointer tabular-nums ${
                         ttl === option.hours
                           ? "bg-card text-foreground shadow-sm border border-border"
                           : "text-muted-foreground hover:text-foreground"
@@ -529,19 +748,22 @@ export function AdComposerModal() {
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-4 h-9 text-[12px] font-bold text-muted-foreground hover:text-foreground hover:bg-muted rounded-[6px] focus-visible:outline-none transition-colors cursor-pointer"
+                disabled={isPublishing}
+                className="px-4 h-9 text-[12px] font-bold text-muted-foreground hover:text-foreground hover:bg-muted rounded-[6px] focus-visible:outline-none transition-colors cursor-pointer disabled:opacity-50"
               >
                 Cancel
               </button>
 
-              <button
+              <AsyncButton
                 type="button"
                 onClick={handlePublish}
-                disabled={isPublishing || !isReadyToPublish}
-                className="px-4 h-9 bg-primary text-primary-foreground text-[12px] font-bold rounded-[6px] hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-45 disabled:cursor-not-allowed flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+                isLoading={isPublishing}
+                loadingAnnouncement="Publishing…"
+                disabled={isPublishing}
+                className="px-4 h-9 bg-primary text-primary-foreground text-[12px] font-bold rounded-[6px] hover:bg-primary/90 transition-all flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
               >
-                {isPublishing ? "Publishing…" : validationHint}
-              </button>
+                Publish Listing
+              </AsyncButton>
             </div>
           </motion.div>
         </div>

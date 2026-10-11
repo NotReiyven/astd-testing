@@ -90,27 +90,37 @@ export function InventoryVaultSkeleton() {
               {Array.from({ length: cardCount }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="bg-card border border-border rounded-[8px] overflow-hidden flex flex-col"
+                  className="bg-card border border-border rounded-[8px] overflow-hidden flex flex-col h-full"
                 >
-                  {/* Card Portrait Area */}
-                  <div className="w-full aspect-square bg-muted/70 border-b border-border relative p-2.5 flex flex-col justify-between">
-                    <div className="flex items-center justify-between">
-                      <div className="h-4 w-8 rounded-[3px] bg-popover/80" />
-                      <div className="h-5 w-10 rounded-[4px] bg-popover/80" />
-                    </div>
-                    <div className="flex flex-col gap-1.5 mt-auto">
-                      <div className="h-3.5 w-3/4 rounded bg-popover/90" />
-                      <div className="h-2.5 w-1/2 rounded bg-popover/70" />
-                    </div>
+                  {/* Card Portrait Area (1:1 aspect-square) */}
+                  <div className="w-full aspect-square bg-muted/70 border-b border-border relative p-2 flex items-start justify-between">
+                    <div className="h-5 w-14 rounded-[4px] bg-popover/80" />
+                    <div className="h-5 w-8 rounded-[4px] bg-popover/80" />
                   </div>
 
-                  {/* Card Footer Value & Controls */}
-                  <div className="p-2.5 flex flex-col gap-2 bg-card">
-                    <div className="flex items-center justify-between">
-                      <div className="h-4 w-16 rounded bg-muted" />
-                      <div className="h-4 w-12 rounded bg-muted/70" />
+                  {/* Card Body & 2-Column Stat Footer matching TradingCardSlot */}
+                  <div className="flex flex-col flex-1 p-[var(--card-p)] bg-card">
+                    <div className="flex flex-col">
+                      <div className="h-4 w-3/4 rounded bg-muted" />
+                      <div className="h-2.5 w-1/2 rounded bg-muted/70 mt-1.5" />
+                      <div className="h-4 w-12 rounded-[2px] bg-popover border border-border mt-2" />
                     </div>
-                    <div className="h-7 w-full rounded-[4px] bg-popover border border-border" />
+
+                    <div className="flex flex-col mt-auto pt-3 w-full">
+                      <div className="pl-2 border-l-[3px] border-primary/50 w-full mb-1">
+                        <div className="h-5 w-20 rounded bg-muted" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 pt-3 mt-3 border-t border-border w-full">
+                        <div className="flex flex-col gap-1 bg-muted rounded-[4px] px-2.5 py-1.5">
+                          <div className="h-2.5 w-10 rounded bg-popover/70" />
+                          <div className="h-3 w-8 rounded bg-popover" />
+                        </div>
+                        <div className="flex flex-col gap-1 bg-muted rounded-[4px] px-2.5 py-1.5">
+                          <div className="h-2.5 w-12 rounded bg-popover/70" />
+                          <div className="h-3 w-10 rounded bg-popover" />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}

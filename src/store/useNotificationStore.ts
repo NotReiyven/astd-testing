@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { supabase } from "../lib/supabase";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { useToastStore } from "./useToastStore";
 
 export interface AppNotification {
   id: string;
@@ -31,6 +32,10 @@ interface NotificationState {
     notification: Partial<AppNotification>
   ) => Promise<void>;
   deleteNotification: (id: string) => Promise<void>;
+  restoreNotification: (
+    notification: AppNotification,
+    index: number
+  ) => Promise<void>;
 }
 
 let activeChannel: RealtimeChannel | null = null;
@@ -184,11 +189,57 @@ export const useNotificationStore = create<NotificationState>(
           error
         );
 
+        useToastStore
+          .getState()
+          .addToast("Could not delete notification—try again.", "error", {
+            action: {
+              label: "Retry",
+              onClick: () => {
+                void get().deleteNotification(id);
+              },
+            },
+          });
+
         if (notification) {
           await get().fetchNotifications(
             activeUserId ?? notification.user_id
           );
         }
+      }
+    },
+
+    restoreNotification: async (notification, index) => {
+      set((state) => {
+        if (state.notifications.some((n) => n.id === notification.id)) {
+          return state;
+        }
+        const nextList = [...state.notifications];
+        const clampedIndex = Math.max(0, Math.min(index, nextList.length));
+        nextList.splice(clampedIndex, 0, notification);
+        return {
+          notifications: nextList,
+          unreadCount: notification.is_read
+            ? state.unreadCount
+            : state.unreadCount + 1,
+        };
+      });
+
+      const { error } = await supabase
+        .from("notifications")
+        .insert({
+          id: notification.id,
+          user_id: notification.user_id,
+          actor_id: notification.actor_id,
+          ad_id: notification.ad_id,
+          comment_id: notification.comment_id,
+          type: notification.type,
+          is_read: notification.is_read,
+          created_at: notification.created_at,
+          message: notification.message ?? null,
+        });
+
+      if (error && error.code !== "23505") {
+        console.error("Failed to restore notification:", error);
       }
     },
 

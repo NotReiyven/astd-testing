@@ -28,14 +28,16 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { useTradeStore } from "../../store/useTradeStore";
 import { useProfileStore } from "../../store/useProfileStore";
 import { useHistoryModalStore } from "../../store/useHistoryModalStore";
+import { useToastStore } from "../../store/useToastStore";
 import { useUnits } from "../../context/UnitContext";
+import { useShowDelay } from "../../hooks/useShowDelay";
 import {
   getProxyImage,
   getUnitAssetUrl,
   handleImageError,
   GRID_STATUS_CFG,
 } from "../../data";
-import { triggerHaptic } from "../../data/helpers";
+import { triggerHaptic, copyTextWithFallback } from "../../data/helpers";
 import { getUnitConservativeValue } from "./InventoryChannel/inventoryUtils";
 import {
   getAvatarStyle,
@@ -46,6 +48,10 @@ import {
 import { StatusIcon } from "./shared/Formatters";
 import { TradeCard, MasterUnit } from "../../types";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
+import { AsyncButton } from "./ui/AsyncButton";
+import { EmptyState } from "./ui/EmptyState";
+
+const MAX_COMMENT_LENGTH = 500;
 
 function getTimeAgoShort(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -173,13 +179,13 @@ const ItemTile = memo(
 
             <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/45 to-transparent z-20 pointer-events-none" />
             <div className="absolute inset-x-1 bottom-1 z-30 flex items-center justify-between pointer-events-none">
-              <span className="text-[9.5px] font-black font-mono text-white/95 leading-none truncate drop-shadow">
+              <span className="text-[9.5px] font-black font-mono text-white/95 leading-none truncate drop-shadow tabular-nums">
                 {unitValDisplay}
               </span>
             </div>
 
             {item.qty > 1 && (
-              <div className="absolute top-1 right-1 bg-background/95 text-foreground text-[9.5px] font-black px-1.5 py-0.5 rounded-[4px] z-30 border border-border leading-none font-mono shadow-sm">
+              <div className="absolute top-1 right-1 bg-background/95 text-foreground text-[9.5px] font-black px-1.5 py-0.5 rounded-[4px] z-30 border border-border leading-none font-mono shadow-sm tabular-nums">
                 ×{item.qty}
               </div>
             )}
@@ -295,31 +301,61 @@ const ItemTile = memo(
   }
 );
 
-export function AdInteractionModal() {
-  const {
-    activeAdId,
-    comments,
-    adVotes,
-    commentVotes,
-    isLoading,
-    isActionPending,
-    closeAdContext,
-    postComment,
-    deleteComment,
-    voteAd,
-    voteComment,
-  } = useAdInteractionStore();
+function DiscussionThreadSkeleton() {
+  return (
+    <div
+      className="flex flex-col gap-4 py-2"
+      role="status"
+      aria-label="Loading discussion comments"
+    >
+      {[0, 1, 2].map((idx) => (
+        <div key={idx} className="flex items-start gap-3 animate-pulse">
+          <div className="w-8 h-8 rounded-full bg-muted border border-border shrink-0 mt-0.5" />
+          <div className="flex-1 bg-muted p-3 rounded-[6px] border border-border flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <div className="h-3.5 w-28 rounded bg-card" />
+              <div className="h-3 w-12 rounded bg-card/70" />
+            </div>
+            <div className="h-3.5 w-4/5 rounded bg-card/80" />
+            <div className="h-3.5 w-2/3 rounded bg-card/60" />
+            <div className="flex items-center justify-between pt-2 border-t border-border mt-1">
+              <div className="h-5 w-24 rounded bg-card" />
+              <div className="h-4 w-12 rounded bg-card/60" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
-  const { ads } = useTradingAdsStore();
-  const { profile } = useAuthStore();
-  const { overwrite } = useTradeStore();
+export function AdInteractionModal() {
+  const activeAdId = useAdInteractionStore((s) => s.activeAdId);
+  const comments = useAdInteractionStore((s) => s.comments);
+  const adVotes = useAdInteractionStore((s) => s.adVotes);
+  const commentVotes = useAdInteractionStore((s) => s.commentVotes);
+  const isLoading = useAdInteractionStore((s) => s.isLoading);
+  const isActionPending = useAdInteractionStore((s) => s.isActionPending);
+  const closeAdContext = useAdInteractionStore((s) => s.closeAdContext);
+  const postComment = useAdInteractionStore((s) => s.postComment);
+  const deleteComment = useAdInteractionStore((s) => s.deleteComment);
+  const voteAd = useAdInteractionStore((s) => s.voteAd);
+  const voteComment = useAdInteractionStore((s) => s.voteComment);
+
+  const ads = useTradingAdsStore((s) => s.ads);
+  const profile = useAuthStore((s) => s.profile);
+  const loginWithDiscord = useAuthStore((s) => s.loginWithDiscord);
+  const overwrite = useTradeStore((s) => s.overwrite);
+  const addToast = useToastStore((s) => s.addToast);
   const { units: ALL_UNITS } = useUnits();
   const openPopout = useProfileStore((s) => s.openPopout);
   const openHistoryModal = useHistoryModalStore((s) => s.openModal);
 
   const activeAd = ads.find((a) => a.id === activeAdId);
+  const showDiscussionSkeleton = useShowDelay(isLoading);
 
   const [newComment, setNewComment] = useState("");
+  const [commentError, setCommentError] = useState("");
   const [repTo, setRepTo] = useState<{ id: string; username: string } | null>(
     null
   );
@@ -332,22 +368,65 @@ export function AdInteractionModal() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [comments.length]);
 
   useEffect(() => {
+    if (commentError && newComment.trim().length > 0 && newComment.length <= MAX_COMMENT_LENGTH) {
+      setCommentError("");
+    }
+  }, [newComment, commentError]);
+
+  useEffect(() => {
+    if (!activeAdId) return;
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    const focusTimer = setTimeout(() => {
+      closeBtnRef.current?.focus();
+    }, 20);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         if (useHistoryModalStore.getState().isOpen) return;
+        e.preventDefault();
         triggerHaptic("light");
         closeAdContext();
+        return;
+      }
+
+      if (e.key === "Tab" && dialogRef.current) {
+        const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), textarea:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [closeAdContext]);
+    return () => {
+      clearTimeout(focusTimer);
+      window.removeEventListener("keydown", handleKeyDown);
+      if (
+        previousFocusRef.current &&
+        typeof previousFocusRef.current.focus === "function"
+      ) {
+        previousFocusRef.current.focus();
+      }
+    };
+  }, [activeAdId, closeAdContext]);
 
   const forecast = useMemo(() => {
     if (!activeAd) return { calculable: false, st: 0, lt: 0 };
@@ -366,53 +445,244 @@ export function AdInteractionModal() {
 
   if (!activeAdId || !activeAd) return null;
 
-  const handlePost = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!newComment.trim() || !profile) return;
+  const submitCommentText = async (
+    textToSubmit: string,
+    parentIdToSubmit: string | null
+  ) => {
+    if (!profile) {
+      addToast("Sign in with Discord to post a comment.", "warning", {
+        action: {
+          label: "Login",
+          onClick: loginWithDiscord,
+        },
+      });
+      return;
+    }
 
+    const trimmed = textToSubmit.trim();
+    if (!trimmed) {
+      setCommentError("Enter a comment before posting.");
+      textareaRef.current?.focus();
+      return;
+    }
+    if (textToSubmit.length > MAX_COMMENT_LENGTH) {
+      setCommentError(
+        `Comment exceeds the ${MAX_COMMENT_LENGTH}-character limit by ${
+          textToSubmit.length - MAX_COMMENT_LENGTH
+        } characters.`
+      );
+      textareaRef.current?.focus();
+      return;
+    }
+
+    setCommentError("");
     triggerHaptic("light");
     const success = await postComment(
       activeAdId,
       profile,
-      newComment,
-      repTo?.id || null
+      trimmed,
+      parentIdToSubmit
     );
     if (success) {
       setNewComment("");
       setRepTo(null);
       if (textareaRef.current) textareaRef.current.style.height = "auto";
+    } else {
+      addToast("Could not post comment—try again.", "error", {
+        action: {
+          label: "Retry",
+          onClick: () => {
+            void submitCommentText(textToSubmit, parentIdToSubmit);
+          },
+        },
+      });
     }
+  };
+
+  const handlePost = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (isActionPending) return;
+    await submitCommentText(newComment, repTo?.id || null);
   };
 
   const handleKeyDownTextarea = (
     e: React.KeyboardEvent<HTMLTextAreaElement>
   ) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
       e.preventDefault();
-      handlePost();
+      void handlePost();
     }
   };
 
   const handleLoadIntoCalculator = () => {
     triggerHaptic("medium");
+    const storeBefore = useTradeStore.getState();
+    const prevGiveMap = new Map(storeBefore.giveItems.map((c) => [c.id, c]));
+    const prevGetMap = new Map(storeBefore.getItems.map((c) => [c.id, c]));
+
+    const nextGiveMap = new Map(activeAd.get_items.map((c) => [c.id, c]));
+    const nextGetMap = new Map(activeAd.give_items.map((c) => [c.id, c]));
+
+    type CardDelta = {
+      id: string;
+      deltaQty: number;
+      cardTemplate: TradeCard;
+    };
+
+    const giveDeltas: CardDelta[] = [];
+    const allGiveIds = new Set([...prevGiveMap.keys(), ...nextGiveMap.keys()]);
+    allGiveIds.forEach((id) => {
+      const beforeCard = prevGiveMap.get(id);
+      const afterCard = nextGiveMap.get(id);
+      const beforeQty = beforeCard?.qty ?? 0;
+      const afterQty = afterCard?.qty ?? 0;
+      if (afterQty !== beforeQty) {
+        giveDeltas.push({
+          id,
+          deltaQty: afterQty - beforeQty,
+          cardTemplate: (beforeCard || afterCard)!,
+        });
+      }
+    });
+
+    const getDeltas: CardDelta[] = [];
+    const allGetIds = new Set([...prevGetMap.keys(), ...nextGetMap.keys()]);
+    allGetIds.forEach((id) => {
+      const beforeCard = prevGetMap.get(id);
+      const afterCard = nextGetMap.get(id);
+      const beforeQty = beforeCard?.qty ?? 0;
+      const afterQty = afterCard?.qty ?? 0;
+      if (afterQty !== beforeQty) {
+        getDeltas.push({
+          id,
+          deltaQty: afterQty - beforeQty,
+          cardTemplate: (beforeCard || afterCard)!,
+        });
+      }
+    });
+
     overwrite(activeAd.get_items, activeAd.give_items);
     window.dispatchEvent(new Event("open-analyzer"));
     closeAdContext();
+
+    const giveSideCount = activeAd.get_items.length;
+    const getSideCount = activeAd.give_items.length;
+
+    addToast(
+      `Loaded ${giveSideCount} ${
+        giveSideCount === 1 ? "unit" : "units"
+      } into You Give & ${getSideCount} ${
+        getSideCount === 1 ? "unit" : "units"
+      } into You Get.`,
+      "success",
+      {
+        action: {
+          label: "Undo",
+          onClick: () => {
+            const currentStore = useTradeStore.getState();
+
+            const applyUndoSide = (
+              side: "give" | "get",
+              deltas: CardDelta[]
+            ) => {
+              const list =
+                side === "give"
+                  ? currentStore.giveItems
+                  : currentStore.getItems;
+              for (const d of deltas) {
+                const existing = list.find((c) => c.id === d.id);
+                if (d.deltaQty > 0) {
+                  if (!existing) continue;
+                  const targetQty = existing.qty - d.deltaQty;
+                  if (targetQty <= 0) {
+                    currentStore.removeCard(side, d.id);
+                  } else {
+                    currentStore.changeQty(side, d.id, targetQty);
+                  }
+                } else if (d.deltaQty < 0) {
+                  const restoreQty = Math.abs(d.deltaQty);
+                  if (existing) {
+                    currentStore.changeQty(
+                      side,
+                      d.id,
+                      existing.qty + restoreQty
+                    );
+                  } else {
+                    currentStore.addCard(side, {
+                      ...d.cardTemplate,
+                      qty: restoreQty,
+                    });
+                  }
+                }
+              }
+            };
+
+            applyUndoSide("give", giveDeltas);
+            applyUndoSide("get", getDeltas);
+            addToast("Reverted loaded trade listing.", "info");
+          },
+        },
+      }
+    );
   };
 
-  const handleShareLink = () => {
+  const handleShareLink = async () => {
     triggerHaptic("success");
-    navigator.clipboard.writeText(window.location.href);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
+    const ok = await copyTextWithFallback(window.location.href);
+    if (ok) {
+      setCopiedLink(true);
+      addToast("Listing link copied to clipboard!", "success");
+      setTimeout(() => setCopiedLink(false), 2000);
+    } else {
+      addToast(
+        "Could not copy link automatically—copy the URL from your address bar.",
+        "error"
+      );
+    }
   };
 
-  const handleCopyDiscord = () => {
+  const handleCopyDiscord = async () => {
     if (!activeAd.profiles?.discord_id) return;
     triggerHaptic("light");
-    navigator.clipboard.writeText(activeAd.profiles.discord_id);
-    setCopiedDiscord(true);
-    setTimeout(() => setCopiedDiscord(false), 2000);
+    const ok = await copyTextWithFallback(activeAd.profiles.discord_id);
+    if (ok) {
+      setCopiedDiscord(true);
+      addToast("Discord ID copied to clipboard!", "success");
+      setTimeout(() => setCopiedDiscord(false), 2000);
+    } else {
+      addToast(
+        `Could not copy automatically—Discord ID: ${activeAd.profiles.discord_id}`,
+        "error"
+      );
+    }
+  };
+
+  const handleAdVoteClick = (val: number) => {
+    if (!profile) {
+      addToast("Sign in with Discord to vote on listings", "warning", {
+        action: {
+          label: "Login",
+          onClick: loginWithDiscord,
+        },
+      });
+      return;
+    }
+    triggerHaptic("light");
+    void voteAd(activeAd.id, profile.id, val, activeAd.user_id);
+  };
+
+  const handleCommentVoteClick = (commentId: string, val: number) => {
+    if (!profile) {
+      addToast("Sign in with Discord to vote on comments", "warning", {
+        action: {
+          label: "Login",
+          onClick: loginWithDiscord,
+        },
+      });
+      return;
+    }
+    triggerHaptic("light");
+    void voteComment(commentId, profile.id, val);
   };
 
   const canModerate = (commentUserId: string) => {
@@ -448,13 +718,20 @@ export function AdInteractionModal() {
 
     const messageStr = `Hey! Saw your ad on ASTD Value List.\nYou're giving: ${giveNames}\nYou're looking for: ${getNames}\nIs this still available?`;
 
-    try {
-      await navigator.clipboard.writeText(messageStr);
+    const ok = await copyTextWithFallback(messageStr);
+    if (ok) {
+      addToast("Copied trade message & opening Discord…", "info");
       safeOpenExternal(
         `https://discord.com/users/${activeAd.profiles.discord_id}`
       );
-    } catch (err) {
-      console.error("Clipboard failed", err);
+    } else {
+      addToast(
+        "Could not copy message automatically—opening Discord profile.",
+        "warning"
+      );
+      safeOpenExternal(
+        `https://discord.com/users/${activeAd.profiles.discord_id}`
+      );
     }
   };
 
@@ -533,12 +810,10 @@ export function AdInteractionModal() {
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1 bg-card rounded-[4px] border border-border px-1.5 py-0.5">
                   <button
-                    onClick={() => {
-                      if (profile) {
-                        triggerHaptic("light");
-                        voteComment(comment.id, profile.id, 1);
-                      }
-                    }}
+                    type="button"
+                    aria-label="Upvote comment"
+                    aria-pressed={votes.userVote === 1}
+                    onClick={() => handleCommentVoteClick(comment.id, 1)}
                     className={`focus-visible:outline-none transition-colors hover:text-[#23a559] cursor-pointer ${
                       votes.userVote === 1
                         ? "text-[#23a559]"
@@ -552,7 +827,7 @@ export function AdInteractionModal() {
                     />
                   </button>
                   <span
-                    className={`text-[11px] font-bold font-mono ${
+                    className={`text-[11px] font-bold font-mono tabular-nums ${
                       score > 0
                         ? "text-[#23a559]"
                         : score < 0
@@ -563,12 +838,10 @@ export function AdInteractionModal() {
                     {score}
                   </span>
                   <button
-                    onClick={() => {
-                      if (profile) {
-                        triggerHaptic("light");
-                        voteComment(comment.id, profile.id, -1);
-                      }
-                    }}
+                    type="button"
+                    aria-label="Downvote comment"
+                    aria-pressed={votes.userVote === -1}
+                    onClick={() => handleCommentVoteClick(comment.id, -1)}
                     className={`focus-visible:outline-none transition-colors hover:text-destructive cursor-pointer ${
                       votes.userVote === -1
                         ? "text-destructive"
@@ -584,12 +857,14 @@ export function AdInteractionModal() {
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => {
                     triggerHaptic("light");
                     setRepTo({
                       id: comment.id,
                       username: comment.profiles.username,
                     });
+                    textareaRef.current?.focus();
                   }}
                   className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
                 >
@@ -600,8 +875,9 @@ export function AdInteractionModal() {
               <div className="flex items-center gap-3">
                 {replies.length > 0 && (
                   <button
+                    type="button"
                     onClick={() => toggleCollapse(comment.id)}
-                    className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
+                    className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer tabular-nums"
                   >
                     {isCollapsed ? (
                       <ChevronDown className="w-3.5 h-3.5" />
@@ -616,9 +892,10 @@ export function AdInteractionModal() {
 
                 {canModerate(comment.user_id) && (
                   <button
+                    type="button"
                     onClick={() => {
                       triggerHaptic("medium");
-                      deleteComment(comment.id);
+                      void deleteComment(comment.id);
                     }}
                     className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none cursor-pointer"
                   >
@@ -670,12 +947,15 @@ export function AdInteractionModal() {
   }, 0);
 
   const valDiff = totalGiveVal - totalGetVal;
+  const isCommentOverLimit = newComment.length > MAX_COMMENT_LENGTH;
 
   return (
     <div
+      ref={dialogRef}
       className="fixed inset-0 z-[100000] flex items-center justify-center p-0 md:p-[var(--page-p)] bg-black/80 animate-fade-in"
       role="dialog"
       aria-modal="true"
+      aria-label={`Trade listing by ${activeAd.profiles?.username || "Trader"}`}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           triggerHaptic("light");
@@ -700,7 +980,8 @@ export function AdInteractionModal() {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={handleShareLink}
+              type="button"
+              onClick={() => void handleShareLink()}
               className="px-3 py-1.5 bg-card hover:bg-muted border border-border rounded-[4px] text-[12px] font-bold text-foreground flex items-center gap-1.5 transition-colors focus-visible:outline-none cursor-pointer"
               aria-label="Share listing"
             >
@@ -709,15 +990,19 @@ export function AdInteractionModal() {
               ) : (
                 <Share2 className="w-3.5 h-3.5 text-muted-foreground" />
               )}
-              <span className="hidden sm:inline">Share</span>
+              <span className="hidden sm:inline">
+                {copiedLink ? "Copied" : "Share"}
+              </span>
             </button>
             <button
+              ref={closeBtnRef}
+              type="button"
               onClick={() => {
                 triggerHaptic("light");
                 closeAdContext();
               }}
               className="text-muted-foreground hover:text-foreground focus-visible:outline-none cursor-pointer p-1.5 hover:bg-card rounded-[4px] transition-colors"
-              aria-label="Close modal"
+              aria-label="Close listing discussion"
             >
               <X className="w-5 h-5" />
             </button>
@@ -726,6 +1011,7 @@ export function AdInteractionModal() {
 
         <div className="flex md:hidden bg-popover border-b border-border p-1 shrink-0">
           <button
+            type="button"
             onClick={() => {
               triggerHaptic("light");
               setMobileTab("listing");
@@ -739,6 +1025,7 @@ export function AdInteractionModal() {
             Listing
           </button>
           <button
+            type="button"
             onClick={() => {
               triggerHaptic("light");
               setMobileTab("comments");
@@ -750,7 +1037,7 @@ export function AdInteractionModal() {
             }`}
           >
             Discussion{" "}
-            <span className="bg-muted px-1.5 rounded text-[10px] font-mono">
+            <span className="bg-muted px-1.5 rounded text-[10px] font-mono tabular-nums">
               {comments.length}
             </span>
           </button>
@@ -795,7 +1082,8 @@ export function AdInteractionModal() {
                 </div>
 
                 <button
-                  onClick={handleCopyDiscord}
+                  type="button"
+                  onClick={() => void handleCopyDiscord()}
                   className="px-3 py-2 bg-card hover:bg-muted border border-border rounded-[4px] text-[12px] font-bold text-foreground flex items-center gap-1.5 transition-colors shadow-sm focus-visible:outline-none shrink-0 cursor-pointer"
                 >
                   {copiedDiscord ? (
@@ -924,7 +1212,7 @@ export function AdInteractionModal() {
 
                 {!isTakingOffers && !isInventory && totalGetVal > 0 && (
                   <div className="mt-2 pt-3 border-t border-border flex flex-col gap-2">
-                    <div className="flex items-center justify-between text-[11px] font-mono">
+                    <div className="flex items-center justify-between text-[11px] font-mono tabular-nums">
                       <span className="text-muted-foreground font-bold uppercase">
                         Value Balance
                       </span>
@@ -944,7 +1232,7 @@ export function AdInteractionModal() {
                           : "Even Trade"}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-[11px] font-mono pt-1">
+                    <div className="flex items-center justify-between text-[11px] font-mono pt-1 tabular-nums">
                       <span className="text-muted-foreground font-bold uppercase">
                         Market Forecast
                       </span>
@@ -966,7 +1254,7 @@ export function AdInteractionModal() {
                           : "Unavailable"}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-[11px] font-mono">
+                    <div className="flex items-center justify-between text-[11px] font-mono tabular-nums">
                       <span className="text-muted-foreground font-bold uppercase">
                         Rarity Shift
                       </span>
@@ -981,6 +1269,7 @@ export function AdInteractionModal() {
 
             <div className="p-4 bg-popover border-t border-border shrink-0 flex flex-col sm:flex-row items-center gap-3">
               <button
+                type="button"
                 onClick={handleLoadIntoCalculator}
                 className="w-full sm:flex-1 h-[var(--ui-height-btn)] bg-primary hover:bg-primary/90 text-primary-foreground text-[12px] font-black uppercase tracking-wider rounded-[4px] transition-colors shadow-sm focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2 border border-primary"
               >
@@ -988,7 +1277,8 @@ export function AdInteractionModal() {
               </button>
 
               <button
-                onClick={handleContact}
+                type="button"
+                onClick={() => void handleContact()}
                 className="w-full sm:w-auto px-4 h-[var(--ui-height-btn)] bg-[#5865F2] hover:bg-[#4752C4] text-white text-[12px] font-bold rounded-[4px] transition-colors shadow-sm focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2"
               >
                 <MessageSquare className="w-4 h-4" /> Message
@@ -1004,25 +1294,22 @@ export function AdInteractionModal() {
             <div className="hidden md:flex items-center justify-between px-6 py-4 bg-popover border-b border-border shrink-0">
               <h2 className="text-[15px] font-black text-foreground tracking-tight uppercase flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-primary" /> Discussion{" "}
-                <span className="bg-muted text-foreground text-[11px] px-2 py-0.5 rounded-[4px] font-mono border border-border">
+                <span className="bg-muted text-foreground text-[11px] px-2 py-0.5 rounded-[4px] font-mono border border-border tabular-nums">
                   {comments.length}
                 </span>
               </h2>
 
               <div className="flex items-center gap-1.5 bg-card rounded-[4px] border border-border px-2.5 py-1">
                 <button
-                  onClick={() => {
-                    if (profile) {
-                      triggerHaptic("light");
-                      voteAd(activeAd.id, profile.id, 1, activeAd.user_id);
-                    }
-                  }}
+                  type="button"
+                  onClick={() => handleAdVoteClick(1)}
                   className={`focus-visible:outline-none transition-colors hover:text-[#23a559] cursor-pointer ${
                     adVotes.userVote === 1
                       ? "text-[#23a559]"
                       : "text-muted-foreground"
                   }`}
                   aria-label="Upvote listing"
+                  aria-pressed={adVotes.userVote === 1}
                 >
                   <ArrowBigUp
                     className={`w-4 h-4 ${
@@ -1031,7 +1318,7 @@ export function AdInteractionModal() {
                   />
                 </button>
                 <span
-                  className={`text-[12px] font-bold font-mono min-w-[20px] text-center ${
+                  className={`text-[12px] font-bold font-mono min-w-[20px] text-center tabular-nums ${
                     adScore > 0
                       ? "text-[#23a559]"
                       : adScore < 0
@@ -1042,18 +1329,15 @@ export function AdInteractionModal() {
                   {adScore}
                 </span>
                 <button
-                  onClick={() => {
-                    if (profile) {
-                      triggerHaptic("light");
-                      voteAd(activeAd.id, profile.id, -1);
-                    }
-                  }}
+                  type="button"
+                  onClick={() => handleAdVoteClick(-1)}
                   className={`focus-visible:outline-none transition-colors hover:text-rose-400 cursor-pointer ${
                     adVotes.userVote === -1
                       ? "text-rose-400"
                       : "text-muted-foreground"
                   }`}
                   aria-label="Downvote listing"
+                  aria-pressed={adVotes.userVote === -1}
                 >
                   <ArrowBigDown
                     className={`w-4 h-4 ${
@@ -1066,22 +1350,28 @@ export function AdInteractionModal() {
 
             <div className="flex-1 overflow-y-auto custom-scrollbar p-[var(--panel-p)] flex flex-col pb-8">
               {isLoading ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-3">
-                  <Clock className="w-6 h-6 animate-spin text-primary" />
-                  <span className="text-[12px] font-bold uppercase tracking-widest">
-                    Loading discussion...
-                  </span>
-                </div>
+                showDiscussionSkeleton ? (
+                  <DiscussionThreadSkeleton />
+                ) : null
               ) : rootComments.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center opacity-70 py-12">
-                  <MessageSquare className="w-12 h-12 text-muted-foreground mb-3" />
-                  <span className="text-[16px] font-black text-foreground">
-                    Start the conversation
-                  </span>
-                  <span className="text-[13px] text-muted-foreground mt-1 max-w-xs">
-                    Be the first to share your thoughts or make an offer on this
-                    listing.
-                  </span>
+                <div className="my-auto py-8 max-w-md mx-auto w-full">
+                  <EmptyState
+                    compact
+                    icon={<MessageSquare className="w-5 h-5" />}
+                    title="No Comments Yet"
+                    description="Be the first to share your thoughts or make an offer on this trade listing."
+                    action={
+                      profile
+                        ? {
+                            label: "Write a Comment",
+                            onClick: () => textareaRef.current?.focus(),
+                          }
+                        : {
+                            label: "Sign In to Comment",
+                            onClick: loginWithDiscord,
+                          }
+                    }
+                  />
                 </div>
               ) : (
                 rootComments.map((comment) => (
@@ -1099,6 +1389,8 @@ export function AdInteractionModal() {
                     {repTo.username}
                   </span>
                   <button
+                    type="button"
+                    aria-label="Cancel reply"
                     onClick={() => {
                       triggerHaptic("light");
                       setRepTo(null);
@@ -1112,53 +1404,89 @@ export function AdInteractionModal() {
 
               {profile ? (
                 <form
-                  onSubmit={handlePost}
-                  className="relative flex items-end gap-2"
+                  onSubmit={(e) => void handlePost(e)}
+                  className="flex flex-col gap-1.5"
                 >
-                  <div className="flex items-center gap-2 mb-1 shrink-0">
-                    <img
-                      src={profile.avatar_url || getUnitAssetUrl("firezio") || ""}
-                      className="w-8 h-8 rounded-full bg-card object-cover border border-border"
-                      alt=""
-                    />
-                  </div>
-
-                  <div className="relative flex-1">
-                    <textarea
-                      ref={textareaRef}
-                      value={newComment}
-                      onChange={(e) => {
-                        setNewComment(e.target.value);
-                        e.target.style.height = "auto";
-                        e.target.style.height =
-                          Math.min(e.target.scrollHeight, 120) + "px";
-                      }}
-                      onKeyDown={handleKeyDownTextarea}
-                      placeholder={
-                        repTo ? `Write a reply...` : `Type a message...`
-                      }
-                      maxLength={500}
-                      rows={1}
-                      disabled={isActionPending}
-                      className="w-full bg-input text-foreground text-base md:text-sm px-3.5 py-2.5 rounded-[4px] outline-none border border-border focus:border-foreground transition-colors font-medium placeholder:text-muted-foreground resize-none max-h-[120px] custom-scrollbar shadow-inner"
-                    />
-                    <div className="absolute right-2 bottom-2.5 text-[10px] font-mono text-muted-foreground pointer-events-none">
-                      {newComment.length}/500
+                  <div className="relative flex items-end gap-2">
+                    <div className="flex items-center gap-2 mb-1 shrink-0">
+                      <img
+                        src={profile.avatar_url || getUnitAssetUrl("firezio") || ""}
+                        className="w-8 h-8 rounded-full bg-card object-cover border border-border"
+                        alt=""
+                      />
                     </div>
+
+                    <div className="relative flex-1">
+                      <textarea
+                        ref={textareaRef}
+                        value={newComment}
+                        onChange={(e) => {
+                          setNewComment(e.target.value);
+                          e.target.style.height = "auto";
+                          e.target.style.height =
+                            Math.min(e.target.scrollHeight, 120) + "px";
+                        }}
+                        onKeyDown={handleKeyDownTextarea}
+                        placeholder={
+                          repTo
+                            ? `Write a reply… (⌘/Ctrl+Enter to post)`
+                            : `Type a message… (⌘/Ctrl+Enter to post)`
+                        }
+                        aria-label={repTo ? `Reply to ${repTo.username}` : "Comment on listing"}
+                        aria-invalid={Boolean(commentError || isCommentOverLimit)}
+                        aria-describedby={commentError ? "ad-comment-error" : undefined}
+                        rows={1}
+                        disabled={isActionPending}
+                        className={`w-full bg-input text-foreground text-base md:text-sm pl-3.5 pr-14 py-2.5 rounded-[4px] outline-none border transition-colors font-medium placeholder:text-muted-foreground resize-none max-h-[120px] custom-scrollbar shadow-inner ${
+                          commentError || isCommentOverLimit
+                            ? "border-destructive focus:border-destructive"
+                            : "border-border focus:border-foreground"
+                        }`}
+                      />
+                      <div
+                        className={`absolute right-2.5 bottom-2.5 text-[10px] font-mono pointer-events-none tabular-nums ${
+                          isCommentOverLimit
+                            ? "text-destructive font-bold"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {newComment.length}/{MAX_COMMENT_LENGTH}
+                      </div>
+                    </div>
+
+                    <AsyncButton
+                      type="submit"
+                      isLoading={isActionPending}
+                      loadingAnnouncement="Posting…"
+                      disabled={isActionPending}
+                      className="h-10 px-4 flex items-center justify-center rounded-[4px] bg-primary hover:bg-primary/85 text-primary-foreground transition-colors focus-visible:outline-none cursor-pointer shrink-0 border border-primary"
+                      aria-label="Post comment"
+                    >
+                      <Send className="w-4 h-4" />
+                    </AsyncButton>
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={!newComment.trim() || isActionPending}
-                    className="h-10 px-4 flex items-center justify-center rounded-[4px] bg-primary hover:bg-primary/85 text-primary-foreground disabled:opacity-45 transition-colors focus-visible:outline-none cursor-pointer shrink-0 border border-primary"
-                    aria-label="Send message"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
+                  {commentError && (
+                    <p
+                      id="ad-comment-error"
+                      role="alert"
+                      aria-live="polite"
+                      className="text-[11.5px] font-semibold text-destructive pl-10"
+                    >
+                      {commentError}
+                    </p>
+                  )}
                 </form>
               ) : (
-                <div className="w-full bg-card text-muted-foreground text-[13px] font-bold text-center py-3 rounded-[4px] border border-border">
-                  You must be logged in to participate in the discussion.
+                <div className="w-full bg-card text-muted-foreground text-[13px] font-bold py-2.5 px-4 rounded-[4px] border border-border flex items-center justify-between gap-3">
+                  <span>Sign in with Discord to join the discussion.</span>
+                  <button
+                    type="button"
+                    onClick={loginWithDiscord}
+                    className="px-3 py-1.5 rounded-[4px] bg-primary text-primary-foreground text-[12px] font-bold hover:bg-primary/90 transition-colors cursor-pointer shrink-0"
+                  >
+                    Sign In
+                  </button>
                 </div>
               )}
             </div>
@@ -1168,5 +1496,3 @@ export function AdInteractionModal() {
     </div>
   );
 }
-
-

@@ -1,33 +1,41 @@
-import { useState, useEffect, useMemo, memo } from "react";
-import { useAutoAnimate } from "@formkit/auto-animate/react";
+import { useState, useEffect, useMemo, useRef, memo } from "react";
 import { Search, Plus, Trash2, Check, Send, Clock, ArrowBigUp, ArrowBigDown } from "lucide-react";
-import { GiMegaphone, GiHourglass, GiLockedFortress, GiAbacus, GiChest, GiTornado, GiChatBubble } from "react-icons/gi";
+import { GiMegaphone, GiHourglass, GiLockedFortress, GiAbacus, GiChest, GiChatBubble } from "react-icons/gi";
 import { supabase } from "../../lib/supabase";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useTradeStore } from "../../store/useTradeStore";
 import { useInventoryStore } from "../../store/useInventoryStore";
 import { useProfileStore } from "../../store/useProfileStore";
-import { useLayoutStore } from "../../store/useLayoutStore";
 import { useUnits } from "../../context/UnitContext";
 import { useHistoryModalStore } from "../../store/useHistoryModalStore";
 import { TradeCard, MasterUnit } from "../../types";
 import { getProxyImage, getUnitAssetUrl, handleImageError } from "../../data";
 import { getAvatarStyle, getInitials } from "./TradeAnalyzer/summaryUtils";
-import { triggerHaptic } from "../../data/helpers";
+import { triggerHaptic, copyTextWithFallback } from "../../data/helpers";
 import { CustomDropdown } from "./MainCanvas/CustomDropdown";
 import { useAdInteractionStore } from "../../store/useAdInteractionStore";
 import { useNotificationStore } from "../../store/useNotificationStore";
 import { AdInteractionModal } from "./AdInteractionModal";
-import { HoldToConfirmButton } from "./shared/Formatters";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
 import { ResponsiveToolbar } from "./shared/ResponsiveToolbar";
+import { useToastStore } from "../../store/useToastStore";
+import { useShowDelay } from "../../hooks/useShowDelay";
+import { EmptyState } from "./ui/EmptyState";
+import { AsyncButton } from "./ui/AsyncButton";
 
 const SORT_OPTIONS = {
   newest: "Recently Posted",
   oldest: "Oldest First",
   "value-desc": "Highest Value",
   "value-asc": "Lowest Value",
+};
+
+const TYPE_FILTER_LABELS: Record<string, string> = {
+  all: "All",
+  standard: "Trades",
+  lf_offers: "LF Offers",
+  inventory: "Showcases",
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -68,7 +76,7 @@ function CountdownTimer({ expiresAt }: { expiresAt: string }) {
   }, [expiresAt]);
 
   return (
-    <span className="text-xs font-medium font-mono text-muted-foreground">
+    <span className="text-xs font-medium font-mono text-muted-foreground tabular-nums">
       {timeLeft}
     </span>
   );
@@ -121,7 +129,7 @@ const FixedSlotGrid = ({
           {label}
         </span>
         {totalVal > 0 && !isOfferTile && (
-          <span className="text-[12px] font-mono font-bold text-foreground">
+          <span className="text-[12px] font-mono font-bold text-foreground tabular-nums">
             {totalVal.toLocaleString()}
           </span>
         )}
@@ -149,7 +157,7 @@ const FixedSlotGrid = ({
                 key="extra-slot"
                 className={`relative ${slotBase} bg-muted border border-border overflow-hidden flex items-center justify-center shadow-sm`}
               >
-                <span className="relative z-10 text-[16px] font-black font-mono text-muted-foreground">
+                <span className="relative z-10 text-[16px] font-black font-mono text-muted-foreground tabular-nums">
                   +{extraCount}
                 </span>
               </div>
@@ -196,7 +204,7 @@ const FixedSlotGrid = ({
                 </div>
 
                 {item.qty > 1 && (
-                  <div className="absolute top-1 right-1 bg-background/90 text-foreground text-[10px] font-black px-1.5 py-0.5 rounded-[4px] z-30 border border-border shadow-sm leading-none">
+                  <div className="absolute top-1 right-1 bg-background/90 text-foreground text-[10px] font-black px-1.5 py-0.5 rounded-[4px] z-30 border border-border shadow-sm leading-none tabular-nums">
                     x{item.qty}
                   </div>
                 )}
@@ -226,7 +234,7 @@ const VanguardAdCard = memo(
     ad,
     currentUserId,
     currentUserRole,
-    onDelete,
+    onRequestDelete,
     ALL_UNITS,
     onInspectUnit,
     onSendToCalculator,
@@ -234,14 +242,14 @@ const VanguardAdCard = memo(
     ad: TradingAd;
     currentUserId?: string;
     currentUserRole?: string;
-    onDelete: (id: string) => void;
+    onRequestDelete: (ad: TradingAd) => void;
     ALL_UNITS: MasterUnit[];
     onInspectUnit: (unitId: string) => void;
     onSendToCalculator: (give: TradeCard[], get: TradeCard[]) => void;
   }) => {
-    const { globalCompactMode } = useLayoutStore();
     const [isContacting, setIsContacting] = useState(false);
     const [votes, setVotes] = useState({ up: 0, down: 0, userVote: 0 });
+    const isVotingRef = useRef(false);
     const [isNewAd, setIsNewAd] = useState(
       () => Date.now() - new Date(ad.created_at).getTime() < 5000
     );
@@ -260,6 +268,8 @@ const VanguardAdCard = memo(
     const setViewingUser = useInventoryStore((s) => s.setViewingUser);
     const openAdContext = useAdInteractionStore((s) => s.openAdContext);
     const openPopout = useProfileStore((s) => s.openPopout);
+    const loginWithDiscord = useAuthStore((s) => s.loginWithDiscord);
+    const addToast = useToastStore((s) => s.addToast);
 
     useEffect(() => {
       if (isNewAd) {
@@ -291,10 +301,22 @@ const VanguardAdCard = memo(
     }, [ad.id, currentUserId]);
 
     const handleVote = async (val: number) => {
-      if (!currentUserId) return;
+      if (!currentUserId) {
+        addToast("Sign in with Discord to vote on listings", "warning", {
+          action: {
+            label: "Login",
+            onClick: loginWithDiscord,
+          },
+        });
+        return;
+      }
+
+      if (isVotingRef.current) return;
+      isVotingRef.current = true;
       triggerHaptic("light");
 
-      const isRemoving = votes.userVote === val;
+      const prevVotes = { ...votes };
+      const isRemoving = prevVotes.userVote === val;
       const newVal = isRemoving ? 0 : val;
 
       setVotes((prev) => {
@@ -307,24 +329,44 @@ const VanguardAdCard = memo(
         return { up, down, userVote: newVal };
       });
 
-      if (isRemoving) {
-        await supabase
-          .from("ad_votes")
-          .delete()
-          .match({ ad_id: ad.id, user_id: currentUserId });
-      } else {
-        const { error } = await supabase
-          .from("ad_votes")
-          .upsert({ ad_id: ad.id, user_id: currentUserId, vote_value: newVal });
+      try {
+        if (isRemoving) {
+          const { error } = await supabase
+            .from("ad_votes")
+            .delete()
+            .match({ ad_id: ad.id, user_id: currentUserId });
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from("ad_votes")
+            .upsert({
+              ad_id: ad.id,
+              user_id: currentUserId,
+              vote_value: newVal,
+            });
+          if (error) throw error;
 
-        if (!error && newVal === 1 && ad.user_id !== currentUserId) {
-          void useNotificationStore.getState().createNotification({
-            user_id: ad.user_id,
-            actor_id: currentUserId,
-            ad_id: ad.id,
-            type: "upvote",
-          });
+          if (newVal === 1 && ad.user_id !== currentUserId) {
+            void useNotificationStore.getState().createNotification({
+              user_id: ad.user_id,
+              actor_id: currentUserId,
+              ad_id: ad.id,
+              type: "upvote",
+            });
+          }
         }
+      } catch {
+        setVotes(prevVotes);
+        addToast("Could not record your vote—try again.", "error", {
+          action: {
+            label: "Retry",
+            onClick: () => {
+              void handleVote(val);
+            },
+          },
+        });
+      } finally {
+        isVotingRef.current = false;
       }
     };
 
@@ -362,11 +404,16 @@ const VanguardAdCard = memo(
         messageStr = `Hey! Saw your ad on ASTD Value List.\nYou're giving: ${giveNames}\nYou're looking for: ${getNames}\nIs this still available?`;
       }
 
-      try {
-        await navigator.clipboard.writeText(messageStr);
+      const copied = await copyTextWithFallback(messageStr);
+      if (copied) {
+        addToast("Copied trade message & opening Discord…", "info");
         safeOpenExternal(`https://discord.com/users/${ad.profiles.discord_id}`);
-      } catch (err) {
-        console.error("Clipboard failed", err);
+      } else {
+        addToast(
+          "Could not copy message automatically—opening Discord profile.",
+          "warning"
+        );
+        safeOpenExternal(`https://discord.com/users/${ad.profiles.discord_id}`);
       }
 
       setTimeout(() => setIsContacting(false), 2500);
@@ -388,7 +435,9 @@ const VanguardAdCard = memo(
     return (
       <div
         className={`relative rounded-[8px] flex flex-col h-full bg-card border border-border transition-all duration-200 will-change-transform specular-card p-4 ${
-          isNewAd ? "border-primary ring-1 ring-primary" : "hover:border-muted-foreground shadow-sm"
+          isNewAd
+            ? "border-primary ring-1 ring-primary"
+            : "hover:border-muted-foreground shadow-sm"
         }`}
       >
         <div className="flex items-start justify-between mb-4 relative z-10">
@@ -487,7 +536,10 @@ const VanguardAdCard = memo(
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-0.5 bg-muted rounded-[4px] border border-border p-0.5">
               <button
-                onClick={() => handleVote(1)}
+                type="button"
+                onClick={() => void handleVote(1)}
+                aria-label="Upvote listing"
+                aria-pressed={votes.userVote === 1}
                 className={`p-1.5 rounded-[3px] hover:bg-card transition-colors focus-visible:outline-none cursor-pointer active:scale-90 flex items-center justify-center ${
                   votes.userVote === 1
                     ? "text-[#23a559]"
@@ -501,7 +553,7 @@ const VanguardAdCard = memo(
                 />
               </button>
               <span
-                className={`text-[var(--ui-text-sm)] font-bold min-w-[20px] text-center font-mono ${
+                className={`text-[var(--ui-text-sm)] font-bold min-w-[20px] text-center font-mono tabular-nums ${
                   score > 0
                     ? "text-[#23a559]"
                     : score < 0
@@ -512,7 +564,10 @@ const VanguardAdCard = memo(
                 {score}
               </span>
               <button
-                onClick={() => handleVote(-1)}
+                type="button"
+                onClick={() => void handleVote(-1)}
+                aria-label="Downvote listing"
+                aria-pressed={votes.userVote === -1}
                 className={`p-1.5 rounded-[3px] hover:bg-card transition-colors focus-visible:outline-none cursor-pointer active:scale-90 flex items-center justify-center ${
                   votes.userVote === -1
                     ? "text-destructive"
@@ -534,7 +589,8 @@ const VanguardAdCard = memo(
           </div>
 
           <button
-            onClick={handleDiscordContact}
+            type="button"
+            onClick={() => void handleDiscordContact()}
             className={`w-full h-[var(--ui-height-btn)] flex items-center justify-center gap-2 text-[var(--ui-text-sm)] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer border ${
               isContacting
                 ? "bg-[#23a559] text-white border-[#23a559]"
@@ -551,11 +607,14 @@ const VanguardAdCard = memo(
 
           <div className="flex gap-2 w-full">
             <button
+              type="button"
               onClick={() => {
                 triggerHaptic("light");
-                isInventory
-                  ? handleInspectVault()
-                  : onSendToCalculator(ad.give_items, ad.get_items);
+                if (isInventory) {
+                  handleInspectVault();
+                } else {
+                  onSendToCalculator(ad.give_items, ad.get_items);
+                }
               }}
               className="flex-1 h-[var(--ui-height-btn)] flex items-center justify-center gap-1.5 text-[var(--ui-text-sm)] font-bold rounded-[4px] border border-border bg-muted hover:bg-card text-foreground transition-colors active:scale-95 focus-visible:outline-none cursor-pointer"
             >
@@ -570,6 +629,7 @@ const VanguardAdCard = memo(
             </button>
 
             <button
+              type="button"
               onClick={() => {
                 triggerHaptic("light");
                 openAdContext(ad.id, currentUserId);
@@ -581,16 +641,18 @@ const VanguardAdCard = memo(
             </button>
 
             {canDelete && (
-              <HoldToConfirmButton
-                onConfirm={() => {
-                  triggerHaptic("heavy");
-                  onDelete(ad.id);
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic("light");
+                  onRequestDelete(ad);
                 }}
-                title="Hold to delete"
-                className="w-[var(--ui-height-btn)] h-[var(--ui-height-btn)] border border-border text-muted-foreground hover:text-destructive-foreground hover:border-destructive bg-muted hover:bg-destructive rounded-[4px] transition-colors focus-visible:outline-none flex items-center justify-center shrink-0"
+                aria-label="Delete listing"
+                title="Delete listing"
+                className="w-[var(--ui-height-btn)] h-[var(--ui-height-btn)] border border-border text-muted-foreground hover:text-destructive-foreground hover:border-destructive bg-muted hover:bg-destructive rounded-[4px] transition-colors focus-visible:outline-none flex items-center justify-center shrink-0 cursor-pointer"
               >
                 <Trash2 className="w-4 h-4" />
-              </HoldToConfirmButton>
+              </button>
             )}
           </div>
         </div>
@@ -673,10 +735,16 @@ function TradingAdsBoardSkeleton({ count = 6 }: { count?: number }) {
 }
 
 export function TradingAdsChannel() {
-  const [animationParent] = useAutoAnimate<HTMLDivElement>();
-  const { ads, isLoading, fetchAds, subscribeToAds, deleteAd } = useTradingAdsStore();
-  const { profile, loginWithDiscord } = useAuthStore();
-  const { overwrite, setComposerOpen } = useTradeStore();
+  const ads = useTradingAdsStore((s) => s.ads);
+  const isLoading = useTradingAdsStore((s) => s.isLoading);
+  const fetchAds = useTradingAdsStore((s) => s.fetchAds);
+  const subscribeToAds = useTradingAdsStore((s) => s.subscribeToAds);
+  const deleteAd = useTradingAdsStore((s) => s.deleteAd);
+  const profile = useAuthStore((s) => s.profile);
+  const loginWithDiscord = useAuthStore((s) => s.loginWithDiscord);
+  const overwrite = useTradeStore((s) => s.overwrite);
+  const setComposerOpen = useTradeStore((s) => s.setComposerOpen);
+  const addToast = useToastStore((s) => s.addToast);
   const { units: ALL_UNITS } = useUnits();
   const openHistoryModal = useHistoryModalStore((state) => state.openModal);
 
@@ -684,11 +752,63 @@ export function TradingAdsChannel() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortMode, setSortMode] = useState("newest");
 
+  const [adPendingDelete, setAdPendingDelete] = useState<TradingAd | null>(null);
+  const [isDeletingAd, setIsDeletingAd] = useState(false);
+  const deleteDialogRef = useRef<HTMLDivElement>(null);
+  const deleteCancelBtnRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  const showAdsSkeleton = useShowDelay(isLoading);
+
   useEffect(() => {
     fetchAds();
     const unsubscribe = subscribeToAds();
     return () => unsubscribe();
   }, [fetchAds, subscribeToAds]);
+
+  useEffect(() => {
+    if (!adPendingDelete) return;
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    const focusTimer = setTimeout(() => {
+      deleteCancelBtnRef.current?.focus();
+    }, 20);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isDeletingAd) {
+        e.preventDefault();
+        setAdPendingDelete(null);
+        return;
+      }
+      if (e.key === "Tab" && deleteDialogRef.current) {
+        const focusables =
+          deleteDialogRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          );
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      clearTimeout(focusTimer);
+      window.removeEventListener("keydown", handleKeyDown);
+      if (
+        previousFocusRef.current &&
+        typeof previousFocusRef.current.focus === "function"
+      ) {
+        previousFocusRef.current.focus();
+      }
+    };
+  }, [adPendingDelete, isDeletingAd]);
 
   const filteredAndSortedAds = useMemo(() => {
     const list = ads.filter((ad) => {
@@ -728,10 +848,143 @@ export function TradingAdsChannel() {
     });
   }, [ads, searchFilter, typeFilter, sortMode]);
 
+  const activeFilterSummary = useMemo(() => {
+    const parts: string[] = [];
+    if (searchFilter.trim()) {
+      parts.push(`search “${searchFilter.trim()}”`);
+    }
+    if (typeFilter !== "all") {
+      parts.push(`type “${TYPE_FILTER_LABELS[typeFilter] || typeFilter}”`);
+    }
+    return parts.join(" & ");
+  }, [searchFilter, typeFilter]);
+
   const handleSendToCalculator = (give: TradeCard[], get: TradeCard[]) => {
     triggerHaptic("medium");
+    const storeBefore = useTradeStore.getState();
+    const prevGiveMap = new Map(storeBefore.giveItems.map((c) => [c.id, c]));
+    const prevGetMap = new Map(storeBefore.getItems.map((c) => [c.id, c]));
+
+    // Note: an ad's `get_items` become what `You Give`, and `give_items` become what `You Get`
+    const nextGiveMap = new Map(get.map((c) => [c.id, c]));
+    const nextGetMap = new Map(give.map((c) => [c.id, c]));
+
+    type CardDelta = {
+      id: string;
+      deltaQty: number;
+      cardTemplate: TradeCard;
+    };
+
+    const giveDeltas: CardDelta[] = [];
+    const allGiveIds = new Set([...prevGiveMap.keys(), ...nextGiveMap.keys()]);
+    allGiveIds.forEach((id) => {
+      const beforeCard = prevGiveMap.get(id);
+      const afterCard = nextGiveMap.get(id);
+      const beforeQty = beforeCard?.qty ?? 0;
+      const afterQty = afterCard?.qty ?? 0;
+      if (afterQty !== beforeQty) {
+        giveDeltas.push({
+          id,
+          deltaQty: afterQty - beforeQty,
+          cardTemplate: (beforeCard || afterCard)!,
+        });
+      }
+    });
+
+    const getDeltas: CardDelta[] = [];
+    const allGetIds = new Set([...prevGetMap.keys(), ...nextGetMap.keys()]);
+    allGetIds.forEach((id) => {
+      const beforeCard = prevGetMap.get(id);
+      const afterCard = nextGetMap.get(id);
+      const beforeQty = beforeCard?.qty ?? 0;
+      const afterQty = afterCard?.qty ?? 0;
+      if (afterQty !== beforeQty) {
+        getDeltas.push({
+          id,
+          deltaQty: afterQty - beforeQty,
+          cardTemplate: (beforeCard || afterCard)!,
+        });
+      }
+    });
+
     overwrite(get, give);
     window.dispatchEvent(new Event("open-analyzer"));
+
+    const giveSideCount = get.length;
+    const getSideCount = give.length;
+
+    addToast(
+      `Loaded ${giveSideCount} ${
+        giveSideCount === 1 ? "unit" : "units"
+      } into You Give & ${getSideCount} ${
+        getSideCount === 1 ? "unit" : "units"
+      } into You Get.`,
+      "success",
+      {
+        action: {
+          label: "Undo",
+          onClick: () => {
+            const currentStore = useTradeStore.getState();
+
+            const applyUndoSide = (
+              side: "give" | "get",
+              deltas: CardDelta[]
+            ) => {
+              const list =
+                side === "give"
+                  ? currentStore.giveItems
+                  : currentStore.getItems;
+              for (const d of deltas) {
+                const existing = list.find((c) => c.id === d.id);
+                if (d.deltaQty > 0) {
+                  if (!existing) continue;
+                  const targetQty = existing.qty - d.deltaQty;
+                  if (targetQty <= 0) {
+                    currentStore.removeCard(side, d.id);
+                  } else {
+                    currentStore.changeQty(side, d.id, targetQty);
+                  }
+                } else if (d.deltaQty < 0) {
+                  const restoreQty = Math.abs(d.deltaQty);
+                  if (existing) {
+                    currentStore.changeQty(
+                      side,
+                      d.id,
+                      existing.qty + restoreQty
+                    );
+                  } else {
+                    currentStore.addCard(side, {
+                      ...d.cardTemplate,
+                      qty: restoreQty,
+                    });
+                  }
+                }
+              }
+            };
+
+            applyUndoSide("give", giveDeltas);
+            applyUndoSide("get", getDeltas);
+            addToast("Reverted loaded trade listing.", "info");
+          },
+        },
+      }
+    );
+  };
+
+  const handleConfirmDeleteAd = async () => {
+    if (!adPendingDelete || isDeletingAd) return;
+    setIsDeletingAd(true);
+    triggerHaptic("heavy");
+    const targetAd = adPendingDelete;
+    try {
+      const ok = await deleteAd(targetAd.id);
+      if (ok) {
+        addToast("Deleted trade listing from the Live Trading Board.", "info");
+        setAdPendingDelete(null);
+      }
+    } finally {
+      setIsDeletingAd(false);
+    }
   };
 
   const handleCreateAdClick = () => {
@@ -747,7 +1000,8 @@ export function TradingAdsChannel() {
         type="text"
         value={searchFilter}
         onChange={(e) => setSearchFilter(e.target.value)}
-        placeholder="Search board by unit name..."
+        placeholder="Search board by unit or trader…"
+        aria-label="Search trading board"
         className="w-full bg-input text-foreground text-[var(--ui-text-sm)] pl-9 pr-4 h-[var(--ui-height-input)] rounded-[4px] outline-none border border-border focus:border-primary transition-colors shadow-inner"
       />
     </div>
@@ -764,6 +1018,7 @@ export function TradingAdsChannel() {
         ].map((t) => (
           <button
             key={t.id}
+            type="button"
             onClick={() => {
               triggerHaptic("light");
               setTypeFilter(t.id);
@@ -832,32 +1087,53 @@ export function TradingAdsChannel() {
       <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col bg-transparent relative z-10">
         <div className="w-full h-full max-w-[1400px] mx-auto pb-24 p-6">
           {isLoading ? (
-            <TradingAdsBoardSkeleton count={6} />
+            showAdsSkeleton ? (
+              <TradingAdsBoardSkeleton count={6} />
+            ) : null
+          ) : ads.length === 0 ? (
+            <div className="py-16 max-w-lg mx-auto">
+              <EmptyState
+                icon={<GiMegaphone className="w-6 h-6" />}
+                title="No Active Listings Yet"
+                description="There are currently no active trade ads on the board. Post the first listing to start receiving offers."
+                action={
+                  profile
+                    ? {
+                        label: "Create First Ad",
+                        onClick: handleCreateAdClick,
+                      }
+                    : {
+                        label: "Sign In to Post an Ad",
+                        onClick: loginWithDiscord,
+                      }
+                }
+              />
+            </div>
           ) : filteredAndSortedAds.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center gap-4 px-4">
-              <div className="w-16 h-16 md:w-20 md:h-20 bg-muted rounded-[8px] flex items-center justify-center border border-border mb-2 shadow-sm">
-                <GiMegaphone className="w-8 h-8 md:w-10 md:h-10 text-muted-foreground" />
-              </div>
-              <span className="text-[20px] font-black text-foreground tracking-tight">
-                No Active Listings
-              </span>
-              <p className="text-[var(--ui-text-sm)] text-muted-foreground max-w-md leading-relaxed">
-                There are currently no trading ads matching your search
-                parameters. Try adjusting your filters or post a new ad
-                yourself.
-              </p>
-
-              <button
-                onClick={handleCreateAdClick}
-                className="mt-4 px-6 h-[var(--ui-height-btn)] bg-primary text-primary-foreground font-bold rounded-[4px] transition-all active:scale-95 hover:bg-primary/80 cursor-pointer shadow-md"
-              >
-                Be the first to post a trade
-              </button>
+            <div className="py-16 max-w-lg mx-auto">
+              <EmptyState
+                icon={<Search className="w-5 h-5" />}
+                title="No Listings Match Your Filters"
+                description={
+                  activeFilterSummary
+                    ? `No active trade ads match ${activeFilterSummary}.`
+                    : "No active trade ads match your current filter selection."
+                }
+                action={{
+                  label: "Clear Filters",
+                  onClick: () => {
+                    setSearchFilter("");
+                    setTypeFilter("all");
+                  },
+                }}
+              />
             </div>
           ) : (
-            <div 
-              className="grid w-full animate-fade-in gap-6" 
-              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))" }}
+            <div
+              className="grid w-full animate-fade-in gap-6"
+              style={{
+                gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
+              }}
             >
               {filteredAndSortedAds.map((ad) => (
                 <VanguardAdCard
@@ -865,7 +1141,7 @@ export function TradingAdsChannel() {
                   ad={ad}
                   currentUserId={profile?.id}
                   currentUserRole={profile?.role}
-                  onDelete={deleteAd}
+                  onRequestDelete={setAdPendingDelete}
                   ALL_UNITS={ALL_UNITS}
                   onInspectUnit={(unitId) => openHistoryModal(unitId)}
                   onSendToCalculator={handleSendToCalculator}
@@ -876,8 +1152,78 @@ export function TradingAdsChannel() {
         </div>
       </div>
 
+      {/* Delete Ad Confirmation Modal */}
+      {adPendingDelete && (
+        <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/80"
+            onClick={() => {
+              if (!isDeletingAd) setAdPendingDelete(null);
+            }}
+          />
+          <div
+            ref={deleteDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm Delete Listing"
+            className="relative z-10 w-full max-w-md bg-popover border border-border rounded-[8px] shadow-2xl overflow-hidden flex flex-col"
+          >
+            <div className="px-5 py-4 border-b border-border bg-card flex items-center gap-2.5">
+              <Trash2 className="w-4 h-4 text-destructive shrink-0" />
+              <h3 className="text-[15px] font-bold text-foreground tracking-tight">
+                Delete Trade Listing?
+              </h3>
+            </div>
+            <div className="p-5 flex flex-col gap-3">
+              <p className="text-[13px] text-muted-foreground leading-relaxed">
+                This will permanently remove{" "}
+                <strong className="text-foreground">
+                  {adPendingDelete.user_id === profile?.id
+                    ? "your listing"
+                    : `${adPendingDelete.profiles?.username || "this trader"}'s listing`}
+                </strong>{" "}
+                from the Live Trading Board, including its{" "}
+                <strong className="text-foreground tabular-nums">
+                  {adPendingDelete.give_items.length} Offering
+                </strong>{" "}
+                {adPendingDelete.ad_type !== "inventory" && (
+                  <>
+                    &{" "}
+                    <strong className="text-foreground tabular-nums">
+                      {adPendingDelete.get_items.length} Requesting
+                    </strong>{" "}
+                  </>
+                )}
+                items, votes, and discussion thread. This action cannot be
+                undone.
+              </p>
+            </div>
+            <div className="px-5 py-3.5 border-t border-border bg-card flex justify-end gap-2">
+              <button
+                ref={deleteCancelBtnRef}
+                type="button"
+                disabled={isDeletingAd}
+                onClick={() => setAdPendingDelete(null)}
+                className="px-4 py-2 rounded-[4px] text-[12px] font-bold text-foreground hover:bg-muted border border-border focus-visible:outline-none cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <AsyncButton
+                type="button"
+                variant="destructive"
+                size="sm"
+                isLoading={isDeletingAd}
+                loadingAnnouncement="Deleting…"
+                onClick={handleConfirmDeleteAd}
+              >
+                Delete Listing
+              </AsyncButton>
+            </div>
+          </div>
+        </div>
+      )}
+
       <AdInteractionModal />
     </div>
   );
 }
-
