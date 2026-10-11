@@ -43,17 +43,20 @@ export function useGuideSystem({
     (v): v is Record<string, boolean> => typeof v === "object" && v !== null
   );
 
+  const hasTriggeredWelcome = useRef(false);
+
   // Initial Boot: Check if Welcome Wizard needs to open
   useEffect(() => {
-    if (bootStage !== "complete") return;
+    if (bootStage !== "complete" || hasTriggeredWelcome.current) return;
 
     const timer = setTimeout(() => {
+      hasTriggeredWelcome.current = true;
       const isAcknowledged =
         localStorage.getItem("astd_welcome_acknowledged") === "true";
       if (!isAcknowledged) {
         window.dispatchEvent(new Event("open-welcome-modal"));
       }
-    }, 300);
+    }, 250);
 
     return () => clearTimeout(timer);
   }, [bootStage]);
@@ -62,6 +65,10 @@ export function useGuideSystem({
   useEffect(() => {
     if (bootStage !== "complete" || !profile || hasTriggeredAuthTour.current)
       return;
+
+    const isWelcomeOpen =
+      localStorage.getItem("astd_welcome_acknowledged") !== "true";
+    if (isWelcomeOpen) return;
 
     if (!completedGuides["auth_tour"]) {
       hasTriggeredAuthTour.current = true;
@@ -89,6 +96,16 @@ export function useGuideSystem({
     [completedGuides, setActiveChannel, setGuideState]
   );
 
+  // Listen for global 'start-guest-tour' event dispatched by WelcomeModal or Academy
+  useEffect(() => {
+    const handleStartGuestTour = () => {
+      startGuide("guest_tour", true);
+    };
+    window.addEventListener("start-guest-tour", handleStartGuestTour);
+    return () =>
+      window.removeEventListener("start-guest-tour", handleStartGuestTour);
+  }, [startGuide]);
+
   const nextStep = useCallback(
     (maxSteps: number) => {
       setGuideState((prev) => {
@@ -111,14 +128,16 @@ export function useGuideSystem({
   }, [setGuideState]);
 
   const endGuide = useCallback(() => {
-    if (guideState.type) {
-      setCompletedGuides((prev) => ({
-        ...prev,
-        [guideState.type as string]: true,
-      }));
-    }
-    setGuideState({ type: null, step: 0 });
-  }, [guideState.type, setCompletedGuides, setGuideState]);
+    setGuideState((prev) => {
+      if (prev.type) {
+        setCompletedGuides((c) => ({
+          ...c,
+          [prev.type as string]: true,
+        }));
+      }
+      return { type: null, step: 0 };
+    });
+  }, [setCompletedGuides, setGuideState]);
 
   return {
     guideState,

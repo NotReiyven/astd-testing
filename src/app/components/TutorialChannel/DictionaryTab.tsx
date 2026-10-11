@@ -1,15 +1,62 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { Search, Trash2, Check, Book } from "lucide-react";
+import { GiOpenBook } from "react-icons/gi";
 import { useUnits } from "../../../context/UnitContext";
 import {
   getSlangCache,
   learnSlang,
   removeSlang,
 } from "../TradeAnalyzer/smartParser";
-import { getProxyImage, getUnitAssetUrl, handleImageError } from "../../../data";
+import {
+  getProxyImage,
+  getUnitAssetUrl,
+  handleImageError,
+} from "../../../data";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 
 const FIRE_ZIO_AVATAR = getUnitAssetUrl("firezio") || "";
+
+const IconSearch = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="7" cy="7" r="4.5" />
+    <path d="M10.5 10.5L14 14" />
+  </svg>
+);
+
+const IconCheck = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="2.2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3.5 8.5L6.5 11.5L12.5 4.5" />
+  </svg>
+);
+
+const IconTrash = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M2.5 4.5H13.5M6 4.5V3C6 2.45 6.45 2 7 2H9C9.55 2 10 2.45 10 3V4.5M4 4.5L4.7 13C4.75 13.55 5.2 14 5.75 14H10.25C10.8 14 11.25 13.55 11.3 13L12 4.5" />
+  </svg>
+);
 
 export function DictionaryTab() {
   const { units: ALL_UNITS } = useUnits();
@@ -80,28 +127,26 @@ export function DictionaryTab() {
         />
         <div className="flex flex-col gap-1">
           <span className="text-[11px] font-black uppercase tracking-widest text-destructive">
-            Fire Zio's Dictionary Setup
+            Fire Zio&apos;s Dictionary Setup
           </span>
           <p className="text-muted-foreground text-[13px] italic font-medium leading-relaxed">
-            "The Smart Parser relies on this local dictionary to understand your
-            specific abbreviations. Add them here. This data never touches our
-            servers. If you clear your browser cache, you will lose your custom
-            slang."
+            &ldquo;The Smart Parser uses this local dictionary to recognize your
+            custom unit nicknames when you paste Discord trades. Saved
+            abbreviations stay in your browser.&rdquo;
           </p>
         </div>
       </div>
 
       <div className="bg-card border border-border rounded-[8px] p-5 md:p-6 shadow-sm">
-        <div className="flex flex-col gap-1.5 mb-2">
+        <div className="flex flex-col gap-1.5 mb-3">
           <h3 className="text-base md:text-sm font-bold text-foreground uppercase tracking-wider">
             Add New Slang
           </h3>
           <p className="text-muted-foreground text-[12px]">
-            Link a custom abbreviation to an official unit.
+            Link a short nickname or abbreviation to an official unit.
           </p>
         </div>
 
-        {/* Fixed: flex-col lg:flex-row to prevent input crushing on 1024-1440px displays */}
         <div className="flex flex-col lg:flex-row gap-4 relative">
           <div className="flex-1 flex flex-col gap-2">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">
@@ -110,7 +155,7 @@ export function DictionaryTab() {
             <input
               value={newSlangKey}
               onChange={(e) => setNewSlangKey(e.target.value)}
-              placeholder="e.g., 'fbg', 'flaw', 'udbz'"
+              placeholder="e.g., 'fbg', 'flaw', 'udbz'…"
               className="w-full bg-input border border-border rounded-[4px] px-4 py-3 text-base md:text-sm text-foreground outline-none placeholder-muted-foreground focus:ring-1 focus:ring-primary transition-all shadow-inner"
             />
           </div>
@@ -129,7 +174,7 @@ export function DictionaryTab() {
                   : "border-border"
               }`}
             >
-              <Search className="w-4 h-4 text-muted-foreground mr-3 shrink-0" />
+              <IconSearch className="w-4 h-4 text-muted-foreground mr-3 shrink-0" />
               <input
                 type="text"
                 value={searchQuery}
@@ -139,11 +184,11 @@ export function DictionaryTab() {
                   if (newSlangTargetId) setNewSlangTargetId("");
                 }}
                 onFocus={() => setIsDropdownOpen(true)}
-                placeholder="Search official database..."
+                placeholder="Search official database…"
                 className="bg-transparent text-base md:text-sm text-foreground w-full outline-none placeholder-muted-foreground"
               />
               {newSlangTargetId && (
-                <Check className="w-4 h-4 text-[#23a559] ml-2 shrink-0" />
+                <IconCheck className="w-4 h-4 text-[#23a559] ml-2 shrink-0" />
               )}
             </div>
 
@@ -159,12 +204,13 @@ export function DictionaryTab() {
                     return (
                       <button
                         key={u.id}
+                        type="button"
                         onClick={() => {
                           setNewSlangTargetId(u.id);
                           setSearchQuery(u.name);
                           setIsDropdownOpen(false);
                         }}
-                        className="flex items-center gap-3 w-full p-2.5 hover:bg-popover rounded-[4px] transition-colors text-left group focus-visible:outline-none"
+                        className="flex items-center gap-3 w-full p-2.5 hover:bg-popover rounded-[4px] transition-colors text-left group focus-visible:outline-none cursor-pointer"
                       >
                         <div className="w-10 h-10 rounded-[4px] bg-popover overflow-hidden shrink-0 flex items-center justify-center border border-border">
                           {proxyUrl ? (
@@ -203,10 +249,11 @@ export function DictionaryTab() {
 
           <div className="flex flex-col justify-end">
             <button
+              type="button"
               onClick={handleAddSlang}
               className={`shrink-0 px-4 py-3 md:py-2 rounded-[4px] text-base md:text-sm md:text-[13px] font-bold transition-colors focus-visible:outline-none ${
                 newSlangKey.trim() && newSlangTargetId
-                  ? "bg-[#23a559] hover:bg-[#1f914e] text-white active:scale-95 shadow-sm"
+                  ? "bg-[#23a559] hover:bg-[#1f914e] text-white active:scale-95 shadow-sm cursor-pointer"
                   : "bg-popover text-muted-foreground border border-border cursor-not-allowed"
               }`}
               disabled={!newSlangKey.trim() || !newSlangTargetId}
@@ -229,13 +276,13 @@ export function DictionaryTab() {
 
         {savedEntries.length === 0 ? (
           <div className="bg-card border border-border rounded-[8px] p-10 flex flex-col items-center justify-center text-center opacity-70 shadow-inner">
-            <Book className="w-10 h-10 text-muted-foreground mb-3" />
+            <GiOpenBook className="w-10 h-10 text-muted-foreground mb-3" />
             <p className="text-[15px] font-bold text-foreground">
               Your dictionary is empty.
             </p>
             <p className="text-[13px] text-muted-foreground mt-1 max-w-sm leading-relaxed">
               Add your most commonly used abbreviations above so the Calculator
-              can parse your trades flawlessly.
+              can parse your trades automatically.
             </p>
           </div>
         ) : (
@@ -258,7 +305,7 @@ export function DictionaryTab() {
                         Slang
                       </span>
                       <span className="text-base md:text-sm font-black text-foreground truncate">
-                        "{key}"
+                        &ldquo;{key}&rdquo;
                       </span>
                     </div>
 
@@ -291,11 +338,12 @@ export function DictionaryTab() {
                   </div>
 
                   <button
+                    type="button"
                     onClick={() => handleRemoveSlang(key)}
-                    className="text-muted-foreground hover:text-destructive p-2 md:p-1.5 transition-colors rounded-[4px] md:rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive hover:bg-destructive/10 shrink-0 ml-2 cursor-pointer"
+                    className="text-muted-foreground hover:text-destructive p-2 md:p-1.5 transition-colors rounded-[4px] md:rounded-[3px] focus-visible:outline-none hover:bg-destructive/10 shrink-0 ml-2 cursor-pointer"
                     title="Remove slang"
                   >
-                    <Trash2 className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                    <IconTrash className="w-4 h-4 md:w-3.5 md:h-3.5" />
                   </button>
                 </div>
               );
@@ -306,5 +354,3 @@ export function DictionaryTab() {
     </div>
   );
 }
-
-

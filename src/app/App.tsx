@@ -7,7 +7,6 @@ import {
   useRef,
 } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
-import { Hash, Check, Ban, ExternalLink } from "lucide-react";
 import { FilterKey } from "../types";
 import { useStickyState, isBoolean } from "../hooks/useStickyState";
 import { useSEO } from "../hooks/useSEO";
@@ -85,7 +84,11 @@ const AdminChannel = lazy(() =>
     default: module.AdminChannel,
   }))
 );
-const NotificationsChannel = lazy(() => import("./components/NotificationsChannel").then((module) => ({ default: module.NotificationsChannel })));
+const NotificationsChannel = lazy(() =>
+  import("./components/NotificationsChannel").then((module) => ({
+    default: module.NotificationsChannel,
+  }))
+);
 const ProfileChannel = lazy(() =>
   import("./components/ProfileChannel").then((module) => ({
     default: module.ProfileChannel,
@@ -398,8 +401,14 @@ export default function App() {
   };
 
   useSEO({
-    title: `ASTD Value List | ${currentChannelInfo.title === "home" ? "All-Star Trading & Analytics" : currentChannelInfo.title.replace("-", " ").toUpperCase()}`,
-    description: currentChannelInfo.subtitle || "Calculate and analyze Roblox item trades with real-time value comparisons, live market data, demand insights, and customizable inventory management."
+    title: `ASTD Value List | ${
+      currentChannelInfo.title === "home"
+        ? "All-Star Trading & Analytics"
+        : currentChannelInfo.title.replace("-", " ").toUpperCase()
+    }`,
+    description:
+      currentChannelInfo.subtitle ||
+      "Calculate and analyze Roblox item trades with real-time value comparisons, live market data, demand insights, and customizable inventory management.",
   });
 
   const isGuestStep1 =
@@ -427,7 +436,9 @@ export default function App() {
   if (bootStage === "complete" && profile?.role === "banned") {
     return (
       <div className="flex flex-col items-center justify-center w-screen h-dvh bg-background text-foreground font-sans p-6 text-center select-none">
-        <Ban className="w-20 h-20 text-destructive mb-6" />
+        <div className="w-20 h-20 rounded-full border-4 border-destructive text-destructive flex items-center justify-center text-3xl font-mono mb-6">
+          ✕
+        </div>
         <h1 className="text-[28px] font-black uppercase tracking-widest text-destructive mb-2">
           Account Terminated
         </h1>
@@ -449,7 +460,7 @@ export default function App() {
           rel="noopener noreferrer"
           className="px-8 py-3.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[13px] uppercase tracking-wider rounded-[4px] flex items-center justify-center gap-2 border border-border focus-visible:outline-none"
         >
-          Appeal in Discord <ExternalLink className="w-4 h-4" />
+          Appeal in Discord <span>↗</span>
         </a>
       </div>
     );
@@ -471,28 +482,29 @@ export default function App() {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
+        {/* Synchronous global overlays outside lazy Suspense so route transitions never freeze modals */}
+        <GlobalToastContainer />
+        <WelcomeModal />
+        <HistoryModal />
+        <ExternalLinkModal />
+        <AdComposerModal />
+        <LoginRecommendationModal
+          isOpen={!!loginModalChannel}
+          onClose={() => setLoginModalChannel(null)}
+          channelName={loginModalChannel || ""}
+        />
+
+        <AquaGuideOverlay
+          guideState={guideState}
+          onNext={nextStep}
+          onPrev={prevStep}
+          onEndGuide={endGuide}
+          isAnalyzerOpen={isAnalyzerOpen}
+        />
+
+        <MiniProfilePopout />
+
         <Suspense fallback={null}>
-          <GlobalToastContainer />
-          <WelcomeModal />
-          <HistoryModal />
-          <ExternalLinkModal />
-          <AdComposerModal />
-          <LoginRecommendationModal
-            isOpen={!!loginModalChannel}
-            onClose={() => setLoginModalChannel(null)}
-            channelName={loginModalChannel || ""}
-          />
-
-          <AquaGuideOverlay
-            guideState={guideState}
-            onNext={nextStep}
-            onPrev={prevStep}
-            onEndGuide={endGuide}
-            isAnalyzerOpen={isAnalyzerOpen}
-          />
-
-          <MiniProfilePopout />
-
           {isRosterOpen && (
             <div
               className="md:hidden fixed inset-0 bg-black/80 z-40"
@@ -510,8 +522,8 @@ export default function App() {
             >
               {toast && (
                 <div className="flex items-center gap-3 px-5 py-3.5 rounded-[4px] border border-border bg-card shadow-sm">
-                  <div className="w-6 h-6 rounded-[4px] flex items-center justify-center flex-shrink-0 bg-[#23a559]">
-                    <Check className="w-4 h-4 text-white" />
+                  <div className="w-6 h-6 rounded-[4px] flex items-center justify-center flex-shrink-0 bg-[#23a559] text-white text-xs font-mono">
+                    ✓
                   </div>
                   <span className="text-foreground text-[13px] font-bold tracking-wide whitespace-nowrap">
                     Added{" "}
@@ -610,7 +622,10 @@ export default function App() {
                     </GranularErrorBoundary>
                   }
                 />
-                <Route path="/notifications" element={<NotificationsChannel />} />
+                <Route
+                  path="/notifications"
+                  element={<NotificationsChannel />}
+                />
                 <Route path="/profile" element={<ProfileChannel />} />
                 <Route
                   path="/trading-ads"
@@ -667,4 +682,3 @@ export default function App() {
     </>
   );
 }
-

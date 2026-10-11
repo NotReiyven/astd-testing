@@ -1,4 +1,10 @@
-import { LayoutGrid, Target, BookOpen, Search } from "lucide-react";
+import React from "react";
+import {
+  GiChecklist,
+  GiCrossedSwords,
+  GiOpenBook,
+  GiFairyWand,
+} from "react-icons/gi";
 import { GuideType } from "../guides/AquaGuideOverlay";
 import { triggerHaptic } from "../../../data/helpers";
 
@@ -13,7 +19,7 @@ export function TutorialChannel({
   activeTab,
   setActiveTab,
 }: {
-  startGuide: (type: GuideType) => void;
+  startGuide: (type: GuideType, force?: boolean) => void;
   completedGuides: Record<string, boolean>;
   activeTab: "sandbox" | "simulator" | "theory" | "dictionary";
   setActiveTab: (
@@ -36,53 +42,68 @@ export function TutorialChannel({
       `}</style>
 
       {/* Navigation tabs */}
-      <div className="flex-shrink-0 px-4 md:px-6 py-3 border-b border-border bg-card/90 backdrop-blur-md relative z-40 shadow-sm">
+      <div className="flex-shrink-0 px-4 md:px-6 py-3 border-b border-border bg-card relative z-40 shadow-sm flex flex-wrap items-center justify-between gap-2">
         <div
-          className="flex bg-popover/90 rounded-[6px] p-1 border border-border w-full overflow-x-auto hide-scrollbar shadow-inner"
+          className="flex bg-popover rounded-[6px] p-1 border border-border overflow-x-auto hide-scrollbar shadow-inner"
           onTouchStart={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
         >
           <button
+            type="button"
             onClick={() => handleTabClick("sandbox")}
-            className={`flex items-center gap-1.5 px-5 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${
               activeTab === "sandbox"
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <LayoutGrid className="w-3.5 h-3.5" /> Academy Checklist
+            <GiChecklist className="w-3.5 h-3.5" /> Academy Checklist
           </button>
           <button
+            type="button"
             onClick={() => handleTabClick("simulator")}
-            className={`flex items-center gap-1.5 px-5 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${
               activeTab === "simulator"
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Target className="w-3.5 h-3.5" /> Mock Trades
+            <GiCrossedSwords className="w-3.5 h-3.5" /> Mock Trades
           </button>
           <button
+            type="button"
             onClick={() => handleTabClick("theory")}
-            className={`flex items-center gap-1.5 px-5 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${
               activeTab === "theory"
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <BookOpen className="w-3.5 h-3.5" /> Market Theory
+            <GiOpenBook className="w-3.5 h-3.5" /> Market Guide
           </button>
           <button
+            type="button"
             onClick={() => handleTabClick("dictionary")}
-            className={`flex items-center gap-1.5 px-5 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${
               activeTab === "dictionary"
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Search className="w-3.5 h-3.5" /> Live Parser Demo
+            <GiFairyWand className="w-3.5 h-3.5" /> Custom Slang
           </button>
         </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            triggerHaptic("light");
+            startGuide("guest_tour", true);
+          }}
+          className="px-3 py-1.5 rounded-[6px] bg-popover hover:bg-muted border border-border text-foreground text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
+        >
+          Replay Aqua Tour
+        </button>
       </div>
 
       {/* Tab viewport */}

@@ -1,70 +1,174 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "../lib/supabase";
 import {
   useAuthStore,
   UserProfile as AuthUserProfile,
 } from "../store/useAuthStore";
+import {
+  unpackProfileRow,
+  packBannerConfig,
+  useProfileStore,
+  UserProfileData,
+} from "../store/useProfileStore";
+import { TradingAd } from "../store/useTradingAdsStore";
 import { useUnits } from "../context/UnitContext";
 import { triggerHaptic } from "../data/helpers";
 
-export interface UserProfile extends AuthUserProfile {
+export interface UserProfile
+  extends AuthUserProfile,
+    Omit<Partial<UserProfileData>, keyof AuthUserProfile> {
   assigned_roles: string[];
 }
 
 export interface SystemMetrics {
   totalUsers: number;
   activeAds: number;
+  expiredAds: number;
   bannedUsers: number;
+  staffCount: number;
+  totalComments: number;
 }
 
 export interface ModLog {
   id: string;
+  target_user_id?: string;
   action_type: string;
   reason: string;
   created_at: string;
   moderator_id: string;
-  profiles: { username: string };
+  profiles?: { username: string };
+  target_profile?: { username: string };
+}
+
+export interface UserVaultItem {
+  unit_id: string;
+  quantity: number;
+}
+
+export interface UserWishlistItem {
+  unit_id: string;
+  priority?: string;
+}
+
+export interface DetailedUserIntel {
+  netWorth: number;
+  unitCount: number;
+  adCount: number;
+  totalAdsCount: number;
+  wishlistCount: number;
+  commentCount: number;
+  inventoryItems: UserVaultItem[];
+  wishlistItems: UserWishlistItem[];
+  userAds: TradingAd[];
+  isLoading: boolean;
 }
 
 interface SupabaseProfile extends AuthUserProfile {
+  bio?: string;
+  banner_color?: string;
+  roblox_username?: string;
+  global_rep?: number;
   user_roles?: { roles?: { name: string } }[];
 }
 
-const ROLE_PRIORITY: Record<string, number> = {
+export const CORE_SYSTEM_ROLES = ["master", "admin", "mod", "user", "banned"];
+
+export const ROLE_PRIORITY: Record<string, number> = {
   master: 0,
   admin: 1,
   mod: 2,
   user: 3,
-  banned: 4,
+  banned: 99,
 };
+
+export function getEffectiveRoleRank(
+  roleName: string,
+  availableRoles?: { name: string; rank: number }[]
+): number {
+  const lower = (roleName || "user").toLowerCase();
+  if (lower in ROLE_PRIORITY) return ROLE_PRIORITY[lower];
+  const found = availableRoles?.find((r) => r.name.toLowerCase() === lower);
+  return found ? Math.max(3, found.rank) : 10;
+}
+
+export function getUserHighestRank(
+  user: Pick<UserProfile, "role" | "assigned_roles"> | null | undefined,
+  availableRoles?: { name: string; rank: number }[]
+): number {
+  if (!user) return 99;
+  const roles = new Set<string>([
+    (user.role || "user").toLowerCase(),
+    ...(user.assigned_roles || []).map((r) => r.toLowerCase()),
+  ]);
+  if (roles.has("master")) return 0;
+  if (roles.has("admin")) return 1;
+  if (roles.has("mod")) return 2;
+  if (roles.has("banned")) return 99;
+  let best = 3;
+  roles.forEach((r) => {
+    const rank = getEffectiveRoleRank(r, availableRoles);
+    if (rank < best) best = rank;
+  });
+  return best;
+}
 
 export function useAdminIntel() {
   const { profile } = useAuthStore();
   const { units: ALL_UNITS } = useUnits();
 
-  const isMaster = profile?.role?.toLowerCase() === "master";
-  const canModerate =
-    profile?.role === "master" ||
-    profile?.role === "admin" ||
-    profile?.role === "mod";
+  const callerRole = (profile?.role || "user").toLowerCase() as
+    | "master"
+    | "admin"
+    | "mod"
+    | "user"
+    | "banned";
+
+  const isMaster = callerRole === "master";
+  const isAdmin = callerRole === "admin";
+  const isMod = callerRole === "mod";
+  const canModerate = isMaster || isAdmin || isMod;
+
+  // Strict capability flags matching the staff hierarchy:
+  // Master: Everything + Debug/Cheats + Security + Destructive Vault/Account Nuke
+  // Admin: Delete Ads + Manage Roles (non-master/non-admin) + Manage Users (Ban/Unban, Reset Profile, Purge Comments)
+  // Mod: Manage Roles (community roles only) + Delete Ads
+  const canManageUsers = isMaster || isAdmin;
+  const canManageRoles = isMaster || isAdmin || isMod;
+  const canDeleteAds = isMaster || isAdmin || isMod;
+  const canUseDestructiveTools = isMaster;
+  const canUseMasterTools = isMaster;
 
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-  const [userIntel, setUserIntel] = useState({
+  const [userIntel, setUserIntel] = useState<DetailedUserIntel>({
     netWorth: 0,
+    unitCount: 0,
     adCount: 0,
+    totalAdsCount: 0,
+    wishlistCount: 0,
+    commentCount: 0,
+    inventoryItems: [],
+    wishlistItems: [],
+    userAds: [],
     isLoading: false,
   });
   const [metrics, setMetrics] = useState<SystemMetrics>({
     totalUsers: 0,
     activeAds: 0,
+    expiredAds: 0,
     bannedUsers: 0,
+    staffCount: 0,
+    totalComments: 0,
   });
   const [availableRoles, setAvailableRoles] = useState<
     { name: string; color: string; rank: number }[]
   >([]);
   const [modLogs, setModLogs] = useState<ModLog[]>([]);
+  const [globalLogs, setGlobalLogs] = useState<ModLog[]>([]);
+  const [platformAds, setPlatformAds] = useState<TradingAd[]>([]);
+  const [isLoadingAds, setIsLoadingAds] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(false);
   const [showBannedOnly, setShowBannedOnly] = useState(false);
   const [toast, setToast] = useState<{
@@ -80,35 +184,190 @@ export function useAdminIntel() {
     []
   );
 
+  // Live server-side clearance check to prevent DevTools state spoofing
+  const verifyLiveClearance = useCallback(
+    async (
+      allowedRoles: ("master" | "admin" | "mod")[],
+      targetUser?: UserProfile | null
+    ): Promise<{ ok: boolean; liveRole?: string }> => {
+      if (!profile || !allowedRoles.includes(callerRole as any)) {
+        showToast("Access denied: insufficient staff clearance.", "error");
+        return { ok: false };
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) {
+        showToast("Session expired. Please sign in again.", "error");
+        return { ok: false };
+      }
+
+      const { data: liveProfile, error } = await supabase
+        .from("profiles")
+        .select("id, role")
+        .eq("id", session.user.id)
+        .single();
+
+      const liveRole = (liveProfile?.role || "user").toLowerCase();
+      if (error || !allowedRoles.includes(liveRole as any)) {
+        showToast(
+          "Security Alert: Live role verification failed. Action blocked.",
+          "error"
+        );
+        return { ok: false };
+      }
+
+      if (targetUser) {
+        const targetHighest = getUserHighestRank(targetUser, availableRoles);
+        const callerRank = ROLE_PRIORITY[liveRole] ?? 99;
+
+        // Nobody except master can act on master; admin cannot act on master/admin; mod cannot act on master/admin/mod
+        if (liveRole !== "master" && targetHighest <= callerRank) {
+          showToast(
+            `Hierarchy Violation: ${liveRole.toUpperCase()} cannot modify a user of equal or higher rank.`,
+            "error"
+          );
+          return { ok: false };
+        }
+      }
+
+      return { ok: true, liveRole };
+    },
+    [profile, callerRole, availableRoles, showToast]
+  );
+
+  // Check if current staff member is allowed to modify a target user in the UI
+  const canActOnUser = useCallback(
+    (target: UserProfile | null | undefined): boolean => {
+      if (!target || !canModerate) return false;
+      if (isMaster) return true;
+      const targetRank = getUserHighestRank(target, availableRoles);
+      const myRank = ROLE_PRIORITY[callerRole] ?? 99;
+      return targetRank > myRank;
+    },
+    [canModerate, isMaster, availableRoles, callerRole]
+  );
+
+  // Check if current staff member can toggle a specific role on a target user
+  const canToggleRole = useCallback(
+    (roleName: string, target: UserProfile | null | undefined): boolean => {
+      if (!target || !canManageRoles) return false;
+      const normalized = roleName.toLowerCase();
+
+      // Prevent stripping master or banning oneself
+      if (
+        target.id === profile?.id &&
+        (normalized === "master" || normalized === "banned")
+      ) {
+        return false;
+      }
+
+      if (isMaster) return true;
+
+      // Non-master staff cannot modify equal/higher rank users
+      if (!canActOnUser(target)) return false;
+
+      if (isAdmin) {
+        // Admin can toggle mod, user, banned, and custom roles, but NEVER master or admin
+        return normalized !== "master" && normalized !== "admin";
+      }
+
+      if (isMod) {
+        // Mod can ONLY toggle custom community roles (cannot toggle master, admin, mod, user, or banned)
+        return !CORE_SYSTEM_ROLES.includes(normalized);
+      }
+
+      return false;
+    },
+    [canManageRoles, profile?.id, isMaster, isAdmin, isMod, canActOnUser]
+  );
+
   const loadMetrics = useCallback(async () => {
     if (!canModerate) return;
     const now = new Date().toISOString();
-    const [usersRes, adsRes, bannedRes, rolesRes] = await Promise.all([
+    const [
+      usersRes,
+      adsRes,
+      expiredAdsRes,
+      bannedRes,
+      staffRes,
+      commentsRes,
+      rolesRes,
+      globalLogsRes,
+    ] = await Promise.all([
       supabase.from("profiles").select("id", { count: "exact", head: true }),
       supabase
         .from("trading_ads")
         .select("id", { count: "exact", head: true })
         .gt("expires_at", now),
       supabase
+        .from("trading_ads")
+        .select("id", { count: "exact", head: true })
+        .lte("expires_at", now),
+      supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
         .eq("role", "banned"),
       supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .in("role", ["master", "admin", "mod"]),
+      supabase.from("ad_comments").select("id", { count: "exact", head: true }),
+      supabase
         .from("roles")
         .select("name, color, rank")
         .order("rank", { ascending: true }),
+      supabase
+        .from("moderation_logs")
+        .select("*, profiles!moderation_logs_moderator_id_fkey(username)")
+        .order("created_at", { ascending: false })
+        .limit(40),
     ]);
 
     setMetrics({
       totalUsers: usersRes.count || 0,
       activeAds: adsRes.count || 0,
+      expiredAds: expiredAdsRes.count || 0,
       bannedUsers: bannedRes.count || 0,
+      staffCount: staffRes.count || 0,
+      totalComments: commentsRes.count || 0,
     });
 
     if (rolesRes.data) {
       setAvailableRoles(rolesRes.data);
     }
+
+    if (globalLogsRes.data) {
+      setGlobalLogs(globalLogsRes.data as ModLog[]);
+    }
   }, [canModerate]);
+
+  const fetchPlatformAds = useCallback(
+    async (includeExpired = false) => {
+      if (!canDeleteAds) return;
+      setIsLoadingAds(true);
+      const now = new Date().toISOString();
+      let req = supabase
+        .from("trading_ads")
+        .select(
+          `*, profiles!trading_ads_user_id_fkey(username, avatar_url, role, discord_id, status)`
+        )
+        .order("created_at", { ascending: false })
+        .limit(80);
+
+      if (!includeExpired || !isMaster) {
+        req = req.gt("expires_at", now);
+      }
+
+      const { data, error } = await req;
+      if (!error && data) {
+        setPlatformAds(data as TradingAd[]);
+      }
+      setIsLoadingAds(false);
+    },
+    [canDeleteAds, isMaster]
+  );
 
   const fetchUsers = useCallback(
     async (query = "", bannedOnly = showBannedOnly) => {
@@ -117,7 +376,7 @@ export function useAdminIntel() {
       let request = supabase
         .from("profiles")
         .select("*, user_roles(roles(name))")
-        .limit(100);
+        .limit(150);
 
       if (bannedOnly) {
         request = request.eq("role", "banned");
@@ -129,18 +388,54 @@ export function useAdminIntel() {
             `discord_id.eq.${query},username.ilike.%${query}%`
           );
         } else {
-          request = request.ilike("username", `%${query}%`);
+          request = request.or(
+            `username.ilike.%${query}%,roblox_username.ilike.%${query}%`
+          );
         }
       }
 
-      const { data, error } = await request;
+      const [{ data, error }, { data: repLogs }] = await Promise.all([
+        request,
+        supabase
+          .from("moderation_logs")
+          .select("target_user_id, action_type, created_at")
+          .ilike("action_type", "MASTER REP OVERRIDE:%")
+          .order("created_at", { ascending: false })
+          .limit(100),
+      ]);
+
+      const repOverrideMap = new Map<string, number>();
+      (repLogs || []).forEach((log: any) => {
+        if (!log.target_user_id || repOverrideMap.has(log.target_user_id)) return;
+        const m = String(log.action_type || "").match(
+          /MASTER REP OVERRIDE:\s*([+-]?\d+)/i
+        );
+        if (m) {
+          const val = parseInt(m[1], 10);
+          if (!Number.isNaN(val)) repOverrideMap.set(log.target_user_id, val);
+        }
+      });
+
       if (!error && data) {
         const mappedUsers = data.map((u: SupabaseProfile) => {
+          const unpacked = unpackProfileRow(u);
+          const logRep = repOverrideMap.get(u.id);
+          const effectiveRep =
+            logRep !== undefined
+              ? logRep
+              : unpacked.master_rep_override !== null
+                ? unpacked.master_rep_override
+                : unpacked.global_rep;
           const rolesList =
             u.user_roles?.map((ur: any) => ur.roles?.name).filter(Boolean) ||
             [];
           if (rolesList.length === 0 && u.role) rolesList.push(u.role);
-          return { ...u, assigned_roles: rolesList } as UserProfile;
+          return {
+            ...u,
+            ...unpacked,
+            global_rep: effectiveRep,
+            assigned_roles: Array.from(new Set(rolesList)),
+          } as UserProfile;
         });
 
         const sorted = [...mappedUsers].sort((a, b) => {
@@ -153,61 +448,112 @@ export function useAdminIntel() {
         });
 
         setUsers(sorted);
-        if (sorted.length === 1 && query) setSelectedUser(sorted[0]);
+        setSelectedUser((prev) => {
+          if (prev) {
+            const refreshed = sorted.find((u) => u.id === prev.id);
+            if (refreshed) return refreshed;
+          }
+          if (sorted.length === 1 && query) return sorted[0];
+          return prev;
+        });
       }
       setIsLoading(false);
     },
     [showBannedOnly, canModerate]
   );
 
+  const filteredUsers = useMemo(() => {
+    if (roleFilter === "all") return users;
+    if (roleFilter === "staff") {
+      return users.filter(
+        (u) =>
+          u.role === "master" ||
+          u.role === "admin" ||
+          u.role === "mod" ||
+          u.assigned_roles?.some((r) => ["master", "admin", "mod"].includes(r))
+      );
+    }
+    return users.filter(
+      (u) => u.role === roleFilter || u.assigned_roles?.includes(roleFilter)
+    );
+  }, [users, roleFilter]);
+
   useEffect(() => {
     loadMetrics();
     fetchUsers(searchQuery, showBannedOnly);
-  }, [loadMetrics, fetchUsers, showBannedOnly, searchQuery]);
+    fetchPlatformAds(false);
+  }, [loadMetrics, fetchUsers, fetchPlatformAds, showBannedOnly, searchQuery]);
 
-  useEffect(() => {
-    if (!selectedUser || !canModerate) return;
-
-    const loadUserIntel = async () => {
+  const refreshSelectedUserIntel = useCallback(
+    async (targetUser: UserProfile) => {
+      if (!canModerate) return;
       setUserIntel((prev) => ({ ...prev, isLoading: true }));
       const now = new Date().toISOString();
 
-      const [invRes, adsRes, logsRes] = await Promise.all([
-        supabase
-          .from("user_inventory")
-          .select("unit_id, quantity")
-          .eq("user_id", selectedUser.id),
-        supabase
-          .from("trading_ads")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", selectedUser.id)
-          .gt("expires_at", now),
-        supabase
-          .from("moderation_logs")
-          .select("*, profiles!moderation_logs_moderator_id_fkey(username)")
-          .eq("target_user_id", selectedUser.id)
-          .order("created_at", { ascending: false }),
-      ]);
+      const [invRes, wishlistRes, adsRes, commentsRes, logsRes] =
+        await Promise.all([
+          supabase
+            .from("user_inventory")
+            .select("unit_id, quantity")
+            .eq("user_id", targetUser.id),
+          supabase
+            .from("user_wishlist")
+            .select("unit_id, priority")
+            .eq("user_id", targetUser.id),
+          supabase
+            .from("trading_ads")
+            .select(
+              "*, profiles!trading_ads_user_id_fkey(username, avatar_url, role, discord_id, status)"
+            )
+            .eq("user_id", targetUser.id)
+            .order("created_at", { ascending: false })
+            .limit(40),
+          supabase
+            .from("ad_comments")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", targetUser.id),
+          supabase
+            .from("moderation_logs")
+            .select("*, profiles!moderation_logs_moderator_id_fkey(username)")
+            .eq("target_user_id", targetUser.id)
+            .order("created_at", { ascending: false }),
+        ]);
 
       let calculatedNetWorth = 0;
-      if (invRes.data) {
-        invRes.data.forEach((item: any) => {
-          const master = ALL_UNITS.find((u) => u.id === item.unit_id);
-          if (master) {
-            const isOC =
-              master.value === "owner" ||
-              master.valueDisplay === "Owner's Choice" ||
-              master.valueDisplay === "O/C";
-            if (!isOC) {
-              const val =
-                typeof master.value === "number"
-                  ? master.value
-                  : master.valueMin || 0;
-              calculatedNetWorth += val * item.quantity;
-            }
+      let totalUnits = 0;
+      const inventoryItems: UserVaultItem[] = (invRes.data || []) as UserVaultItem[];
+
+      inventoryItems.forEach((item) => {
+        totalUnits += Number(item.quantity || 0);
+        const master = ALL_UNITS.find((u) => u.id === item.unit_id);
+        if (master) {
+          const isOC =
+            master.value === "owner" ||
+            master.valueDisplay === "Owner's Choice" ||
+            master.valueDisplay === "O/C";
+          if (!isOC) {
+            const val =
+              typeof master.value === "number"
+                ? master.value
+                : master.valueMin || 0;
+            calculatedNetWorth += val * item.quantity;
           }
-        });
-      }
+        }
+      });
+
+      const allUserAds = (adsRes.data || []) as TradingAd[];
+      const activeUserAds = allUserAds.filter((a) => a.expires_at > now);
+
+      // Privacy enforcement: Master sees all ads (including private/expired); Admin/Mod see active ads or public history
+      const visibleAds = isMaster
+        ? allUserAds
+        : allUserAds.filter((ad) => {
+            const isLive = ad.expires_at > now;
+            if (isLive) return true; // Staff can always moderate live ads
+            if (targetUser.ad_history_public === false) return false;
+            if (targetUser.private_ad_ids?.includes(ad.id)) return false;
+            return true;
+          });
 
       if (logsRes.data) {
         setModLogs(logsRes.data as ModLog[]);
@@ -215,13 +561,24 @@ export function useAdminIntel() {
 
       setUserIntel({
         netWorth: calculatedNetWorth,
-        adCount: adsRes.count || 0,
+        unitCount: totalUnits,
+        adCount: activeUserAds.length,
+        totalAdsCount: allUserAds.length,
+        wishlistCount: wishlistRes.data?.length || 0,
+        commentCount: commentsRes.count || 0,
+        inventoryItems,
+        wishlistItems: (wishlistRes.data || []) as UserWishlistItem[],
+        userAds: visibleAds,
         isLoading: false,
       });
-    };
+    },
+    [ALL_UNITS, canModerate, isMaster]
+  );
 
-    loadUserIntel();
-  }, [selectedUser?.id, ALL_UNITS, canModerate]);
+  useEffect(() => {
+    if (!selectedUser || !canModerate) return;
+    refreshSelectedUserIntel(selectedUser);
+  }, [selectedUser?.id, canModerate, refreshSelectedUserIntel]);
 
   const logModAction = async (
     targetUserId: string,
@@ -232,6 +589,7 @@ export function useAdminIntel() {
 
     const optimisticLog: ModLog = {
       id: Math.random().toString(),
+      target_user_id: targetUserId,
       action_type: actionType,
       reason: reason,
       created_at: new Date().toISOString(),
@@ -240,6 +598,7 @@ export function useAdminIntel() {
     };
 
     setModLogs((prev) => [optimisticLog, ...prev]);
+    setGlobalLogs((prev) => [optimisticLog, ...prev]);
 
     const { error } = await supabase.from("moderation_logs").insert({
       target_user_id: targetUserId,
@@ -252,15 +611,41 @@ export function useAdminIntel() {
       console.error("🚨 DB Insert Error for Moderation Log:", error.message);
       showToast("Audit log failed to save. Please try again.", "error");
       setModLogs((prev) => prev.filter((log) => log.id !== optimisticLog.id));
+      setGlobalLogs((prev) => prev.filter((log) => log.id !== optimisticLog.id));
     }
   };
 
+  // ============================================================================
+  // ROLE MANAGEMENT (Master, Admin, Mod — scoped by rank hierarchy)
+  // ============================================================================
   const updateUserRole = async (
     targetUserId: string,
     newRole: string,
     reason?: string
   ) => {
-    if (!canModerate) return false;
+    const target =
+      users.find((u) => u.id === targetUserId) ||
+      (selectedUser?.id === targetUserId ? selectedUser : null);
+
+    if (!canToggleRole(newRole, target)) {
+      showToast(
+        `Clearance Denied: Your role (${callerRole.toUpperCase()}) cannot assign or revoke '${newRole.toUpperCase()}' on this user.`,
+        "error"
+      );
+      return false;
+    }
+
+    // Banning via role toggle requires Admin or Master
+    if (newRole.toLowerCase() === "banned" && !canManageUsers) {
+      showToast("Only Admins and Master can ban or unban accounts.", "error");
+      return false;
+    }
+
+    const clearance = await verifyLiveClearance(
+      ["master", "admin", "mod"],
+      target
+    );
+    if (!clearance.ok) return false;
 
     const { error } = await supabase.rpc("admin_assign_role", {
       target_user_id: targetUserId,
@@ -268,66 +653,112 @@ export function useAdminIntel() {
     });
 
     if (error) {
-      showToast("A database error occurred. Please try again.", "error");
+      showToast("Could not update role—check database permissions.", "error");
       return false;
-    } else {
-      if (reason)
-        await logModAction(
-          targetUserId,
-          `ROLE TOGGLE: ${newRole.toUpperCase()}`,
-          reason
-        );
-
-      if (selectedUser?.id === targetUserId) {
-        const currentRoles = selectedUser.assigned_roles || [];
-        const hasRole = currentRoles.includes(newRole);
-        const nextRoles = hasRole
-          ? currentRoles.filter((r) => r !== newRole)
-          : [...currentRoles, newRole];
-        setSelectedUser({
-          ...selectedUser,
-          assigned_roles: nextRoles,
-          role: (nextRoles[0] as UserProfile["role"]) || "user",
-        });
-      }
-      fetchUsers(searchQuery, showBannedOnly);
-      showToast(`Toggled role: ${newRole.toUpperCase()}`);
-      if (newRole === "banned") loadMetrics();
-      return true;
     }
+
+    await logModAction(
+      targetUserId,
+      `ROLE TOGGLE: ${newRole.toUpperCase()}`,
+      reason || `Role '${newRole}' toggled by ${profile?.username || "Staff"}`
+    );
+
+    if (selectedUser?.id === targetUserId) {
+      const currentRoles = selectedUser.assigned_roles || [];
+      const hasRole = currentRoles.includes(newRole);
+      const nextRoles = hasRole
+        ? currentRoles.filter((r) => r !== newRole)
+        : [...currentRoles, newRole];
+      setSelectedUser({
+        ...selectedUser,
+        assigned_roles: nextRoles,
+        role: (nextRoles[0] as UserProfile["role"]) || "user",
+      });
+    }
+    fetchUsers(searchQuery, showBannedOnly);
+    showToast(`Toggled role: ${newRole.toUpperCase()}`);
+    if (newRole === "banned") loadMetrics();
+    return true;
   };
 
   const createNewRole = async (name: string, color: string, rank: number) => {
-    if (!isMaster) return showToast("Only Master can create roles.", "error");
+    const clearance = await verifyLiveClearance(["master", "admin"]);
+    if (!clearance.ok) return;
 
-    const cleanName = name.toLowerCase().replace(/\s+/g, "-");
+    const cleanName = name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9-_]/g, "-")
+      .replace(/-+/g, "-");
+    if (!cleanName) {
+      showToast("Enter a valid role identifier.", "error");
+      return;
+    }
+
+    // Admins can only create custom community roles (rank >= 3)
+    const safeRank = isMaster ? Math.max(0, rank) : Math.max(3, rank);
+
     const { error } = await supabase.from("roles").insert({
       name: cleanName,
       color,
-      rank,
+      rank: safeRank,
       permissions: {},
     });
 
     if (error) {
-      showToast("Failed to create role. Check that the name is unique and try again.", "error");
+      showToast(
+        "Failed to create role. Ensure the role name is unique.",
+        "error"
+      );
     } else {
-      showToast(`Role '${cleanName}' created successfully!`);
+      showToast(`Role '${cleanName}' created at Rank #${safeRank}.`);
+      loadMetrics();
+    }
+  };
+
+  const updateRoleConfig = async (
+    name: string,
+    color: string,
+    rank: number
+  ) => {
+    const clearance = await verifyLiveClearance(["master", "admin"]);
+    if (!clearance.ok) return;
+
+    if (!isMaster && CORE_SYSTEM_ROLES.includes(name.toLowerCase())) {
+      showToast("Only Master can modify core system roles.", "error");
+      return;
+    }
+
+    const safeRank = isMaster ? Math.max(0, rank) : Math.max(3, rank);
+    const { error } = await supabase
+      .from("roles")
+      .update({ color, rank: safeRank })
+      .eq("name", name);
+
+    if (error) {
+      showToast("Failed to update role settings.", "error");
+    } else {
+      showToast(`Updated role '${name}'.`);
       loadMetrics();
     }
   };
 
   const deleteRole = async (name: string) => {
-    if (!isMaster) return showToast("Only Master can delete roles.", "error");
-    if (["master", "admin", "mod", "user", "banned"].includes(name)) {
-      return showToast("Cannot delete core system roles.", "error");
+    const clearance = await verifyLiveClearance(["master", "admin"]);
+    if (!clearance.ok) return;
+
+    if (CORE_SYSTEM_ROLES.includes(name.toLowerCase())) {
+      showToast("Core system roles cannot be deleted.", "error");
+      return;
     }
 
-    if (
-      !confirm(
-        `Are you absolutely sure you want to delete the role '${name}'? Users with this role will be downgraded to 'user'.`
-      )
-    )
-      return;
+    if (!isMaster) {
+      const targetRoleObj = availableRoles.find((r) => r.name === name);
+      if (targetRoleObj && targetRoleObj.rank < 3) {
+        showToast("Only Master can delete high-rank staff roles.", "error");
+        return;
+      }
+    }
 
     const { error } = await supabase.from("roles").delete().eq("name", name);
     if (error) {
@@ -339,96 +770,195 @@ export function useAdminIntel() {
     }
   };
 
-  const executeModAction = async (
-    targetUserId: string,
-    actionType: string,
-    reason: string,
-    actionPromise: PromiseLike<any>,
-    onSuccess?: () => void
+  // ============================================================================
+  // AD MODERATION (Master, Admin, Mod)
+  // ============================================================================
+  const deleteSingleAd = async (
+    adId: string,
+    adOwnerId: string,
+    reason = "Rule violation / Staff removal"
   ) => {
-    if (!canModerate) {
-      showToast("Unauthorized: You lack moderation privileges.", "error");
-      return;
-    }
-    await logModAction(targetUserId, actionType, reason);
+    const clearance = await verifyLiveClearance(["master", "admin", "mod"]);
+    if (!clearance.ok) return false;
 
-    const { error } = await actionPromise;
+    triggerHaptic("heavy");
+    await logModAction(
+      adOwnerId,
+      `DELETED AD (${adId.slice(0, 8)})`,
+      reason
+    );
+
+    const { error } = await supabase
+      .from("trading_ads")
+      .delete()
+      .eq("id", adId);
+
     if (error) {
-      showToast(`Failed to ${actionType.toLowerCase()}.`, "error");
+      showToast("Failed to delete trading ad.", "error");
+      return false;
+    }
+
+    setPlatformAds((prev) => prev.filter((a) => a.id !== adId));
+    setUserIntel((prev) => ({
+      ...prev,
+      userAds: prev.userAds.filter((a) => a.id !== adId),
+      adCount: Math.max(0, prev.adCount - 1),
+    }));
+    loadMetrics();
+    showToast("Trading ad removed and logged.");
+    return true;
+  };
+
+  const handlePurgeAds = async (reason: string) => {
+    if (!selectedUser) return;
+    const clearance = await verifyLiveClearance(
+      ["master", "admin", "mod"],
+      selectedUser
+    );
+    if (!clearance.ok) return;
+
+    triggerHaptic("heavy");
+    await logModAction(selectedUser.id, "Purged Active Ads", reason);
+
+    const { error } = await supabase
+      .from("trading_ads")
+      .delete()
+      .eq("user_id", selectedUser.id);
+
+    if (error) {
+      showToast("Failed to purge user ads.", "error");
     } else {
-      showToast(`${actionType} successful.`);
-      if (onSuccess) onSuccess();
+      showToast("Purged all trading ads for user.");
+      setUserIntel((prev) => ({ ...prev, adCount: 0, userAds: [] }));
+      setPlatformAds((prev) =>
+        prev.filter((a) => a.user_id !== selectedUser.id)
+      );
+      loadMetrics();
     }
   };
 
-  const handleResetProfile = (reason: string) => {
+  // ============================================================================
+  // USER MANAGEMENT SANCTIONS (Master & Admin ONLY — Mods blocked)
+  // ============================================================================
+  const handleResetProfile = async (reason: string) => {
     if (!selectedUser) return;
-    triggerHaptic("heavy");
-    executeModAction(
-      selectedUser.id,
-      "Reset Profile Info",
-      reason,
-      supabase
-        .from("profiles")
-        .update({ username: "Moderated User", avatar_url: "", bio: "" })
-        .eq("id", selectedUser.id),
-      () => fetchUsers(searchQuery, showBannedOnly)
+    const clearance = await verifyLiveClearance(
+      ["master", "admin"],
+      selectedUser
     );
+    if (!clearance.ok) return;
+
+    triggerHaptic("heavy");
+    await logModAction(selectedUser.id, "Reset Profile Info", reason);
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        username: "Moderated User",
+        avatar_url: "",
+        bio: "",
+        roblox_username: "",
+      })
+      .eq("id", selectedUser.id);
+
+    if (error) {
+      showToast("Failed to reset profile info.", "error");
+    } else {
+      showToast("Profile identity reset.");
+      fetchUsers(searchQuery, showBannedOnly);
+    }
   };
 
-  const handlePurgeAds = (reason: string) => {
+  const handlePurgeComments = async (reason: string) => {
     if (!selectedUser) return;
-    triggerHaptic("heavy");
-    executeModAction(
-      selectedUser.id,
-      "Purged Active Ads",
-      reason,
-      supabase.from("trading_ads").delete().eq("user_id", selectedUser.id),
-      () => {
-        setUserIntel((prev) => ({ ...prev, adCount: 0 }));
-        loadMetrics();
-      }
+    const clearance = await verifyLiveClearance(
+      ["master", "admin"],
+      selectedUser
     );
+    if (!clearance.ok) return;
+
+    triggerHaptic("heavy");
+    await logModAction(selectedUser.id, "Purged All Comments", reason);
+
+    const { error } = await supabase
+      .from("ad_comments")
+      .delete()
+      .eq("user_id", selectedUser.id);
+
+    if (error) {
+      showToast("Failed to purge user comments.", "error");
+    } else {
+      showToast("All user comments purged.");
+      setUserIntel((prev) => ({ ...prev, commentCount: 0 }));
+      loadMetrics();
+    }
   };
 
-  const handlePurgeComments = (reason: string) => {
+  // ============================================================================
+  // DESTRUCTIVE VAULT & ACCOUNT NUKE (Master ONLY)
+  // ============================================================================
+  const handleWipeInventory = async (reason: string) => {
     if (!selectedUser) return;
+    const clearance = await verifyLiveClearance(["master"], selectedUser);
+    if (!clearance.ok) return;
+
     triggerHaptic("heavy");
-    executeModAction(
-      selectedUser.id,
-      "Purged All Comments",
-      reason,
-      supabase.from("ad_comments").delete().eq("user_id", selectedUser.id)
-    );
+    await logModAction(selectedUser.id, "Wiped Inventory", reason);
+
+    const { error } = await supabase
+      .from("user_inventory")
+      .delete()
+      .eq("user_id", selectedUser.id);
+
+    if (error) {
+      showToast("Failed to wipe user inventory.", "error");
+    } else {
+      showToast("User inventory wiped clean.");
+      setUserIntel((prev) => ({
+        ...prev,
+        netWorth: 0,
+        unitCount: 0,
+        inventoryItems: [],
+      }));
+    }
   };
 
-  const handleWipeInventory = (reason: string) => {
+  const handleWipeWishlist = async (reason: string) => {
     if (!selectedUser) return;
-    triggerHaptic("heavy");
-    executeModAction(
-      selectedUser.id,
-      "Wiped Inventory",
-      reason,
-      supabase.from("user_inventory").delete().eq("user_id", selectedUser.id),
-      () => setUserIntel((prev) => ({ ...prev, netWorth: 0 }))
-    );
-  };
+    const clearance = await verifyLiveClearance(["master"], selectedUser);
+    if (!clearance.ok) return;
 
-  const handleWipeWishlist = (reason: string) => {
-    if (!selectedUser) return;
     triggerHaptic("heavy");
-    executeModAction(
-      selectedUser.id,
-      "Wiped Wishlist",
-      reason,
-      supabase.from("user_wishlist").delete().eq("user_id", selectedUser.id)
-    );
+    await logModAction(selectedUser.id, "Wiped Wishlist", reason);
+
+    const { error } = await supabase
+      .from("user_wishlist")
+      .delete()
+      .eq("user_id", selectedUser.id);
+
+    if (error) {
+      showToast("Failed to wipe user wishlist.", "error");
+    } else {
+      showToast("User wishlist wiped clean.");
+      setUserIntel((prev) => ({
+        ...prev,
+        wishlistCount: 0,
+        wishlistItems: [],
+      }));
+    }
   };
 
   const handleTotalAccountNuke = async (reason: string) => {
-    if (!selectedUser || !canModerate) return;
-    triggerHaptic("heavy");
+    if (!selectedUser) return;
+    if (selectedUser.id === profile?.id) {
+      showToast("You cannot nuke your own Master account.", "error");
+      return;
+    }
 
+    const clearance = await verifyLiveClearance(["master"], selectedUser);
+    if (!clearance.ok) return;
+
+    triggerHaptic("heavy");
     await logModAction(selectedUser.id, "ACCOUNT NUKED & BANNED", reason);
 
     const { error } = await supabase.rpc("admin_nuke_account", {
@@ -436,11 +966,22 @@ export function useAdminIntel() {
     });
 
     if (error) {
-      showToast("Action failed. Please try again or contact an admin.", "error");
+      showToast("Account nuke RPC failed. Check database permissions.", "error");
       return;
     }
 
-    setUserIntel({ netWorth: 0, adCount: 0, isLoading: false });
+    setUserIntel({
+      netWorth: 0,
+      unitCount: 0,
+      adCount: 0,
+      totalAdsCount: 0,
+      wishlistCount: 0,
+      commentCount: 0,
+      inventoryItems: [],
+      wishlistItems: [],
+      userAds: [],
+      isLoading: false,
+    });
     showToast(`ACCOUNT NUKED: ${selectedUser.username} has been eradicated.`);
 
     setSelectedUser((prev) =>
@@ -451,16 +992,208 @@ export function useAdminIntel() {
     loadMetrics();
   };
 
+  // ============================================================================
+  // MASTER SOVEREIGN CHEATS, DEBUG & OVERRIDE TOOLS (Strictly Master ONLY)
+  // ============================================================================
+  const masterSetReputation = async (
+    targetUserId: string,
+    newRep: number,
+    reason = "Master Reputation Override"
+  ) => {
+    const clearance = await verifyLiveClearance(["master"]);
+    if (!clearance.ok) return false;
+
+    const clampedRep = Math.max(-999999, Math.min(999999, Math.round(newRep)));
+
+    if (targetUserId === profile?.id) {
+      const { data: rawRow } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", targetUserId)
+        .maybeSingle();
+
+      const unpacked = unpackProfileRow(rawRow || {});
+      const packedBanner = packBannerConfig({
+        ...unpacked,
+        master_rep_override: clampedRep,
+      });
+
+      await supabase
+        .from("profiles")
+        .update({ banner_color: packedBanner })
+        .eq("id", targetUserId);
+    }
+
+    await logModAction(
+      targetUserId,
+      `MASTER REP OVERRIDE: ${clampedRep >= 0 ? `+${clampedRep}` : clampedRep}`,
+      reason
+    );
+
+    useProfileStore.getState().updateLocalProfile(targetUserId, {
+      global_rep: clampedRep,
+      master_rep_override: clampedRep,
+    });
+
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === targetUserId
+          ? { ...u, global_rep: clampedRep, master_rep_override: clampedRep }
+          : u
+      )
+    );
+    setSelectedUser((prev) =>
+      prev && prev.id === targetUserId
+        ? { ...prev, global_rep: clampedRep, master_rep_override: clampedRep }
+        : prev
+    );
+    showToast(`Reputation updated to ${clampedRep.toLocaleString()} Rep.`);
+    return true;
+  };
+
+  const masterModifyVaultUnit = async (
+    targetUserId: string,
+    unitId: string,
+    quantity: number,
+    mode: "set" | "add" | "remove" = "add",
+    reason = "Master Vault Unit Injection"
+  ) => {
+    const clearance = await verifyLiveClearance(["master"]);
+    if (!clearance.ok) return false;
+
+    const unitObj = ALL_UNITS.find((u) => u.id === unitId);
+    if (!unitObj) {
+      showToast("Invalid unit ID selected.", "error");
+      return false;
+    }
+
+    // Check current quantity
+    const { data: existing } = await supabase
+      .from("user_inventory")
+      .select("quantity")
+      .eq("user_id", targetUserId)
+      .eq("unit_id", unitId)
+      .maybeSingle();
+
+    const currentQty = existing?.quantity || 0;
+    let nextQty = quantity;
+    if (mode === "add") nextQty = currentQty + quantity;
+    if (mode === "remove") nextQty = Math.max(0, currentQty - quantity);
+
+    if (nextQty <= 0) {
+      const { error } = await supabase
+        .from("user_inventory")
+        .delete()
+        .eq("user_id", targetUserId)
+        .eq("unit_id", unitId);
+
+      if (error) {
+        showToast("Failed to remove unit from vault.", "error");
+        return false;
+      }
+    } else {
+      const { error } = await supabase.from("user_inventory").upsert(
+        {
+          user_id: targetUserId,
+          unit_id: unitId,
+          quantity: Math.min(9999, nextQty),
+        },
+        { onConflict: "user_id,unit_id" }
+      );
+
+      if (error) {
+        showToast("Failed to inject unit into vault.", "error");
+        return false;
+      }
+    }
+
+    await logModAction(
+      targetUserId,
+      `MASTER VAULT ${mode.toUpperCase()}: ${unitObj.name} (x${Math.max(0, nextQty)})`,
+      reason
+    );
+
+    if (selectedUser && selectedUser.id === targetUserId) {
+      await refreshSelectedUserIntel(selectedUser);
+    }
+    showToast(
+      `Vault updated: ${unitObj.name} → ×${Math.max(0, nextQty)}`
+    );
+    return true;
+  };
+
+  const masterOverrideProfile = async (
+    targetUserId: string,
+    patch: Partial<{
+      username: string;
+      roblox_username: string;
+      bio: string;
+      status: "online" | "dnd" | "invisible" | "offline";
+      banner_color: string;
+    }>,
+    reason = "Master Direct Profile Override"
+  ) => {
+    const clearance = await verifyLiveClearance(["master"]);
+    if (!clearance.ok) return false;
+
+    const { error } = await supabase
+      .from("profiles")
+      .update(patch)
+      .eq("id", targetUserId);
+
+    if (error) {
+      showToast("Failed to apply Master profile override.", "error");
+      return false;
+    }
+
+    await logModAction(
+      targetUserId,
+      `MASTER PROFILE OVERRIDE (${Object.keys(patch).join(", ")})`,
+      reason
+    );
+
+    await fetchUsers(searchQuery, showBannedOnly);
+    showToast("Master profile override applied.");
+    return true;
+  };
+
+  const masterPurgeExpiredAds = async () => {
+    const clearance = await verifyLiveClearance(["master"]);
+    if (!clearance.ok) return;
+
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from("trading_ads")
+      .delete()
+      .lte("expires_at", now);
+
+    if (error) {
+      showToast("Failed to purge expired ads.", "error");
+    } else {
+      showToast("All expired trading ads purged from database.");
+      loadMetrics();
+      fetchPlatformAds(false);
+    }
+  };
+
   return {
-    users,
+    users: filteredUsers,
+    allUsers: users,
     selectedUser,
     setSelectedUser,
     userIntel,
+    refreshSelectedUserIntel,
     metrics,
     availableRoles,
     modLogs,
+    globalLogs,
+    platformAds,
+    isLoadingAds,
+    fetchPlatformAds,
     searchQuery,
     setSearchQuery,
+    roleFilter,
+    setRoleFilter,
     isLoading,
     toast,
     showToast,
@@ -471,17 +1204,35 @@ export function useAdminIntel() {
       e.preventDefault();
       fetchUsers(searchQuery, showBannedOnly);
     },
+    fetchUsers,
+    loadMetrics,
     updateUserRole,
     createNewRole,
+    updateRoleConfig,
     deleteRole,
+    deleteSingleAd,
     handleResetProfile,
     handlePurgeAds,
     handlePurgeComments,
     handleWipeInventory,
     handleWipeWishlist,
     handleTotalAccountNuke,
+    masterSetReputation,
+    masterModifyVaultUnit,
+    masterOverrideProfile,
+    masterPurgeExpiredAds,
     profile,
+    callerRole,
     isMaster,
+    isAdmin,
+    isMod,
+    canModerate,
+    canManageUsers,
+    canManageRoles,
+    canDeleteAds,
+    canUseDestructiveTools,
+    canUseMasterTools,
+    canActOnUser,
+    canToggleRole,
   };
 }
-

@@ -1,7 +1,55 @@
 import React, { useState } from "react";
-import { CheckCircle2, Circle, ChevronRight, History } from "lucide-react";
 import { GRID_STATUS_CFG } from "../../../data";
 import { StatusIcon } from "../MainCanvas/UnitGrid";
+
+const IconCheckCircle = ({
+  className = "w-4 h-4",
+}: {
+  className?: string;
+}) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="8" cy="8" r="6.25" />
+    <path d="M5.5 8.2L7.2 9.9L10.8 6.3" />
+  </svg>
+);
+
+const IconCircle = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="1.8"
+  >
+    <circle cx="8" cy="8" r="6.25" />
+  </svg>
+);
+
+const IconChevronRight = ({
+  className = "w-4 h-4",
+}: {
+  className?: string;
+}) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M6 12L10 8L6 4" />
+  </svg>
+);
 
 export function MissionCard({
   title,
@@ -35,9 +83,9 @@ export function MissionCard({
             {title}
           </span>
           {isDone ? (
-            <CheckCircle2 className="w-4 h-4 text-[#23a559] shrink-0 animate-scale-in" />
+            <IconCheckCircle className="w-4 h-4 text-[#23a559] shrink-0 animate-scale-in" />
           ) : (
-            <Circle className="w-4 h-4 text-muted-foreground shrink-0" />
+            <IconCircle className="w-4 h-4 text-muted-foreground shrink-0" />
           )}
         </div>
         <p
@@ -116,16 +164,16 @@ export function TheoryEmbed({
           {historyTitle && historyContent && (
             <div className="mt-auto border-t border-border pt-4">
               <button
+                type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="flex items-center justify-between w-full text-left group focus-visible:outline-none"
               >
                 <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
-                  <History className="w-4 h-4" />
                   <span className="text-[12px] font-bold uppercase tracking-wider">
                     {historyTitle}
                   </span>
                 </div>
-                <ChevronRight
+                <IconChevronRight
                   className={`w-4 h-4 text-muted-foreground transition-transform duration-300 ${
                     isExpanded ? "rotate-90" : ""
                   }`}
@@ -143,7 +191,7 @@ export function TheoryEmbed({
                   className="mt-3 bg-popover p-3.5 rounded-[6px] border border-border text-[12.5px] text-muted-foreground leading-relaxed italic border-l-2"
                   style={{ borderLeftColor: color }}
                 >
-                  "{historyContent}"
+                  &ldquo;{historyContent}&rdquo;
                 </div>
               </div>
             </div>
@@ -169,9 +217,9 @@ export function TooltipText({
       style={{ color, textDecorationColor: `${color}80` }}
     >
       {text}
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-[220px] bg-popover/95 backdrop-blur-md border border-border text-foreground text-[12px] font-medium p-3 rounded-[8px] shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 animate-slide-up text-center leading-relaxed">
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-[220px] bg-popover border border-border text-foreground text-[12px] font-medium p-3 rounded-[8px] shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 animate-slide-up text-center leading-relaxed">
         {tip}
-        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-[6px] border-transparent border-t-popover/95" />
+        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-[6px] border-transparent border-t-popover" />
       </div>
     </span>
   );

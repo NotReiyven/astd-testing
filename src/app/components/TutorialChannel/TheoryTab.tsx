@@ -1,5 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { BookOpen, Tag, Activity, Flame, ChevronRight } from "lucide-react";
+import React, { useState } from "react";
+import {
+  GiOpenBook,
+  GiPriceTag,
+  GiFlame,
+  GiWaterDrop,
+} from "react-icons/gi";
 import {
   THEORY_STATUS_TAGS,
   THEORY_SECONDARY_TAGS,
@@ -7,13 +12,11 @@ import {
   THEORY_LIQUIDITY_SCALE,
 } from "../../../data";
 
+const AQUA_AVATAR_URL =
+  "https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png";
+
 export function TheoryTab() {
   const [activeSection, setActiveSection] = useState<string>("tags");
-
-  useEffect(() => {
-    // Replaced addEventListener with direct onScroll prop below
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const sections = ["tags", "rarity", "liquidity"];
@@ -37,18 +40,19 @@ export function TheoryTab() {
 
   return (
     <div className="flex flex-col md:flex-row gap-8 max-w-6xl mx-auto h-full font-sans">
-      {/* Sidebar Navigation - Hidden on lg to make room for calculator overlay */}
+      {/* Sidebar Navigation */}
       <nav className="hidden lg:flex flex-col w-56 shrink-0 sticky top-0 self-start pt-2">
         <div className="flex items-center gap-2.5 mb-6 text-foreground">
-          <BookOpen className="w-5 h-5" />
+          <GiOpenBook className="w-5 h-5 text-primary" />
           <h2 className="text-[15px] font-black uppercase tracking-wider">
-            Documentation
+            Market Guide
           </h2>
         </div>
         <div className="flex flex-col gap-1 border-l-2 border-border pl-4">
           <button
+            type="button"
             onClick={() => scrollTo("tags")}
-            className={`text-left text-[13px] font-medium py-1.5 transition-colors focus-visible:outline-none ${
+            className={`text-left text-[13px] font-medium py-1.5 transition-colors focus-visible:outline-none cursor-pointer ${
               activeSection === "tags"
                 ? "text-primary font-bold"
                 : "text-muted-foreground hover:text-foreground"
@@ -57,8 +61,9 @@ export function TheoryTab() {
             Market Tags
           </button>
           <button
+            type="button"
             onClick={() => scrollTo("rarity")}
-            className={`text-left text-[13px] font-medium py-1.5 transition-colors focus-visible:outline-none ${
+            className={`text-left text-[13px] font-medium py-1.5 transition-colors focus-visible:outline-none cursor-pointer ${
               activeSection === "rarity"
                 ? "text-primary font-bold"
                 : "text-muted-foreground hover:text-foreground"
@@ -67,8 +72,9 @@ export function TheoryTab() {
             Rarity Scale
           </button>
           <button
+            type="button"
             onClick={() => scrollTo("liquidity")}
-            className={`text-left text-[13px] font-medium py-1.5 transition-colors focus-visible:outline-none ${
+            className={`text-left text-[13px] font-medium py-1.5 transition-colors focus-visible:outline-none cursor-pointer ${
               activeSection === "liquidity"
                 ? "text-primary font-bold"
                 : "text-muted-foreground hover:text-foreground"
@@ -79,38 +85,57 @@ export function TheoryTab() {
         </div>
       </nav>
 
-      {/* Added min-w-0 to prevent flexbox crushing */}
       <div
         id="theory-content"
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-16 flex flex-col gap-12 min-w-0"
+        className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-16 flex flex-col gap-10 min-w-0"
       >
         {/* Intro */}
-        <div className="flex flex-col gap-3">
-          <h1 className="text-[28px] md:text-[32px] font-black text-foreground tracking-tight">
-            Market Theory & Fundamentals
-          </h1>
-          <p className="text-[15px] text-muted-foreground leading-relaxed max-w-3xl">
-            Raw value is only one variable in evaluating a trade. To accurately
-            forecast short and long-term gains, you must understand how Status
-            Tags, Rarity, and Liquidity mathematically affect a unit's market
-            perception. This document serves as the official reference manual
-            for all ASTD Value List metrics.
-          </p>
+        <div className="flex flex-col gap-4">
+          <div>
+            <h1 className="text-[26px] md:text-[30px] font-black text-foreground tracking-tight">
+              How Market Values Work
+            </h1>
+            <p className="text-[14px] text-muted-foreground leading-relaxed max-w-3xl mt-1">
+              Raw value is only part of a trade. To avoid losing value over
+              time, check a unit&apos;s Status Tag, Rarity, and Liquidity before
+              you accept an offer.
+            </p>
+          </div>
+
+          <div className="bg-popover border border-border rounded-[8px] p-4 flex items-start gap-4 shadow-sm">
+            <img
+              src={AQUA_AVATAR_URL}
+              alt="Goddess Aqua"
+              referrerPolicy="no-referrer"
+              className="w-12 h-12 rounded-full border border-border object-cover object-top shrink-0 bg-muted"
+            />
+            <div className="flex flex-col gap-1">
+              <span className="text-[12px] font-black text-foreground">
+                Goddess Aqua&apos;s Advice
+              </span>
+              <p className="text-[13px] text-muted-foreground leading-relaxed">
+                &ldquo;Listen up! Even if two units have the exact same value
+                number, a Rising unit with High Liquidity will get you rich,
+                while an Inflated or Dropping unit will leave you broke like
+                Kazuma! Read the tags below so you don&apos;t get tricked!&rdquo;
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Status Tags */}
-        <section id="section-tags" className="flex flex-col gap-6">
+        <section id="section-tags" className="flex flex-col gap-5">
           <div className="flex items-center gap-2 border-b border-border pb-3">
-            <Tag className="w-5 h-5 text-primary" />
+            <GiPriceTag className="w-5 h-5 text-primary" />
             <h2 className="text-[20px] font-black text-foreground">
               Market Tags
             </h2>
           </div>
           <p className="text-[14px] text-foreground leading-relaxed">
-            Market tags indicate the current trajectory of a unit's value based
-            on community trade data. Accepting a mathematically "fair" trade for
-            a Dropping unit will result in a net loss over time.
+            Market tags show where a unit&apos;s price is heading based on
+            recent trades. Taking a fair paper trade for a Dropping unit usually
+            turns into a loss within a few days.
           </p>
 
           <div className="bg-card border border-border rounded-[8px] overflow-hidden shadow-sm">
@@ -119,7 +144,7 @@ export function TheoryTab() {
                 <thead>
                   <tr className="bg-popover text-muted-foreground text-[10px] uppercase tracking-widest border-b border-border">
                     <th className="px-5 py-4 font-bold w-[140px]">Tag</th>
-                    <th className="px-5 py-4 font-bold">Definition</th>
+                    <th className="px-5 py-4 font-bold">What It Means</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -130,7 +155,7 @@ export function TheoryTab() {
                     >
                       <td className="px-5 py-3.5 align-middle">
                         <span
-                          className="text-xs font-semibold px-2 py-1 rounded-[6px] border block text-center w-full shadow-sm backdrop-blur-md"
+                          className="text-xs font-semibold px-2 py-1 rounded-[6px] border block text-center w-full shadow-sm"
                           style={{
                             backgroundColor: t.bg,
                             color: t.color,
@@ -159,7 +184,7 @@ export function TheoryTab() {
                     >
                       <td className="px-5 py-3.5 align-middle">
                         <span
-                          className="text-xs font-semibold px-2 py-1 rounded-[6px] border block text-center w-full shadow-sm backdrop-blur-md"
+                          className="text-xs font-semibold px-2 py-1 rounded-[6px] border block text-center w-full shadow-sm"
                           style={{
                             backgroundColor: t.bg,
                             color: t.color,
@@ -181,18 +206,17 @@ export function TheoryTab() {
         </section>
 
         {/* Rarity */}
-        <section id="section-rarity" className="flex flex-col gap-6">
+        <section id="section-rarity" className="flex flex-col gap-5">
           <div className="flex items-center gap-2 border-b border-border pb-3">
-            <Flame className="w-5 h-5 text-[#FAA61A]" />
+            <GiFlame className="w-5 h-5 text-[#FAA61A]" />
             <h2 className="text-[20px] font-black text-foreground">
-              Rarity Scale (0 - 20)
+              Rarity Scale (0 to 20)
             </h2>
           </div>
           <p className="text-[14px] text-foreground leading-relaxed">
-            Rarity represents the absolute scarcity of a unit in the global
-            economy. Rarity acts as a stabilizer-units with higher rarity are
-            heavily insulated against market crashes and manipulation compared
-            to common, hyped units.
+            Rarity measures how few copies of a unit exist across the game.
+            Scarce units hold their value much better over time than common
+            units with temporary update hype.
           </p>
 
           <div className="bg-card border border-border rounded-[8px] overflow-hidden shadow-sm">
@@ -203,7 +227,7 @@ export function TheoryTab() {
                     <th className="px-5 py-4 font-bold w-[100px] text-center">
                       Rarity
                     </th>
-                    <th className="px-5 py-4 font-bold">Volume / Definition</th>
+                    <th className="px-5 py-4 font-bold">Supply Level</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -235,19 +259,18 @@ export function TheoryTab() {
         </section>
 
         {/* Liquidity */}
-        <section id="section-liquidity" className="flex flex-col gap-6">
+        <section id="section-liquidity" className="flex flex-col gap-5">
           <div className="flex items-center gap-2 border-b border-border pb-3">
-            <Activity className="w-5 h-5 text-[#23a559]" />
+            <GiWaterDrop className="w-5 h-5 text-[#23a559]" />
             <h2 className="text-[20px] font-black text-foreground">
               Liquidity
             </h2>
           </div>
           <p className="text-[14px] text-foreground leading-relaxed">
-            Liquidity is the fusion of Supply and Demand. It dictates the
-            velocity at which an asset can be converted back into raw value or
-            traded for other units.{" "}
-            <strong>Value is meaningless without liquidity.</strong> A 10k value
-            unit with "Low" liquidity is functionally a dead asset.
+            Liquidity tells you how fast you can trade a unit away at its listed
+            value.{" "}
+            <strong>Paper value does not matter without liquidity.</strong> A
+            high-value unit with Low liquidity can take weeks to find a buyer.
           </p>
 
           <div className="bg-card border border-border rounded-[8px] overflow-hidden shadow-sm">
@@ -257,7 +280,7 @@ export function TheoryTab() {
                   <th className="px-5 py-4 font-bold w-[120px] text-center">
                     Score
                   </th>
-                  <th className="px-5 py-4 font-bold">Definition</th>
+                  <th className="px-5 py-4 font-bold">What to Expect</th>
                 </tr>
               </thead>
               <tbody>

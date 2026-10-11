@@ -19,7 +19,10 @@ import {
 import { useAuthStore, UserProfile } from "../../store/useAuthStore";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
 import { useInventoryStore } from "../../store/useInventoryStore";
-import { useTradeStore } from "../../store/useTradeStore";
+import {
+  useTradeStore,
+  DEFAULT_ANALYZER_SETTINGS,
+} from "../../store/useTradeStore";
 import { useHistoryModalStore } from "../../store/useHistoryModalStore";
 import { useToastStore } from "../../store/useToastStore";
 import { getUnitAssetUrl, triggerHaptic } from "../../data/helpers";
@@ -1144,17 +1147,18 @@ export function ProfileChannel() {
   // UNAUTHENTICATED LOCAL PREFERENCES FALLBACK
   if (!targetId) {
     return (
-      <div className="flex-1 w-full h-full font-sans overflow-y-auto custom-scrollbar p-6 md:p-10 bg-background flex flex-col items-center">
-        <div className="max-w-3xl w-full flex flex-col gap-6">
-          <div className="bg-card border border-border rounded-[8px] p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="flex-1 w-full h-full font-sans overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-10 bg-background flex flex-col items-center">
+        <div className="max-w-3xl w-full flex flex-col gap-5 pb-12">
+          {/* Sign-In Header Banner */}
+          <div className="bg-card border border-border rounded-[8px] p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex flex-col text-center sm:text-left gap-1">
-              <h2 className="text-[20px] text-foreground">
+              <h2 className="text-[18px] text-foreground">
                 Trader Profile & Preferences
               </h2>
-              <p className="text-[13px] text-muted-foreground">
-                Customize your local theme and startup behavior, or sign in with
+              <p className="text-[12.5px] text-muted-foreground">
+                Local settings apply immediately to this browser. Sign in with
                 Discord to unlock your custom profile banner, Ad History, and
-                Target Wishlist.
+                cloud Target Wishlist.
               </p>
             </div>
             <button
@@ -1163,43 +1167,43 @@ export function ProfileChannel() {
                 triggerHaptic("medium");
                 loginWithDiscord();
               }}
-              className="px-5 py-2.5 bg-[#5865F2] hover:bg-[#4752C4] text-white text-[13px] rounded-[6px] flex items-center gap-2 transition-colors shrink-0 shadow-sm cursor-pointer focus-visible:outline-none"
+              className="px-4 py-2.5 bg-[#5865F2] hover:bg-[#4752C4] text-white text-[12.5px] rounded-[6px] flex items-center gap-2 transition-colors shrink-0 shadow-sm cursor-pointer focus-visible:outline-none"
             >
               <GiCharacter className="w-4 h-4" /> Sign In with Discord
             </button>
           </div>
 
-          {/* Theme Mode */}
-          <div className="bg-card border border-border rounded-[8px] p-6 shadow-sm flex flex-col gap-4">
-            <div className="flex flex-col gap-0.5">
-              <h3 className="text-[14px] text-foreground">Application Theme</h3>
-              <p className="text-[12.5px] text-muted-foreground">
-                Choose the color palette used across the value list and
-                calculator.
+          {/* 1. Appearance & Layout Density */}
+          <div className="bg-card border border-border rounded-[8px] p-5 shadow-sm flex flex-col gap-4">
+            <div className="flex flex-col gap-0.5 border-b border-border pb-3">
+              <h3 className="text-[14px] text-foreground">
+                Appearance & Layout Density
+              </h3>
+              <p className="text-[12px] text-muted-foreground">
+                Choose the global color palette and card density across the
+                value list and calculator.
               </p>
             </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
                 {
                   id: "dark",
                   label: "Deep Dark",
-                  desc: "High-contrast dark surface",
-                  previewBg: "#0a0a0a",
-                  previewCard: "#171717",
+                  desc: "High-contrast dark mode",
+                  swatch: "#0a0a0a",
                 },
                 {
                   id: "discord",
                   label: "Discord Blurple",
-                  desc: "Native Discord slate palette",
-                  previewBg: "#313338",
-                  previewCard: "#2B2D31",
+                  desc: "Matches Discord slate UI",
+                  swatch: "#313338",
                 },
                 {
                   id: "light",
                   label: "Crisp Light",
-                  desc: "Daylight trading mode",
-                  previewBg: "#fafafa",
-                  previewCard: "#ffffff",
+                  desc: "High-visibility light mode",
+                  swatch: "#fafafa",
                 },
               ].map((t) => (
                 <button
@@ -1209,26 +1213,228 @@ export function ProfileChannel() {
                     triggerHaptic("light");
                     setTheme(t.id as ThemeMode);
                   }}
-                  className={`p-4 rounded-[6px] border text-left flex flex-col gap-2.5 focus-visible:outline-none cursor-pointer transition-colors ${
+                  className={`p-3.5 rounded-[6px] border text-left flex flex-col gap-1.5 focus-visible:outline-none cursor-pointer transition-colors ${
                     theme === t.id
                       ? "bg-popover border-primary ring-1 ring-primary/40"
-                      : "bg-muted/60 border-border hover:bg-popover"
+                      : "bg-popover/40 border-border hover:bg-popover"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-[14px] text-foreground">
+                    <span className="text-[13px] text-foreground">
                       {t.label}
                     </span>
                     <span
-                      className="w-5 h-5 rounded-full border border-border"
-                      style={{ backgroundColor: t.previewBg }}
+                      className="w-4 h-4 rounded-full border border-border"
+                      style={{ backgroundColor: t.swatch }}
                     />
                   </div>
-                  <span className="text-[12px] text-muted-foreground">
+                  <span className="text-[11.5px] text-muted-foreground">
                     {t.desc}
                   </span>
                 </button>
               ))}
+            </div>
+
+            {/* Global Compact Mode */}
+            <div className="pt-3 border-t border-border/70 flex items-center justify-between gap-4">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[13px] text-foreground">
+                  Global Compact Mode
+                </span>
+                <span className="text-[12px] text-muted-foreground">
+                  Tightens padding and card spacing across the entire app to fit
+                  more units on screen.
+                </span>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={globalCompactMode}
+                aria-label="Toggle Global Compact Mode"
+                onClick={() => {
+                  triggerHaptic("medium");
+                  setGlobalCompactMode(!globalCompactMode);
+                }}
+                className={`relative w-11 h-6 rounded-full transition-colors shrink-0 cursor-pointer ${
+                  globalCompactMode
+                    ? "bg-primary"
+                    : "bg-muted border border-border"
+                }`}
+              >
+                <div
+                  className={`absolute top-0.5 left-0.5 bg-white w-5 h-5 rounded-full transition-transform ${
+                    globalCompactMode ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* 2. Navigation & Trade Analyzer Defaults */}
+          <div className="bg-card border border-border rounded-[8px] p-5 shadow-sm flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-2 border-b border-border pb-3">
+              <div className="flex flex-col gap-0.5">
+                <h3 className="text-[14px] text-foreground">
+                  Navigation & Trade Analyzer Defaults
+                </h3>
+                <p className="text-[12px] text-muted-foreground">
+                  Configure your default startup channel and which panels appear
+                  in the Trade Analyzer.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic("light");
+                  updateAnalyzerSettings(DEFAULT_ANALYZER_SETTINGS);
+                  useToastStore
+                    .getState()
+                    .addToast("Trade Analyzer settings reset to defaults.", "info");
+                }}
+                className="px-2.5 py-1.5 rounded-[5px] bg-popover hover:bg-muted border border-border text-muted-foreground hover:text-foreground text-[11px] font-mono flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
+              >
+                <IconRefresh className="w-3 h-3" />
+                <span>Reset Defaults</span>
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-[12px] text-muted-foreground">
+                Default Startup Channel
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {[
+                  {
+                    id: "last-used",
+                    label: "Last Used",
+                    desc: "Resume session",
+                  },
+                  {
+                    id: "value-list",
+                    label: "Value List",
+                    desc: "Live tier grid",
+                  },
+                  {
+                    id: "trading-ads",
+                    label: "Trading Ads",
+                    desc: "Community board",
+                  },
+                  {
+                    id: "home",
+                    label: "Home",
+                    desc: "Update logs",
+                  },
+                ].map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic("light");
+                      setBootChannel(opt.id as BootChannel);
+                    }}
+                    className={`p-3 rounded-[6px] border text-left flex flex-col gap-0.5 cursor-pointer transition-colors ${
+                      bootChannel === opt.id
+                        ? "bg-popover border-primary"
+                        : "bg-popover/40 border-border hover:bg-popover"
+                    }`}
+                  >
+                    <span className="text-[12.5px] text-foreground">
+                      {opt.label}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground truncate">
+                      {opt.desc}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Trade Analyzer Panel & Metric Toggles */}
+            <div className="pt-3 border-t border-border/70 flex flex-col gap-2">
+              <span className="text-[12px] text-muted-foreground">
+                Trade Analyzer Visible Sections & Metrics
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {(
+                  [
+                    {
+                      key: "showSummaryMetrics",
+                      label: "Forecast & Metrics Bar",
+                      active: analyzerSettings?.showSummaryMetrics ?? true,
+                    },
+                    {
+                      key: "showStFlip",
+                      label: "ST Flip Indicator",
+                      active: analyzerSettings?.showStFlip ?? true,
+                    },
+                    {
+                      key: "showLtHold",
+                      label: "LT Hold Indicator",
+                      active: analyzerSettings?.showLtHold ?? true,
+                    },
+                    {
+                      key: "showRarity",
+                      label: "Rarity Comparison Metric",
+                      active: analyzerSettings?.showRarity ?? true,
+                    },
+                    {
+                      key: "showLiquidity",
+                      label: "Liquidity Comparison Metric",
+                      active: analyzerSettings?.showLiquidity ?? true,
+                    },
+                    {
+                      key: "showMomentumSummary",
+                      label: "Status Momentum Summary",
+                      active: analyzerSettings?.showMomentumSummary ?? true,
+                    },
+                    {
+                      key: "showTermsInTrade",
+                      label: "Terms in This Trade",
+                      active: analyzerSettings?.showTermsInTrade ?? true,
+                    },
+                    {
+                      key: "showGiveNotices",
+                      label: "You Give Unit Notices",
+                      active: analyzerSettings?.showGiveNotices ?? true,
+                    },
+                    {
+                      key: "showGetNotices",
+                      label: "You Get Unit Notices",
+                      active: analyzerSettings?.showGetNotices ?? true,
+                    },
+                    {
+                      key: "collapseUnitsByDefault",
+                      label: "Collapse Analyzer Units by Default",
+                      active: analyzerSettings?.collapseUnitsByDefault ?? false,
+                    },
+                  ] as const
+                ).map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic("light");
+                      updateAnalyzerSettings({
+                        [item.key]: !item.active,
+                      });
+                    }}
+                    className="flex items-center justify-between px-3.5 py-2.5 rounded-[6px] bg-popover border border-border hover:border-foreground/30 transition-colors cursor-pointer text-left"
+                  >
+                    <span className="text-[12.5px] text-foreground">
+                      {item.label}
+                    </span>
+                    <span
+                      className={`text-[11px] font-mono px-2 py-0.5 rounded-[4px] ${
+                        item.active
+                          ? "bg-[#23a559]/15 text-[#23a559]"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {item.active ? "Shown" : "Hidden"}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -2685,14 +2891,33 @@ export function ProfileChannel() {
 
                 {/* 3. Startup Channel & Trade Calculator Preferences */}
                 <div className="bg-card border border-border rounded-[8px] p-5 flex flex-col gap-4">
-                  <div className="flex flex-col gap-0.5 border-b border-border pb-3">
-                    <h3 className="text-[14px] text-foreground">
-                      Navigation & Trade Analyzer Defaults
-                    </h3>
-                    <p className="text-[12px] text-muted-foreground">
-                      Configure your default startup channel and which panels
-                      appear in the Trade Analyzer.
-                    </p>
+                  <div className="flex items-center justify-between gap-2 border-b border-border pb-3">
+                    <div className="flex flex-col gap-0.5">
+                      <h3 className="text-[14px] text-foreground">
+                        Navigation & Trade Analyzer Defaults
+                      </h3>
+                      <p className="text-[12px] text-muted-foreground">
+                        Configure your default startup channel and which panels
+                        appear in the Trade Analyzer.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        triggerHaptic("light");
+                        updateAnalyzerSettings(DEFAULT_ANALYZER_SETTINGS);
+                        useToastStore
+                          .getState()
+                          .addToast(
+                            "Trade Analyzer settings reset to defaults.",
+                            "info"
+                          );
+                      }}
+                      className="px-2.5 py-1.5 rounded-[5px] bg-popover hover:bg-muted border border-border text-muted-foreground hover:text-foreground text-[11px] font-mono flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
+                    >
+                      <IconRefresh className="w-3 h-3" />
+                      <span>Reset Defaults</span>
+                    </button>
                   </div>
 
                   <div className="flex flex-col gap-2">
@@ -2749,7 +2974,7 @@ export function ProfileChannel() {
                   {/* Trade Analyzer Panel Toggles */}
                   <div className="pt-3 border-t border-border/70 flex flex-col gap-2">
                     <span className="text-[12px] text-muted-foreground">
-                      Trade Analyzer Visible Sections
+                      Trade Analyzer Visible Sections & Metrics
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       {(
@@ -2758,6 +2983,26 @@ export function ProfileChannel() {
                             key: "showSummaryMetrics",
                             label: "Forecast & Metrics Bar",
                             active: analyzerSettings?.showSummaryMetrics ?? true,
+                          },
+                          {
+                            key: "showStFlip",
+                            label: "ST Flip Indicator",
+                            active: analyzerSettings?.showStFlip ?? true,
+                          },
+                          {
+                            key: "showLtHold",
+                            label: "LT Hold Indicator",
+                            active: analyzerSettings?.showLtHold ?? true,
+                          },
+                          {
+                            key: "showRarity",
+                            label: "Rarity Comparison Metric",
+                            active: analyzerSettings?.showRarity ?? true,
+                          },
+                          {
+                            key: "showLiquidity",
+                            label: "Liquidity Comparison Metric",
+                            active: analyzerSettings?.showLiquidity ?? true,
                           },
                           {
                             key: "showMomentumSummary",

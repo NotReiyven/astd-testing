@@ -1,30 +1,62 @@
-// ================================================
-// FILE: src/app/components/TutorialChannel/SimulatorTab.tsx
-// ================================================
-
 import React, { useState, useCallback, useEffect } from "react";
-import {
-  ArrowRight,
-  Sparkles,
-  Activity,
-  RotateCcw,
-  BookOpen,
-  List,
-  Timer,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  ArrowDown,
-} from "lucide-react";
 import { StaticStatusBadge } from "./TutorialUI";
 import { useUnits } from "../../../context/UnitContext";
 import { MasterUnit } from "../../../types";
-import { getProxyImage, getUnitAssetUrl, handleImageError } from "../../../data";
+import {
+  getProxyImage,
+  getUnitAssetUrl,
+  handleImageError,
+} from "../../../data";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { buildScenariosList, Scenario } from "./simulatorEngine";
 
 const SECONDS_PER_SCENARIO = 20;
+const AQUA_AVATAR_URL =
+  "https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png";
+
+const IconArrowRight = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3 8H13M9 4L13 8L9 12" />
+  </svg>
+);
+
+const IconArrowDown = ({ className = "w-6 h-6" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M8 3V13M4 9L8 13L12 9" />
+  </svg>
+);
+
+const IconTimer = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="8" cy="9" r="5.5" />
+    <path d="M8 6.5V9L9.8 10.2M6 1.5H10" />
+  </svg>
+);
 
 const ScenarioUnitDisplay = ({
   unit,
@@ -166,7 +198,6 @@ export function SimulatorTab() {
 
     if (guess === scenarios[currentScenario].correct) {
       setGuessResult("correct");
-      // Bonus points for answering fast
       const timeBonus = timeLeft * 10;
       setSimScore((prev) => prev + 500 + simCombo * 200 + timeBonus);
       setSimCombo((prev) => prev + 1);
@@ -206,7 +237,6 @@ export function SimulatorTab() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground h-full flex-1">
-        <Sparkles className="w-8 h-8 animate-spin text-primary mb-4" />
         <p className="font-bold">Loading live market data...</p>
       </div>
     );
@@ -216,44 +246,51 @@ export function SimulatorTab() {
     return (
       <div className="animate-fade-in pb-6 max-w-4xl mx-auto font-sans select-none flex flex-col flex-1 justify-center h-full">
         <div className="bg-card border border-border rounded-[12px] p-8 md:p-12 shadow-xl flex flex-col items-center text-center my-auto">
-          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6 border border-primary/20">
-            <Activity className="w-10 h-10 text-primary" />
-          </div>
+          <img
+            src={AQUA_AVATAR_URL}
+            alt="Goddess Aqua"
+            referrerPolicy="no-referrer"
+            className="w-20 h-20 rounded-full border border-border object-cover object-top mb-5 bg-popover shadow-sm"
+          />
           <h2 className="text-[24px] md:text-[32px] font-black text-foreground tracking-tight mb-2">
-            Assessment Concluded
+            Mock Trades Complete
           </h2>
-          <p className="text-muted-foreground text-[14px] uppercase tracking-widest mb-8 font-bold">
+          <p className="text-muted-foreground text-[14px] uppercase tracking-widest mb-6 font-bold">
             Final Score:{" "}
             <span className="text-primary">{simScore.toLocaleString()}</span>
           </p>
 
           <div className="w-full h-px bg-border my-2" />
 
-          <p className="text-muted-foreground text-[15px] leading-relaxed mb-10 max-w-lg mt-6">
-            Trading algorithms provide pure mathematical statistics, but a human
-            trader must adapt to shifting trends. Your score reflects your
-            ability to balance raw value metrics against liquidity and market
-            manipulation.
+          <p className="text-muted-foreground text-[14px] leading-relaxed mb-8 max-w-lg mt-5">
+            {simScore >= 1200
+              ? "\"AHAHA! Look at that score! Clearly my divine coaching turned you into a trade genius! Go out there and show the market how it's done!\""
+              : simScore > 0
+              ? "\"Not bad for a mortal! You spotted some good deals, just don't let Dropping or Inflated tags trick you next time!\""
+              : "\"WAAAAAH! Zero points?! Did you close your eyes and click at random like Kazuma?! Hit Play Again before you lose your whole inventory!\""}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
             <button
+              type="button"
               onClick={startSimulator}
-              className="w-full sm:w-auto px-8 py-4 rounded-[8px] bg-primary text-primary-foreground font-bold text-[14px] transition-all hover:brightness-110 active:scale-95 shadow-sm flex items-center justify-center gap-2 focus-visible:outline-none"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-[8px] bg-primary text-primary-foreground font-bold text-[14px] transition-all hover:brightness-110 active:scale-95 shadow-sm flex items-center justify-center gap-2 focus-visible:outline-none cursor-pointer"
             >
-              <RotateCcw className="w-4 h-4" /> Retake Assessment
+              Play Again
             </button>
             <button
+              type="button"
               onClick={() => handleNavigate("theory")}
-              className="w-full sm:w-auto px-8 py-4 rounded-[8px] bg-muted text-foreground font-bold text-[14px] transition-all hover:brightness-110 active:scale-95 focus-visible:outline-none flex items-center justify-center gap-2 shadow-sm"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-[8px] bg-muted text-foreground font-bold text-[14px] transition-all hover:brightness-110 active:scale-95 focus-visible:outline-none flex items-center justify-center gap-2 shadow-sm cursor-pointer border border-border"
             >
-              <BookOpen className="w-4 h-4" /> Review Theory
+              Read Market Guide
             </button>
             <button
+              type="button"
               onClick={() => handleNavigate("value-list")}
-              className="w-full sm:w-auto px-8 py-4 rounded-[8px] bg-muted text-foreground font-bold text-[14px] transition-all hover:brightness-110 active:scale-95 focus-visible:outline-none flex items-center justify-center gap-2 shadow-sm"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-[8px] bg-muted text-foreground font-bold text-[14px] transition-all hover:brightness-110 active:scale-95 focus-visible:outline-none flex items-center justify-center gap-2 shadow-sm cursor-pointer border border-border"
             >
-              <List className="w-4 h-4" /> Return to Market
+              Go to Value List
             </button>
           </div>
         </div>
@@ -265,30 +302,32 @@ export function SimulatorTab() {
     <div className="animate-fade-in pb-6 max-w-5xl mx-auto font-sans select-none h-full flex flex-col">
       {!isSimulatorRunning && simScore === 0 ? (
         <div className="flex-1 flex flex-col justify-center">
-          <div className="bg-card border border-border rounded-[12px] p-8 md:p-10 shadow-lg flex flex-col gap-8 w-full my-auto max-w-2xl mx-auto">
+          <div className="bg-card border border-border rounded-[12px] p-8 md:p-10 shadow-lg flex flex-col gap-6 w-full my-auto max-w-2xl mx-auto">
             <div className="flex items-center gap-4 border-b border-border pb-6">
               <div className="relative w-16 h-16 rounded-full border border-border overflow-hidden bg-popover shadow-sm shrink-0">
                 <img
-                  src="https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png"
+                  src={AQUA_AVATAR_URL}
+                  referrerPolicy="no-referrer"
                   className="w-full h-full object-cover object-top"
                   alt="Aqua"
                 />
               </div>
               <div className="flex flex-col">
-                <h2 className="text-[24px] md:text-[28px] font-black text-foreground tracking-tight leading-none mb-1.5">
-                  Certification Assessment
+                <h2 className="text-[22px] md:text-[26px] font-black text-foreground tracking-tight leading-none mb-1.5">
+                  Mock Trade Drills
                 </h2>
                 <span className="text-[12px] font-bold uppercase tracking-widest text-primary mt-0.5">
-                  Assessor: Goddess Aqua
+                  Hosted by Goddess Aqua
                 </span>
               </div>
             </div>
 
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-5">
               <p className="text-[14px] text-foreground leading-relaxed">
-                Think you're a trading prodigy? Prove it. I've magically made a
-                way to pull <strong>real units from the live value list</strong>{" "}
-                and generate mathematically balanced market baits.
+                &ldquo;Think you&apos;re a trading prodigy? Prove it! I pulled{" "}
+                <strong>real units from the live value list</strong> to test if
+                you can spot winning flips, losing downgrades, and inflated
+                traps before the 20-second timer runs out!&rdquo;
               </p>
 
               <div className="bg-popover border-l-4 border-l-destructive border-y border-y-border border-r border-r-border rounded-r-[8px] p-4 shadow-inner flex items-start gap-4">
@@ -299,37 +338,24 @@ export function SimulatorTab() {
                 />
                 <div className="flex flex-col gap-1">
                   <span className="text-[11px] font-black uppercase tracking-widest text-destructive">
-                    Fire Zio's Observation
+                    Fire Zio&apos;s Tip
                   </span>
                   <p className="text-muted-foreground text-[13px] italic font-medium leading-relaxed">
-                    "The trade is automatically loaded into your Calculator on
-                    the right. Analyze the math, check the forecast, and tell me
-                    if it's a win. Do not fail."
+                    &ldquo;Each trade is also loaded into your Calculator on the
+                    right. Check the status tags, compare both sides, and decide
+                    whether to Accept, Decline, or call out a Scam.&rdquo;
                   </p>
                 </div>
               </div>
-
-              <div className="bg-[#FAA61A]/10 border border-[#FAA61A]/20 rounded-[8px] p-4 flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-[#FAA61A] shrink-0 mt-0.5" />
-                <p className="text-foreground text-[12.5px] leading-relaxed">
-                  <strong className="text-[#FAA61A] block mb-1">
-                    Disclaimer
-                  </strong>
-                  This simulator uses strict math to
-                  determine win/loss states based on current stats. Real market
-                  trading requires reading the room, predicting trends, and
-                  human intuition. Always prioritize your own market knowledge
-                  over pure statistics.
-                </p>
-              </div>
             </div>
 
-            <div className="pt-4 border-t border-border flex justify-end mt-2">
+            <div className="pt-4 border-t border-border flex justify-end mt-1">
               <button
+                type="button"
                 onClick={startSimulator}
                 className="bg-primary hover:bg-primary/80 text-primary-foreground px-8 py-3 rounded-[6px] text-[13px] font-bold uppercase tracking-wider transition-all active:scale-95 focus-visible:outline-none shadow-md w-full md:w-auto flex items-center justify-center gap-2 cursor-pointer"
               >
-                Commence Live Assessment <ArrowRight className="w-4 h-4" />
+                Start Mock Trades <IconArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -364,7 +390,7 @@ export function SimulatorTab() {
             <div className="flex items-center gap-5">
               <div className="hidden sm:flex flex-col text-right">
                 <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
-                  Question
+                  Round
                 </span>
                 <span className="text-[16px] font-black text-foreground leading-none">
                   {currentScenario + 1} / {scenarios.length}
@@ -377,7 +403,7 @@ export function SimulatorTab() {
                     : "bg-popover border border-border text-foreground"
                 }`}
               >
-                <Timer className="w-5 h-5" />
+                <IconTimer className="w-5 h-5" />
                 <span className="font-mono font-black text-[16px] tracking-wide">
                   00:{timeLeft.toString().padStart(2, "0")}
                 </span>
@@ -394,17 +420,17 @@ export function SimulatorTab() {
             </div>
 
             <div className="p-6 md:p-10 flex flex-col flex-1">
-              <div className="flex flex-col gap-2 mb-10">
-                <h3 className="text-[24px] md:text-[28px] font-black text-foreground tracking-tight">
+              <div className="flex flex-col gap-2 mb-8">
+                <h3 className="text-[22px] md:text-[26px] font-black text-foreground tracking-tight">
                   {scenarios[currentScenario].title}
                 </h3>
-                <p className="text-[15px] text-muted-foreground leading-relaxed max-w-2xl">
+                <p className="text-[14px] text-muted-foreground leading-relaxed max-w-2xl">
                   {scenarios[currentScenario].desc}
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6 items-center mb-10">
-                <div className="bg-popover border border-border rounded-[8px] p-6 flex flex-col gap-6 shadow-sm min-h-[160px]">
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6 items-center mb-8">
+                <div className="bg-popover border border-border rounded-[8px] p-6 flex flex-col gap-6 shadow-sm min-h-[150px]">
                   <div className="flex items-center justify-between border-b border-border pb-3">
                     <span className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground">
                       You Give
@@ -417,11 +443,11 @@ export function SimulatorTab() {
                 </div>
 
                 <div className="flex justify-center items-center text-muted-foreground px-2">
-                  <ArrowRight className="w-6 h-6 hidden md:block opacity-50" />
-                  <ArrowDown className="w-6 h-6 md:hidden opacity-50" />
+                  <IconArrowRight className="w-6 h-6 hidden md:block opacity-50" />
+                  <IconArrowDown className="w-6 h-6 md:hidden opacity-50" />
                 </div>
 
-                <div className="bg-popover border border-border rounded-[8px] p-6 flex flex-col gap-6 shadow-sm min-h-[160px]">
+                <div className="bg-popover border border-border rounded-[8px] p-6 flex flex-col gap-6 shadow-sm min-h-[150px]">
                   <div className="flex items-center justify-between border-b border-border pb-3">
                     <span className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground">
                       You Get
@@ -438,6 +464,7 @@ export function SimulatorTab() {
                 {guessResult === "none" ? (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full animate-fade-in">
                     <button
+                      type="button"
                       onClick={() => handleGuess("WIN")}
                       className="group flex flex-col items-center justify-center gap-1.5 py-4 sm:py-5 rounded-[8px] bg-[#22c55e] text-white transition-all hover:brightness-110 active:scale-95 shadow-md focus-visible:outline-none cursor-pointer"
                     >
@@ -449,6 +476,7 @@ export function SimulatorTab() {
                       </span>
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleGuess("LOSS")}
                       className="group flex flex-col items-center justify-center gap-1.5 py-4 sm:py-5 rounded-[8px] bg-muted text-foreground transition-all hover:bg-muted/80 active:scale-95 shadow-md focus-visible:outline-none cursor-pointer border border-border"
                     >
@@ -460,6 +488,7 @@ export function SimulatorTab() {
                       </span>
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleGuess("SCAM")}
                       className="group flex flex-col items-center justify-center gap-1.5 py-4 sm:py-5 rounded-[8px] bg-[#ef4444] text-white transition-all hover:brightness-110 active:scale-95 shadow-md focus-visible:outline-none cursor-pointer"
                     >
@@ -467,40 +496,37 @@ export function SimulatorTab() {
                         Scam
                       </span>
                       <span className="text-[12px] text-white/90 font-medium">
-                        Unreasonable Ask
+                        Trap / Manipulated
                       </span>
                     </button>
                   </div>
                 ) : (
                   <div
-                    className="flex flex-col md:flex-row items-center gap-6 p-6 rounded-[8px] border transition-all animate-slide-up shadow-sm"
+                    className="flex flex-col md:flex-row items-start md:items-center gap-5 p-6 rounded-[8px] border transition-all animate-slide-up shadow-sm"
                     style={{
                       backgroundColor:
                         guessResult === "correct"
-                          ? "rgba(34, 197, 94, 0.05)"
+                          ? "rgba(34, 197, 94, 0.06)"
                           : guessResult === "scam"
-                          ? "rgba(239, 68, 68, 0.05)"
+                          ? "rgba(239, 68, 68, 0.06)"
                           : "var(--muted)",
                       borderColor:
                         guessResult === "correct"
-                          ? "rgba(34, 197, 94, 0.2)"
+                          ? "rgba(34, 197, 94, 0.25)"
                           : guessResult === "scam"
-                          ? "rgba(239, 68, 68, 0.2)"
+                          ? "rgba(239, 68, 68, 0.25)"
                           : "var(--border)",
                     }}
                   >
-                    <div className="shrink-0">
-                      {guessResult === "correct" ? (
-                        <CheckCircle2 className="w-14 h-14 text-[#22c55e]" />
-                      ) : guessResult === "scam" ? (
-                        <AlertTriangle className="w-14 h-14 text-[#ef4444]" />
-                      ) : (
-                        <XCircle className="w-14 h-14 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="flex flex-col flex-1 text-center md:text-left">
+                    <img
+                      src={AQUA_AVATAR_URL}
+                      alt="Goddess Aqua"
+                      referrerPolicy="no-referrer"
+                      className="w-14 h-14 rounded-full border border-border object-cover object-top shrink-0 bg-popover"
+                    />
+                    <div className="flex flex-col flex-1 text-left">
                       <span
-                        className="text-[16px] font-black uppercase tracking-wider mb-2"
+                        className="text-[15px] font-black uppercase tracking-wider mb-1.5"
                         style={{
                           color:
                             guessResult === "correct"
@@ -511,30 +537,31 @@ export function SimulatorTab() {
                         }}
                       >
                         {guessResult === "correct"
-                          ? "Correct Assessment"
+                          ? "Spot On! Aqua Approves!"
                           : guessResult === "scam"
-                          ? "Trade Avoided"
+                          ? "Trap Dodged!"
                           : guessResult === "timeout"
-                          ? "Time Expired"
-                          : "Incorrect Assessment"}
+                          ? "Time Ran Out!"
+                          : "Wrong Call!"}
                       </span>
-                      <p className="text-[14px] text-foreground leading-relaxed mb-6">
-                        {guessResult === "scam"
-                          ? `You identified this as a heavily manipulated or unreasonable trade. The algorithm calculated it as a ${
-                              scenarios[currentScenario].forecast.st >= 0 ||
-                              scenarios[currentScenario].forecast.lt >= 0
-                                ? "WIN"
-                                : "LOSS"
-                            }, but real-world market knowledge overrides pure math.`
-                          : scenarios[currentScenario].explanation}
+                      <p className="text-[13.5px] text-foreground leading-relaxed mb-4">
+                        {guessResult === "correct" &&
+                          `"Hehehe, nice eye! ${scenarios[currentScenario].explanation}"`}
+                        {guessResult === "incorrect" &&
+                          `"WAAAAAH! Did you even look at the status tags?! ${scenarios[currentScenario].explanation}"`}
+                        {guessResult === "timeout" &&
+                          `"Hey! Wake up! You took so long staring at the numbers that the other trader left the server! ${scenarios[currentScenario].explanation}"`}
+                        {guessResult === "scam" &&
+                          `"Good instinct calling out a shady offer! ${scenarios[currentScenario].explanation}"`}
                       </p>
                       <button
+                        type="button"
                         onClick={nextScenario}
-                        className="self-center md:self-start px-8 py-3 bg-popover hover:bg-card text-foreground text-[13px] font-black uppercase tracking-wider rounded-[6px] transition-all shadow-sm focus-visible:outline-none active:scale-95 border border-border cursor-pointer"
+                        className="self-start px-6 py-2.5 bg-popover hover:bg-card text-foreground text-[12px] font-black uppercase tracking-wider rounded-[6px] transition-all shadow-sm focus-visible:outline-none active:scale-95 border border-border cursor-pointer"
                       >
                         {currentScenario >= scenarios.length - 1
-                          ? "Complete Assessment"
-                          : "Next Scenario"}
+                          ? "See Final Score"
+                          : "Next Trade"}
                       </button>
                     </div>
                   </div>
@@ -547,5 +574,3 @@ export function SimulatorTab() {
     </div>
   );
 }
-
-

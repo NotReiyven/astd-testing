@@ -1,6 +1,15 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { X, ArrowRight, CheckCircle2, Circle } from "lucide-react";
-import { GiAbacus, GiLockedFortress, GiFairyWand, GiShieldEchoes, GiScrollUnfurled, GiMegaphone, GiTrophyCup, GiBookmark, GiOpenBook } from "react-icons/gi";
+import {
+  GiAbacus,
+  GiLockedFortress,
+  GiFairyWand,
+  GiShieldEchoes,
+  GiScrollUnfurled,
+  GiMegaphone,
+  GiTrophyCup,
+  GiBookmark,
+  GiOpenBook,
+} from "react-icons/gi";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { useInventoryStore } from "../../../store/useInventoryStore";
 import { useAuthStore } from "../../../store/useAuthStore";
@@ -11,6 +20,71 @@ interface SandboxTabProps {
 }
 
 const FIRE_ZIO_AVATAR = getUnitAssetUrl("firezio") || "";
+const AQUA_AVATAR_URL =
+  "https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png";
+
+const IconClose = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M4 4L12 12M12 4L4 12" />
+  </svg>
+);
+
+const IconArrowRight = ({
+  className = "w-3 h-3",
+}: {
+  className?: string;
+}) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3 8H13M9 4L13 8L9 12" />
+  </svg>
+);
+
+const IconCheckCircle = ({
+  className = "w-5 h-5",
+}: {
+  className?: string;
+}) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="8" cy="8" r="6.25" />
+    <path d="M5.5 8.2L7.2 9.9L10.8 6.3" />
+  </svg>
+);
+
+const IconCircle = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="1.8"
+  >
+    <circle cx="8" cy="8" r="6.25" />
+  </svg>
+);
 
 export function SandboxTab({ completedGuides }: SandboxTabProps) {
   const { giveItems, getItems, pinnedIds, presets } = useTradeStore();
@@ -66,38 +140,41 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
       {
         id: "filter",
         title: "Market Research",
-        desc: "Filter or sort the live Value List.",
+        desc: "Filter or sort the live Value List to compare units.",
         isDone: hasFiltered,
         action: (
           <button
+            type="button"
             onClick={() => handleNavigate("value-list")}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-card border border-border text-foreground rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none"
           >
-            Value List <ArrowRight className="w-3 h-3" />
+            Value List <IconArrowRight className="w-3 h-3" />
           </button>
         ),
       },
       {
         id: "trade",
         title: "Build a Trade",
-        desc: "Add any unit to the Calculator.",
+        desc: "Add any unit to Give or Get in the Calculator.",
         isDone: hasGiveGet,
         action: (
           <button
+            type="button"
             onClick={() => handleNavigate("value-list")}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-card border border-border text-foreground rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none"
           >
-            Value List <ArrowRight className="w-3 h-3" />
+            Value List <IconArrowRight className="w-3 h-3" />
           </button>
         ),
       },
       {
         id: "pin",
         title: "Lock Assets",
-        desc: "Pin a unit in the Calculator to prevent clearing.",
+        desc: "Pin a unit in the Calculator so it stays locked when clearing.",
         isDone: hasPinned,
         action: (
           <button
+            type="button"
             onClick={handleOpenCalc}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-card border border-border text-foreground rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none"
           >
@@ -108,10 +185,11 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
       {
         id: "parser",
         title: "Smart Import",
-        desc: "Click the Wand to instantly import text trades.",
+        desc: "Click the Wand in the Calculator (or press Ctrl+V) to import text trades.",
         isDone: hasUsedParser,
         action: (
           <button
+            type="button"
             onClick={handleOpenCalc}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-card border border-border text-foreground rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none"
           >
@@ -122,10 +200,11 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
       {
         id: "preset",
         title: "Trade Loadouts",
-        desc: "Click the Bookmark to save a trade layout.",
+        desc: "Click the Bookmark icon in the Calculator to save a preset.",
         isDone: hasPresets,
         action: (
           <button
+            type="button"
             onClick={handleOpenCalc}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-card border border-border text-foreground rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none"
           >
@@ -136,14 +215,15 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
       {
         id: "sim",
         title: "Certification",
-        desc: "Score points in the Mock Trade Simulator.",
+        desc: "Score points in the Mock Trades simulator.",
         isDone: hasPassedSim,
         action: (
           <button
+            type="button"
             onClick={switchToSimulator}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground border border-primary rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none shadow-sm"
           >
-            <GiTrophyCup className="w-3.5 h-3.5" /> Simulator
+            <GiTrophyCup className="w-3.5 h-3.5" /> Mock Trades
           </button>
         ),
       },
@@ -162,11 +242,12 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
     () => [
       {
         id: "auth",
-        title: "Authentication",
-        desc: "Log in securely using Discord.",
+        title: "Discord Login",
+        desc: "Sign in with Discord to unlock your Vault and Trade Ads.",
         isDone: hasLogin,
         action: (
           <button
+            type="button"
             onClick={() => {
               triggerHaptic("medium");
               loginWithDiscord();
@@ -180,10 +261,11 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
       {
         id: "vault",
         title: "Vault Sync",
-        desc: "Add an owned unit to your public Inventory.",
+        desc: "Add an owned unit to your personal Inventory.",
         isDone: hasVault,
         action: (
           <button
+            type="button"
             onClick={() => handleNavigate("inventory")}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-card border border-border text-foreground rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none"
           >
@@ -193,11 +275,12 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
       },
       {
         id: "wishlist",
-        title: "Target Sourcing",
-        desc: "Add a desired unit to your Wishlist.",
+        title: "Target Wishlist",
+        desc: "Add a unit you are hunting for to your Wishlist.",
         isDone: hasWishlist,
         action: (
           <button
+            type="button"
             onClick={() => handleNavigate("inventory")}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-card border border-border text-foreground rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none"
           >
@@ -207,11 +290,12 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
       },
       {
         id: "ads",
-        title: "Market Maker",
-        desc: "Publish a Live Trading Ad to the board.",
+        title: "Post a Trade Ad",
+        desc: "Publish a listing to the live Trading Board.",
         isDone: hasPostedAd,
         action: (
           <button
+            type="button"
             onClick={() => handleNavigate("trading-ads")}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-card border border-border text-foreground rounded-[4px] text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer focus-visible:outline-none"
           >
@@ -246,19 +330,20 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
   return (
     <div className="flex flex-col md:flex-row gap-8 max-w-6xl mx-auto pb-12 font-sans select-none animate-fade-in w-full">
       {showCertificate && (
-        <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-background/80 backdrop-blur-sm animate-fade-in p-4">
-          <div className="bg-popover border border-card p-8 md:p-12 relative max-w-3xl w-full shadow-2xl flex flex-col items-center text-center animate-slide-up rounded-[8px] overflow-hidden">
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/85 animate-fade-in p-4">
+          <div className="bg-popover border border-border p-8 md:p-12 relative max-w-3xl w-full shadow-2xl flex flex-col items-center text-center animate-slide-up rounded-[8px] overflow-hidden">
             <button
+              type="button"
               onClick={() => setShowCertificate(false)}
               className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <IconClose className="w-5 h-5" />
             </button>
 
             <div className="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 border-destructive pointer-events-none"></div>
             <div className="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 border-destructive pointer-events-none"></div>
 
-            <h1 className="text-2xl md:text-3xl font-black text-foreground uppercase tracking-[0.2em] mb-2 font-serif text-shadow-sm">
+            <h1 className="text-2xl md:text-3xl font-black text-foreground uppercase tracking-[0.2em] mb-2">
               Official Trader License
             </h1>
             <p className="text-muted-foreground text-[12px] md:text-[14px] uppercase tracking-widest mb-1">
@@ -269,9 +354,8 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
             </p>
 
             <p className="text-foreground/90 text-[14px] md:text-[16px] italic mb-8 max-w-lg leading-relaxed">
-              This certifies that the user has successfully mastered the
-              platform fundamentals, demonstrating an elite understanding of the
-              smart parser, loadouts, and live market valuation.
+              This certifies that this trader has mastered the core calculator
+              tools, smart trade parser, loadouts, and live market valuation.
             </p>
 
             <div className="mt-2 pt-6 border-t border-border w-full flex justify-between items-end relative">
@@ -281,8 +365,8 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
                   alt="Fire Zio"
                   className="w-12 h-12 md:w-14 md:h-14 rounded-full border border-border object-cover shadow-sm bg-muted"
                 />
-                <div className="flex flex-col items-start md:items-start">
-                  <span className="font-serif text-xl md:text-2xl text-destructive italic tracking-tight">
+                <div className="flex flex-col items-start">
+                  <span className="text-xl md:text-2xl text-destructive italic tracking-tight">
                     Fire Zio
                   </span>
                   <span className="text-[9px] md:text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
@@ -290,7 +374,7 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
                   </span>
                 </div>
               </div>
-              <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-[3px] md:border-4 border-destructive flex items-center justify-center text-destructive font-black text-[10px] md:text-[12px] rotate-[-15deg] shadow-[0_0_20px_rgba(237,66,69,0.3)] select-none">
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-[3px] md:border-4 border-destructive flex items-center justify-center text-destructive font-black text-[10px] md:text-[12px] rotate-[-15deg] select-none">
                 VERIFIED
               </div>
             </div>
@@ -298,16 +382,17 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
         </div>
       )}
 
-      {/* DOCUMENTATION SIDEBAR NAVIGATION (Matching TheoryTab Style) */}
+      {/* SIDEBAR NAVIGATION */}
       <nav className="hidden md:flex flex-col w-56 shrink-0 sticky top-0 self-start pt-2">
         <div className="flex items-center gap-2.5 mb-6 text-foreground">
           <GiOpenBook className="w-5 h-5 text-primary" />
           <h2 className="text-[15px] font-black uppercase tracking-wider">
-            Documentation
+            Checklist
           </h2>
         </div>
         <div className="flex flex-col gap-1 border-l-2 border-border pl-4">
           <button
+            type="button"
             onClick={() => scrollToSection("fundamentals")}
             className={`text-left text-[13px] font-medium py-1.5 transition-colors focus-visible:outline-none cursor-pointer ${
               activeSection === "fundamentals"
@@ -318,6 +403,7 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
             Trading Fundamentals
           </button>
           <button
+            type="button"
             onClick={() => scrollToSection("verified")}
             className={`text-left text-[13px] font-medium py-1.5 transition-colors focus-visible:outline-none cursor-pointer ${
               activeSection === "verified"
@@ -331,7 +417,7 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
       </nav>
 
       {/* MAIN CHECKLIST CONTENT CONTAINER */}
-      <div className="flex-1 flex flex-col gap-8 min-w-0">
+      <div className="flex-1 flex flex-col gap-6 min-w-0">
         {/* Header & Progress */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border pb-6">
           <div className="flex flex-col gap-1.5">
@@ -339,7 +425,8 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
               Academy Checklist
             </h2>
             <p className="text-muted-foreground text-[14px]">
-              Complete these structured tasks to master the platform.
+              Try each tool below to learn the ropes and unlock your Trader
+              License.
             </p>
           </div>
 
@@ -359,6 +446,30 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
           </div>
         </div>
 
+        {/* Aqua Coaching Banner */}
+        <div className="bg-popover border border-border rounded-[8px] p-4 flex items-start gap-4 shadow-sm">
+          <img
+            src={AQUA_AVATAR_URL}
+            alt="Goddess Aqua"
+            referrerPolicy="no-referrer"
+            className="w-12 h-12 rounded-full border border-border object-cover object-top shrink-0 bg-muted"
+          />
+          <div className="flex flex-col gap-1">
+            <span className="text-[12px] font-black text-foreground">
+              Goddess Aqua
+            </span>
+            <p className="text-[13px] text-muted-foreground leading-relaxed">
+              {completedTasks === 0 &&
+                "\"Hey! Don't just stare at the list like Kazuma slacking off at the guild! Click any button below to test the Value List, the Calculator, and Mock Trades!\""}
+              {completedTasks > 0 &&
+                !phase1Done &&
+                `"Ooh, ${completedTasks} down already! Keep going! Once you finish all 6 Fundamentals tasks, Fire Zio and I will sign your Official Trader License!"`}
+              {phase1Done &&
+                "\"Hehehe, look at you clearing the Fundamentals! I knew my divine coaching worked! Don't forget to check out your Trader License!\""}
+            </p>
+          </div>
+        </div>
+
         {phase1Done && (
           <div className="bg-popover border-l-4 border-l-[#23a559] border-y border-y-border border-r border-r-border rounded-r-[8px] p-4 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-3">
@@ -370,6 +481,7 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
               </span>
             </div>
             <button
+              type="button"
               onClick={() => {
                 triggerHaptic("light");
                 setShowCertificate(true);
@@ -399,9 +511,9 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
               >
                 <div className="flex-1 flex items-start gap-3.5">
                   {task.isDone ? (
-                    <CheckCircle2 className="w-5 h-5 text-[#23a559] shrink-0" />
+                    <IconCheckCircle className="w-5 h-5 text-[#23a559] shrink-0" />
                   ) : (
-                    <Circle className="w-5 h-5 text-muted-foreground shrink-0" />
+                    <IconCircle className="w-5 h-5 text-muted-foreground shrink-0" />
                   )}
                   <div className="flex flex-col">
                     <span
@@ -455,9 +567,9 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
               >
                 <div className="flex-1 flex items-start gap-3.5">
                   {task.isDone ? (
-                    <CheckCircle2 className="w-5 h-5 text-[#23a559] shrink-0" />
+                    <IconCheckCircle className="w-5 h-5 text-[#23a559] shrink-0" />
                   ) : (
-                    <Circle className="w-5 h-5 text-muted-foreground shrink-0" />
+                    <IconCircle className="w-5 h-5 text-muted-foreground shrink-0" />
                   )}
                   <div className="flex flex-col">
                     <span
@@ -485,6 +597,3 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
     </div>
   );
 }
-
-
-

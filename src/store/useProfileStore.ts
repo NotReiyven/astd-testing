@@ -38,6 +38,7 @@ export interface UserProfileData {
   wishlist_public?: boolean;
   hide_discord_id?: boolean;
   private_ad_ids?: string[];
+  master_rep_override?: number | null;
 }
 
 const VALID_HEX = /^#[0-9A-Fa-f]{6}$/;
@@ -57,9 +58,12 @@ const VALID_STANCES: TradingStanceType[] = [
 ];
 
 export function unpackProfileRow(raw: any): UserProfileData {
-  const rawBanner = typeof raw?.banner_color === "string" ? raw.banner_color : "#121214";
+  const rawBanner =
+    typeof raw?.banner_color === "string" ? raw.banner_color : "#121214";
   const [hexPart, metaPart] = rawBanner.split("|");
-  const cleanHex = VALID_HEX.test(hexPart?.trim()) ? hexPart.trim() : "#121214";
+  const cleanHex = VALID_HEX.test(hexPart?.trim())
+    ? hexPart.trim()
+    : "#121214";
 
   let accent_color = "#7289da";
   let banner_style: BannerStyleType = "gradient";
@@ -68,6 +72,7 @@ export function unpackProfileRow(raw: any): UserProfileData {
   let wishlist_public = true;
   let hide_discord_id = false;
   let private_ad_ids: string[] = [];
+  let master_rep_override: number | null = null;
 
   if (metaPart) {
     try {
@@ -93,13 +98,26 @@ export function unpackProfileRow(raw: any): UserProfileData {
           .filter((s) => /^[0-9a-fA-F-]{8,36}$/.test(s))
           .slice(0, 100);
       }
+
+      const mrep = params.get("mrepset");
+      if (mrep !== null && /^-?\d+$/.test(mrep.trim())) {
+        master_rep_override = parseInt(mrep.trim(), 10);
+      }
     } catch {
       // Fallback to defaults if malformed
     }
   }
 
+  const resolvedRep =
+    master_rep_override !== null
+      ? master_rep_override
+      : typeof raw?.global_rep === "number"
+      ? raw.global_rep
+      : 0;
+
   return {
     ...raw,
+    global_rep: resolvedRep,
     banner_color: cleanHex,
     accent_color,
     banner_style,
@@ -108,6 +126,7 @@ export function unpackProfileRow(raw: any): UserProfileData {
     wishlist_public,
     hide_discord_id,
     private_ad_ids,
+    master_rep_override,
   };
 }
 
@@ -136,13 +155,22 @@ export function packBannerConfig(profile: Partial<UserProfileData>): string {
   if (profile.hide_discord_id === true) {
     params.set("hdi", "1");
   }
-  if (Array.isArray(profile.private_ad_ids) && profile.private_ad_ids.length > 0) {
+  if (
+    Array.isArray(profile.private_ad_ids) &&
+    profile.private_ad_ids.length > 0
+  ) {
     const validIds = profile.private_ad_ids
       .filter((s) => /^[0-9a-fA-F-]{8,36}$/.test(s))
       .slice(0, 100);
     if (validIds.length > 0) {
       params.set("pids", validIds.join(","));
     }
+  }
+  if (
+    typeof profile.master_rep_override === "number" &&
+    !Number.isNaN(profile.master_rep_override)
+  ) {
+    params.set("mrepset", String(Math.round(profile.master_rep_override)));
   }
 
   const qs = params.toString();
@@ -263,6 +291,28 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
     const profileData = unpackProfileRow(data);
 
+    if (profileData.master_rep_override === null) {
+      const { data: repLog } = await supabase
+        .from("moderation_logs")
+        .select("action_type")
+        .eq("target_user_id", userId)
+        .ilike("action_type", "MASTER REP OVERRIDE:%")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (repLog?.action_type) {
+        const match = repLog.action_type.match(/MASTER REP OVERRIDE:\s*([+-]?\d+)/i);
+        if (match) {
+          const parsed = parseInt(match[1], 10);
+          if (!Number.isNaN(parsed)) {
+            profileData.global_rep = parsed;
+            profileData.master_rep_override = parsed;
+          }
+        }
+      }
+    }
+
     set((state) => ({
       cache: {
         ...state.cache,
@@ -313,6 +363,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
         updates.hide_discord_id ?? existing?.hide_discord_id ?? false,
       private_ad_ids:
         updates.private_ad_ids ?? existing?.private_ad_ids ?? [],
+      master_rep_override: existing?.master_rep_override ?? null,
     };
 
     const dbPayload: Record<string, any> = {
