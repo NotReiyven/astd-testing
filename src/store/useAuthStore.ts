@@ -25,6 +25,7 @@ interface AuthState {
 
 import { del as delIdb } from "idb-keyval";
 import { useToastStore } from "./useToastStore";
+import { useProfileStore } from "./useProfileStore";
 
 const STATUS_DISPLAY_LABELS: Record<UserProfile["status"], string> = {
   online: "Online",
@@ -53,9 +54,6 @@ const clearLocalAuthCache = () => {
 };
 
 let activeProfileChannel: RealtimeChannel | null = null;
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 // SECURITY FIX: Sanitize the Supabase session object in both memory AND localStorage
 // to prevent Discord provider_token / provider_refresh_token leakage via XSS.
@@ -131,14 +129,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       activeProfileChannel = null;
     }
 
-    const { profile } = get();
-    if (profile) {
-      await supabase
-        .from("profiles")
-        .update({ status: "offline" })
-        .eq("id", profile.id);
-    }
-
     await supabase.auth.signOut();
     clearLocalAuthCache();
     set({ session: null, profile: null });
@@ -154,13 +144,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     const previousStatus = profile.status;
 
-    if (status === "dnd" || status === "invisible") {
-      localStorage.setItem("astd_manual_status", status);
-    } else if (status === "online") {
+    try {
       localStorage.removeItem("astd_manual_status");
+    } catch {
+      // Ignore storage errors
     }
 
     set({ profile: { ...profile, status } });
+    useProfileStore.getState().updateLocalProfile(profile.id, { status });
 
     const { error } = await supabase
       .from("profiles")
@@ -169,6 +160,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (error) {
       set({ profile: { ...profile, status: previousStatus } });
+      useProfileStore
+        .getState()
+        .updateLocalProfile(profile.id, { status: previousStatus });
       useToastStore.getState().addToast(
         "Could not update your status. Try again.",
         "error",
@@ -205,24 +199,41 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     if (data) {
-      const savedManualStatus = localStorage.getItem("astd_manual_status");
-      let targetStatus = data.status;
-
-      if (savedManualStatus === "dnd" || savedManualStatus === "invisible") {
-        targetStatus = savedManualStatus;
-      } else {
-        targetStatus = "online";
+      let legacyLocalPreference: string | null = null;
+      try {
+        legacyLocalPreference = localStorage.getItem("astd_manual_status");
+        if (legacyLocalPreference) {
+          localStorage.removeItem("astd_manual_status");
+        }
+      } catch {
+        // Ignore storage errors
       }
 
-      if (data.status !== targetStatus && data.role !== "banned") {
-        await supabase
+      // Only migrate if the DB row has legacy "offline" (or invalid) status;
+      // never overwrite a persisted "online", "dnd", or "invisible" preference.
+      const isValidPreference =
+        data.status === "online" ||
+        data.status === "dnd" ||
+        data.status === "invisible";
+
+      if (!isValidPreference && data.role !== "banned") {
+        const migratedPreference: UserProfile["status"] =
+          legacyLocalPreference === "dnd" || legacyLocalPreference === "invisible"
+            ? legacyLocalPreference
+            : "online";
+        const { error: migrateError } = await supabase
           .from("profiles")
-          .update({ status: targetStatus })
+          .update({ status: migratedPreference })
           .eq("id", userId);
-        data.status = targetStatus;
+        if (!migrateError) {
+          data.status = migratedPreference;
+        } else {
+          data.status = migratedPreference;
+        }
       }
 
       set({ profile: data as UserProfile });
+      useProfileStore.getState().seedProfile(data);
 
       if (activeProfileChannel) {
         supabase.removeChannel(activeProfileChannel);
@@ -245,6 +256,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               get().logout();
             } else {
               set({ profile: updatedProfile });
+              useProfileStore.getState().seedProfile(payload.new);
             }
           }
         )
@@ -276,28 +288,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           activeProfileChannel = null;
         }
         set({ profile: null });
-      }
-    });
-
-    window.addEventListener("beforeunload", () => {
-      const { profile, session } = get();
-      if (
-        profile &&
-        session &&
-        profile.status !== "invisible" &&
-        profile.role !== "banned"
-      ) {
-        const url = `${supabaseUrl}/rest/v1/profiles?id=eq.${profile.id}`;
-        fetch(url, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-            apikey: supabaseAnonKey,
-          },
-          body: JSON.stringify({ status: "offline" }),
-          keepalive: true,
-        });
       }
     });
   },

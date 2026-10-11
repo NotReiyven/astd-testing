@@ -39,6 +39,16 @@ export function useGlobalEvents({
         setCompletedGuides((p: any) => ({ ...p, hasPassedSim: true }));
       if (e.type === "academy-posted-ad")
         setCompletedGuides((p: any) => ({ ...p, hasPostedAd: true }));
+      if (e.type === "academy-give-get")
+        setCompletedGuides((p: any) => ({ ...p, hasGiveGet: true }));
+      if (e.type === "academy-pinned")
+        setCompletedGuides((p: any) => ({ ...p, hasPinned: true }));
+      if (e.type === "academy-saved-preset")
+        setCompletedGuides((p: any) => ({ ...p, hasPresets: true }));
+      if (e.type === "academy-vault")
+        setCompletedGuides((p: any) => ({ ...p, hasVault: true }));
+      if (e.type === "academy-wishlist")
+        setCompletedGuides((p: any) => ({ ...p, hasWishlist: true }));
     };
 
     const handleWelcomeClosed = () => {
@@ -52,6 +62,9 @@ export function useGlobalEvents({
       }>;
       if (!customEvent.detail) return;
       triggerHaptic("medium");
+      setCompletedGuides((p: any) =>
+        p.hasGiveGet ? p : { ...p, hasGiveGet: true }
+      );
 
       const now = Date.now();
       setToast((prev) => {
@@ -109,11 +122,22 @@ export function useGlobalEvents({
       );
     };
 
+    const academyEventNames = [
+      "academy-used-parser",
+      "academy-used-filter",
+      "academy-passed-sim",
+      "academy-posted-ad",
+      "academy-give-get",
+      "academy-pinned",
+      "academy-saved-preset",
+      "academy-vault",
+      "academy-wishlist",
+    ];
+
     window.addEventListener("set-tutorial-tab", handleSetTab);
-    window.addEventListener("academy-used-parser", handleAcademyEvent);
-    window.addEventListener("academy-used-filter", handleAcademyEvent);
-    window.addEventListener("academy-passed-sim", handleAcademyEvent);
-    window.addEventListener("academy-posted-ad", handleAcademyEvent);
+    academyEventNames.forEach((evt) =>
+      window.addEventListener(evt, handleAcademyEvent)
+    );
     window.addEventListener("welcome-closed", handleWelcomeClosed);
     window.addEventListener("trade-added", handleTradeAdded);
     window.document.addEventListener("navigate", handleNavigate);
@@ -121,10 +145,9 @@ export function useGlobalEvents({
 
     return () => {
       window.removeEventListener("set-tutorial-tab", handleSetTab);
-      window.removeEventListener("academy-used-parser", handleAcademyEvent);
-      window.removeEventListener("academy-used-filter", handleAcademyEvent);
-      window.removeEventListener("academy-passed-sim", handleAcademyEvent);
-      window.removeEventListener("academy-posted-ad", handleAcademyEvent);
+      academyEventNames.forEach((evt) =>
+        window.removeEventListener(evt, handleAcademyEvent)
+      );
       window.removeEventListener("welcome-closed", handleWelcomeClosed);
       window.removeEventListener("trade-added", handleTradeAdded);
       window.document.removeEventListener("navigate", handleNavigate);

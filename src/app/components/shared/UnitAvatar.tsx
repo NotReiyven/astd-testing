@@ -1,4 +1,4 @@
-import { useState, memo } from "react";
+import { useState, useEffect, memo } from "react";
 import { getProxyImage, handleImageError } from "../../../data";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 
@@ -24,31 +24,43 @@ export const UnitAvatar = memo(
     const [imgError, setImgError] = useState(false);
     const proxyUrl = getProxyImage(unitId, imageUrl);
 
+    useEffect(() => {
+      setImgLoaded(false);
+      setImgError(false);
+    }, [unitId, proxyUrl]);
+
     return (
       <>
         {!imgLoaded && !imgError && proxyUrl && (
           <div className="absolute inset-0 z-[5] bg-muted/40 animate-pulse" />
         )}
-        {(!proxyUrl || imgError) && <div
-          className={`${fallbackClassName} ${
-            !isOpaqueFallback
-              ? "opacity-20 select-none pointer-events-none"
-              : ""
-          }`}
-          style={getAvatarStyle(unitName)}
-        >
-          {getInitials(unitName)}
-        </div>}
-        {proxyUrl && (
+        {(!proxyUrl || imgError) && (
+          <div
+            className={`${fallbackClassName} ${
+              !isOpaqueFallback
+                ? "opacity-20 select-none pointer-events-none"
+                : ""
+            }`}
+            style={getAvatarStyle(unitName)}
+          >
+            {getInitials(unitName)}
+          </div>
+        )}
+        {proxyUrl && !imgError && (
           <img
             src={proxyUrl}
             alt={unitName}
             loading="lazy"
             decoding="async"
-            onLoad={() => setImgLoaded(true)}
+            onLoad={() => {
+              setImgLoaded(true);
+              setImgError(false);
+            }}
             onError={(e) => {
-              setImgError(true);
-              handleImageError(e, unitId);
+              const retrying = handleImageError(e, unitId);
+              if (!retrying) {
+                setImgError(true);
+              }
             }}
             className={`${imageClassName} transition-opacity duration-300 ease-out ${
               imgLoaded ? "opacity-100" : "opacity-0"

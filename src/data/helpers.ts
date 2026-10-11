@@ -1,5 +1,10 @@
 import { MasterUnit } from "../types";
 import { RARITY_SCALE } from "./config";
+import {
+  LOCAL_PREFERRED_UNIT_SLUGS,
+  resolveUnitImageSlug,
+  toUnitSlug,
+} from "./unitSlug";
 
 export function triggerHaptic(type: 'light' | 'medium' | 'heavy' | 'success') {
   if (typeof window !== "undefined" && navigator.vibrate) {
@@ -42,23 +47,47 @@ const ASSET_CDN_BASE_URL =
 
 export function getUnitAssetUrl(unitId: string) {
   if (!unitId) return null;
-  if (ASSET_CDN_BASE_URL) return `${ASSET_CDN_BASE_URL}/units/${unitId}.webp`;
-  return `/units/${unitId}.webp`;
+  const resolvedSlug = resolveUnitImageSlug(unitId);
+  if (!resolvedSlug) return null;
+  if (
+    ASSET_CDN_BASE_URL &&
+    !LOCAL_PREFERRED_UNIT_SLUGS.has(resolvedSlug) &&
+    !LOCAL_PREFERRED_UNIT_SLUGS.has(toUnitSlug(unitId))
+  ) {
+    return `${ASSET_CDN_BASE_URL}/units/${resolvedSlug}.webp`;
+  }
+  return `/units/${resolvedSlug}.webp`;
 }
 
 export function getProxyImage(unitId: string, _fallbackUrl?: string) {
   return getUnitAssetUrl(unitId);
 }
 
+/**
+ * Handles image load errors with a single cache-busting retry before hiding the image.
+ * Returns `true` if a retry was scheduled, or `false` if retries are exhausted.
+ */
 export function handleImageError(
   e: React.SyntheticEvent<HTMLImageElement, Event>,
-  _id: string
-) {
+  id: string
+): boolean {
   const target = e.currentTarget;
-  target.setAttribute("data-fallback-stage", "1");
+  const stage = target.getAttribute("data-fallback-stage");
+
+  if (!stage) {
+    target.setAttribute("data-fallback-stage", "1");
+    const resolvedSlug = resolveUnitImageSlug(id);
+    if (resolvedSlug) {
+      target.src = `/units/${resolvedSlug}.webp?retry=1`;
+      return true;
+    }
+  }
+
+  target.setAttribute("data-fallback-stage", "2");
   target.src =
     "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
   target.style.opacity = "0";
+  return false;
 }
 
 export function getObtainability(unit?: MasterUnit): "OBT" | "UNOB" {

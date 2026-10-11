@@ -1,725 +1,704 @@
 export const UNIT_IMAGES: Record<string, string> = {
-  // S Tier
-  demise:
-    "https://static.wikia.nocookie.net/allstartd/images/8/82/Demise.png/revision/latest/scale-to-width-down/250?cb=20240815230519",
-  "galaxy-girl":
-    "https://static.wikia.nocookie.net/allstartd/images/b/bd/Galaxy_Girl_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240710101742",
-  beardcutter:
-    "https://static.wikia.nocookie.net/allstartd/images/7/7d/Beardcutter_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240301052022",
-  "ul-borul-alt":
-    "https://static.wikia.nocookie.net/allstartd/images/c/c6/Ultra_Legendary_Borul_%28Alternative%29.png/revision/latest?cb=20240608183124",
-  death:
-    "https://static.wikia.nocookie.net/allstartd/images/5/59/Death_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20230909020936",
-  "two-hands":
-    "https://static.wikia.nocookie.net/allstartd/images/c/c8/Two_Hands_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240827103643",
-  "brol-alt":
-    "https://static.wikia.nocookie.net/allstartd/images/1/17/Legendary_Borul_%28Alternative%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20230909023237",
-  "slayer-mage":
-    "https://static.wikia.nocookie.net/allstartd/images/a/aa/Slayer_Mage_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240424011005",
-  "bunny-girl":
-    "https://static.wikia.nocookie.net/allstartd/images/0/06/Bunny_Girl_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240121121224",
-  "frost-moon":
-    "https://static.wikia.nocookie.net/allstartd/images/6/64/Frost_Moon_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240121121722",
-  "gold-dark-wing":
-    "https://static.wikia.nocookie.net/allstartd/images/9/9c/Dark_Wing_%28Gold%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715011729",
-  "club-beast":
-    "https://static.wikia.nocookie.net/allstartd/images/8/88/Club_Beast_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717040603",
-  "old-will":
-    "https://static.wikia.nocookie.net/allstartd/images/9/97/Old_Will_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20230909025318",
-  "light-rock-blaster":
-    "https://static.wikia.nocookie.net/allstartd/images/8/8c/Light%E2%98%86Rock_Blaster_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623165419",
-  "first-wood-bender":
-    "https://static.wikia.nocookie.net/allstartd/images/c/c7/First_Wood_Bender_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20230909024638",
-  "gold-flame-servant":
-    "https://static.wikia.nocookie.net/allstartd/images/f/f0/Flame_Servant_%28Gold%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064618",
-  kageni:
-    "https://static.wikia.nocookie.net/allstartd/images/b/bb/Kageni.png/revision/latest/scale-to-width-down/250?cb=20230419140326",
-  illusiva:
-    "https://static.wikia.nocookie.net/allstartd/images/0/05/Illusiva_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715185321",
-  "gold-jinjou":
-    "https://static.wikia.nocookie.net/allstartd/images/2/20/Jinjou_%28Gold%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064745",
-  "ikki-anni":
-    "https://static.wikia.nocookie.net/allstartd/images/3/37/Ikki_%28Anni%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240415040028",
-  "gold-tomi":
-    "https://static.wikia.nocookie.net/allstartd/images/5/5b/Tomi_%28Gold%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064843",
-  "ultra-kovegu":
-    "https://static.wikia.nocookie.net/allstartd/images/6/69/Ultra_Kovegu_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260810231508",
+  "demise": "https://static.wikia.nocookie.net/allstartd/images/8/82/Demise.png/revision/latest/scale-to-width-down/250?cb=20240815230519",
+  "galaxy-girl": "https://static.wikia.nocookie.net/allstartd/images/b/bd/Galaxy_Girl_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240710101742",
+  "beardcutter": "https://static.wikia.nocookie.net/allstartd/images/7/7d/Beardcutter_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240301052022",
+  "ul-borul-alt": "https://static.wikia.nocookie.net/allstartd/images/c/c6/Ultra_Legendary_Borul_%28Alternative%29.png/revision/latest?cb=20240608183124",
+  "death": "https://static.wikia.nocookie.net/allstartd/images/5/59/Death_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20230909020936",
+  "two-hands": "https://static.wikia.nocookie.net/allstartd/images/c/c8/Two_Hands_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240827103643",
+  "brol-alt": "https://static.wikia.nocookie.net/allstartd/images/1/17/Legendary_Borul_%28Alternative%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20230909023237",
+  "slayer-mage": "https://static.wikia.nocookie.net/allstartd/images/a/aa/Slayer_Mage_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240424011005",
+  "bunny-girl": "https://static.wikia.nocookie.net/allstartd/images/0/06/Bunny_Girl_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240121121224",
+  "frost-moon": "https://static.wikia.nocookie.net/allstartd/images/6/64/Frost_Moon_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240121121722",
+  "gold-dark-wing": "https://static.wikia.nocookie.net/allstartd/images/9/9c/Dark_Wing_%28Gold%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715011729",
+  "club-beast": "https://static.wikia.nocookie.net/allstartd/images/8/88/Club_Beast_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717040603",
+  "old-will": "https://static.wikia.nocookie.net/allstartd/images/9/97/Old_Will_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20230909025318",
+  "light-rock-blaster": "https://static.wikia.nocookie.net/allstartd/images/8/8c/Light%E2%98%86Rock_Blaster_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623165419",
+  "first-wood-bender": "https://static.wikia.nocookie.net/allstartd/images/c/c7/First_Wood_Bender_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20230909024638",
+  "gold-flame-servant": "https://static.wikia.nocookie.net/allstartd/images/f/f0/Flame_Servant_%28Gold%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064618",
+  "kageni": "https://static.wikia.nocookie.net/allstartd/images/b/bb/Kageni.png/revision/latest/scale-to-width-down/250?cb=20230419140326",
+  "illusiva": "https://static.wikia.nocookie.net/allstartd/images/0/05/Illusiva_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715185321",
+  "gold-jinjou": "https://static.wikia.nocookie.net/allstartd/images/2/20/Jinjou_%28Gold%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064745",
+  "ikki-anni": "https://static.wikia.nocookie.net/allstartd/images/3/37/Ikki_%28Anni%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240415040028",
+  "gold-tomi": "https://static.wikia.nocookie.net/allstartd/images/5/5b/Tomi_%28Gold%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064843",
+  "ultra-kovegu": "https://static.wikia.nocookie.net/allstartd/images/6/69/Ultra_Kovegu_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260810231508",
   "gold-martial-artist": "https://i.imgur.com/YudxTz9.png",
-  "challenger-flaming-tiger":
-    "https://static.wikia.nocookie.net/allstartd/images/f/f0/Challenger_Flaming_Tiger_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715185258",
-
-  // A Tier
-  "arot-supa":
-    "https://static.wikia.nocookie.net/allstartd/images/1/14/Arot_%28Supa%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010513",
-  varaq:
-    "https://static.wikia.nocookie.net/allstartd/images/5/57/Varaq_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715185418",
-  godpa:
-    "https://static.wikia.nocookie.net/allstartd/images/c/cb/Godpa_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240409124953",
-  "koku-red-spirit-x50":
-    "https://static.wikia.nocookie.net/allstartd/images/3/34/Koku_%28Red_Spirit_x50%29.png/revision/latest/scale-to-width-down/250?cb=20230107001033",
-  "crimson-mommy":
-    "https://static.wikia.nocookie.net/allstartd/images/c/c1/Crimson_Mommy_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231122024001",
-  "dark-wing":
-    "https://static.wikia.nocookie.net/allstartd/images/2/2c/Dark_Wing_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064717",
-  "zaruto-grr-iii":
-    "https://static.wikia.nocookie.net/allstartd/images/c/ca/Zaruto_%28GRR_III%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717231018",
-  "the-ripper":
-    "https://static.wikia.nocookie.net/allstartd/images/7/7e/The_Ripper_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623165435",
-  "water-goddess":
-    "https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png/revision/latest/scale-to-width-down/250?cb=20230611110544",
-  "flame-servant":
-    "https://static.wikia.nocookie.net/allstartd/images/6/6d/Flame_Servant_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260627211819",
-  twister:
-    "https://static.wikia.nocookie.net/allstartd/images/9/9f/Twister_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010858",
-  "ikki-quin":
-    "https://static.wikia.nocookie.net/allstartd/images/8/8f/Ikki_%28Quin%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010355",
-  "nurse-heart":
-    "https://static.wikia.nocookie.net/allstartd/images/6/6c/Nurse_Heart_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623165338",
-  "dark-rock-blaster":
-    "https://static.wikia.nocookie.net/allstartd/images/9/98/Dark%E2%98%85Rock_Blaster_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623165318",
-  leaf: "https://static.wikia.nocookie.net/allstartd/images/5/55/Leaf_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260811175451",
-  "spirit-knight":
-    "https://static.wikia.nocookie.net/allstartd/images/0/01/Spirit_Knight_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260810231438",
-
-  // High A Tier
-  "perfect-insect":
-    "https://static.wikia.nocookie.net/allstartd/images/e/ec/Perfect_Insect_%28Ballin%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231203092103",
-  jinjou:
-    "https://static.wikia.nocookie.net/allstartd/images/6/61/Jinjou_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260627211922",
-  "mr-random":
-    "https://static.wikia.nocookie.net/allstartd/images/b/b9/Mr._Random_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010753",
-  "zaruto-mecha":
-    "https://static.wikia.nocookie.net/allstartd/images/7/7a/Zaruto_%28MECHA%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010916",
-  "platinum-god":
-    "https://static.wikia.nocookie.net/allstartd/images/9/93/Platinium_God_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240423020506",
-  "green-needle":
-    "https://static.wikia.nocookie.net/allstartd/images/c/c5/Green_Needle_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010616",
-  "haaland-exhibition":
-    "https://static.wikia.nocookie.net/allstartd/images/9/97/Haaland_%28First_Exhibition%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623065303",
-  "zaruto-grr-ii":
-    "https://static.wikia.nocookie.net/allstartd/images/b/b7/Zaruto_%28GRR_II%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717041112",
-  tomi: "https://static.wikia.nocookie.net/allstartd/images/4/47/Tomi_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260627211922",
-  "koku-red-spirit-x25":
-    "https://static.wikia.nocookie.net/allstartd/images/9/97/Koku_%28Red_Spirit_x25%29.png/revision/latest/scale-to-width-down/250?cb=20230107001028",
-  "expert-sorcerer":
-    "https://static.wikia.nocookie.net/allstartd/images/7/74/Expert_Sorcerer_%28HD%29.png/revision/latest/scale-to-width-down/250?cb=20240501092515",
-  "martial-artist":
-    "https://static.wikia.nocookie.net/allstartd/images/1/13/Martial_Artist_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20230909022954",
-  "spade-dark":
-    "https://static.wikia.nocookie.net/allstartd/images/4/48/Spade_%28Dark%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260724061400",
-  "heaven-zio":
-    "https://static.wikia.nocookie.net/allstartd/images/2/2f/Heaven_Zio.png/revision/latest/scale-to-width-down/250?cb=20230107001014",
-  "oni-princess-hybrid":
-    "https://static.wikia.nocookie.net/allstartd/images/3/30/Oni_Princess_%28Hybrid%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240324035657",
-
-  // Mid A Tier
-  "ghost-girl":
-    "https://static.wikia.nocookie.net/allstartd/images/5/53/Ghost_Girl.png/revision/latest/scale-to-width-down/250?cb=20230104144424",
-  "bot-12-lab":
-    "https://static.wikia.nocookie.net/allstartd/images/8/88/BOT_12_Lab_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260627211802",
-  "masochist-lady":
-    "https://static.wikia.nocookie.net/allstartd/images/5/5c/Masochist_Lady_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231124063134",
-  "koku-red-spirit-x5":
-    "https://static.wikia.nocookie.net/allstartd/images/d/d4/Koku_%28Red_Spirit_x5%29.png/revision/latest/scale-to-width-down/250?cb=20230107001023",
-  jozu: "https://static.wikia.nocookie.net/allstartd/images/9/98/Jozu_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717230926",
-  "shadow-zio":
-    "https://static.wikia.nocookie.net/allstartd/images/7/7d/Shadow_Zio.png/revision/latest/scale-to-width-down/250?cb=20230107001019",
-  ziego:
-    "https://static.wikia.nocookie.net/allstartd/images/5/50/ZIEGO_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240105033911",
-  "haaland-blue":
-    "https://static.wikia.nocookie.net/allstartd/images/8/84/Haaland_%28Blue_Rose%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623065325",
-  "anti-magician-demon":
-    "https://static.wikia.nocookie.net/allstartd/images/b/bb/Anti_Magician_%28SUPER_DEMON%29.png/revision/latest/scale-to-width-down/250?cb=20230107023923",
-  "kovegu-alternative":
-    "https://static.wikia.nocookie.net/allstartd/images/0/0d/Kovegu_%28Alternative%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240120004307",
-  "zaruto-grr-i":
-    "https://static.wikia.nocookie.net/allstartd/images/7/74/Zaruto_%28GRR_I%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260724061444",
-  "gex-d-gecko":
-    "https://static.wikia.nocookie.net/allstartd/images/9/99/Gex_D._Gecko_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240211124158",
-  "tuca-donka":
-    "https://static.wikia.nocookie.net/allstartd/images/e/e5/Tuca_Donka_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010845",
-  "sound-o-sonic-demon":
-    "https://static.wikia.nocookie.net/allstartd/images/a/a1/Sound-O-Sonic_%28Demon%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240419133147",
-  "mercury-guardian":
-    "https://static.wikia.nocookie.net/allstartd/images/e/e5/Mercury_Guardian_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240210073035",
-  "fire-king":
-    "https://static.wikia.nocookie.net/allstartd/images/7/78/Fire_King.png/revision/latest/scale-to-width-down/250?cb=20230106222607",
-  "cursed-brothers-enraged":
-    "https://static.wikia.nocookie.net/allstartd/images/0/03/Cursed_Brothers_%28Enraged%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064605",
-  gankai:
-    "https://static.wikia.nocookie.net/allstartd/images/0/00/Gankai_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260630070559",
-
-  // Low A Tier
-  jangiku:
-    "https://static.wikia.nocookie.net/allstartd/images/b/b9/Jangiku_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240122001432",
-  "the-finger":
-    "https://static.wikia.nocookie.net/allstartd/images/7/7c/The_Finger_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240122001405",
-  "expert-sorcerer-angry":
-    "https://static.wikia.nocookie.net/allstartd/images/5/5d/Expert_Sorcerer_%28Angry%29.png/revision/latest/scale-to-width-down/250?cb=20230204022457",
-  "expert-sorcerer-sad":
-    "https://static.wikia.nocookie.net/allstartd/images/5/55/Expert_Sorcerer_%28Sad%29.png/revision/latest/scale-to-width-down/250?cb=20230611110321",
-  "sabre-hopper":
-    "https://static.wikia.nocookie.net/allstartd/images/2/24/Sabre_Hopper_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240122230743",
-  davi: "https://i.imgur.com/emJMpkb.png",
-  "the-big-three":
-    "https://static.wikia.nocookie.net/allstartd/images/2/2a/The_Big_Three_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240423234224",
-  "death-painting":
-    "https://static.wikia.nocookie.net/allstartd/images/4/4a/Death_Painting_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231109063252",
-  "slim-shady-forever":
-    "https://static.wikia.nocookie.net/allstartd/images/3/3c/Slim_Shady-Ye_%28Forever%29_%28Pose2%29.png/revision/latest/scale-to-width-down/250?cb=20260715220547",
-  "slim-shady":
-    "https://static.wikia.nocookie.net/allstartd/images/c/c8/Slim_Shady-Ye_%28Forever%29_-_Only_SS.png/revision/latest/scale-to-width-down/250?cb=20260715064829",
-  ye: "https://static.wikia.nocookie.net/allstartd/images/0/01/Slim_Shady-Ye_%28Forever%29_-_Only_Y.png/revision/latest/scale-to-width-down/250?cb=20260715064835",
-  "future-habri":
-    "https://static.wikia.nocookie.net/allstartd/images/2/21/Future_Habri.png/revision/latest/scale-to-width-down/250?cb=20230107004622",
-  "flower-trainer":
-    "https://static.wikia.nocookie.net/allstartd/images/b/b3/Flower_Trainer.png/revision/latest/scale-to-width-down/250?cb=20230106222534",
-  "dark-ice-queen":
-    "https://static.wikia.nocookie.net/allstartd/images/0/01/Dark_Ice_Queen_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717040610",
-  "elemental-ultimate":
-    "https://static.wikia.nocookie.net/allstartd/images/d/d6/Elemental_%28Ultimate%29.png/revision/latest/scale-to-width-down/250?cb=20230107002014",
-  "mysterious-x-girl":
-    "https://static.wikia.nocookie.net/allstartd/images/8/84/Mysterious_X_%28Girl%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231121081300",
-  "ice-x-marine":
-    "https://static.wikia.nocookie.net/allstartd/images/9/93/Ice_X-Marine_%28Pose%29.png/revision/latest?cb=20260717230855",
-  "red-saber":
-    "https://static.wikia.nocookie.net/allstartd/images/3/35/Red_Saber_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240323130426",
-  "cursed-brothers":
-    "https://static.wikia.nocookie.net/allstartd/images/a/ad/Cursed_Brothers_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240313092245",
-  becky:
-    "https://static.wikia.nocookie.net/allstartd/images/7/7a/Becky.png/revision/latest/scale-to-width-down/250?cb=20230204044803",
-  "garnet-spear":
-    "https://static.wikia.nocookie.net/allstartd/images/c/c0/Garnet_Spear.png/revision/latest/scale-to-width-down/250?cb=20240409012403",
-  "bright-reaper":
-    "https://static.wikia.nocookie.net/allstartd/images/1/1a/Bright_Reaper.png/revision/latest/scale-to-width-down/250?cb=20230107002241",
-  "jujutsu-master":
-    "https://static.wikia.nocookie.net/allstartd/images/f/f6/Jujutsu_Master_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260627211858",
-  "ice-dragon":
-    "https://static.wikia.nocookie.net/allstartd/images/9/98/Ice_Dragon_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717231055",
-  etri: "https://static.wikia.nocookie.net/allstartd/images/5/5a/Etri_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064725",
-  "shirtless-devil":
-    "https://static.wikia.nocookie.net/allstartd/images/9/96/Shirtless_Devil.png/revision/latest/scale-to-width-down/250?cb=20230106222555",
-
-  // B Tier
-  tobirama:
-    "https://static.wikia.nocookie.net/allstartd/images/8/85/Water_Bender.png/revision/latest/scale-to-width-down/250?cb=20230105081217",
-  aokiji:
-    "https://static.wikia.nocookie.net/allstartd/images/6/6b/Ice_Marine_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717040755",
-  veldora:
-    "https://static.wikia.nocookie.net/allstartd/images/2/24/Storm_Dragon_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010814",
-  lupin:
-    "https://static.wikia.nocookie.net/allstartd/images/0/07/Lupin_III.png/revision/latest/scale-to-width-down/250?cb=20230129115102",
-  chrollo:
-    "https://static.wikia.nocookie.net/allstartd/images/f/fb/Spider_Boss.png/revision/latest/scale-to-width-down/250?cb=20230105073356",
-  "ryo-shimazaki":
-    "https://static.wikia.nocookie.net/allstartd/images/4/4e/TP_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260628005102",
-  "water-kakazu":
-    "https://static.wikia.nocookie.net/allstartd/images/4/44/Elemental_%28Water%29.png/revision/latest/scale-to-width-down/250?cb=20230107002045",
-  "wind-kakazu":
-    "https://static.wikia.nocookie.net/allstartd/images/5/5e/Elemental_%28Wind%29.png/revision/latest/scale-to-width-down/250?cb=20230107002048",
-  denji:
-    "https://static.wikia.nocookie.net/allstartd/images/f/f7/Chains_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715185249",
-  "summer-aizen":
-    "https://static.wikia.nocookie.net/allstartd/images/d/da/Eyezen_%28Summer%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231213090424",
-  "todoroki-winter": "https://i.imgur.com/2ojUuhF.png",
-  zabuza:
-    "https://static.wikia.nocookie.net/allstartd/images/f/f2/Mist-man.png/revision/latest/scale-to-width-down/250?cb=20230105080813",
-  ichigobw:
-    "https://static.wikia.nocookie.net/allstartd/images/6/63/Ikki_%28BW%29.png/revision/latest/scale-to-width-down/250?cb=20230105083233",
-  grimmjow:
-    "https://static.wikia.nocookie.net/allstartd/images/5/54/Ice-Jaw.png/revision/latest/scale-to-width-down/250?cb=20230105054838",
-  ram: "https://static.wikia.nocookie.net/allstartd/images/8/83/Calm_Maid_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064709",
-  kisame:
-    "https://static.wikia.nocookie.net/allstartd/images/7/71/Shark_Ninja.png/revision/latest/scale-to-width-down/250?cb=20230107001253",
-  "ryo-asuka":
-    "https://static.wikia.nocookie.net/allstartd/images/6/6a/God_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715011720",
-  zombieluffy:
-    "https://static.wikia.nocookie.net/allstartd/images/c/c1/Ruffy_%28Zambe%29.png/revision/latest/scale-to-width-down/250?cb=20230106222603",
-  "hogyoku-aizen":
-    "https://static.wikia.nocookie.net/allstartd/images/d/d0/Hog_Eyzen.png/revision/latest/scale-to-width-down/250?cb=20230106223516",
-  "gordon-agrippa":
-    "https://static.wikia.nocookie.net/allstartd/images/3/3a/Poison_Clown_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231215071745",
-  "summer-saber":
-    "https://static.wikia.nocookie.net/allstartd/images/1/14/Sword_%28Summer%29.png/revision/latest/scale-to-width-down/250?cb=20231119021506",
-  atalanta:
-    "https://static.wikia.nocookie.net/allstartd/images/0/0b/Green_Huntress.png/revision/latest/scale-to-width-down/250?cb=20230106224703",
-  "tengen-district":
-    "https://static.wikia.nocookie.net/allstartd/images/c/cf/Sound-O-Sonic_%28District%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240410040528",
-  yamato:
-    "https://static.wikia.nocookie.net/allstartd/images/e/e8/Oni_Princess_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240325070411",
-  rem: "https://static.wikia.nocookie.net/allstartd/images/8/8e/Maid_Waifu_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064759",
-  gray: "https://static.wikia.nocookie.net/allstartd/images/f/f3/Shirtless_Magician.png/revision/latest?cb=20230105035722",
-  "saiki-k":
-    "https://static.wikia.nocookie.net/allstartd/images/9/96/Buddy%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240821195640",
-  "barragan-6star":
-    "https://static.wikia.nocookie.net/allstartd/images/f/fc/Raizan_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064814",
-  "big-mom":
-    "https://static.wikia.nocookie.net/allstartd/images/2/26/Large_Mother.png/revision/latest/scale-to-width-down/250?cb=20230106224451",
-  gremmy:
-    "https://static.wikia.nocookie.net/allstartd/images/5/57/The_Visionary_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010823",
-  double:
-    "https://static.wikia.nocookie.net/allstartd/images/6/62/Double.jpg/revision/latest/scale-to-width-down/250?cb=20230130210252",
-  "great-saiyaman":
-    "https://static.wikia.nocookie.net/allstartd/images/f/f1/Saiya_Heroes_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231122061502",
-  nagatoro:
-    "https://static.wikia.nocookie.net/allstartd/images/b/bf/Miss_Toro.png/revision/latest/scale-to-width-down/250?cb=20231121223626",
-  uraraka: "https://i.imgur.com/ZXeJR9h.png",
-  akeno:
-    "https://static.wikia.nocookie.net/allstartd/images/0/08/Lightning_Mommy_%28Maid%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715011738",
-  kenjaku:
-    "https://static.wikia.nocookie.net/allstartd/images/0/05/Sorcerer_Evil_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240418020205",
-  "neco-arc-ssj":
-    "https://static.wikia.nocookie.net/allstartd/images/5/54/Super_Muge_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240127233257",
-  "x-drake":
-    "https://static.wikia.nocookie.net/allstartd/images/e/e0/Exotic_Rexor_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064612",
-  "kure-raian":
-    "https://static.wikia.nocookie.net/allstartd/images/a/a8/The_Devil_Assassin_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240210122509",
-  "old-madara":
-    "https://static.wikia.nocookie.net/allstartd/images/7/71/Legendary_Leader_%28Old%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240415143356",
-  tsunayoshi:
-    "https://static.wikia.nocookie.net/allstartd/images/2/29/Mafia_Boss_%28Future%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260627211902",
-  thragg:
-    "https://static.wikia.nocookie.net/allstartd/images/e/e7/Freddie_Mercury_%28Fool%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623070442",
-  haku: "https://static.wikia.nocookie.net/allstartd/images/6/6f/Maskice.png/revision/latest/scale-to-width-down/250?cb=20230105035643",
-  "fused-kai":
-    "https://static.wikia.nocookie.net/allstartd/images/6/64/Bitokai_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240414093944",
-  shino:
-    "https://static.wikia.nocookie.net/allstartd/images/a/aa/Bug_Ninja_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623070458",
-  deidara:
-    "https://static.wikia.nocookie.net/allstartd/images/e/e2/Explosion_Artist_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623070451",
-  akira:
-    "https://static.wikia.nocookie.net/allstartd/images/5/58/Demonside_%28Ultimate%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260628004915",
-  "piccolo-awakening":
-    "https://static.wikia.nocookie.net/allstartd/images/3/3d/Mr._Green_%28Supa%29.png/revision/latest/scale-to-width-down/250?cb=20240211023354",
-  "sailor-moon":
-    "https://static.wikia.nocookie.net/allstartd/images/1/17/Captain_Sparkle.png/revision/latest/scale-to-width-down/250?cb=20230105075201",
-  "barragan-b":
-    "https://static.wikia.nocookie.net/allstartd/images/7/76/Eyezen_Boy%27s.png/revision/latest/scale-to-width-down/250?cb=20230105071604",
-  eugeo:
-    "https://static.wikia.nocookie.net/allstartd/images/2/2c/Erito_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260628005013",
-  "asuna-spirit":
-    "https://static.wikia.nocookie.net/allstartd/images/6/62/Dungeon_Queen_%28Spirit%29.png/revision/latest/scale-to-width-down/250?cb=20230105071949",
-  "asuna-shadow":
-    "https://static.wikia.nocookie.net/allstartd/images/6/62/Dungeon_Queen_%28Spirit%29.png/revision/latest?cb=20230105071949",
-  hisoka:
-    "https://static.wikia.nocookie.net/allstartd/images/d/d2/Joke_Da_Fool_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064626",
-  kabuto:
-    "https://static.wikia.nocookie.net/allstartd/images/f/f2/The_Assistant.png/revision/latest/scale-to-width-down/250?cb=20230105054746",
-  llen: "https://static.wikia.nocookie.net/allstartd/images/c/cb/Weaponize.png/revision/latest/scale-to-width-down/250?cb=20230107001841",
-  illyasviel:
-    "https://static.wikia.nocookie.net/allstartd/images/b/b9/String_Mage.png/revision/latest/scale-to-width-down/250?cb=20230204044937",
-  muzan:
-    "https://static.wikia.nocookie.net/allstartd/images/4/41/Jackzon_%28Girl%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231213230222",
-  "eruka-frog":
-    "https://static.wikia.nocookie.net/allstartd/images/1/10/Tadpole_Witch_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231214110734",
-  "master-roshi":
-    "https://static.wikia.nocookie.net/allstartd/images/9/97/Lee_Chun_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260813182424",
-  roswaal:
-    "https://static.wikia.nocookie.net/allstartd/images/d/d4/Clown_Mage_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717230756",
-  "teen-goku":
-    "https://static.wikia.nocookie.net/allstartd/images/8/8f/Koku_%28Teen%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240330024451",
-  kimimaru:
-    "https://static.wikia.nocookie.net/allstartd/images/7/74/Rimimaro.png/revision/latest/scale-to-width-down/250?cb=20230105082436",
-  "mei-terumi":
-    "https://static.wikia.nocookie.net/allstartd/images/0/0d/Lava_Moth.png/revision/latest?cb=20230105085326",
-  "barragan-5star":
-    "https://static.wikia.nocookie.net/allstartd/images/8/8d/Raizan_Second.png/revision/latest/scale-to-width-down/250?cb=20230106224511",
-
-  // High C Tier
-  judar:
-    "https://static.wikia.nocookie.net/allstartd/images/e/ee/Judar.png/revision/latest/scale-to-width-down/250?cb=20230101032414",
-  "red-head":
-    "https://static.wikia.nocookie.net/allstartd/images/d/d8/Red_Head.png/revision/latest/scale-to-width-down/250?cb=20230105082027",
-  racky:
-    "https://static.wikia.nocookie.net/allstartd/images/b/b1/Racky.png/revision/latest/scale-to-width-down/250?cb=20230105081018",
-  "careless-samurai":
-    "https://static.wikia.nocookie.net/allstartd/images/9/92/Careless_Samurai.png/revision/latest/scale-to-width-down/250?cb=20230105071902",
-  shave:
-    "https://static.wikia.nocookie.net/allstartd/images/5/51/Shave.png/revision/latest/scale-to-width-down/250?cb=20230105072608",
-  "bike-leader":
-    "https://static.wikia.nocookie.net/allstartd/images/0/0a/Bike_Leader.png/revision/latest/scale-to-width-down/250?cb=20230105072044",
-  "wormji-variant":
-    "https://static.wikia.nocookie.net/allstartd/images/8/8d/Worm_Assassin_%28Revived%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240402014514",
-  mechanical:
-    "https://static.wikia.nocookie.net/allstartd/images/6/6a/MechanicalThumb.png/revision/latest/scale-to-width-down/250?cb=20230106232303",
-  "mafia-boss":
-    "https://static.wikia.nocookie.net/allstartd/images/1/17/Mafia_Boss_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260628041834",
-  envi: "https://static.wikia.nocookie.net/allstartd/images/d/d6/Envi.png/revision/latest/scale-to-width-down/250?cb=20230105084733",
-  "wood-master":
-    "https://static.wikia.nocookie.net/allstartd/images/b/b3/Wood_Master.png/revision/latest/scale-to-width-down/250?cb=20230105085954",
-  "dual-servant":
-    "https://static.wikia.nocookie.net/allstartd/images/8/86/Dual_Servant.png/revision/latest/scale-to-width-down/250?cb=20230105084658",
-  eyezen:
-    "https://static.wikia.nocookie.net/allstartd/images/7/7b/Eyezen.png/revision/latest/scale-to-width-down/250?cb=20230105072410",
-  "elemental-lightning":
-    "https://static.wikia.nocookie.net/allstartd/images/5/5d/Elemental_%28Lightning%29.png/revision/latest/scale-to-width-down/250?cb=20230105080857",
-  kokule:
-    "https://static.wikia.nocookie.net/allstartd/images/1/1b/Kokule.png/revision/latest/scale-to-width-down/250?cb=20230611110123",
-  "dungeon-queen-c":
-    "https://static.wikia.nocookie.net/allstartd/images/4/4c/Dungeon_Queen.png/revision/latest/scale-to-width-down/250?cb=20230625070546",
-  "the-shogun":
-    "https://static.wikia.nocookie.net/allstartd/images/8/8b/The_Shogun.png/revision/latest/scale-to-width-down/250?cb=20230106224622",
-  "thorn-princess":
-    "https://static.wikia.nocookie.net/allstartd/images/8/8e/Thorn_Princess_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715185403",
-  "second-hand":
-    "https://static.wikia.nocookie.net/allstartd/images/a/a9/Second_Hand.png/revision/latest/scale-to-width-down/250?cb=20230105083632",
-  "the-boys":
-    "https://static.wikia.nocookie.net/allstartd/images/d/d0/The_Boys_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260604014746",
-  "water-mage-c":
-    "https://static.wikia.nocookie.net/allstartd/images/d/de/Water_Mage.png/revision/latest/scale-to-width-down/250?cb=20230212132102",
-  "bird-magician":
-    "https://static.wikia.nocookie.net/allstartd/images/9/99/Bird_Magician.png/revision/latest/scale-to-width-down/250?cb=20230106231901",
-  ginbei:
-    "https://static.wikia.nocookie.net/allstartd/images/2/22/Ginbei_thumb.png/revision/latest/scale-to-width-down/250?cb=20230106232436",
-  "kovegu-alternative-f":
-    "https://static.wikia.nocookie.net/allstartd/images/4/40/Kovegu_%28Alternative%29_%28F%29.png/revision/latest/scale-to-width-down/250?cb=20230419162901",
-  "muge-c":
-    "https://static.wikia.nocookie.net/allstartd/images/2/2a/Muge.png/revision/latest/scale-to-width-down/250?cb=20230611110224",
-  "dragon-daughter":
-    "https://static.wikia.nocookie.net/allstartd/images/0/02/Dragon_Daughter_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260627211849",
-  "sorcerer-killer":
-    "https://static.wikia.nocookie.net/allstartd/images/1/14/Sorcerer_Killer_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240121014104",
-  sun: "https://static.wikia.nocookie.net/allstartd/images/6/61/Sun.png/revision/latest/scale-to-width-down/250?cb=20230106223045",
-  cloud:
-    "https://static.wikia.nocookie.net/allstartd/images/d/d2/Cloud.png/revision/latest/scale-to-width-down/250?cb=20230106223040",
-  "vampire-queen":
-    "https://static.wikia.nocookie.net/allstartd/images/5/58/Vampire_Queen_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240122001418",
-  exorcist:
-    "https://static.wikia.nocookie.net/allstartd/images/a/ac/Exorcist.png/revision/latest/scale-to-width-down/250?cb=20230509181204",
-  "silent-voice":
-    "https://static.wikia.nocookie.net/allstartd/images/2/26/Silent_Voice_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240404034248",
-  "tony-stark":
-    "https://static.wikia.nocookie.net/allstartd/images/e/e5/Tony_Stark_thumb.png/revision/latest/scale-to-width-down/250?cb=20230105050639",
-  spade:
-    "https://static.wikia.nocookie.net/allstartd/images/8/8e/Spade.png/revision/latest/scale-to-width-down/250?cb=20230105082144",
-  "buddha-chairman":
-    "https://static.wikia.nocookie.net/allstartd/images/9/98/Buddha_Chairman.png/revision/latest/scale-to-width-down/250?cb=20230105044809",
-  "blinding-lights":
-    "https://static.wikia.nocookie.net/allstartd/images/b/bd/Blinding_Lights.png/revision/latest/scale-to-width-down/250?cb=20230105083554",
-  "toad-master":
-    "https://static.wikia.nocookie.net/allstartd/images/1/10/Toad_Master_HD.png/revision/latest/scale-to-width-down/250?cb=20230113083413",
-  "mountain-cannon":
-    "https://static.wikia.nocookie.net/allstartd/images/a/aa/Mountain_Cannon.png/revision/latest/scale-to-width-down/250?cb=20230106231917",
-  duhrai:
-    "https://static.wikia.nocookie.net/allstartd/images/8/8f/Duhrai.png/revision/latest/scale-to-width-down/250?cb=20230106231825",
-  "4-eye-sorcerer":
-    "https://static.wikia.nocookie.net/allstartd/images/0/0d/4-Eye_Sorcerer.png/revision/latest/scale-to-width-down/250?cb=20230106231948",
-  tyrant:
-    "https://static.wikia.nocookie.net/allstartd/images/0/0a/Tyrant.png/revision/latest/scale-to-width-down/250?cb=20230105051925",
-  "blonde-chain":
-    "https://static.wikia.nocookie.net/allstartd/images/4/4b/Blonde_Chain.png/revision/latest/scale-to-width-down/250?cb=20230106232012",
-  "ex-captain":
-    "https://static.wikia.nocookie.net/allstartd/images/0/02/Ex-Captain.png/revision/latest/scale-to-width-down/250?cb=20230106232002",
-  crazwind:
-    "https://static.wikia.nocookie.net/allstartd/images/8/80/Crazwind_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260724061050",
-  "handsome-jo":
-    "https://static.wikia.nocookie.net/allstartd/images/f/fc/Handsome-Jo.png/revision/latest/scale-to-width-down/250?cb=20230105053520",
-  falcon:
-    "https://static.wikia.nocookie.net/allstartd/images/0/06/Falcon.png/revision/latest/scale-to-width-down/250?cb=20230106231846",
-  "wild-animal":
-    "https://static.wikia.nocookie.net/allstartd/images/2/20/Wild_Animal.png/revision/latest/scale-to-width-down/250?cb=20230106231909",
-  "silver-x":
-    "https://static.wikia.nocookie.net/allstartd/images/d/dc/Silver-X.png/revision/latest/scale-to-width-down/250?cb=20230106231800",
-  "red-servant":
-    "https://static.wikia.nocookie.net/allstartd/images/7/7b/Red_Servant.png/revision/latest/scale-to-width-down/250?cb=20230106231759",
-  mag: "https://static.wikia.nocookie.net/allstartd/images/7/71/Mag.png/revision/latest/scale-to-width-down/250?cb=20230105080728",
-  zorro:
-    "https://static.wikia.nocookie.net/allstartd/images/d/db/Zorro.png/revision/latest/scale-to-width-down/250?cb=20230105081059",
-  "card-collector-go":
-    "https://static.wikia.nocookie.net/allstartd/images/4/44/Card_Collector%2C_Go.png/revision/latest/scale-to-width-down/250?cb=20230105044921",
-  "expert-sorcerer-girl":
-    "https://static.wikia.nocookie.net/allstartd/images/6/6c/Expert_Sorcerer_%28Girl%29.png/revision/latest/scale-to-width-down/268?cb=20240213234328",
-  "kid-koku":
-    "https://static.wikia.nocookie.net/allstartd/images/4/43/Koku_%28Kid%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240313073924",
-  "legendary-leader":
-    "https://static.wikia.nocookie.net/allstartd/images/9/9c/Legendary_Leader_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231122210803",
-  "shisui-alter":
-    "https://static.wikia.nocookie.net/allstartd/images/e/e6/Sui_%28After%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231129033353",
-
-  // Top C Tier
-  zebra:
-    "https://static.wikia.nocookie.net/allstartd/images/3/37/Zebra.png/revision/latest?cb=20230106224545",
-  zumi: "https://static.wikia.nocookie.net/allstartd/images/4/41/Zumi_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260715011711",
-  genie:
-    "https://static.wikia.nocookie.net/allstartd/images/8/8c/Genie.png/revision/latest?cb=20230106231830",
-  "water-boy":
-    "https://static.wikia.nocookie.net/allstartd/images/c/c1/Water_Boy_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260715185447",
-  "underwater-god":
-    "https://static.wikia.nocookie.net/allstartd/images/0/09/Underwater_God_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260715064849",
-  "sorcerer-killer-revived":
-    "https://static.wikia.nocookie.net/allstartd/images/1/1a/Sorcerer_Killer_%28Revived%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240123004222",
-  "elemental-fire":
-    "https://static.wikia.nocookie.net/allstartd/images/a/ae/Elemental_%28Fire%29.png/revision/latest?cb=20230107002055",
-  "dungeon-queen-flare":
-    "https://static.wikia.nocookie.net/allstartd/images/6/62/Dungeon_Queen_%28Spirit%29.png/revision/latest?cb=20230105071949",
-  "dungeon-queen-nature":
-    "https://static.wikia.nocookie.net/allstartd/images/6/62/Dungeon_Queen_%28Spirit%29.png/revision/latest?cb=20230105071949",
-  "excellent-leader":
-    "https://static.wikia.nocookie.net/allstartd/images/0/0b/Excellent-Leader_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260813182415",
-  "gun-girl-ii":
-    "https://static.wikia.nocookie.net/allstartd/images/c/c5/Gun_Girl_2.png/revision/latest?cb=20230105044300",
-  "gun-girl-i":
-    "https://static.wikia.nocookie.net/allstartd/images/4/49/Gun_Girl_1.png/revision/latest?cb=20230105072320",
-  puppet:
-    "https://static.wikia.nocookie.net/allstartd/images/6/6f/Puppet.png/revision/latest?cb=20230106225444",
-  "blue-satan":
-    "https://static.wikia.nocookie.net/allstartd/images/c/c8/Blue_Satan_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260628004902",
-  "dark-knight":
-    "https://static.wikia.nocookie.net/allstartd/images/9/94/Dark_Knight_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260813182318",
-  "maiden-servant":
-    "https://static.wikia.nocookie.net/allstartd/images/6/60/Maiden_Servant_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260813182436",
-  "hero-slinger":
-    "https://static.wikia.nocookie.net/allstartd/images/e/e2/Hero_Slinger_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260813182419",
-  "demon-lord":
-    "https://static.wikia.nocookie.net/allstartd/images/d/d0/Demon_Lord_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260813182323",
-  "joe-kid-von":
-    "https://static.wikia.nocookie.net/allstartd/images/1/13/Joe_Kid_%28Von%29_%28Pose%29.png/revision/latest?cb=20260403140455",
-  "hunter-duo-enraged":
-    "https://static.wikia.nocookie.net/allstartd/images/6/6c/Hunter_Duo_%28Enraged%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240527233937",
-
-  // Mid C Tier (25 – 49)
+  "challenger-flaming-tiger": "https://static.wikia.nocookie.net/allstartd/images/f/f0/Challenger_Flaming_Tiger_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715185258",
+  "arot-supa": "https://static.wikia.nocookie.net/allstartd/images/1/14/Arot_%28Supa%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010513",
+  "varaq": "https://static.wikia.nocookie.net/allstartd/images/5/57/Varaq_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715185418",
+  "godpa": "https://static.wikia.nocookie.net/allstartd/images/c/cb/Godpa_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240409124953",
+  "koku-red-spirit-x50": "https://static.wikia.nocookie.net/allstartd/images/3/34/Koku_%28Red_Spirit_x50%29.png/revision/latest/scale-to-width-down/250?cb=20230107001033",
+  "crimson-mommy": "https://static.wikia.nocookie.net/allstartd/images/c/c1/Crimson_Mommy_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231122024001",
+  "dark-wing": "https://static.wikia.nocookie.net/allstartd/images/2/2c/Dark_Wing_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064717",
+  "zaruto-grr-iii": "https://static.wikia.nocookie.net/allstartd/images/c/ca/Zaruto_%28GRR_III%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717231018",
+  "the-ripper": "https://static.wikia.nocookie.net/allstartd/images/7/7e/The_Ripper_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623165435",
+  "water-goddess": "https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png/revision/latest/scale-to-width-down/250?cb=20230611110544",
+  "flame-servant": "https://static.wikia.nocookie.net/allstartd/images/6/6d/Flame_Servant_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260627211819",
+  "twister": "https://static.wikia.nocookie.net/allstartd/images/9/9f/Twister_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010858",
+  "ikki-quin": "https://static.wikia.nocookie.net/allstartd/images/8/8f/Ikki_%28Quin%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010355",
+  "nurse-heart": "https://static.wikia.nocookie.net/allstartd/images/6/6c/Nurse_Heart_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623165338",
+  "dark-rock-blaster": "https://static.wikia.nocookie.net/allstartd/images/9/98/Dark%E2%98%85Rock_Blaster_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623165318",
+  "leaf": "https://static.wikia.nocookie.net/allstartd/images/5/55/Leaf_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260811175451",
+  "spirit-knight": "https://static.wikia.nocookie.net/allstartd/images/0/01/Spirit_Knight_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260810231438",
+  "perfect-insect": "https://static.wikia.nocookie.net/allstartd/images/e/ec/Perfect_Insect_%28Ballin%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231203092103",
+  "jinjou": "https://static.wikia.nocookie.net/allstartd/images/6/61/Jinjou_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260627211922",
+  "mr-random": "https://static.wikia.nocookie.net/allstartd/images/b/b9/Mr._Random_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010753",
+  "zaruto-mecha": "https://static.wikia.nocookie.net/allstartd/images/7/7a/Zaruto_%28MECHA%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010916",
+  "platinum-god": "https://static.wikia.nocookie.net/allstartd/images/9/93/Platinium_God_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240423020506",
+  "green-needle": "https://static.wikia.nocookie.net/allstartd/images/c/c5/Green_Needle_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010616",
+  "haaland-exhibition": "https://static.wikia.nocookie.net/allstartd/images/9/97/Haaland_%28First_Exhibition%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623065303",
+  "zaruto-grr-ii": "https://static.wikia.nocookie.net/allstartd/images/b/b7/Zaruto_%28GRR_II%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717041112",
+  "tomi": "https://static.wikia.nocookie.net/allstartd/images/4/47/Tomi_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260627211922",
+  "koku-red-spirit-x25": "https://static.wikia.nocookie.net/allstartd/images/9/97/Koku_%28Red_Spirit_x25%29.png/revision/latest/scale-to-width-down/250?cb=20230107001028",
+  "expert-sorcerer": "https://static.wikia.nocookie.net/allstartd/images/7/74/Expert_Sorcerer_%28HD%29.png/revision/latest/scale-to-width-down/250?cb=20240501092515",
+  "martial-artist": "https://static.wikia.nocookie.net/allstartd/images/1/13/Martial_Artist_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20230909022954",
+  "spade-dark": "https://static.wikia.nocookie.net/allstartd/images/4/48/Spade_%28Dark%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260724061400",
+  "heaven-zio": "https://static.wikia.nocookie.net/allstartd/images/2/2f/Heaven_Zio.png/revision/latest/scale-to-width-down/250?cb=20230107001014",
+  "oni-princess-hybrid": "https://static.wikia.nocookie.net/allstartd/images/3/30/Oni_Princess_%28Hybrid%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240324035657",
+  "ghost-girl": "https://static.wikia.nocookie.net/allstartd/images/5/53/Ghost_Girl.png/revision/latest/scale-to-width-down/250?cb=20230104144424",
+  "bot-12-lab": "https://static.wikia.nocookie.net/allstartd/images/8/88/BOT_12_Lab_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260627211802",
+  "masochist-lady": "https://static.wikia.nocookie.net/allstartd/images/5/5c/Masochist_Lady_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231124063134",
+  "koku-red-spirit-x5": "https://static.wikia.nocookie.net/allstartd/images/d/d4/Koku_%28Red_Spirit_x5%29.png/revision/latest/scale-to-width-down/250?cb=20230107001023",
+  "jozu": "https://static.wikia.nocookie.net/allstartd/images/9/98/Jozu_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717230926",
+  "shadow-zio": "https://static.wikia.nocookie.net/allstartd/images/7/7d/Shadow_Zio.png/revision/latest/scale-to-width-down/250?cb=20230107001019",
+  "ziego": "https://static.wikia.nocookie.net/allstartd/images/5/50/ZIEGO_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240105033911",
+  "haaland-blue": "https://static.wikia.nocookie.net/allstartd/images/8/84/Haaland_%28Blue_Rose%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623065325",
+  "anti-magician-demon": "https://static.wikia.nocookie.net/allstartd/images/b/bb/Anti_Magician_%28SUPER_DEMON%29.png/revision/latest/scale-to-width-down/250?cb=20230107023923",
+  "kovegu-alternative": "https://static.wikia.nocookie.net/allstartd/images/0/0d/Kovegu_%28Alternative%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240120004307",
+  "zaruto-grr-i": "https://static.wikia.nocookie.net/allstartd/images/7/74/Zaruto_%28GRR_I%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260724061444",
+  "gex-d-gecko": "https://static.wikia.nocookie.net/allstartd/images/9/99/Gex_D._Gecko_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240211124158",
+  "tuca-donka": "https://static.wikia.nocookie.net/allstartd/images/e/e5/Tuca_Donka_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010845",
+  "sound-o-sonic-demon": "https://static.wikia.nocookie.net/allstartd/images/a/a1/Sound-O-Sonic_%28Demon%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240419133147",
+  "mercury-guardian": "https://static.wikia.nocookie.net/allstartd/images/e/e5/Mercury_Guardian_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240210073035",
+  "fire-king": "https://static.wikia.nocookie.net/allstartd/images/7/78/Fire_King.png/revision/latest/scale-to-width-down/250?cb=20230106222607",
+  "cursed-brothers-enraged": "https://static.wikia.nocookie.net/allstartd/images/0/03/Cursed_Brothers_%28Enraged%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064605",
+  "gankai": "https://static.wikia.nocookie.net/allstartd/images/0/00/Gankai_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260630070559",
+  "jangiku": "https://static.wikia.nocookie.net/allstartd/images/b/b9/Jangiku_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240122001432",
+  "the-finger": "https://static.wikia.nocookie.net/allstartd/images/7/7c/The_Finger_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240122001405",
+  "expert-sorcerer-angry": "https://static.wikia.nocookie.net/allstartd/images/5/5d/Expert_Sorcerer_%28Angry%29.png/revision/latest/scale-to-width-down/250?cb=20230204022457",
+  "expert-sorcerer-sad": "https://static.wikia.nocookie.net/allstartd/images/5/55/Expert_Sorcerer_%28Sad%29.png/revision/latest/scale-to-width-down/250?cb=20230611110321",
+  "sabre-hopper": "https://static.wikia.nocookie.net/allstartd/images/2/24/Sabre_Hopper_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240122230743",
+  "davi": "https://i.imgur.com/emJMpkb.png",
+  "the-big-three": "https://static.wikia.nocookie.net/allstartd/images/2/2a/The_Big_Three_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240423234224",
+  "death-painting": "https://static.wikia.nocookie.net/allstartd/images/4/4a/Death_Painting_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231109063252",
+  "slim-shady-forever": "https://static.wikia.nocookie.net/allstartd/images/3/3c/Slim_Shady-Ye_%28Forever%29_%28Pose2%29.png/revision/latest/scale-to-width-down/250?cb=20260715220547",
+  "slim-shady": "https://static.wikia.nocookie.net/allstartd/images/c/c8/Slim_Shady-Ye_%28Forever%29_-_Only_SS.png/revision/latest/scale-to-width-down/250?cb=20260715064829",
+  "ye": "https://static.wikia.nocookie.net/allstartd/images/0/01/Slim_Shady-Ye_%28Forever%29_-_Only_Y.png/revision/latest/scale-to-width-down/250?cb=20260715064835",
+  "future-habri": "https://static.wikia.nocookie.net/allstartd/images/2/21/Future_Habri.png/revision/latest/scale-to-width-down/250?cb=20230107004622",
+  "flower-trainer": "https://static.wikia.nocookie.net/allstartd/images/b/b3/Flower_Trainer.png/revision/latest/scale-to-width-down/250?cb=20230106222534",
+  "dark-ice-queen": "https://static.wikia.nocookie.net/allstartd/images/0/01/Dark_Ice_Queen_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717040610",
+  "elemental-ultimate": "https://static.wikia.nocookie.net/allstartd/images/d/d6/Elemental_%28Ultimate%29.png/revision/latest/scale-to-width-down/250?cb=20230107002014",
+  "mysterious-x-girl": "https://static.wikia.nocookie.net/allstartd/images/8/84/Mysterious_X_%28Girl%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231121081300",
+  "ice-x-marine": "https://static.wikia.nocookie.net/allstartd/images/9/93/Ice_X-Marine_%28Pose%29.png/revision/latest?cb=20260717230855",
+  "red-saber": "https://static.wikia.nocookie.net/allstartd/images/3/35/Red_Saber_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240323130426",
+  "cursed-brothers": "https://static.wikia.nocookie.net/allstartd/images/a/ad/Cursed_Brothers_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240313092245",
+  "becky": "https://static.wikia.nocookie.net/allstartd/images/7/7a/Becky.png/revision/latest/scale-to-width-down/250?cb=20230204044803",
+  "garnet-spear": "https://static.wikia.nocookie.net/allstartd/images/c/c0/Garnet_Spear.png/revision/latest/scale-to-width-down/250?cb=20240409012403",
+  "bright-reaper": "https://static.wikia.nocookie.net/allstartd/images/1/1a/Bright_Reaper.png/revision/latest/scale-to-width-down/250?cb=20230107002241",
+  "jujutsu-master": "https://static.wikia.nocookie.net/allstartd/images/f/f6/Jujutsu_Master_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260627211858",
+  "ice-dragon": "https://static.wikia.nocookie.net/allstartd/images/9/98/Ice_Dragon_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717231055",
+  "etri": "https://static.wikia.nocookie.net/allstartd/images/5/5a/Etri_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064725",
+  "shirtless-devil": "https://static.wikia.nocookie.net/allstartd/images/9/96/Shirtless_Devil.png/revision/latest/scale-to-width-down/250?cb=20230106222555",
+  "tobirama": "https://static.wikia.nocookie.net/allstartd/images/8/85/Water_Bender.png/revision/latest/scale-to-width-down/250?cb=20230105081217",
+  "aokiji": "https://static.wikia.nocookie.net/allstartd/images/6/6b/Ice_Marine_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717040755",
+  "veldora": "https://static.wikia.nocookie.net/allstartd/images/2/24/Storm_Dragon_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010814",
+  "lupin": "https://static.wikia.nocookie.net/allstartd/images/0/07/Lupin_III.png/revision/latest/scale-to-width-down/250?cb=20230129115102",
+  "chrollo": "https://static.wikia.nocookie.net/allstartd/images/f/fb/Spider_Boss.png/revision/latest/scale-to-width-down/250?cb=20230105073356",
+  "ryo-shimazaki": "https://static.wikia.nocookie.net/allstartd/images/4/4e/TP_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260628005102",
+  "water-kakazu": "https://static.wikia.nocookie.net/allstartd/images/4/44/Elemental_%28Water%29.png/revision/latest/scale-to-width-down/250?cb=20230107002045",
+  "wind-kakazu": "https://static.wikia.nocookie.net/allstartd/images/5/5e/Elemental_%28Wind%29.png/revision/latest/scale-to-width-down/250?cb=20230107002048",
+  "denji": "https://static.wikia.nocookie.net/allstartd/images/f/f7/Chains_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715185249",
+  "summer-aizen": "https://static.wikia.nocookie.net/allstartd/images/d/da/Eyezen_%28Summer%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231213090424",
+  "todoroki-winter": "https://static.wikia.nocookie.net/allstartd/images/1/14/Rodoroki_%28Winter%29.png/revision/latest?cb=20230107002103",
+  "zabuza": "https://static.wikia.nocookie.net/allstartd/images/f/f2/Mist-man.png/revision/latest/scale-to-width-down/250?cb=20230105080813",
+  "ichigobw": "https://static.wikia.nocookie.net/allstartd/images/6/63/Ikki_%28BW%29.png/revision/latest/scale-to-width-down/250?cb=20230105083233",
+  "grimmjow": "https://static.wikia.nocookie.net/allstartd/images/5/54/Ice-Jaw.png/revision/latest/scale-to-width-down/250?cb=20230105054838",
+  "ram": "https://static.wikia.nocookie.net/allstartd/images/8/83/Calm_Maid_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064709",
+  "kisame": "https://static.wikia.nocookie.net/allstartd/images/7/71/Shark_Ninja.png/revision/latest/scale-to-width-down/250?cb=20230107001253",
+  "ryo-asuka": "https://static.wikia.nocookie.net/allstartd/images/6/6a/God_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715011720",
+  "zombieluffy": "https://static.wikia.nocookie.net/allstartd/images/c/c1/Ruffy_%28Zambe%29.png/revision/latest/scale-to-width-down/250?cb=20230106222603",
+  "hogyoku-aizen": "https://static.wikia.nocookie.net/allstartd/images/d/d0/Hog_Eyzen.png/revision/latest/scale-to-width-down/250?cb=20230106223516",
+  "gordon-agrippa": "https://static.wikia.nocookie.net/allstartd/images/3/3a/Poison_Clown_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231215071745",
+  "summer-saber": "https://static.wikia.nocookie.net/allstartd/images/1/14/Sword_%28Summer%29.png/revision/latest/scale-to-width-down/250?cb=20231119021506",
+  "atalanta": "https://static.wikia.nocookie.net/allstartd/images/0/0b/Green_Huntress.png/revision/latest/scale-to-width-down/250?cb=20230106224703",
+  "tengen-district": "https://static.wikia.nocookie.net/allstartd/images/c/cf/Sound-O-Sonic_%28District%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240410040528",
+  "yamato": "https://static.wikia.nocookie.net/allstartd/images/e/e8/Oni_Princess_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240325070411",
+  "rem": "https://static.wikia.nocookie.net/allstartd/images/8/8e/Maid_Waifu_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064759",
+  "gray": "https://static.wikia.nocookie.net/allstartd/images/f/f3/Shirtless_Magician.png/revision/latest?cb=20230105035722",
+  "saiki-k": "https://static.wikia.nocookie.net/allstartd/images/9/96/Buddy%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240821195640",
+  "barragan-6star": "https://static.wikia.nocookie.net/allstartd/images/f/fc/Raizan_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064814",
+  "big-mom": "https://static.wikia.nocookie.net/allstartd/images/2/26/Large_Mother.png/revision/latest/scale-to-width-down/250?cb=20230106224451",
+  "gremmy": "https://static.wikia.nocookie.net/allstartd/images/5/57/The_Visionary_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010823",
+  "double": "https://static.wikia.nocookie.net/allstartd/images/6/62/Double.jpg/revision/latest/scale-to-width-down/250?cb=20230130210252",
+  "great-saiyaman": "https://static.wikia.nocookie.net/allstartd/images/f/f1/Saiya_Heroes_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231122061502",
+  "nagatoro": "https://static.wikia.nocookie.net/allstartd/images/b/bf/Miss_Toro.png/revision/latest/scale-to-width-down/250?cb=20231121223626",
+  "uraraka": "https://i.imgur.com/ZXeJR9h.png",
+  "akeno": "https://static.wikia.nocookie.net/allstartd/images/0/08/Lightning_Mommy_%28Maid%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715011738",
+  "kenjaku": "https://static.wikia.nocookie.net/allstartd/images/0/05/Sorcerer_Evil_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240418020205",
+  "neco-arc-ssj": "https://static.wikia.nocookie.net/allstartd/images/5/54/Super_Muge_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240127233257",
+  "x-drake": "https://static.wikia.nocookie.net/allstartd/images/e/e0/Exotic_Rexor_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064612",
+  "kure-raian": "https://static.wikia.nocookie.net/allstartd/images/a/a8/The_Devil_Assassin_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240210122509",
+  "old-madara": "https://static.wikia.nocookie.net/allstartd/images/7/71/Legendary_Leader_%28Old%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240415143356",
+  "tsunayoshi": "https://static.wikia.nocookie.net/allstartd/images/2/29/Mafia_Boss_%28Future%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260627211902",
+  "thragg": "https://static.wikia.nocookie.net/allstartd/images/e/e7/Freddie_Mercury_%28Fool%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623070442",
+  "haku": "https://static.wikia.nocookie.net/allstartd/images/6/6f/Maskice.png/revision/latest/scale-to-width-down/250?cb=20230105035643",
+  "fused-kai": "https://static.wikia.nocookie.net/allstartd/images/6/64/Bitokai_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240414093944",
+  "shino": "https://static.wikia.nocookie.net/allstartd/images/a/aa/Bug_Ninja_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623070458",
+  "deidara": "https://static.wikia.nocookie.net/allstartd/images/e/e2/Explosion_Artist_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623070451",
+  "akira": "https://static.wikia.nocookie.net/allstartd/images/5/58/Demonside_%28Ultimate%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260628004915",
+  "piccolo-awakening": "https://static.wikia.nocookie.net/allstartd/images/3/3d/Mr._Green_%28Supa%29.png/revision/latest/scale-to-width-down/250?cb=20240211023354",
+  "sailor-moon": "https://static.wikia.nocookie.net/allstartd/images/1/17/Captain_Sparkle.png/revision/latest/scale-to-width-down/250?cb=20230105075201",
+  "barragan-b": "https://static.wikia.nocookie.net/allstartd/images/7/76/Eyezen_Boy%27s.png/revision/latest/scale-to-width-down/250?cb=20230105071604",
+  "eugeo": "https://static.wikia.nocookie.net/allstartd/images/2/2c/Erito_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260628005013",
+  "asuna-spirit": "https://static.wikia.nocookie.net/allstartd/images/6/62/Dungeon_Queen_%28Spirit%29.png/revision/latest/scale-to-width-down/250?cb=20230105071949",
+  "asuna-shadow": "https://static.wikia.nocookie.net/allstartd/images/6/62/Dungeon_Queen_%28Spirit%29.png/revision/latest?cb=20230105071949",
+  "hisoka": "https://static.wikia.nocookie.net/allstartd/images/d/d2/Joke_Da_Fool_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064626",
+  "kabuto": "https://static.wikia.nocookie.net/allstartd/images/f/f2/The_Assistant.png/revision/latest/scale-to-width-down/250?cb=20230105054746",
+  "llen": "https://static.wikia.nocookie.net/allstartd/images/c/cb/Weaponize.png/revision/latest/scale-to-width-down/250?cb=20230107001841",
+  "illyasviel": "https://static.wikia.nocookie.net/allstartd/images/b/b9/String_Mage.png/revision/latest/scale-to-width-down/250?cb=20230204044937",
+  "muzan": "https://static.wikia.nocookie.net/allstartd/images/4/41/Jackzon_%28Girl%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231213230222",
+  "eruka-frog": "https://static.wikia.nocookie.net/allstartd/images/1/10/Tadpole_Witch_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231214110734",
+  "master-roshi": "https://static.wikia.nocookie.net/allstartd/images/9/97/Lee_Chun_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260813182424",
+  "roswaal": "https://static.wikia.nocookie.net/allstartd/images/d/d4/Clown_Mage_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717230756",
+  "teen-goku": "https://static.wikia.nocookie.net/allstartd/images/8/8f/Koku_%28Teen%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240330024451",
+  "kimimaru": "https://static.wikia.nocookie.net/allstartd/images/7/74/Rimimaro.png/revision/latest/scale-to-width-down/250?cb=20230105082436",
+  "mei-terumi": "https://static.wikia.nocookie.net/allstartd/images/0/0d/Lava_Moth.png/revision/latest?cb=20230105085326",
+  "barragan-5star": "https://static.wikia.nocookie.net/allstartd/images/8/8d/Raizan_Second.png/revision/latest/scale-to-width-down/250?cb=20230106224511",
+  "judar": "https://static.wikia.nocookie.net/allstartd/images/e/ee/Judar.png/revision/latest/scale-to-width-down/250?cb=20230101032414",
+  "red-head": "https://static.wikia.nocookie.net/allstartd/images/d/d8/Red_Head.png/revision/latest/scale-to-width-down/250?cb=20230105082027",
+  "racky": "https://static.wikia.nocookie.net/allstartd/images/b/b1/Racky.png/revision/latest/scale-to-width-down/250?cb=20230105081018",
+  "careless-samurai": "https://static.wikia.nocookie.net/allstartd/images/9/92/Careless_Samurai.png/revision/latest/scale-to-width-down/250?cb=20230105071902",
+  "shave": "https://static.wikia.nocookie.net/allstartd/images/5/51/Shave.png/revision/latest/scale-to-width-down/250?cb=20230105072608",
+  "bike-leader": "https://static.wikia.nocookie.net/allstartd/images/0/0a/Bike_Leader.png/revision/latest/scale-to-width-down/250?cb=20230105072044",
+  "wormji-variant": "https://static.wikia.nocookie.net/allstartd/images/8/8d/Worm_Assassin_%28Revived%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240402014514",
+  "mechanical": "https://static.wikia.nocookie.net/allstartd/images/6/6a/MechanicalThumb.png/revision/latest/scale-to-width-down/250?cb=20230106232303",
+  "mafia-boss": "https://static.wikia.nocookie.net/allstartd/images/1/17/Mafia_Boss_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260628041834",
+  "envi": "https://static.wikia.nocookie.net/allstartd/images/d/d6/Envi.png/revision/latest/scale-to-width-down/250?cb=20230105084733",
+  "wood-master": "https://static.wikia.nocookie.net/allstartd/images/b/b3/Wood_Master.png/revision/latest/scale-to-width-down/250?cb=20230105085954",
+  "dual-servant": "https://static.wikia.nocookie.net/allstartd/images/8/86/Dual_Servant.png/revision/latest/scale-to-width-down/250?cb=20230105084658",
+  "eyezen": "https://static.wikia.nocookie.net/allstartd/images/7/7b/Eyezen.png/revision/latest/scale-to-width-down/250?cb=20230105072410",
+  "elemental-lightning": "https://static.wikia.nocookie.net/allstartd/images/5/5d/Elemental_%28Lightning%29.png/revision/latest/scale-to-width-down/250?cb=20230105080857",
+  "kokule": "https://static.wikia.nocookie.net/allstartd/images/1/1b/Kokule.png/revision/latest/scale-to-width-down/250?cb=20230611110123",
+  "dungeon-queen-c": "https://static.wikia.nocookie.net/allstartd/images/4/4c/Dungeon_Queen.png/revision/latest/scale-to-width-down/250?cb=20230625070546",
+  "the-shogun": "https://static.wikia.nocookie.net/allstartd/images/8/8b/The_Shogun.png/revision/latest/scale-to-width-down/250?cb=20230106224622",
+  "thorn-princess": "https://static.wikia.nocookie.net/allstartd/images/8/8e/Thorn_Princess_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715185403",
+  "second-hand": "https://static.wikia.nocookie.net/allstartd/images/a/a9/Second_Hand.png/revision/latest/scale-to-width-down/250?cb=20230105083632",
+  "the-boys": "https://static.wikia.nocookie.net/allstartd/images/d/d0/The_Boys_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260604014746",
+  "water-mage-c": "https://static.wikia.nocookie.net/allstartd/images/d/de/Water_Mage.png/revision/latest/scale-to-width-down/250?cb=20230212132102",
+  "bird-magician": "https://static.wikia.nocookie.net/allstartd/images/9/99/Bird_Magician.png/revision/latest/scale-to-width-down/250?cb=20230106231901",
+  "ginbei": "https://static.wikia.nocookie.net/allstartd/images/2/22/Ginbei_thumb.png/revision/latest/scale-to-width-down/250?cb=20230106232436",
+  "kovegu-alternative-f": "https://static.wikia.nocookie.net/allstartd/images/4/40/Kovegu_%28Alternative%29_%28F%29.png/revision/latest/scale-to-width-down/250?cb=20230419162901",
+  "muge-c": "https://static.wikia.nocookie.net/allstartd/images/2/2a/Muge.png/revision/latest/scale-to-width-down/250?cb=20230611110224",
+  "dragon-daughter": "https://static.wikia.nocookie.net/allstartd/images/0/02/Dragon_Daughter_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260627211849",
+  "sorcerer-killer": "https://static.wikia.nocookie.net/allstartd/images/1/14/Sorcerer_Killer_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240121014104",
+  "sun": "https://static.wikia.nocookie.net/allstartd/images/6/61/Sun.png/revision/latest/scale-to-width-down/250?cb=20230106223045",
+  "cloud": "https://static.wikia.nocookie.net/allstartd/images/d/d2/Cloud.png/revision/latest/scale-to-width-down/250?cb=20230106223040",
+  "vampire-queen": "https://static.wikia.nocookie.net/allstartd/images/5/58/Vampire_Queen_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240122001418",
+  "exorcist": "https://static.wikia.nocookie.net/allstartd/images/a/ac/Exorcist.png/revision/latest/scale-to-width-down/250?cb=20230509181204",
+  "silent-voice": "https://static.wikia.nocookie.net/allstartd/images/2/26/Silent_Voice_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240404034248",
+  "tony-stark": "https://static.wikia.nocookie.net/allstartd/images/e/e5/Tony_Stark_thumb.png/revision/latest/scale-to-width-down/250?cb=20230105050639",
+  "spade": "https://static.wikia.nocookie.net/allstartd/images/8/8e/Spade.png/revision/latest/scale-to-width-down/250?cb=20230105082144",
+  "buddha-chairman": "https://static.wikia.nocookie.net/allstartd/images/9/98/Buddha_Chairman.png/revision/latest/scale-to-width-down/250?cb=20230105044809",
+  "blinding-lights": "https://static.wikia.nocookie.net/allstartd/images/b/bd/Blinding_Lights.png/revision/latest/scale-to-width-down/250?cb=20230105083554",
+  "toad-master": "https://static.wikia.nocookie.net/allstartd/images/1/10/Toad_Master_HD.png/revision/latest/scale-to-width-down/250?cb=20230113083413",
+  "mountain-cannon": "https://static.wikia.nocookie.net/allstartd/images/a/aa/Mountain_Cannon.png/revision/latest/scale-to-width-down/250?cb=20230106231917",
+  "duhrai": "https://static.wikia.nocookie.net/allstartd/images/8/8f/Duhrai.png/revision/latest/scale-to-width-down/250?cb=20230106231825",
+  "4-eye-sorcerer": "https://static.wikia.nocookie.net/allstartd/images/0/0d/4-Eye_Sorcerer.png/revision/latest/scale-to-width-down/250?cb=20230106231948",
+  "tyrant": "https://static.wikia.nocookie.net/allstartd/images/0/0a/Tyrant.png/revision/latest/scale-to-width-down/250?cb=20230105051925",
+  "blonde-chain": "https://static.wikia.nocookie.net/allstartd/images/4/4b/Blonde_Chain.png/revision/latest/scale-to-width-down/250?cb=20230106232012",
+  "ex-captain": "https://static.wikia.nocookie.net/allstartd/images/0/02/Ex-Captain.png/revision/latest/scale-to-width-down/250?cb=20230106232002",
+  "crazwind": "https://static.wikia.nocookie.net/allstartd/images/8/80/Crazwind_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260724061050",
+  "handsome-jo": "https://static.wikia.nocookie.net/allstartd/images/f/fc/Handsome-Jo.png/revision/latest/scale-to-width-down/250?cb=20230105053520",
+  "falcon": "https://static.wikia.nocookie.net/allstartd/images/0/06/Falcon.png/revision/latest/scale-to-width-down/250?cb=20230106231846",
+  "wild-animal": "https://static.wikia.nocookie.net/allstartd/images/2/20/Wild_Animal.png/revision/latest/scale-to-width-down/250?cb=20230106231909",
+  "silver-x": "https://static.wikia.nocookie.net/allstartd/images/d/dc/Silver-X.png/revision/latest/scale-to-width-down/250?cb=20230106231800",
+  "red-servant": "https://static.wikia.nocookie.net/allstartd/images/7/7b/Red_Servant.png/revision/latest/scale-to-width-down/250?cb=20230106231759",
+  "mag": "https://static.wikia.nocookie.net/allstartd/images/7/71/Mag.png/revision/latest/scale-to-width-down/250?cb=20230105080728",
+  "zorro": "https://static.wikia.nocookie.net/allstartd/images/d/db/Zorro.png/revision/latest/scale-to-width-down/250?cb=20230105081059",
+  "card-collector-go": "https://static.wikia.nocookie.net/allstartd/images/4/44/Card_Collector%2C_Go.png/revision/latest/scale-to-width-down/250?cb=20230105044921",
+  "expert-sorcerer-girl": "https://static.wikia.nocookie.net/allstartd/images/6/6c/Expert_Sorcerer_%28Girl%29.png/revision/latest/scale-to-width-down/268?cb=20240213234328",
+  "kid-koku": "https://static.wikia.nocookie.net/allstartd/images/4/43/Koku_%28Kid%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240313073924",
+  "legendary-leader": "https://static.wikia.nocookie.net/allstartd/images/9/9c/Legendary_Leader_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231122210803",
+  "shisui-alter": "https://static.wikia.nocookie.net/allstartd/images/e/e6/Sui_%28After%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231129033353",
+  "zebra": "https://static.wikia.nocookie.net/allstartd/images/3/37/Zebra.png/revision/latest?cb=20230106224545",
+  "zumi": "https://static.wikia.nocookie.net/allstartd/images/4/41/Zumi_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260715011711",
+  "genie": "https://static.wikia.nocookie.net/allstartd/images/8/8c/Genie.png/revision/latest?cb=20230106231830",
+  "water-boy": "https://static.wikia.nocookie.net/allstartd/images/c/c1/Water_Boy_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260715185447",
+  "underwater-god": "https://static.wikia.nocookie.net/allstartd/images/0/09/Underwater_God_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260715064849",
+  "sorcerer-killer-revived": "https://static.wikia.nocookie.net/allstartd/images/1/1a/Sorcerer_Killer_%28Revived%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240123004222",
+  "elemental-fire": "https://static.wikia.nocookie.net/allstartd/images/a/ae/Elemental_%28Fire%29.png/revision/latest?cb=20230107002055",
+  "dungeon-queen-flare": "https://static.wikia.nocookie.net/allstartd/images/6/62/Dungeon_Queen_%28Spirit%29.png/revision/latest?cb=20230105071949",
+  "dungeon-queen-nature": "https://static.wikia.nocookie.net/allstartd/images/6/62/Dungeon_Queen_%28Spirit%29.png/revision/latest?cb=20230105071949",
+  "excellent-leader": "https://static.wikia.nocookie.net/allstartd/images/0/0b/Excellent-Leader_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260813182415",
+  "gun-girl-ii": "https://static.wikia.nocookie.net/allstartd/images/c/c5/Gun_Girl_2.png/revision/latest?cb=20230105044300",
+  "gun-girl-i": "https://static.wikia.nocookie.net/allstartd/images/4/49/Gun_Girl_1.png/revision/latest?cb=20230105072320",
+  "puppet": "https://static.wikia.nocookie.net/allstartd/images/6/6f/Puppet.png/revision/latest?cb=20230106225444",
+  "blue-satan": "https://static.wikia.nocookie.net/allstartd/images/c/c8/Blue_Satan_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260628004902",
+  "dark-knight": "https://static.wikia.nocookie.net/allstartd/images/9/94/Dark_Knight_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260813182318",
+  "maiden-servant": "https://static.wikia.nocookie.net/allstartd/images/6/60/Maiden_Servant_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260813182436",
+  "hero-slinger": "https://static.wikia.nocookie.net/allstartd/images/e/e2/Hero_Slinger_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260813182419",
+  "demon-lord": "https://static.wikia.nocookie.net/allstartd/images/d/d0/Demon_Lord_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260813182323",
+  "joe-kid-von": "https://static.wikia.nocookie.net/allstartd/images/1/13/Joe_Kid_%28Von%29_%28Pose%29.png/revision/latest?cb=20260403140455",
+  "hunter-duo-enraged": "https://static.wikia.nocookie.net/allstartd/images/6/6c/Hunter_Duo_%28Enraged%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240527233937",
   "afro-samurai": "https://i.imgur.com/y0NWMae.png",
-  "shield-master":
-    "https://static.wikia.nocookie.net/allstartd/images/a/a2/Shield_Master.png/revision/latest?cb=20230104144904",
-  "ice-queen-d":
-    "https://static.wikia.nocookie.net/allstartd/images/f/ff/Ice_Queen_%28D%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260717230838",
-  "ms-love":
-    "https://static.wikia.nocookie.net/allstartd/images/0/06/Ms._Love.png/revision/latest?cb=20240815230052",
-  carrot:
-    "https://static.wikia.nocookie.net/allstartd/images/8/82/Bunny.png/revision/latest?cb=20230107002710",
-  "world-traveler":
-    "https://static.wikia.nocookie.net/allstartd/images/3/3b/World_Traveler_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260628005143",
-  ramsay:
-    "https://static.wikia.nocookie.net/allstartd/images/f/fd/Ramsay.png/revision/latest?cb=20230105054440",
-  "bike-hero":
-    "https://static.wikia.nocookie.net/allstartd/images/5/52/Bike_Hero.png/revision/latest?cb=20230105085208",
-  rhikidai:
-    "https://static.wikia.nocookie.net/allstartd/images/1/19/Rhikadai.png/revision/latest?cb=20230212124818",
-  "miss-jo":
-    "https://static.wikia.nocookie.net/allstartd/images/8/83/Miss-Jo_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260625010746",
-  "large-mother-prime":
-    "https://static.wikia.nocookie.net/allstartd/images/2/2a/Large_Mother_%28Prime%29.png/revision/latest?cb=20230709235342",
-  "ruffy-huge":
-    "https://static.wikia.nocookie.net/allstartd/images/4/44/Ruffy_%28Huge%29.png/revision/latest?cb=20230105075939",
-  "ultra-koku-black":
-    "https://static.wikia.nocookie.net/allstartd/images/2/26/Ultra_Koku_Black.png/revision/latest?cb=20230105045126",
-  box: "https://static.wikia.nocookie.net/allstartd/images/c/c0/BOX.png/revision/latest?cb=20230105074907",
-  smoker:
-    "https://static.wikia.nocookie.net/allstartd/images/1/1d/Smoker_%28Pose%29.png/revision/latest?cb=20230914130657",
-  "koku-drip":
-    "https://static.wikia.nocookie.net/allstartd/images/b/b9/Koku_Drip.png/revision/latest?cb=20230105035504",
-  "zazashi-drip":
-    "https://static.wikia.nocookie.net/allstartd/images/0/00/Zazashi_Drip.png/revision/latest?cb=20230105045329",
-  "king-ruffy":
-    "https://static.wikia.nocookie.net/allstartd/images/6/61/King_Ruffy.png/revision/latest?cb=20230105085823",
-  "lightning-bolt":
-    "https://static.wikia.nocookie.net/allstartd/images/f/fd/Lightning_Bolt.png/revision/latest?cb=20230105061320",
-  "mysterious-key":
-    "https://static.wikia.nocookie.net/allstartd/images/4/43/Mysterious_Key.png/revision/latest?cb=20230105045224",
-  "bot-12-majin":
-    "https://static.wikia.nocookie.net/allstartd/images/3/32/BOT_12.png/revision/latest?cb=20230106222815",
-  bito: "https://static.wikia.nocookie.net/allstartd/images/7/7d/Bito_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240413032836",
-  "kaoe-ii":
-    "https://static.wikia.nocookie.net/allstartd/images/e/ea/Kaoe_II_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240412021503",
-  "orange-head":
-    "https://static.wikia.nocookie.net/allstartd/images/e/e8/Orange_Head.png/revision/latest?cb=20230105074841",
-  "pink-mango":
-    "https://static.wikia.nocookie.net/allstartd/images/8/82/Pink_Mango_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260630070810",
-  "muscle-baldie":
-    "https://static.wikia.nocookie.net/allstartd/images/7/7f/Muscle_Baldie.png/revision/latest?cb=20230107004812",
-  "wolf-fang":
-    "https://static.wikia.nocookie.net/allstartd/images/c/c9/Wolf_Fang.png/revision/latest?cb=20230107004805",
-  "hunter-duo":
-    "https://static.wikia.nocookie.net/allstartd/images/2/28/Hunter_Duo_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240521125358",
-
-  // Low C Tier (0 – 24)
+  "shield-master": "https://static.wikia.nocookie.net/allstartd/images/a/a2/Shield_Master.png/revision/latest?cb=20230104144904",
+  "ice-queen-d": "https://static.wikia.nocookie.net/allstartd/images/f/ff/Ice_Queen_%28D%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260717230838",
+  "ms-love": "https://static.wikia.nocookie.net/allstartd/images/0/06/Ms._Love.png/revision/latest?cb=20240815230052",
+  "carrot": "https://static.wikia.nocookie.net/allstartd/images/8/82/Bunny.png/revision/latest?cb=20230107002710",
+  "world-traveler": "https://static.wikia.nocookie.net/allstartd/images/3/3b/World_Traveler_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260628005143",
+  "ramsay": "https://static.wikia.nocookie.net/allstartd/images/f/fd/Ramsay.png/revision/latest?cb=20230105054440",
+  "bike-hero": "https://static.wikia.nocookie.net/allstartd/images/5/52/Bike_Hero.png/revision/latest?cb=20230105085208",
+  "rhikidai": "https://static.wikia.nocookie.net/allstartd/images/1/19/Rhikadai.png/revision/latest?cb=20230212124818",
+  "miss-jo": "https://static.wikia.nocookie.net/allstartd/images/8/83/Miss-Jo_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260625010746",
+  "large-mother-prime": "https://static.wikia.nocookie.net/allstartd/images/2/2a/Large_Mother_%28Prime%29.png/revision/latest?cb=20230709235342",
+  "ruffy-huge": "https://static.wikia.nocookie.net/allstartd/images/4/44/Ruffy_%28Huge%29.png/revision/latest?cb=20230105075939",
+  "ultra-koku-black": "https://static.wikia.nocookie.net/allstartd/images/2/26/Ultra_Koku_Black.png/revision/latest?cb=20230105045126",
+  "box": "https://static.wikia.nocookie.net/allstartd/images/c/c0/BOX.png/revision/latest?cb=20230105074907",
+  "smoker": "https://static.wikia.nocookie.net/allstartd/images/1/1d/Smoker_%28Pose%29.png/revision/latest?cb=20230914130657",
+  "koku-drip": "https://static.wikia.nocookie.net/allstartd/images/b/b9/Koku_Drip.png/revision/latest?cb=20230105035504",
+  "zazashi-drip": "https://static.wikia.nocookie.net/allstartd/images/0/00/Zazashi_Drip.png/revision/latest?cb=20230105045329",
+  "king-ruffy": "https://static.wikia.nocookie.net/allstartd/images/6/61/King_Ruffy.png/revision/latest?cb=20230105085823",
+  "lightning-bolt": "https://static.wikia.nocookie.net/allstartd/images/f/fd/Lightning_Bolt.png/revision/latest?cb=20230105061320",
+  "mysterious-key": "https://static.wikia.nocookie.net/allstartd/images/4/43/Mysterious_Key.png/revision/latest?cb=20230105045224",
+  "bot-12-majin": "https://static.wikia.nocookie.net/allstartd/images/3/32/BOT_12.png/revision/latest?cb=20230106222815",
+  "bito": "https://static.wikia.nocookie.net/allstartd/images/7/7d/Bito_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240413032836",
+  "kaoe-ii": "https://static.wikia.nocookie.net/allstartd/images/e/ea/Kaoe_II_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240412021503",
+  "orange-head": "https://static.wikia.nocookie.net/allstartd/images/e/e8/Orange_Head.png/revision/latest?cb=20230105074841",
+  "pink-mango": "https://static.wikia.nocookie.net/allstartd/images/8/82/Pink_Mango_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260630070810",
+  "muscle-baldie": "https://static.wikia.nocookie.net/allstartd/images/7/7f/Muscle_Baldie.png/revision/latest?cb=20230107004812",
+  "wolf-fang": "https://static.wikia.nocookie.net/allstartd/images/c/c9/Wolf_Fang.png/revision/latest?cb=20230107004805",
+  "hunter-duo": "https://static.wikia.nocookie.net/allstartd/images/2/28/Hunter_Duo_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240521125358",
   "the-hero": "https://i.imgur.com/gcGUvBs.png",
-  "24kgoldn":
-    "https://static.wikia.nocookie.net/allstartd/images/6/64/24kGoldn.png/revision/latest?cb=20230105045026",
-  "rabbit-manager":
-    "https://static.wikia.nocookie.net/allstartd/images/c/cb/Rabbit_Manager_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240122001344",
-  kappa:
-    "https://static.wikia.nocookie.net/allstartd/images/5/57/Kappa_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240224020450",
-  "alien-soldier-friend":
-    "https://static.wikia.nocookie.net/allstartd/images/f/fc/Alien_Soldier_%28Friend%29_Remodel.png/revision/latest?cb=20230130081736",
-  tysson:
-    "https://static.wikia.nocookie.net/allstartd/images/c/ca/Tysson_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240127133613",
-  eis: "https://static.wikia.nocookie.net/allstartd/images/6/6c/Ice_Dragon_%28Eis_Shenron%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260813181822",
-  "future-gohan":
-    "https://static.wikia.nocookie.net/allstartd/images/7/73/Kogan_%28Future%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20231107043226",
-  chad: "https://static.wikia.nocookie.net/allstartd/images/9/9a/Chad_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240214055401",
-  "anita-max-wynn":
-    "https://static.wikia.nocookie.net/allstartd/images/2/25/Ayumukasuga.png/revision/latest?cb=20240120175139",
-  "ice-skater":
-    "https://static.wikia.nocookie.net/allstartd/images/d/dd/Ice_Skater.png/revision/latest?cb=20221231164844",
-  "godus-disguised":
-    "https://static.wikia.nocookie.net/allstartd/images/6/66/Godus_%28Disguised%29.png/revision/latest?cb=20240212062311",
-  "green-huntress-alter":
-    "https://static.wikia.nocookie.net/allstartd/images/0/05/Green_Huntress_%28Alternative%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20231107043100",
-  "angels-gate":
-    "https://static.wikia.nocookie.net/allstartd/images/4/49/Angels_Gate_%28Base%29.png/revision/latest?cb=20230106222541",
-  "water-magician":
-    "https://static.wikia.nocookie.net/allstartd/images/5/5a/Water_Magician_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260630034305",
-  "rukia-captain":
-    "https://static.wikia.nocookie.net/allstartd/images/a/af/Zukia_%28Captain%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260630034255",
-  lebron:
-    "https://static.wikia.nocookie.net/allstartd/images/f/fd/Lebron_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240122001355",
-  "guardian-of-aba":
-    "https://static.wikia.nocookie.net/allstartd/images/e/ea/Guardian_of_ABA_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260531232458",
-  "nominated-female-giant":
-    "https://static.wikia.nocookie.net/allstartd/images/5/51/Nominated_Female_Giant_%28Pose%29.png/revision/latest?cb=20230911025009",
-  "fire-boy":
-    "https://static.wikia.nocookie.net/allstartd/images/f/f8/Fire_Boy_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260604011015",
-  car: "https://static.wikia.nocookie.net/allstartd/images/4/45/Car_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260717230748",
-  "sweet-girl":
-    "https://static.wikia.nocookie.net/allstartd/images/6/6b/Sweet_Girl.png/revision/latest?cb=20230107023913",
-  "snake-child":
-    "https://static.wikia.nocookie.net/allstartd/images/5/50/Snake_Child.png/revision/latest?cb=20230105054223",
-  samurai:
-    "https://static.wikia.nocookie.net/allstartd/images/0/09/Samurai.png/revision/latest?cb=20230207200716",
-  "blonde-esper":
-    "https://static.wikia.nocookie.net/allstartd/images/a/a7/Blonde_Esper.png/revision/latest?cb=20230105053433",
-  amen: "https://static.wikia.nocookie.net/allstartd/images/0/03/Amen.png/revision/latest?cb=20230207183909",
-  "block-man":
-    "https://static.wikia.nocookie.net/allstartd/images/4/44/Block_Man.png/revision/latest?cb=20230207191941",
-  "sky-god":
-    "https://static.wikia.nocookie.net/allstartd/images/d/d6/Sky_God_%28Balrog%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260701032521",
-  "zero-daniel":
-    "https://static.wikia.nocookie.net/allstartd/images/f/f6/Zero_%28Daniel%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260531220050",
-  venom:
-    "https://static.wikia.nocookie.net/allstartd/images/8/86/Venom_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260630070451",
-  patternine:
-    "https://static.wikia.nocookie.net/allstartd/images/b/bc/Patternine.png/revision/latest?cb=20230106231842",
-  "mr-green-enraged":
-    "https://static.wikia.nocookie.net/allstartd/images/9/91/Mr._Green_%28Enraged%29.png/revision/latest?cb=20230207195415",
-  "supa-future-t":
-    "https://static.wikia.nocookie.net/allstartd/images/1/1e/Supa_Future_T_%28Pose%29.png/revision/latest?cb=20231025065545",
-  "paper-beauty":
-    "https://static.wikia.nocookie.net/allstartd/images/7/74/Paper_Beauty_%28Awaken%29_%28Pose2%29.png/revision/latest?cb=20231020092048",
-  "killer-lightspeed":
-    "https://static.wikia.nocookie.net/allstartd/images/4/48/Killer_%28Lightspeed%29_%28Pose%29.png/revision/latest?cb=20231020091253",
-  "mina-strong":
-    "https://static.wikia.nocookie.net/allstartd/images/5/5a/Mina_%28Strong%29_%28Pose%29.png/revision/latest?cb=20231020091725",
-  zio: "https://static.wikia.nocookie.net/allstartd/images/c/c8/ZIO.png/revision/latest?cb=20230105044348",
-  "snowman-5":
-    "https://static.wikia.nocookie.net/allstartd/images/b/b1/Snowman_V.png/revision/latest?cb=20230216070604",
-  "snowman-2":
-    "https://static.wikia.nocookie.net/allstartd/images/b/b5/Snowman_II.png/revision/latest?cb=20230216070201",
-  "snowman-4":
-    "https://static.wikia.nocookie.net/allstartd/images/0/0d/Snowman_IV.png/revision/latest?cb=20230216070337",
-  "snowman-3":
-    "https://static.wikia.nocookie.net/allstartd/images/5/59/Snowman_III.png/revision/latest?cb=20230216070453",
-  "snowman-1":
-    "https://static.wikia.nocookie.net/allstartd/images/c/c7/Snowman.png/revision/latest?cb=20230216070025",
-
-  // Oddities, Boxes & Crates
-  "box-summer-3":
-    "https://static.wikia.nocookie.net/allstartd/images/0/06/Summer_Box_III.png/revision/latest/scale-to-width-down/250?cb=20230106222612",
-  "box-summer-2":
-    "https://static.wikia.nocookie.net/allstartd/images/1/10/Summer_Box_II.png/revision/latest/scale-to-width-down/250?cb=20230106222618",
-  "cg-3-2020":
-    "https://static.wikia.nocookie.net/allstartd/images/d/d8/Christmas_Gift_III.png/revision/latest/scale-to-width-down/250?cb=20230106222628",
-  "crushed-box-3":
-    "https://static.wikia.nocookie.net/allstartd/images/d/db/Crushed_Box_III.png/revision/latest/scale-to-width-down/250?cb=20230105074618",
-  "box-summer-1":
-    "https://static.wikia.nocookie.net/allstartd/images/a/a0/Summer_Box_I.png/revision/latest/scale-to-width-down/250?cb=20230106222624",
-  "pumpkin-3":
-    "https://static.wikia.nocookie.net/allstartd/images/4/4b/Pumpkin_III_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231109085402",
-  "crushed-box-2":
-    "https://static.wikia.nocookie.net/allstartd/images/3/32/Crushed_Box_II.png/revision/latest/scale-to-width-down/250?cb=20230105074525",
-  "cg-1-2020":
-    "https://static.wikia.nocookie.net/allstartd/images/c/c3/Christmas_Gift.png/revision/latest/scale-to-width-down/250?cb=20230105035844",
-  "cg-2-2020":
-    "https://static.wikia.nocookie.net/allstartd/images/b/b6/Christmas_Gift_II.png/revision/latest/scale-to-width-down/250?cb=20230105035805",
-  "winterfell-present-3":
-    "https://static.wikia.nocookie.net/allstartd/images/f/fb/Winterfell_Present_III.png/revision/latest/scale-to-width-down/250?cb=20221228020150",
-  "cg-3-2021":
-    "https://static.wikia.nocookie.net/allstartd/images/a/a3/Christmas_Box_III.png/revision/latest/scale-to-width-down/250?cb=20230105074703",
-  "winterfell-present-2":
-    "https://static.wikia.nocookie.net/allstartd/images/d/db/Winterfell_Present_II.png/revision/latest/scale-to-width-down/250?cb=20221228015454",
-  "cg-1-2021":
-    "https://static.wikia.nocookie.net/allstartd/images/9/94/Christmas_Box.png/revision/latest/scale-to-width-down/250?cb=20230105073848",
-  "cg-2-2021":
-    "https://static.wikia.nocookie.net/allstartd/images/b/b0/Christmas_Box_II.png/revision/latest/scale-to-width-down/250?cb=20230106222547",
-  "winterfell-present-1":
-    "https://static.wikia.nocookie.net/allstartd/images/4/40/Winterfell_Present_I.png/revision/latest/scale-to-width-down/250?cb=20221228015140",
-  "crushed-box-1":
-    "https://static.wikia.nocookie.net/allstartd/images/c/c2/Crushed_Box_I.png/revision/latest/scale-to-width-down/250?cb=20230105073922",
-  "pumpkin-2":
-    "https://static.wikia.nocookie.net/allstartd/images/5/50/Pumpkin_II_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231025075058",
-  "pumpkin-1":
-    "https://static.wikia.nocookie.net/allstartd/images/e/e2/Pumpkin_I_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231025074700",
-
-  // Eggs II
-  ainz: "https://static.wikia.nocookie.net/allstartd/images/3/34/100%25_Egg_-_Necro.png/revision/latest/scale-to-width-down/250?cb=20240828231200",
-  "egg2-90":
-    "https://static.wikia.nocookie.net/allstartd/images/e/ed/90%25_Egg_-_Manipulation.png/revision/latest/scale-to-width-down/250?cb=20240828234315",
-  "egg2-80":
-    "https://static.wikia.nocookie.net/allstartd/images/c/c6/80%25_Egg_-_Telepathy.png/revision/latest/scale-to-width-down/250?cb=20240409182711",
-  "egg2-70":
-    "https://static.wikia.nocookie.net/allstartd/images/4/4f/70%25_Egg_-_Hypersonic.png/revision/latest/scale-to-width-down/250?cb=20240828232846",
-  "egg2-60":
-    "https://static.wikia.nocookie.net/allstartd/images/3/3f/60%25_Egg_-_Pyro.png/revision/latest/scale-to-width-down/250?cb=20240829070416",
-  "egg2-50":
-    "https://static.wikia.nocookie.net/allstartd/images/c/c0/50%25_Egg_-_Dream.png/revision/latest/scale-to-width-down/250?cb=20240829125904",
-  "egg2-40":
-    "https://static.wikia.nocookie.net/allstartd/images/3/33/40%25_Egg_-_Electric.png/revision/latest/scale-to-width-down/250?cb=20240412235531",
-  "egg2-30":
-    "https://static.wikia.nocookie.net/allstartd/images/3/30/30%25_Egg_-_Gold.png/revision/latest/scale-to-width-down/250?cb=20240829224737",
-  "egg2-20":
-    "https://static.wikia.nocookie.net/allstartd/images/b/b4/20%25_Egg_II_-_Silver.png/revision/latest/scale-to-width-down/250?cb=20240829225209",
-  "egg2-10":
-    "https://static.wikia.nocookie.net/allstartd/images/0/09/10%25_Egg_-_Bronze.png/revision/latest/scale-to-width-down/250?cb=20240829225519",
-
-  // OG Eggs
-  kedark:
-    "https://static.wikia.nocookie.net/allstartd/images/6/6c/100%25_Egg_-_Dark.png/revision/latest/scale-to-width-down/250?cb=20230113090518",
-  "egg-90":
-    "https://static.wikia.nocookie.net/allstartd/images/8/86/90%25_Egg_-_Leaf.png/revision/latest/scale-to-width-down/250?cb=20230113090524",
-  "egg-80":
-    "https://static.wikia.nocookie.net/allstartd/images/6/6e/80%25_Egg_-_Neon.png/revision/latest/scale-to-width-down/250?cb=20230113090533",
-  "egg-70":
-    "https://static.wikia.nocookie.net/allstartd/images/5/57/70%25_Egg_-_Cinder.png/revision/latest/scale-to-width-down/250?cb=20230113090538",
-  "egg-60":
-    "https://static.wikia.nocookie.net/allstartd/images/7/70/60%25_Egg_-_Tone.png/revision/latest/scale-to-width-down/250?cb=20230113090542",
-  "egg-50":
-    "https://static.wikia.nocookie.net/allstartd/images/e/ef/50%25_Egg_-_Metal.png/revision/latest/scale-to-width-down/250?cb=20230113090547",
-  "egg-40":
-    "https://static.wikia.nocookie.net/allstartd/images/6/69/40%25_Egg_-_Mist.png/revision/latest/scale-to-width-down/250?cb=20230113090604",
-  "egg-30":
-    "https://static.wikia.nocookie.net/allstartd/images/8/82/30%25_Egg_-_Ice.png/revision/latest/scale-to-width-down/250?cb=20230113090622",
-  "egg-20":
-    "https://static.wikia.nocookie.net/allstartd/images/c/c3/20%25_Egg_-_Shadow.png/revision/latest/scale-to-width-down/250?cb=20230113090602",
-  "egg-10":
-    "https://static.wikia.nocookie.net/allstartd/images/8/8f/10%25_Egg_-_Water.png/revision/latest/scale-to-width-down/250?cb=20230113090627",
-
-  // other bs
-  arcane:
-    "https://static.wikia.nocookie.net/allstartd/images/1/1f/Vampire_Queen_%28Arcane%29_%28Pose%29.png/revision/latest?cb=20260625023453",
-  "375":
-    "https://media.discordapp.net/attachments/1538970612947615744/1543579915780235304/image.png?ex=6a956252&is=6a9410d2&hm=361152ccfec4d490f2f5b305f79b6e208446046ed6e63bc9299c09e3c3c019fa&=&format=webp&quality=lossless",
-  "97": "https://media.discordapp.net/attachments/1538970612947615744/1543579915465523341/image.png?ex=6a956252&is=6a9410d2&hm=4aab920d4cabe3d2e7b317437706bdc6e90e71998b7e5534882d661771ee7a32&=&format=webp&quality=lossless",
-  "31": "https://media.discordapp.net/attachments/1538970612947615744/1543579915159343144/image.png?ex=6a956252&is=6a9410d2&hm=7581f76c1d97892eb71af5a66ec849243457912a3e1f6a156eec79e18d9d6232&=&format=webp&quality=lossless",
-  "17": "https://media.discordapp.net/attachments/1538970612947615744/1543579914895364106/image.png?ex=6a956252&is=6a9410d2&hm=68917198042e448a0af2564d1a8a692cb6eb55e33a15a93e43945ab752856074&=&format=webp&quality=lossless",
-  "5": "https://media.discordapp.net/attachments/1538970612947615744/1543579914614210560/image.png?ex=6a956251&is=6a9410d1&hm=2d14020b570b8bcb0e221db9717881cd0da706670b21fab3a870c32f42d1379c&=&format=webp&quality=lossless",
-
-  "13000":
-    "https://media.discordapp.net/attachments/1538970612947615744/1543580111624863764/image.png?ex=6a956280&is=6a941100&hm=ee7ecdefc6069189de80a41cdb8aa0ef3fdb017c2b921e3a3c2416a934364cb4&=&format=webp&quality=lossless",
-  "1850":
-    "https://media.discordapp.net/attachments/1538970612947615744/1543580111297581116/image.png?ex=6a956280&is=6a941100&hm=05b7c87ad071ea1db170f0a5859937c13ea54aff0ddf2eec4b339de190158252&=&format=webp&quality=lossless",
-  "950":
-    "https://media.discordapp.net/attachments/1538970612947615744/1543580111008440412/image.png?ex=6a956280&is=6a941100&hm=518bfbd2fe7ce0026d3de89abc2376d252197d7ed5f7a6661950fab2696a5b85&=&format=webp&quality=lossless",
-  "500":
-    "https://media.discordapp.net/attachments/1538970612947615744/1543580110714708048/image.png?ex=6a956280&is=6a941100&hm=73b83a7b3c743f13e4da95d12467423116675aae091c61ce4105a8bd55de03e9&=&format=webp&quality=lossless",
-  "50": "https://media.discordapp.net/attachments/1538970612947615744/1543580110412578867/image.png?ex=6a956280&is=6a941100&hm=f912f4d3911d151d3de1e21953766b6d0b21a458a02f5fe8379ab6aabfa36348&=&format=webp&quality=lossless",
-
-  x3: "https://media.discordapp.net/attachments/1538970612947615744/1543580409693085848/image.png?ex=6a9562c8&is=6a941148&hm=96f2f00d6d003156b7bc2a7dbaf55e57afcebcba52db78f3e7e0e97c075a06e5&=&format=webp&quality=lossless",
-  sp: "https://media.discordapp.net/attachments/1538970612947615744/1543582790791200788/image.png?ex=6a9564ff&is=6a94137f&hm=df088e6bdb61d46d71102a74887302dacc24cdc891eed0057ac87f204636f872&=&format=webp&quality=lossless",
-  vip: "https://media.discordapp.net/attachments/1538970612947615744/1543580409357533336/image.png?ex=6a9562c7&is=6a941147&hm=1a2bcb67682f15bd26e38749bfb408107450aa68faae5c9ba0107d68e4fb3fb5&=&format=webp&quality=lossless",
-  nimbus:
-    "https://media.discordapp.net/attachments/1538970612947615744/1543580408459960370/image.png?ex=6a9562c7&is=6a941147&hm=158c3ac3d33ea58f44584f69bc68a3aaaa3936b5be9d021ae3ad1b0b1c902851&=&format=webp&quality=lossless",
-  frieza:
-    "https://media.discordapp.net/attachments/1538970612947615744/1543580408736653395/image.png?ex=6a9562c7&is=6a941147&hm=0665368048c12f92e9d0f7ebc07be4f17776e32ebc8a7a097c462cac5f283046&=&format=webp&quality=lossless",
-  carpsule:
-    "https://media.discordapp.net/attachments/1538970612947615744/1543580409034575872/image.png?ex=6a9562c7&is=6a941147&hm=aa7f68b5cbb31cf7dd200d55639ebf3ee6e0d80f2100fad8c605a1b4ac509ef6&=&format=webp&quality=lossless",
+  "24kgoldn": "https://static.wikia.nocookie.net/allstartd/images/6/64/24kGoldn.png/revision/latest?cb=20230105045026",
+  "rabbit-manager": "https://static.wikia.nocookie.net/allstartd/images/c/cb/Rabbit_Manager_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240122001344",
+  "kappa": "https://static.wikia.nocookie.net/allstartd/images/5/57/Kappa_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240224020450",
+  "alien-soldier-friend": "https://static.wikia.nocookie.net/allstartd/images/f/fc/Alien_Soldier_%28Friend%29_Remodel.png/revision/latest?cb=20230130081736",
+  "tysson": "https://static.wikia.nocookie.net/allstartd/images/c/ca/Tysson_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240127133613",
+  "eis": "https://static.wikia.nocookie.net/allstartd/images/6/6c/Ice_Dragon_%28Eis_Shenron%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260813181822",
+  "future-gohan": "https://static.wikia.nocookie.net/allstartd/images/7/73/Kogan_%28Future%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20231107043226",
+  "chad": "https://static.wikia.nocookie.net/allstartd/images/9/9a/Chad_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240214055401",
+  "anita-max-wynn": "https://static.wikia.nocookie.net/allstartd/images/2/25/Ayumukasuga.png/revision/latest?cb=20240120175139",
+  "ice-skater": "https://static.wikia.nocookie.net/allstartd/images/d/dd/Ice_Skater.png/revision/latest?cb=20221231164844",
+  "godus-disguised": "https://static.wikia.nocookie.net/allstartd/images/6/66/Godus_%28Disguised%29.png/revision/latest?cb=20240212062311",
+  "green-huntress-alter": "https://static.wikia.nocookie.net/allstartd/images/0/05/Green_Huntress_%28Alternative%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20231107043100",
+  "angels-gate": "https://static.wikia.nocookie.net/allstartd/images/4/49/Angels_Gate_%28Base%29.png/revision/latest?cb=20230106222541",
+  "water-magician": "https://static.wikia.nocookie.net/allstartd/images/5/5a/Water_Magician_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260630034305",
+  "rukia-captain": "https://static.wikia.nocookie.net/allstartd/images/a/af/Zukia_%28Captain%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260630034255",
+  "lebron": "https://static.wikia.nocookie.net/allstartd/images/f/fd/Lebron_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20240122001355",
+  "guardian-of-aba": "https://static.wikia.nocookie.net/allstartd/images/e/ea/Guardian_of_ABA_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260531232458",
+  "nominated-female-giant": "https://static.wikia.nocookie.net/allstartd/images/5/51/Nominated_Female_Giant_%28Pose%29.png/revision/latest?cb=20230911025009",
+  "fire-boy": "https://static.wikia.nocookie.net/allstartd/images/f/f8/Fire_Boy_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260604011015",
+  "car": "https://static.wikia.nocookie.net/allstartd/images/4/45/Car_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260717230748",
+  "sweet-girl": "https://static.wikia.nocookie.net/allstartd/images/6/6b/Sweet_Girl.png/revision/latest?cb=20230107023913",
+  "snake-child": "https://static.wikia.nocookie.net/allstartd/images/5/50/Snake_Child.png/revision/latest?cb=20230105054223",
+  "samurai": "https://static.wikia.nocookie.net/allstartd/images/0/09/Samurai.png/revision/latest?cb=20230207200716",
+  "blonde-esper": "https://static.wikia.nocookie.net/allstartd/images/a/a7/Blonde_Esper.png/revision/latest?cb=20230105053433",
+  "amen": "https://static.wikia.nocookie.net/allstartd/images/0/03/Amen.png/revision/latest?cb=20230207183909",
+  "block-man": "https://static.wikia.nocookie.net/allstartd/images/4/44/Block_Man.png/revision/latest?cb=20230207191941",
+  "sky-god": "https://static.wikia.nocookie.net/allstartd/images/d/d6/Sky_God_%28Balrog%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260701032521",
+  "zero-daniel": "https://static.wikia.nocookie.net/allstartd/images/f/f6/Zero_%28Daniel%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260531220050",
+  "venom": "https://static.wikia.nocookie.net/allstartd/images/8/86/Venom_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260630070451",
+  "patternine": "https://static.wikia.nocookie.net/allstartd/images/b/bc/Patternine.png/revision/latest?cb=20230106231842",
+  "mr-green-enraged": "https://static.wikia.nocookie.net/allstartd/images/9/91/Mr._Green_%28Enraged%29.png/revision/latest?cb=20230207195415",
+  "supa-future-t": "https://static.wikia.nocookie.net/allstartd/images/1/1e/Supa_Future_T_%28Pose%29.png/revision/latest?cb=20231025065545",
+  "paper-beauty": "https://static.wikia.nocookie.net/allstartd/images/7/74/Paper_Beauty_%28Awaken%29_%28Pose2%29.png/revision/latest?cb=20231020092048",
+  "killer-lightspeed": "https://static.wikia.nocookie.net/allstartd/images/4/48/Killer_%28Lightspeed%29_%28Pose%29.png/revision/latest?cb=20231020091253",
+  "mina-strong": "https://static.wikia.nocookie.net/allstartd/images/5/5a/Mina_%28Strong%29_%28Pose%29.png/revision/latest?cb=20231020091725",
+  "zio": "https://static.wikia.nocookie.net/allstartd/images/c/c8/ZIO.png/revision/latest?cb=20230105044348",
+  "snowman-5": "https://static.wikia.nocookie.net/allstartd/images/b/b1/Snowman_V.png/revision/latest?cb=20230216070604",
+  "snowman-2": "https://static.wikia.nocookie.net/allstartd/images/b/b5/Snowman_II.png/revision/latest?cb=20230216070201",
+  "snowman-4": "https://static.wikia.nocookie.net/allstartd/images/0/0d/Snowman_IV.png/revision/latest?cb=20230216070337",
+  "snowman-3": "https://static.wikia.nocookie.net/allstartd/images/5/59/Snowman_III.png/revision/latest?cb=20230216070453",
+  "snowman-1": "https://static.wikia.nocookie.net/allstartd/images/c/c7/Snowman.png/revision/latest?cb=20230216070025",
+  "box-summer-3": "https://static.wikia.nocookie.net/allstartd/images/0/06/Summer_Box_III.png/revision/latest/scale-to-width-down/250?cb=20230106222612",
+  "box-summer-2": "https://static.wikia.nocookie.net/allstartd/images/1/10/Summer_Box_II.png/revision/latest/scale-to-width-down/250?cb=20230106222618",
+  "cg-3-2020": "https://static.wikia.nocookie.net/allstartd/images/d/d8/Christmas_Gift_III.png/revision/latest/scale-to-width-down/250?cb=20230106222628",
+  "crushed-box-3": "https://static.wikia.nocookie.net/allstartd/images/d/db/Crushed_Box_III.png/revision/latest/scale-to-width-down/250?cb=20230105074618",
+  "box-summer-1": "https://static.wikia.nocookie.net/allstartd/images/a/a0/Summer_Box_I.png/revision/latest/scale-to-width-down/250?cb=20230106222624",
+  "pumpkin-3": "https://static.wikia.nocookie.net/allstartd/images/4/4b/Pumpkin_III_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231109085402",
+  "crushed-box-2": "https://static.wikia.nocookie.net/allstartd/images/3/32/Crushed_Box_II.png/revision/latest/scale-to-width-down/250?cb=20230105074525",
+  "cg-1-2020": "https://static.wikia.nocookie.net/allstartd/images/c/c3/Christmas_Gift.png/revision/latest/scale-to-width-down/250?cb=20230105035844",
+  "cg-2-2020": "https://static.wikia.nocookie.net/allstartd/images/b/b6/Christmas_Gift_II.png/revision/latest/scale-to-width-down/250?cb=20230105035805",
+  "winterfell-present-3": "https://static.wikia.nocookie.net/allstartd/images/f/fb/Winterfell_Present_III.png/revision/latest/scale-to-width-down/250?cb=20221228020150",
+  "cg-3-2021": "https://static.wikia.nocookie.net/allstartd/images/a/a3/Christmas_Box_III.png/revision/latest/scale-to-width-down/250?cb=20230105074703",
+  "winterfell-present-2": "https://static.wikia.nocookie.net/allstartd/images/d/db/Winterfell_Present_II.png/revision/latest/scale-to-width-down/250?cb=20221228015454",
+  "cg-1-2021": "https://static.wikia.nocookie.net/allstartd/images/9/94/Christmas_Box.png/revision/latest/scale-to-width-down/250?cb=20230105073848",
+  "cg-2-2021": "https://static.wikia.nocookie.net/allstartd/images/b/b0/Christmas_Box_II.png/revision/latest/scale-to-width-down/250?cb=20230106222547",
+  "winterfell-present-1": "https://static.wikia.nocookie.net/allstartd/images/4/40/Winterfell_Present_I.png/revision/latest/scale-to-width-down/250?cb=20221228015140",
+  "crushed-box-1": "https://static.wikia.nocookie.net/allstartd/images/c/c2/Crushed_Box_I.png/revision/latest/scale-to-width-down/250?cb=20230105073922",
+  "pumpkin-2": "https://static.wikia.nocookie.net/allstartd/images/5/50/Pumpkin_II_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231025075058",
+  "pumpkin-1": "https://static.wikia.nocookie.net/allstartd/images/e/e2/Pumpkin_I_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231025074700",
+  "ainz": "https://static.wikia.nocookie.net/allstartd/images/3/34/100%25_Egg_-_Necro.png/revision/latest/scale-to-width-down/250?cb=20240828231200",
+  "egg2-90": "https://static.wikia.nocookie.net/allstartd/images/e/ed/90%25_Egg_-_Manipulation.png/revision/latest/scale-to-width-down/250?cb=20240828234315",
+  "egg2-80": "https://static.wikia.nocookie.net/allstartd/images/c/c6/80%25_Egg_-_Telepathy.png/revision/latest/scale-to-width-down/250?cb=20240409182711",
+  "egg2-70": "https://static.wikia.nocookie.net/allstartd/images/4/4f/70%25_Egg_-_Hypersonic.png/revision/latest/scale-to-width-down/250?cb=20240828232846",
+  "egg2-60": "https://static.wikia.nocookie.net/allstartd/images/3/3f/60%25_Egg_-_Pyro.png/revision/latest/scale-to-width-down/250?cb=20240829070416",
+  "egg2-50": "https://static.wikia.nocookie.net/allstartd/images/c/c0/50%25_Egg_-_Dream.png/revision/latest/scale-to-width-down/250?cb=20240829125904",
+  "egg2-40": "https://static.wikia.nocookie.net/allstartd/images/3/33/40%25_Egg_-_Electric.png/revision/latest/scale-to-width-down/250?cb=20240412235531",
+  "egg2-30": "https://static.wikia.nocookie.net/allstartd/images/3/30/30%25_Egg_-_Gold.png/revision/latest/scale-to-width-down/250?cb=20240829224737",
+  "egg2-20": "https://static.wikia.nocookie.net/allstartd/images/b/b4/20%25_Egg_II_-_Silver.png/revision/latest/scale-to-width-down/250?cb=20240829225209",
+  "egg2-10": "https://static.wikia.nocookie.net/allstartd/images/0/09/10%25_Egg_-_Bronze.png/revision/latest/scale-to-width-down/250?cb=20240829225519",
+  "kedark": "https://static.wikia.nocookie.net/allstartd/images/6/6c/100%25_Egg_-_Dark.png/revision/latest/scale-to-width-down/250?cb=20230113090518",
+  "egg-90": "https://static.wikia.nocookie.net/allstartd/images/8/86/90%25_Egg_-_Leaf.png/revision/latest/scale-to-width-down/250?cb=20230113090524",
+  "egg-80": "https://static.wikia.nocookie.net/allstartd/images/6/6e/80%25_Egg_-_Neon.png/revision/latest/scale-to-width-down/250?cb=20230113090533",
+  "egg-70": "https://static.wikia.nocookie.net/allstartd/images/5/57/70%25_Egg_-_Cinder.png/revision/latest/scale-to-width-down/250?cb=20230113090538",
+  "egg-60": "https://static.wikia.nocookie.net/allstartd/images/7/70/60%25_Egg_-_Tone.png/revision/latest/scale-to-width-down/250?cb=20230113090542",
+  "egg-50": "https://static.wikia.nocookie.net/allstartd/images/e/ef/50%25_Egg_-_Metal.png/revision/latest/scale-to-width-down/250?cb=20230113090547",
+  "egg-40": "https://static.wikia.nocookie.net/allstartd/images/6/69/40%25_Egg_-_Mist.png/revision/latest/scale-to-width-down/250?cb=20230113090604",
+  "egg-30": "https://static.wikia.nocookie.net/allstartd/images/8/82/30%25_Egg_-_Ice.png/revision/latest/scale-to-width-down/250?cb=20230113090622",
+  "egg-20": "https://static.wikia.nocookie.net/allstartd/images/c/c3/20%25_Egg_-_Shadow.png/revision/latest/scale-to-width-down/250?cb=20230113090602",
+  "egg-10": "https://static.wikia.nocookie.net/allstartd/images/8/8f/10%25_Egg_-_Water.png/revision/latest/scale-to-width-down/250?cb=20230113090627",
+  "arcane": "https://static.wikia.nocookie.net/allstartd/images/1/1f/Vampire_Queen_%28Arcane%29_%28Pose%29.png/revision/latest?cb=20260625023453",
+  "375": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/375-stardust-bundle.webp",
+  "97": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/97-stardust-bundle.webp",
+  "31": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/31-stardust-bundle.webp",
+  "17": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/17-stardust-bundle.webp",
+  "5": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/5-stardust-bundle.webp",
+  "13000": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/13000-gems-bundle.webp",
+  "1850": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/1850-gems-bundle.webp",
+  "950": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/950-gems-bundle.webp",
+  "500": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/500-gems-bundle.webp",
+  "50": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/50-gems-bundle.webp",
+  "x3": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/3x-gamepass.webp",
+  "sp": "https://static.wikia.nocookie.net/allstartd/images/4/4c/Star_Pass.png/revision/latest?cb=20220415095625",
+  "vip": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/v-i-p-gamepass.webp",
+  "nimbus": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/nimbus-unit-mount-gamepass.webp",
+  "frieza": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/frieza-pod-unit-mount-gamepass.webp",
+  "carpsule": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/capsule-corp-car-unit-mount-gamepass.webp",
+  "ultra-legendary-borul-alternative": "https://static.wikia.nocookie.net/allstartd/images/c/c6/Ultra_Legendary_Borul_%28Alternative%29.png/revision/latest?cb=20240608183124",
+  "legendary-borul-alternative": "https://static.wikia.nocookie.net/allstartd/images/1/17/Legendary_Borul_%28Alternative%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20230909023237",
+  "dark-wing-gold": "https://static.wikia.nocookie.net/allstartd/images/9/9c/Dark_Wing_%28Gold%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715011729",
+  "flame-servant-gold": "https://static.wikia.nocookie.net/allstartd/images/f/f0/Flame_Servant_%28Gold%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064618",
+  "jinjou-gold": "https://static.wikia.nocookie.net/allstartd/images/2/20/Jinjou_%28Gold%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064745",
+  "tomi-gold": "https://static.wikia.nocookie.net/allstartd/images/5/5b/Tomi_%28Gold%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064843",
+  "martial-artist-gold": "https://i.imgur.com/YudxTz9.png",
+  "perfect-insect-ballin": "https://static.wikia.nocookie.net/allstartd/images/e/ec/Perfect_Insect_%28Ballin%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231203092103",
+  "platinium-god": "https://static.wikia.nocookie.net/allstartd/images/9/93/Platinium_God_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240423020506",
+  "haaland-first-exhibition": "https://static.wikia.nocookie.net/allstartd/images/9/97/Haaland_%28First_Exhibition%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623065303",
+  "oni-princess-6": "https://static.wikia.nocookie.net/allstartd/images/e/e8/Oni_Princess_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240325070411",
+  "haaland-blue-rose": "https://static.wikia.nocookie.net/allstartd/images/8/84/Haaland_%28Blue_Rose%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623065325",
+  "anti-magician-super-demon": "https://static.wikia.nocookie.net/allstartd/images/b/bb/Anti_Magician_%28SUPER_DEMON%29.png/revision/latest/scale-to-width-down/250?cb=20230107023923",
+  "overlord": "https://static.wikia.nocookie.net/allstartd/images/f/f8/The_Overlord_%28Pose%29.png/revision/latest?cb=20260810015430",
+  "slim-shady-ye-forever": "https://static.wikia.nocookie.net/allstartd/images/3/3c/Slim_Shady-Ye_%28Forever%29_%28Pose2%29.png/revision/latest/scale-to-width-down/250?cb=20260715220547",
+  "slim-shady-killer-bee": "https://static.wikia.nocookie.net/allstartd/images/c/c8/Slim_Shady-Ye_%28Forever%29_-_Only_SS.png/revision/latest/scale-to-width-down/250?cb=20260715064829",
+  "slim-shady-ye-forever-only-y": "https://static.wikia.nocookie.net/allstartd/images/0/01/Slim_Shady-Ye_%28Forever%29_-_Only_Y.png/revision/latest/scale-to-width-down/250?cb=20260715064835",
+  "water-bender": "https://static.wikia.nocookie.net/allstartd/images/8/85/Water_Bender.png/revision/latest/scale-to-width-down/250?cb=20230105081217",
+  "ice-marine": "https://static.wikia.nocookie.net/allstartd/images/6/6b/Ice_Marine_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717040755",
+  "storm-dragon": "https://static.wikia.nocookie.net/allstartd/images/2/24/Storm_Dragon_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010814",
+  "lupin-iii": "https://static.wikia.nocookie.net/allstartd/images/0/07/Lupin_III.png/revision/latest/scale-to-width-down/250?cb=20230129115102",
+  "spider-boss": "https://static.wikia.nocookie.net/allstartd/images/f/fb/Spider_Boss.png/revision/latest/scale-to-width-down/250?cb=20230105073356",
+  "tp": "https://static.wikia.nocookie.net/allstartd/images/4/4e/TP_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260628005102",
+  "elemental-water": "https://static.wikia.nocookie.net/allstartd/images/4/44/Elemental_%28Water%29.png/revision/latest/scale-to-width-down/250?cb=20230107002045",
+  "elemental-wind": "https://static.wikia.nocookie.net/allstartd/images/5/5e/Elemental_%28Wind%29.png/revision/latest/scale-to-width-down/250?cb=20230107002048",
+  "chains": "https://static.wikia.nocookie.net/allstartd/images/f/f7/Chains_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715185249",
+  "eyezen-summer": "https://static.wikia.nocookie.net/allstartd/images/d/da/Eyezen_%28Summer%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231213090424",
+  "rodoroki-winter": "https://static.wikia.nocookie.net/allstartd/images/1/14/Rodoroki_%28Winter%29.png/revision/latest?cb=20230107002103",
+  "mist-man": "https://static.wikia.nocookie.net/allstartd/images/f/f2/Mist-man.png/revision/latest/scale-to-width-down/250?cb=20230105080813",
+  "ikki-bw": "https://static.wikia.nocookie.net/allstartd/images/6/63/Ikki_%28BW%29.png/revision/latest/scale-to-width-down/250?cb=20230105083233",
+  "ice-jaw": "https://static.wikia.nocookie.net/allstartd/images/5/54/Ice-Jaw.png/revision/latest/scale-to-width-down/250?cb=20230105054838",
+  "calm-maid": "https://static.wikia.nocookie.net/allstartd/images/8/83/Calm_Maid_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064709",
+  "shark-ninja": "https://static.wikia.nocookie.net/allstartd/images/7/71/Shark_Ninja.png/revision/latest/scale-to-width-down/250?cb=20230107001253",
+  "god": "https://static.wikia.nocookie.net/allstartd/images/6/6a/God_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715011720",
+  "ruffy-zambe": "https://static.wikia.nocookie.net/allstartd/images/c/c1/Ruffy_%28Zambe%29.png/revision/latest/scale-to-width-down/250?cb=20230106222603",
+  "hog-eyezen-normal": "https://static.wikia.nocookie.net/allstartd/images/d/d0/Hog_Eyzen.png/revision/latest/scale-to-width-down/250?cb=20230106223516",
+  "hog-eyezen-anger": "https://static.wikia.nocookie.net/allstartd/images/d/d0/Hog_Eyzen.png/revision/latest/scale-to-width-down/250?cb=20230106223516",
+  "hog-eyezen-brave": "https://static.wikia.nocookie.net/allstartd/images/d/d0/Hog_Eyzen.png/revision/latest/scale-to-width-down/250?cb=20230106223516",
+  "hog-eyezen-intelligence": "https://static.wikia.nocookie.net/allstartd/images/d/d0/Hog_Eyzen.png/revision/latest/scale-to-width-down/250?cb=20230106223516",
+  "hog-eyezen-charm": "https://static.wikia.nocookie.net/allstartd/images/d/d0/Hog_Eyzen.png/revision/latest/scale-to-width-down/250?cb=20230106223516",
+  "poison-clown": "https://static.wikia.nocookie.net/allstartd/images/3/3a/Poison_Clown_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231215071745",
+  "sword-summer": "https://static.wikia.nocookie.net/allstartd/images/1/14/Sword_%28Summer%29.png/revision/latest/scale-to-width-down/250?cb=20231119021506",
+  "green-huntress": "https://static.wikia.nocookie.net/allstartd/images/0/0b/Green_Huntress.png/revision/latest/scale-to-width-down/250?cb=20230106224703",
+  "sound-o-sonic-district": "https://static.wikia.nocookie.net/allstartd/images/c/cf/Sound-O-Sonic_%28District%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240410040528",
+  "oni-princess-5": "https://static.wikia.nocookie.net/allstartd/images/e/e8/Oni_Princess_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240325070411",
+  "maid-waifu": "https://static.wikia.nocookie.net/allstartd/images/8/8e/Maid_Waifu_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064759",
+  "shirtless-magician": "https://static.wikia.nocookie.net/allstartd/images/f/f3/Shirtless_Magician.png/revision/latest?cb=20230105035722",
+  "buddy": "https://static.wikia.nocookie.net/allstartd/images/9/96/Buddy%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240821195640",
+  "raizan": "https://static.wikia.nocookie.net/allstartd/images/f/fc/Raizan_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064814",
+  "large-mother": "https://static.wikia.nocookie.net/allstartd/images/2/26/Large_Mother.png/revision/latest/scale-to-width-down/250?cb=20230106224451",
+  "the-visionary": "https://static.wikia.nocookie.net/allstartd/images/5/57/The_Visionary_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260625010823",
+  "saiya-heroes": "https://static.wikia.nocookie.net/allstartd/images/f/f1/Saiya_Heroes_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231122061502",
+  "miss-toro": "https://static.wikia.nocookie.net/allstartd/images/b/bf/Miss_Toro.png/revision/latest/scale-to-width-down/250?cb=20231121223626",
+  "gravitily": "https://i.imgur.com/ZXeJR9h.png",
+  "lightning-mommy": "https://static.wikia.nocookie.net/allstartd/images/0/08/Lightning_Mommy_%28Maid%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715011738",
+  "sorcerer-evil": "https://static.wikia.nocookie.net/allstartd/images/0/05/Sorcerer_Evil_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240418020205",
+  "super-muge": "https://static.wikia.nocookie.net/allstartd/images/5/54/Super_Muge_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240127233257",
+  "exotic-rexor": "https://static.wikia.nocookie.net/allstartd/images/e/e0/Exotic_Rexor_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064612",
+  "the-devil-assassin": "https://static.wikia.nocookie.net/allstartd/images/a/a8/The_Devil_Assassin_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240210122509",
+  "legendary-leader-old": "https://static.wikia.nocookie.net/allstartd/images/7/71/Legendary_Leader_%28Old%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240415143356",
+  "mafia-boss-future": "https://static.wikia.nocookie.net/allstartd/images/2/29/Mafia_Boss_%28Future%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260627211902",
+  "freddie-mercury-fool": "https://static.wikia.nocookie.net/allstartd/images/e/e7/Freddie_Mercury_%28Fool%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623070442",
+  "maskice": "https://static.wikia.nocookie.net/allstartd/images/6/6f/Maskice.png/revision/latest/scale-to-width-down/250?cb=20230105035643",
+  "bitokai": "https://static.wikia.nocookie.net/allstartd/images/6/64/Bitokai_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240414093944",
+  "bug-ninja": "https://static.wikia.nocookie.net/allstartd/images/a/aa/Bug_Ninja_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623070458",
+  "explosion-artist": "https://static.wikia.nocookie.net/allstartd/images/e/e2/Explosion_Artist_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260623070451",
+  "demonside-ultimate": "https://static.wikia.nocookie.net/allstartd/images/5/58/Demonside_%28Ultimate%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260628004915",
+  "mr-green-supa": "https://static.wikia.nocookie.net/allstartd/images/3/3d/Mr._Green_%28Supa%29.png/revision/latest/scale-to-width-down/250?cb=20240211023354",
+  "captain-sparkle": "https://static.wikia.nocookie.net/allstartd/images/1/17/Captain_Sparkle.png/revision/latest/scale-to-width-down/250?cb=20230105075201",
+  "eyezen-boys": "https://static.wikia.nocookie.net/allstartd/images/7/76/Eyezen_Boy%27s.png/revision/latest/scale-to-width-down/250?cb=20230105071604",
+  "erito": "https://static.wikia.nocookie.net/allstartd/images/2/2c/Erito_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260628005013",
+  "dungeon-queen-spirit": "https://static.wikia.nocookie.net/allstartd/images/6/62/Dungeon_Queen_%28Spirit%29.png/revision/latest/scale-to-width-down/250?cb=20230105071949",
+  "dungeon-queen-shadow": "https://static.wikia.nocookie.net/allstartd/images/6/62/Dungeon_Queen_%28Spirit%29.png/revision/latest?cb=20230105071949",
+  "joke-da-fool": "https://static.wikia.nocookie.net/allstartd/images/d/d2/Joke_Da_Fool_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715064626",
+  "the-assistant": "https://static.wikia.nocookie.net/allstartd/images/f/f2/The_Assistant.png/revision/latest/scale-to-width-down/250?cb=20230105054746",
+  "weaponize": "https://static.wikia.nocookie.net/allstartd/images/c/cb/Weaponize.png/revision/latest/scale-to-width-down/250?cb=20230107001841",
+  "string-mage": "https://static.wikia.nocookie.net/allstartd/images/b/b9/String_Mage.png/revision/latest/scale-to-width-down/250?cb=20230204044937",
+  "jackzon-girl": "https://static.wikia.nocookie.net/allstartd/images/4/41/Jackzon_%28Girl%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231213230222",
+  "tadpole-witch": "https://static.wikia.nocookie.net/allstartd/images/1/10/Tadpole_Witch_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231214110734",
+  "lee-chun": "https://static.wikia.nocookie.net/allstartd/images/9/97/Lee_Chun_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260813182424",
+  "clown-mage": "https://static.wikia.nocookie.net/allstartd/images/d/d4/Clown_Mage_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717230756",
+  "teen-koku": "https://static.wikia.nocookie.net/allstartd/images/8/8f/Koku_%28Teen%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240330024451",
+  "rimimaro": "https://static.wikia.nocookie.net/allstartd/images/7/74/Rimimaro.png/revision/latest/scale-to-width-down/250?cb=20230105082436",
+  "lava-moth": "https://static.wikia.nocookie.net/allstartd/images/0/0d/Lava_Moth.png/revision/latest?cb=20230105085326",
+  "raizan-second": "https://static.wikia.nocookie.net/allstartd/images/8/8d/Raizan_Second.png/revision/latest/scale-to-width-down/250?cb=20230106224511",
+  "wormji": "https://static.wikia.nocookie.net/allstartd/images/8/8d/Worm_Assassin_%28Revived%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240402014514",
+  "mechanicalthumb": "https://static.wikia.nocookie.net/allstartd/images/6/6a/MechanicalThumb.png/revision/latest/scale-to-width-down/250?cb=20230106232303",
+  "koku-kid": "https://static.wikia.nocookie.net/allstartd/images/4/43/Koku_%28Kid%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240313073924",
+  "sui-after": "https://static.wikia.nocookie.net/allstartd/images/e/e6/Sui_%28After%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231129033353",
+  "gun-girl-2": "https://static.wikia.nocookie.net/allstartd/images/c/c5/Gun_Girl_2.png/revision/latest?cb=20230105044300",
+  "gun-girl-1": "https://static.wikia.nocookie.net/allstartd/images/4/49/Gun_Girl_1.png/revision/latest?cb=20230105072320",
+  "biscuit": "https://static.wikia.nocookie.net/allstartd/images/c/c4/Biscuit_%28Pose%29.png/revision/latest?cb=20240417041439",
+  "dungeon-queen": "https://static.wikia.nocookie.net/allstartd/images/4/4c/Dungeon_Queen.png/revision/latest/scale-to-width-down/250?cb=20230625070546",
+  "water-mage": "https://static.wikia.nocookie.net/allstartd/images/d/de/Water_Mage.png/revision/latest/scale-to-width-down/250?cb=20230212132102",
+  "muge": "https://static.wikia.nocookie.net/allstartd/images/2/2a/Muge.png/revision/latest/scale-to-width-down/250?cb=20230611110224",
+  "bot-12": "https://static.wikia.nocookie.net/allstartd/images/3/32/BOT_12.png/revision/latest?cb=20230106222815",
+  "sky-god-balrog": "https://static.wikia.nocookie.net/allstartd/images/d/d6/Sky_God_%28Balrog%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260701032521",
+  "paper-beauty-awaken": "https://static.wikia.nocookie.net/allstartd/images/7/74/Paper_Beauty_%28Awaken%29_%28Pose2%29.png/revision/latest?cb=20231020092048",
+  "bunny": "https://static.wikia.nocookie.net/allstartd/images/8/82/Bunny.png/revision/latest?cb=20230107002710",
+  "rhikadai": "https://static.wikia.nocookie.net/allstartd/images/1/19/Rhikadai.png/revision/latest?cb=20230212124818",
+  "alien-soldier-friend-remodel": "https://static.wikia.nocookie.net/allstartd/images/f/fc/Alien_Soldier_%28Friend%29_Remodel.png/revision/latest?cb=20230130081736",
+  "ice-dragon-eis-shenron": "https://static.wikia.nocookie.net/allstartd/images/6/6c/Ice_Dragon_%28Eis_Shenron%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260813181822",
+  "kogan-future": "https://static.wikia.nocookie.net/allstartd/images/7/73/Kogan_%28Future%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20231107043226",
+  "ayumukasuga": "https://static.wikia.nocookie.net/allstartd/images/2/25/Ayumukasuga.png/revision/latest?cb=20240120175139",
+  "green-huntress-alternative": "https://static.wikia.nocookie.net/allstartd/images/0/05/Green_Huntress_%28Alternative%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20231107043100",
+  "angels-gate-base": "https://static.wikia.nocookie.net/allstartd/images/4/49/Angels_Gate_%28Base%29.png/revision/latest?cb=20230106222541",
+  "zukia-captain": "https://static.wikia.nocookie.net/allstartd/images/a/af/Zukia_%28Captain%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20260630034255",
+  "snowman-v": "https://static.wikia.nocookie.net/allstartd/images/b/b1/Snowman_V.png/revision/latest?cb=20230216070604",
+  "snowman-ii": "https://static.wikia.nocookie.net/allstartd/images/b/b5/Snowman_II.png/revision/latest?cb=20230216070201",
+  "snowman-iv": "https://static.wikia.nocookie.net/allstartd/images/0/0d/Snowman_IV.png/revision/latest?cb=20230216070337",
+  "snowman-iii": "https://static.wikia.nocookie.net/allstartd/images/5/59/Snowman_III.png/revision/latest?cb=20230216070453",
+  "snowman": "https://static.wikia.nocookie.net/allstartd/images/c/c7/Snowman.png/revision/latest?cb=20230216070025",
+  "summer-box-iii-sb3": "https://static.wikia.nocookie.net/allstartd/images/0/06/Summer_Box_III.png/revision/latest/scale-to-width-down/250?cb=20230106222612",
+  "summer-box-ii-sb2": "https://static.wikia.nocookie.net/allstartd/images/1/10/Summer_Box_II.png/revision/latest/scale-to-width-down/250?cb=20230106222618",
+  "christmas-gift-iii-cg3-2020": "https://static.wikia.nocookie.net/allstartd/images/d/d8/Christmas_Gift_III.png/revision/latest/scale-to-width-down/250?cb=20230106222628",
+  "crushed-box-iii": "https://static.wikia.nocookie.net/allstartd/images/d/db/Crushed_Box_III.png/revision/latest/scale-to-width-down/250?cb=20230105074618",
+  "summer-box-i-sb1": "https://static.wikia.nocookie.net/allstartd/images/a/a0/Summer_Box_I.png/revision/latest/scale-to-width-down/250?cb=20230106222624",
+  "pumpkin-iii": "https://static.wikia.nocookie.net/allstartd/images/4/4b/Pumpkin_III_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231109085402",
+  "crushed-box-ii": "https://static.wikia.nocookie.net/allstartd/images/3/32/Crushed_Box_II.png/revision/latest/scale-to-width-down/250?cb=20230105074525",
+  "christmas-gift-i-cg1-2020": "https://static.wikia.nocookie.net/allstartd/images/c/c3/Christmas_Gift.png/revision/latest/scale-to-width-down/250?cb=20230105035844",
+  "christmas-gift-ii-cg2-2020": "https://static.wikia.nocookie.net/allstartd/images/b/b6/Christmas_Gift_II.png/revision/latest/scale-to-width-down/250?cb=20230105035805",
+  "winterfell-present-iii-wf3": "https://static.wikia.nocookie.net/allstartd/images/f/fb/Winterfell_Present_III.png/revision/latest/scale-to-width-down/250?cb=20221228020150",
+  "christmas-crate-iii": "https://static.wikia.nocookie.net/allstartd/images/d/d2/Christmas_Crate_III.png/revision/latest?cb=20240116011243",
+  "winterfell-present-ii-wf2": "https://static.wikia.nocookie.net/allstartd/images/d/db/Winterfell_Present_II.png/revision/latest/scale-to-width-down/250?cb=20221228015454",
+  "christmas-crate-i-cg1-2021": "https://static.wikia.nocookie.net/allstartd/images/9/94/Christmas_Box.png/revision/latest/scale-to-width-down/250?cb=20230105073848",
+  "christmas-crate-ii-cg2-2021": "https://static.wikia.nocookie.net/allstartd/images/b/b0/Christmas_Box_II.png/revision/latest/scale-to-width-down/250?cb=20230106222547",
+  "winterfell-present-i-wf1": "https://static.wikia.nocookie.net/allstartd/images/4/40/Winterfell_Present_I.png/revision/latest/scale-to-width-down/250?cb=20221228015140",
+  "crushed-box-i": "https://static.wikia.nocookie.net/allstartd/images/c/c2/Crushed_Box_I.png/revision/latest/scale-to-width-down/250?cb=20230105073922",
+  "pumpkin-ii": "https://static.wikia.nocookie.net/allstartd/images/5/50/Pumpkin_II_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231025075058",
+  "pumpkin-i": "https://static.wikia.nocookie.net/allstartd/images/e/e2/Pumpkin_I_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20231025074700",
+  "100-egg-ii": "https://static.wikia.nocookie.net/allstartd/images/3/34/100%25_Egg_-_Necro.png/revision/latest/scale-to-width-down/250?cb=20240828231200",
+  "90-egg-ii": "https://static.wikia.nocookie.net/allstartd/images/e/ed/90%25_Egg_-_Manipulation.png/revision/latest/scale-to-width-down/250?cb=20240828234315",
+  "80-egg-ii": "https://static.wikia.nocookie.net/allstartd/images/c/c6/80%25_Egg_-_Telepathy.png/revision/latest/scale-to-width-down/250?cb=20240409182711",
+  "70-egg-ii": "https://static.wikia.nocookie.net/allstartd/images/4/4f/70%25_Egg_-_Hypersonic.png/revision/latest/scale-to-width-down/250?cb=20240828232846",
+  "60-egg-ii": "https://static.wikia.nocookie.net/allstartd/images/3/3f/60%25_Egg_-_Pyro.png/revision/latest/scale-to-width-down/250?cb=20240829070416",
+  "50-egg-ii": "https://static.wikia.nocookie.net/allstartd/images/c/c0/50%25_Egg_-_Dream.png/revision/latest/scale-to-width-down/250?cb=20240829125904",
+  "40-egg-ii": "https://static.wikia.nocookie.net/allstartd/images/3/33/40%25_Egg_-_Electric.png/revision/latest/scale-to-width-down/250?cb=20240412235531",
+  "30-egg-ii": "https://static.wikia.nocookie.net/allstartd/images/3/30/30%25_Egg_-_Gold.png/revision/latest/scale-to-width-down/250?cb=20240829224737",
+  "20-egg-ii": "https://static.wikia.nocookie.net/allstartd/images/b/b4/20%25_Egg_II_-_Silver.png/revision/latest/scale-to-width-down/250?cb=20240829225209",
+  "10-egg-ii": "https://static.wikia.nocookie.net/allstartd/images/0/09/10%25_Egg_-_Bronze.png/revision/latest/scale-to-width-down/250?cb=20240829225519",
+  "100-egg": "https://static.wikia.nocookie.net/allstartd/images/6/6c/100%25_Egg_-_Dark.png/revision/latest/scale-to-width-down/250?cb=20230113090518",
+  "90-egg": "https://static.wikia.nocookie.net/allstartd/images/8/86/90%25_Egg_-_Leaf.png/revision/latest/scale-to-width-down/250?cb=20230113090524",
+  "80-egg": "https://static.wikia.nocookie.net/allstartd/images/6/6e/80%25_Egg_-_Neon.png/revision/latest/scale-to-width-down/250?cb=20230113090533",
+  "70-egg": "https://static.wikia.nocookie.net/allstartd/images/5/57/70%25_Egg_-_Cinder.png/revision/latest/scale-to-width-down/250?cb=20230113090538",
+  "60-egg": "https://static.wikia.nocookie.net/allstartd/images/7/70/60%25_Egg_-_Tone.png/revision/latest/scale-to-width-down/250?cb=20230113090542",
+  "50-egg": "https://static.wikia.nocookie.net/allstartd/images/e/ef/50%25_Egg_-_Metal.png/revision/latest/scale-to-width-down/250?cb=20230113090547",
+  "40-egg": "https://static.wikia.nocookie.net/allstartd/images/6/69/40%25_Egg_-_Mist.png/revision/latest/scale-to-width-down/250?cb=20230113090604",
+  "30-egg": "https://static.wikia.nocookie.net/allstartd/images/8/82/30%25_Egg_-_Ice.png/revision/latest/scale-to-width-down/250?cb=20230113090622",
+  "20-egg": "https://static.wikia.nocookie.net/allstartd/images/c/c3/20%25_Egg_-_Shadow.png/revision/latest/scale-to-width-down/250?cb=20230113090602",
+  "10-egg": "https://static.wikia.nocookie.net/allstartd/images/8/8f/10%25_Egg_-_Water.png/revision/latest/scale-to-width-down/250?cb=20230113090627",
+  "death-pure": "https://static.wikia.nocookie.net/allstartd/images/5/59/Death_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20230909020936",
+  "legendary-borul-alternative-pure": "https://static.wikia.nocookie.net/allstartd/images/1/17/Legendary_Borul_%28Alternative%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20230909023237",
+  "old-will-pure": "https://static.wikia.nocookie.net/allstartd/images/9/97/Old_Will_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20230909025318",
+  "club-beast-pure": "https://static.wikia.nocookie.net/allstartd/images/8/88/Club_Beast_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717040603",
+  "first-wood-bender-pure": "https://static.wikia.nocookie.net/allstartd/images/c/c7/First_Wood_Bender_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20230909024638",
+  "illusiva-pure": "https://static.wikia.nocookie.net/allstartd/images/0/05/Illusiva_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715185321",
+  "zaruto-grr-iii-pure": "https://static.wikia.nocookie.net/allstartd/images/c/ca/Zaruto_%28GRR_III%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260717231018",
+  "water-goddess-pure": "https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png/revision/latest/scale-to-width-down/250?cb=20230611110544",
+  "varaq-pure": "https://static.wikia.nocookie.net/allstartd/images/5/57/Varaq_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20260715185418",
+  "hog-eyezen-normal-pure": "https://static.wikia.nocookie.net/allstartd/images/d/d0/Hog_Eyzen.png/revision/latest/scale-to-width-down/250?cb=20230106223516",
+  "other-hog-eyezens-pure": "https://static.wikia.nocookie.net/allstartd/images/d/d0/Hog_Eyzen.png/revision/latest/scale-to-width-down/250?cb=20230106223516",
+  "dungeon-queen-spirit-pure": "https://static.wikia.nocookie.net/allstartd/images/6/62/Dungeon_Queen_%28Spirit%29.png/revision/latest/scale-to-width-down/250?cb=20230105071949",
+  "375-pure": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/375-stardust-bundle.webp",
+  "97-pure": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/97-stardust-bundle.webp",
+  "31-pure": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/31-stardust-bundle.webp",
+  "17-pure": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/17-stardust-bundle.webp",
+  "5-pure": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/5-stardust-bundle.webp",
+  "vampire-queen-arcane": "https://static.wikia.nocookie.net/allstartd/images/1/1f/Vampire_Queen_%28Arcane%29_%28Pose%29.png/revision/latest?cb=20260625023453",
+  "13000-gems": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/13000-gems-bundle.webp",
+  "1850-gems": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/1850-gems-bundle.webp",
+  "950-gems": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/950-gems-bundle.webp",
+  "500-gems": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/500-gems-bundle.webp",
+  "50-gems": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/50-gems-bundle.webp",
+  "3x-speed": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/3x-gamepass.webp",
+  "star-pass": "https://static.wikia.nocookie.net/allstartd/images/4/4c/Star_Pass.png/revision/latest?cb=20220415095625",
+  "nimbus-cloud": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/nimbus-unit-mount-gamepass.webp",
+  "space-pod": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/frieza-pod-unit-mount-gamepass.webp",
+  "capsule-car": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/capsule-corp-car-unit-mount-gamepass.webp",
+  "the-overlord": "https://static.wikia.nocookie.net/allstartd/images/f/f8/The_Overlord_%28Pose%29.png/revision/latest?cb=20260810015430",
+  "expert-sorcercer-girl": "https://static.wikia.nocookie.net/allstartd/images/6/6c/Expert_Sorcerer_%28Girl%29.png/revision/latest/scale-to-width-down/268?cb=20240213234328",
+  "expert-sorcerer-pure": "https://static.wikia.nocookie.net/allstartd/images/7/74/Expert_Sorcerer_%28HD%29.png/revision/latest/scale-to-width-down/250?cb=20240501092515",
+  "other-dungeon-queens-pure": "https://static.wikia.nocookie.net/allstartd/images/6/62/Dungeon_Queen_%28Spirit%29.png/revision/latest/scale-to-width-down/250?cb=20230105071949",
+  "375-stardust-bundle": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/375-stardust-bundle.webp",
+  "97-stardust-bundle": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/97-stardust-bundle.webp",
+  "31-stardust-bundle": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/31-stardust-bundle.webp",
+  "17-stardust-bundle": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/17-stardust-bundle.webp",
+  "5-stardust-bundle": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/5-stardust-bundle.webp",
+  "13000-gems-bundle": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/13000-gems-bundle.webp",
+  "1850-gems-bundle": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/1850-gems-bundle.webp",
+  "950-gems-bundle": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/950-gems-bundle.webp",
+  "500-gems-bundle": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/500-gems-bundle.webp",
+  "50-gems-bundle": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/50-gems-bundle.webp",
+  "3x-gamepass": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/3x-gamepass.webp",
+  "v-i-p-gamepass": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/v-i-p-gamepass.webp",
+  "nimbus-unit-mount-gamepass": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/nimbus-unit-mount-gamepass.webp",
+  "frieza-pod-unit-mount-gamepass": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/frieza-pod-unit-mount-gamepass.webp",
+  "capsule-corp-car-unit-mount-gamepass": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/capsule-corp-car-unit-mount-gamepass.webp",
+  "premium-pass": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/premium-pass.webp",
+  "christmas-box-iii-cg3-2021": "https://static.wikia.nocookie.net/allstartd/images/a/a3/Christmas_Box_III.png/revision/latest/scale-to-width-down/250?cb=20230105074703",
+  "christmas-box-ii-cg2-2021": "https://static.wikia.nocookie.net/allstartd/images/b/b0/Christmas_Box_II.png/revision/latest/scale-to-width-down/250?cb=20230106222547",
+  "christmas-box-i-cg1-2021": "https://static.wikia.nocookie.net/allstartd/images/9/94/Christmas_Box.png/revision/latest/scale-to-width-down/250?cb=20230105073848",
+  "christmas-crate-ii": "https://static.wikia.nocookie.net/allstartd/images/8/8c/Christmas_Crate_II.png/revision/latest?cb=20240116014450",
+  "ultra-capsule": "https://static.wikia.nocookie.net/allstartd/images/b/b9/Ultra_Capsule.png/revision/latest?cb=20230105075334",
+  "super-firework": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/super-firework.webp",
+  "moniko": "https://static.wikia.nocookie.net/allstartd/images/3/32/Moniko_%28Pose%29.png/revision/latest?cb=20260715064807",
+  "diamond-kogan": "https://static.wikia.nocookie.net/allstartd/images/f/fc/Diamond_Kogan.png/revision/latest?cb=20230106223009",
+  "challenger-mikato": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/challenger-mikato.webp",
+  "challenger-borul": "https://static.wikia.nocookie.net/allstartd/images/5/50/Challenger_Borul.png/revision/latest?cb=20230106222850",
+  "koku-supa-1000": "https://static.wikia.nocookie.net/allstartd/images/8/83/Koku_%28Supa_1000%29_%28Pose%29.png/revision/latest?cb=20260627211826",
+  "platinum-ikki": "https://static.wikia.nocookie.net/allstartd/images/3/34/Platinum_Ikki.png/revision/latest?cb=20230106222959",
+  "darkness-slayer": "https://static.wikia.nocookie.net/allstartd/images/a/a3/Darkness_Slayer_%28Pose%29.png/revision/latest?cb=20260627211759",
+  "kiguri": "https://static.wikia.nocookie.net/allstartd/images/c/c6/Kiguri_%28Pose%29.png/revision/latest?cb=20260715064752",
+  "devil-sister": "https://static.wikia.nocookie.net/allstartd/images/e/e7/Devil_Sister_%28Pose%29.png/revision/latest?cb=20260627211812",
+  "miku": "https://static.wikia.nocookie.net/allstartd/images/a/a8/Miku_%28Pose%29.png/revision/latest?cb=20260628041852",
+  "the-curse-one-summer": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/the-curse-one-summer.webp",
+  "borul-summer": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/borul-summer.webp",
+  "all-powerful-summer": "https://static.wikia.nocookie.net/allstartd/images/9/93/All_Powerful_%28SUMMER%29.png/revision/latest?cb=20230105082917",
+  "gold-tatsu": "https://static.wikia.nocookie.net/allstartd/images/e/ea/Gold_Tatsu.png/revision/latest?cb=20230106222855",
+  "diamond-falcon": "https://static.wikia.nocookie.net/allstartd/images/e/e7/Diamond_Falcon.png/revision/latest?cb=20230207212239",
+  "diamond-renitsu": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/diamond-renitsu.webp",
+  "rimimaro-insane": "https://static.wikia.nocookie.net/allstartd/images/3/3a/Rimimaro_%28Insane%29.png/revision/latest?cb=20230105072530",
+  "silver-lights": "https://static.wikia.nocookie.net/allstartd/images/e/e3/Silver_Lights.png/revision/latest?cb=20230106225435",
+  "platinum-spirit-detective": "https://static.wikia.nocookie.net/allstartd/images/e/e3/Platinum_Spirit_Detective.png/revision/latest?cb=20230106222840",
+  "platinum-lucky-green": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/platinum-lucky-green.webp",
+  "dilemma-duo": "https://static.wikia.nocookie.net/allstartd/images/2/21/Dilemma_Duo_%28Pose%29.png/revision/latest?cb=20260724061221",
+  "dillema-duo": "https://static.wikia.nocookie.net/allstartd/images/2/21/Dilemma_Duo_%28Pose%29.png/revision/latest?cb=20260724061221",
+  "gold-god-black": "https://static.wikia.nocookie.net/allstartd/images/d/d9/Gold_God_Black.png/revision/latest?cb=20230106222831",
+  "bronze-all-powerful": "https://static.wikia.nocookie.net/allstartd/images/2/2c/Bronze_Powerful.png/revision/latest?cb=20230207212122",
+  "lucky-fireman": "https://static.wikia.nocookie.net/allstartd/images/3/3f/Lucky_Fireman.png/revision/latest?cb=20230105080441",
+  "ikki-summer": "https://static.wikia.nocookie.net/allstartd/images/4/48/Ikki_%28SUMMER%29.png/revision/latest?cb=20230105075755",
+  "mikato-boss": "https://static.wikia.nocookie.net/allstartd/images/e/e7/Mikato_%28Boss%29.png/revision/latest?cb=20230107002120",
+  "snake-cloak": "https://static.wikia.nocookie.net/allstartd/images/5/52/Snake_%28Cloak%29.png/revision/latest?cb=20230105083952",
+  "super-koku-jacket": "https://static.wikia.nocookie.net/allstartd/images/0/0d/Super_Koku_%28Jacket%29.png/revision/latest?cb=20230107002010",
+  "the-man": "https://static.wikia.nocookie.net/allstartd/images/2/21/The_Man.png/revision/latest?cb=20230105084605",
+  "nezichi-sword-skin": "https://static.wikia.nocookie.net/allstartd/images/1/18/Nezichi_%28Sword_skin%29.png/revision/latest?cb=20230107001959",
+  "blossom-cherry": "https://static.wikia.nocookie.net/allstartd/images/5/51/Blossom_%28Cherry%29.png/revision/latest?cb=20230105042810",
+  "arot": "https://static.wikia.nocookie.net/allstartd/images/3/37/Arot.png/revision/latest?cb=20230105072937",
+  "spirit-detective-hip": "https://static.wikia.nocookie.net/allstartd/images/1/1a/Spirit_Detective_%28Hip%29.png/revision/latest?cb=20230107002006",
+  "toad-clone": "https://static.wikia.nocookie.net/allstartd/images/f/fd/Toad_Clone.png/revision/latest?cb=20230107002059",
+  "ikki-white-ii": "https://static.wikia.nocookie.net/allstartd/images/a/a1/Ikki_%28White_II%29.png/revision/latest?cb=20230105085719",
+  "vampire-vegu": "https://static.wikia.nocookie.net/allstartd/images/4/48/Vampire_Vegu.png/revision/latest?cb=20230105085249",
+  "zomurai": "https://static.wikia.nocookie.net/allstartd/images/d/d8/Zomurai.png/revision/latest?cb=20230105085910",
+  "ikki-white-i": "https://static.wikia.nocookie.net/allstartd/images/1/13/Ikki_%28White_I%29.png/revision/latest?cb=20230105083824",
+  "fancy-spade": "https://static.wikia.nocookie.net/allstartd/images/f/f1/Fancy_Spade.png/revision/latest?cb=20230107002111",
+  "mrflimflam-winter": "https://static.wikia.nocookie.net/allstartd/images/f/fc/Mrflimflam_%28Winter%29.png/revision/latest?cb=20230105081647",
+  "santa-ruffy": "https://static.wikia.nocookie.net/allstartd/images/7/7c/Santa_Ruffy.png/revision/latest?cb=20230105084356",
+  "mad-bully-sonku": "https://static.wikia.nocookie.net/allstartd/images/1/1a/Mad_Bully_Sonku.png/revision/latest?cb=20230105083518",
+  "wild-west-zorro": "https://static.wikia.nocookie.net/allstartd/images/2/22/Wild_West_Zorro.png/revision/latest?cb=20230105083440",
+  "paper-beauty-winter": "https://static.wikia.nocookie.net/allstartd/images/e/e0/Paper_Beauty_%28Winter%29.png/revision/latest?cb=20230105080407",
+  "santa": "https://static.wikia.nocookie.net/allstartd/images/5/5b/Santa.png/revision/latest?cb=20230105085134",
+  "tatsu-alternative": "https://static.wikia.nocookie.net/allstartd/images/c/cb/Alternative_Tatsu.png/revision/latest?cb=20230105084914",
+  "gen-ant-uniform": "https://static.wikia.nocookie.net/allstartd/images/a/a7/Gen_%28Ant_Uniform%29.png/revision/latest?cb=20230105085039",
+  "mysterious-x-summer": "https://static.wikia.nocookie.net/allstartd/images/0/05/Mysterious_X_%28SUMMER%29.png/revision/latest?cb=20230608161852",
+  "koku-training": "https://static.wikia.nocookie.net/allstartd/images/e/ea/Koku_%28Training%29.png/revision/latest?cb=20230105084435",
+  "bruce": "https://static.wikia.nocookie.net/allstartd/images/1/14/Bruce.png/revision/latest?cb=20230105084522",
+  "future-trunks-armor": "https://static.wikia.nocookie.net/allstartd/images/8/8b/Future_T_%28Armor%29.png/revision/latest?cb=20230105084827",
+  "zazashi-masked": "https://static.wikia.nocookie.net/allstartd/images/4/46/Zazashi_%28Masked%29.png/revision/latest?cb=20230105080933",
+  "blue-fireman": "https://static.wikia.nocookie.net/allstartd/images/2/29/Blue_Fireman.png/revision/latest?cb=20230107002302",
+  "humble-swordman-girl": "https://static.wikia.nocookie.net/allstartd/images/1/1e/Humble-Swordman_%28Girl%29.png/revision/latest?cb=20230107001857",
+  "girl-rentisu": "https://static.wikia.nocookie.net/allstartd/images/a/ae/Girl_Rentisu.png/revision/latest?cb=20230107001904",
+  "kaoe": "https://static.wikia.nocookie.net/allstartd/images/9/98/Kaoe.png/revision/latest?cb=20240815213115",
+  "blossom-ext": "https://static.wikia.nocookie.net/allstartd/images/3/38/Blossom_%28EXT%29.png/revision/latest?cb=20230107001908",
+  "bomba-ext": "https://static.wikia.nocookie.net/allstartd/images/5/56/Bomba_%28EXT%29.png/revision/latest?cb=20230107001917",
+  "wild-animal-ext": "https://static.wikia.nocookie.net/allstartd/images/5/57/Wild_Animal_%28EXT%29.png/revision/latest?cb=20230107001944",
+  "future-t-anniversary": "https://static.wikia.nocookie.net/allstartd/images/0/05/Future_T_%28Anniversary%29.png/revision/latest?cb=20230101070529",
+  "wrathdioas-anniversary": "https://static.wikia.nocookie.net/allstartd/images/6/6a/Wrathdioas_%28Anniversary%29.png/revision/latest?cb=20230101070822",
+  "jon-jo-anniversary": "https://static.wikia.nocookie.net/allstartd/images/0/0a/Jon_Jo_%28Anniversary%29.png/revision/latest?cb=20230101070706",
+  "winter-koku": "https://static.wikia.nocookie.net/allstartd/images/d/d8/Winter_Koku.png/revision/latest?cb=20230129091658",
+  "winter-vegu": "https://static.wikia.nocookie.net/allstartd/images/8/84/Winter_Vegu.png/revision/latest?cb=20230129084552",
+  "janji-ts-chef": "https://static.wikia.nocookie.net/allstartd/images/8/83/Janji_TS_%28Chef%29.png/revision/latest?cb=20230805032243",
+  "gen-chef": "https://static.wikia.nocookie.net/allstartd/images/e/e1/Gen_%28Chef%29.png/revision/latest?cb=20230803214313",
+  "son-koken-chef": "https://static.wikia.nocookie.net/allstartd/images/c/c6/Son_Koken_%28Chef%29.png/revision/latest?cb=20230803214706",
+  "mr-green-other": "https://static.wikia.nocookie.net/allstartd/images/9/9d/Mr._Green_%28Other%29.png/revision/latest?cb=20230105080606",
+  "stampede-normal": "https://static.wikia.nocookie.net/allstartd/images/e/e7/Stampede_%28Normal%29.png/revision/latest?cb=20230105081726",
+  "crow-ops": "https://static.wikia.nocookie.net/allstartd/images/2/22/Crow_%28Ops%29.png/revision/latest?cb=20230105080255",
+  "gate-alt": "https://static.wikia.nocookie.net/allstartd/images/b/bc/Gate_Alt.png/revision/latest?cb=20230105080331",
+  "wild-animal-other": "https://static.wikia.nocookie.net/allstartd/images/3/3a/Wild_Animal_%28Other%29.png/revision/latest?cb=20230107002337",
+  "master-w-swordman": "https://static.wikia.nocookie.net/allstartd/images/9/91/Master_W-Swordman.png/revision/latest?cb=20230105081801",
+  "evil-shade-sonic": "https://static.wikia.nocookie.net/allstartd/images/1/1c/Evil_Shade_%28Sonic%29.png/revision/latest?cb=20230608161519",
+  "cauli": "https://static.wikia.nocookie.net/allstartd/images/8/8a/Cauli.png/revision/latest?cb=20230107004753",
+  "kogan-adult": "https://static.wikia.nocookie.net/allstartd/images/8/8a/Kogan_Adult.png/revision/latest?cb=20230107002323",
+  "mr-green-anniversary": "https://static.wikia.nocookie.net/allstartd/images/e/ea/Mr._Green_%28Anniversary%29.png/revision/latest?cb=20230101070224",
+  "ruffy-anniversary": "https://static.wikia.nocookie.net/allstartd/images/a/a2/Ruffy_%28Anniversary%29.png/revision/latest?cb=20221228013123",
+  "zaruto-anniversary": "https://static.wikia.nocookie.net/allstartd/images/8/8a/Zaruto_%28Anniversary%29.png/revision/latest?cb=20230101070420",
+  "bronze-future-t": "https://static.wikia.nocookie.net/allstartd/images/7/7e/Bronze_Future_T.png/revision/latest?cb=20230105044511",
+  "todoroki-both": "https://static.wikia.nocookie.net/allstartd/images/0/02/Todoroki_Both.png/revision/latest?cb=20230129115127",
+  "crazwind-bender": "https://static.wikia.nocookie.net/allstartd/images/d/db/Crazwind_%28Bender%29.png/revision/latest?cb=20230608161255",
+  "kage-kakashi": "https://static.wikia.nocookie.net/allstartd/images/7/7e/Kage_Kakashi.png/revision/latest?cb=20230129090328",
+  "koku-mazin": "https://static.wikia.nocookie.net/allstartd/images/b/b5/Koku_%28Mazin%29.png/revision/latest?cb=20230107004759",
+  "human-patternine": "https://static.wikia.nocookie.net/allstartd/images/1/15/Human_Patternine.png/revision/latest?cb=20230107004210",
+  "jaws": "https://static.wikia.nocookie.net/allstartd/images/8/84/Jaws_%28Pose%29.png/revision/latest?cb=20260930000838",
+  "speed-hashira": "https://static.wikia.nocookie.net/allstartd/images/b/b0/Speed_Hashira_%28Pose%29.png/revision/latest?cb=20230922203111",
+  "evil-larp-monster-1": "https://static.wikia.nocookie.net/allstartd/images/5/5a/Evil_Larp_Monster_1.png/revision/latest?cb=20260905082051",
+  "evil-larp-monster-2": "https://static.wikia.nocookie.net/allstartd/images/7/7e/Evil_Larp_Monster_2_%28Pose%29.png/revision/latest?cb=20260904223001",
+  "firefist-sinner": "https://static.wikia.nocookie.net/allstartd/images/8/8d/Firefist_Sinner_%28Pose%29.png/revision/latest?cb=20260904223018",
+  "revegeance-cyborg": "https://static.wikia.nocookie.net/allstartd/images/0/0e/Revengeance_Cyborg_%28Pose%29.png/revision/latest?cb=20260904223127",
+  "horse-scientist": "https://static.wikia.nocookie.net/allstartd/images/f/f4/Horse_Scientist_%28Pose%29.png/revision/latest?cb=20260904223027",
+  "scheele-s-green": "https://static.wikia.nocookie.net/allstartd/images/a/ac/Scheele%27s_Green_%28Pose%29.png/revision/latest?cb=20260904223141",
+  "pretty-magician": "https://static.wikia.nocookie.net/allstartd/images/a/a4/Pretty_Magician_%28Pose%29.png/revision/latest?cb=20260904223113",
+  "pages-man": "https://static.wikia.nocookie.net/allstartd/images/0/0b/Pages_Man_%28Pose%29.png/revision/latest?cb=20260904223100",
+  "the-minor": "https://static.wikia.nocookie.net/allstartd/images/4/4b/The_Minor_%28Pose%29.png/revision/latest?cb=20260904223147",
+  "destroyguy": "https://static.wikia.nocookie.net/allstartd/images/e/e6/DESTROYGUY_%28Pose%29.png/revision/latest?cb=20260904222933",
+  "all-star": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/all-star.webp",
+  "astd": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/astd.webp",
+  "firezio": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/firezio.webp",
+  "lightning-mommy-maid": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/lightning-mommy-maid.webp",
+  "lucina": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/lucina.webp",
+  "quality-assurance": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/quality-assurance.webp",
+  "reiyven": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/reiyven.webp",
+  "sui-full-samurai": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/sui-full-samurai.webp",
+  "value-list": "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/value-list.webp",
+  "slim-shady-ye-forever-only-ss": "https://static.wikia.nocookie.net/allstartd/images/c/c8/Slim_Shady-Ye_%28Forever%29_-_Only_SS.png/revision/latest/scale-to-width-down/250?cb=20260715064829",
+  "other-hog-eyezens": "https://static.wikia.nocookie.net/allstartd/images/d/d0/Hog_Eyzen.png/revision/latest/scale-to-width-down/250?cb=20230106223516",
+  "oni-princess": "https://static.wikia.nocookie.net/allstartd/images/e/e8/Oni_Princess_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240325070411",
+  "other-dungeon-queens": "https://static.wikia.nocookie.net/allstartd/images/6/62/Dungeon_Queen_%28Spirit%29.png/revision/latest/scale-to-width-down/250?cb=20230105071949",
+  "koku-teen": "https://static.wikia.nocookie.net/allstartd/images/8/8f/Koku_%28Teen%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240330024451",
+  "worm-assassin-revived": "https://static.wikia.nocookie.net/allstartd/images/8/8d/Worm_Assassin_%28Revived%29_%28Pose%29.png/revision/latest/scale-to-width-down/250?cb=20240402014514",
+  "100-egg-ii-necro": "https://static.wikia.nocookie.net/allstartd/images/3/34/100%25_Egg_-_Necro.png/revision/latest/scale-to-width-down/250?cb=20240828231200",
+  "90-egg-ii-manipulation": "https://static.wikia.nocookie.net/allstartd/images/e/ed/90%25_Egg_-_Manipulation.png/revision/latest/scale-to-width-down/250?cb=20240828234315",
+  "80-egg-ii-telepathy": "https://static.wikia.nocookie.net/allstartd/images/c/c6/80%25_Egg_-_Telepathy.png/revision/latest/scale-to-width-down/250?cb=20240409182711",
+  "70-egg-ii-hypersonic": "https://static.wikia.nocookie.net/allstartd/images/4/4f/70%25_Egg_-_Hypersonic.png/revision/latest/scale-to-width-down/250?cb=20240828232846",
+  "60-egg-ii-pyro": "https://static.wikia.nocookie.net/allstartd/images/3/3f/60%25_Egg_-_Pyro.png/revision/latest/scale-to-width-down/250?cb=20240829070416",
+  "50-egg-ii-dream": "https://static.wikia.nocookie.net/allstartd/images/c/c0/50%25_Egg_-_Dream.png/revision/latest/scale-to-width-down/250?cb=20240829125904",
+  "40-egg-ii-electric": "https://static.wikia.nocookie.net/allstartd/images/3/33/40%25_Egg_-_Electric.png/revision/latest/scale-to-width-down/250?cb=20240412235531",
+  "30-egg-ii-gold": "https://static.wikia.nocookie.net/allstartd/images/3/30/30%25_Egg_-_Gold.png/revision/latest/scale-to-width-down/250?cb=20240829224737",
+  "20-egg-ii-silver": "https://static.wikia.nocookie.net/allstartd/images/b/b4/20%25_Egg_II_-_Silver.png/revision/latest/scale-to-width-down/250?cb=20240829225209",
+  "10-egg-ii-bronze": "https://static.wikia.nocookie.net/allstartd/images/0/09/10%25_Egg_-_Bronze.png/revision/latest/scale-to-width-down/250?cb=20240829225519",
+  "100-egg-dark": "https://static.wikia.nocookie.net/allstartd/images/6/6c/100%25_Egg_-_Dark.png/revision/latest/scale-to-width-down/250?cb=20230113090518",
+  "90-egg-leaf": "https://static.wikia.nocookie.net/allstartd/images/8/86/90%25_Egg_-_Leaf.png/revision/latest/scale-to-width-down/250?cb=20230113090524",
+  "80-egg-neon": "https://static.wikia.nocookie.net/allstartd/images/6/6e/80%25_Egg_-_Neon.png/revision/latest/scale-to-width-down/250?cb=20230113090533",
+  "70-egg-cinder": "https://static.wikia.nocookie.net/allstartd/images/5/57/70%25_Egg_-_Cinder.png/revision/latest/scale-to-width-down/250?cb=20230113090538",
+  "60-egg-tone": "https://static.wikia.nocookie.net/allstartd/images/7/70/60%25_Egg_-_Tone.png/revision/latest/scale-to-width-down/250?cb=20230113090542",
+  "50-egg-metal": "https://static.wikia.nocookie.net/allstartd/images/e/ef/50%25_Egg_-_Metal.png/revision/latest/scale-to-width-down/250?cb=20230113090547",
+  "40-egg-mist": "https://static.wikia.nocookie.net/allstartd/images/6/69/40%25_Egg_-_Mist.png/revision/latest/scale-to-width-down/250?cb=20230113090604",
+  "30-egg-ice": "https://static.wikia.nocookie.net/allstartd/images/8/82/30%25_Egg_-_Ice.png/revision/latest/scale-to-width-down/250?cb=20230113090622",
+  "20-egg-shadow": "https://static.wikia.nocookie.net/allstartd/images/c/c3/20%25_Egg_-_Shadow.png/revision/latest/scale-to-width-down/250?cb=20230113090602",
+  "10-egg-water": "https://static.wikia.nocookie.net/allstartd/images/8/8f/10%25_Egg_-_Water.png/revision/latest/scale-to-width-down/250?cb=20230113090627",
 };

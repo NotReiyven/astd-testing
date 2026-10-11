@@ -23,6 +23,7 @@ import { useToastStore } from "../../store/useToastStore";
 import { useShowDelay } from "../../hooks/useShowDelay";
 import { EmptyState } from "./ui/EmptyState";
 import { AsyncButton } from "./ui/AsyncButton";
+import { STATUS_COLORS, useEffectiveStatus } from "../../hooks/usePresence";
 
 const SORT_OPTIONS = {
   newest: "Recently Posted",
@@ -36,13 +37,6 @@ const TYPE_FILTER_LABELS: Record<string, string> = {
   standard: "Trades",
   lf_offers: "LF Offers",
   inventory: "Showcases",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  online: "#23a559",
-  dnd: "#ef4444",
-  invisible: "#888888",
-  offline: "#888888",
 };
 
 function getTimeAgo(dateStr: string) {
@@ -270,6 +264,7 @@ const VanguardAdCard = memo(
     const openPopout = useProfileStore((s) => s.openPopout);
     const loginWithDiscord = useAuthStore((s) => s.loginWithDiscord);
     const addToast = useToastStore((s) => s.addToast);
+    const effectiveStatus = useEffectiveStatus(ad.user_id, ad.profiles?.status);
 
     useEffect(() => {
       if (isNewAd) {
@@ -434,7 +429,7 @@ const VanguardAdCard = memo(
 
     return (
       <div
-        className={`relative rounded-[8px] flex flex-col h-full bg-card border border-border transition-all duration-200 will-change-transform specular-card p-4 ${
+        className={`relative rounded-[8px] flex flex-col h-full bg-card border border-border transition-colors duration-200 will-change-transform specular-card p-4 ${
           isNewAd
             ? "border-primary ring-1 ring-primary"
             : "hover:border-muted-foreground shadow-sm"
@@ -459,9 +454,9 @@ const VanguardAdCard = memo(
               <div
                 className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-2 border-card z-10"
                 style={{
-                  backgroundColor:
-                    STATUS_COLORS[ad.profiles?.status || "offline"],
+                  backgroundColor: STATUS_COLORS[effectiveStatus],
                 }}
+                title={`Status: ${effectiveStatus.toUpperCase()}`}
               />
             </div>
             <div className="flex flex-col min-w-0 pt-0.5">

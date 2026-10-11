@@ -220,8 +220,12 @@ interface CacheEntry {
   timestamp: number;
 }
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 interface ProfileState {
   cache: Record<string, CacheEntry>;
+  notFoundCache: Record<string, number>;
   popoutUserId: string | null;
   popoutPosition: { x: number; y: number } | null;
   viewingProfileId: string | null;
@@ -236,6 +240,8 @@ interface ProfileState {
     userId: string,
     force?: boolean
   ) => Promise<UserProfileData | null>;
+  fetchProfiles: (userIds: string[]) => Promise<UserProfileData[]>;
+  seedProfile: (rawRow: any) => void;
   updateLocalProfile: (
     userId: string,
     updates: Partial<UserProfileData>
@@ -247,9 +253,11 @@ interface ProfileState {
 }
 
 const CACHE_TTL = 5 * 60 * 1000;
+const NOT_FOUND_TTL = 60 * 1000;
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
   cache: {},
+  notFoundCache: {},
   popoutUserId: null,
   popoutPosition: null,
   viewingProfileId: null,
@@ -270,7 +278,81 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   setViewingProfile: (userId, returnChannel = null) =>
     set({ viewingProfileId: userId, returnChannel }),
 
+  seedProfile: (rawRow) => {
+    if (!rawRow?.id || !UUID_REGEX.test(String(rawRow.id))) return;
+    const now = Date.now();
+    const unpacked = unpackProfileRow(rawRow);
+    set((state) => ({
+      cache: {
+        ...state.cache,
+        [unpacked.id]: { data: unpacked, timestamp: now },
+      },
+    }));
+  },
+
+  fetchProfiles: async (userIds) => {
+    const validIds = Array.from(
+      new Set(
+        userIds
+          .map((id) => String(id || "").trim())
+          .filter((id) => UUID_REGEX.test(id))
+      )
+    );
+    if (validIds.length === 0) return [];
+
+    const { cache, notFoundCache } = get();
+    const now = Date.now();
+
+    const missingIds = validIds.filter((id) => {
+      if (cache[id] && now - cache[id].timestamp < CACHE_TTL) return false;
+      if (notFoundCache[id] && now - notFoundCache[id] < NOT_FOUND_TTL)
+        return false;
+      return true;
+    });
+
+    if (missingIds.length > 0) {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("id", missingIds);
+
+      if (!error && Array.isArray(data)) {
+        const foundIds = new Set<string>();
+        const newEntries: Record<string, CacheEntry> = {};
+
+        for (const row of data) {
+          if (row?.id) {
+            const unpacked = unpackProfileRow(row);
+            foundIds.add(unpacked.id);
+            newEntries[unpacked.id] = { data: unpacked, timestamp: now };
+          }
+        }
+
+        const newNotFound: Record<string, number> = {};
+        for (const id of missingIds) {
+          if (!foundIds.has(id)) {
+            newNotFound[id] = now;
+          }
+        }
+
+        set((state) => ({
+          cache: { ...state.cache, ...newEntries },
+          notFoundCache: { ...state.notFoundCache, ...newNotFound },
+        }));
+      }
+    }
+
+    const latestCache = get().cache;
+    return validIds
+      .map((id) => latestCache[id]?.data)
+      .filter((p): p is UserProfileData => Boolean(p));
+  },
+
   fetchProfile: async (userId, force = false) => {
+    if (!userId || !UUID_REGEX.test(userId)) {
+      return null;
+    }
+
     const { cache } = get();
     const now = Date.now();
 
@@ -286,6 +368,9 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
     if (error || !data) {
       console.error(`Failed to fetch profile for ${userId}:`, error?.message);
+      set((state) => ({
+        notFoundCache: { ...state.notFoundCache, [userId]: now },
+      }));
       return null;
     }
 

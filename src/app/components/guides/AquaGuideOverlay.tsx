@@ -313,8 +313,10 @@ export function AquaGuideOverlay({
     onEndGuide();
   };
 
-  const renderDialogue = (text: string) => {
-    const parts = text.split(/(!!.*?!!|\^\^.*?\^\^|\*\*.*?\*\*|\*.*?\*)/g);
+  const renderDialogue = (text?: string) => {
+    const parts = (text || "").split(
+      /(!!.*?!!|\^\^.*?\^\^|\*\*.*?\*\*|\*.*?\*)/g
+    );
     return parts.map((part, idx) => {
       if (part.startsWith("!!") && part.endsWith("!!")) {
         return (

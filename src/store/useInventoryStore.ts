@@ -105,6 +105,9 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
         set({ viewedItems: data, isLoading: false });
       } else {
         set({ items: data, isLoading: false });
+        if (data.length > 0 && typeof window !== "undefined") {
+          window.dispatchEvent(new Event("academy-vault"));
+        }
       }
     } else {
       set({ isLoading: false });
@@ -128,7 +131,12 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
 
     if (!error && data) {
       if (isViewing) set({ viewedWishlist: data });
-      else set({ wishlistItems: data });
+      else {
+        set({ wishlistItems: data });
+        if (data.length > 0 && typeof window !== "undefined") {
+          window.dispatchEvent(new Event("academy-wishlist"));
+        }
+      }
     } else if (error) {
       console.error("[Inventory] Failed to fetch wishlist");
     }
@@ -149,6 +157,10 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     if (newQuantity <= 0) {
       if (existingItem) await get().removeUnit(userId, unitId);
       return;
+    }
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("academy-vault"));
     }
 
     try {
@@ -376,6 +388,9 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
 
     const previousItems = get().wishlistItems;
     const existing = previousItems.find((i) => i.unit_id === unitId);
+    if (!existing && typeof window !== "undefined") {
+      window.dispatchEvent(new Event("academy-wishlist"));
+    }
 
     try {
       if (!navigator.onLine) {

@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useStickyState } from "./useStickyState";
 import { useAuthStore } from "../store/useAuthStore";
+import { useTradeStore } from "../store/useTradeStore";
+import { useInventoryStore } from "../store/useInventoryStore";
+import { hasAcceptedCurrentLegalVersion } from "../data/legal";
 
 export type GuideType = "guest_tour" | "auth_tour" | "academy_grad" | null;
 
@@ -22,6 +25,13 @@ export function useGuideSystem({
   bootStage,
 }: UseGuideSystemProps) {
   const { profile } = useAuthStore();
+  const giveCount = useTradeStore((s) => s.giveItems.length);
+  const getCount = useTradeStore((s) => s.getItems.length);
+  const pinnedCount = useTradeStore((s) => s.pinnedIds.length);
+  const presetCount = useTradeStore((s) => s.presets.length);
+  const vaultCount = useInventoryStore((s) => s.items.length);
+  const wishlistCount = useInventoryStore((s) => s.wishlistItems.length);
+
   const hasTriggeredAuthTour = useRef(false);
 
   // Persist the active guide state so it survives page refreshes
@@ -43,6 +53,38 @@ export function useGuideSystem({
     (v): v is Record<string, boolean> => typeof v === "object" && v !== null
   );
 
+  // App-level one-way latch for Academy checklist tasks (also latches existing live state on first load)
+  useEffect(() => {
+    const liveHasGiveGet = giveCount > 0 || getCount > 0;
+    const liveHasPinned = pinnedCount > 0;
+    const liveHasPresets = presetCount > 0;
+    const liveHasLogin = Boolean(profile);
+    const liveHasVault = vaultCount > 0;
+    const liveHasWishlist = wishlistCount > 0;
+
+    setCompletedGuides((prev) => {
+      const updates: Record<string, boolean> = {};
+      if (liveHasGiveGet && !prev.hasGiveGet) updates.hasGiveGet = true;
+      if (liveHasPinned && !prev.hasPinned) updates.hasPinned = true;
+      if (liveHasPresets && !prev.hasPresets) updates.hasPresets = true;
+      if (liveHasLogin && !prev.hasLogin) updates.hasLogin = true;
+      if (liveHasVault && !prev.hasVault) updates.hasVault = true;
+      if (liveHasWishlist && !prev.hasWishlist) updates.hasWishlist = true;
+
+      if (Object.keys(updates).length === 0) return prev;
+      return { ...prev, ...updates };
+    });
+  }, [
+    giveCount,
+    getCount,
+    pinnedCount,
+    presetCount,
+    profile,
+    vaultCount,
+    wishlistCount,
+    setCompletedGuides,
+  ]);
+
   const hasTriggeredWelcome = useRef(false);
 
   // Initial Boot: Check if Welcome Wizard needs to open
@@ -51,8 +93,7 @@ export function useGuideSystem({
 
     const timer = setTimeout(() => {
       hasTriggeredWelcome.current = true;
-      const isAcknowledged =
-        localStorage.getItem("astd_welcome_acknowledged") === "true";
+      const isAcknowledged = hasAcceptedCurrentLegalVersion();
       if (!isAcknowledged) {
         window.dispatchEvent(new Event("open-welcome-modal"));
       }
@@ -66,8 +107,7 @@ export function useGuideSystem({
     if (bootStage !== "complete" || !profile || hasTriggeredAuthTour.current)
       return;
 
-    const isWelcomeOpen =
-      localStorage.getItem("astd_welcome_acknowledged") !== "true";
+    const isWelcomeOpen = !hasAcceptedCurrentLegalVersion();
     if (isWelcomeOpen) return;
 
     if (!completedGuides["auth_tour"]) {

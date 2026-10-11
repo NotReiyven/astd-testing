@@ -90,7 +90,10 @@ export const useTradeStore = create<TradeState>()(
           },
         })),
 
-      addCard: (col, card) =>
+      addCard: (col, card) => {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("academy-give-get"));
+        }
         set((state) => {
           const target = col === "give" ? state.giveItems : state.getItems;
           const existing = target.find((c) => c.id === card.id);
@@ -102,7 +105,8 @@ export const useTradeStore = create<TradeState>()(
           return col === "give"
             ? { giveItems: newTarget }
             : { getItems: newTarget };
-        }),
+        });
+      },
 
       changeQty: (col, id, qty) =>
         set((state) => {
@@ -158,16 +162,26 @@ export const useTradeStore = create<TradeState>()(
           getItems: [...state.giveItems],
         })),
 
-      overwrite: (giveCards, getCards) =>
+      overwrite: (giveCards, getCards) => {
+        if (
+          typeof window !== "undefined" &&
+          (giveCards.length > 0 || getCards.length > 0)
+        ) {
+          window.dispatchEvent(new Event("academy-give-get"));
+        }
         set({
           giveItems: giveCards,
           getItems: getCards,
-        }),
+        });
+      },
 
       togglePin: (col, id) =>
         set((state) => {
           const pinKey = `${col}-${id}`;
           const isPinned = state.pinnedIds.includes(pinKey);
+          if (!isPinned && typeof window !== "undefined") {
+            window.dispatchEvent(new Event("academy-pinned"));
+          }
           return {
             pinnedIds: isPinned
               ? state.pinnedIds.filter((p) => p !== pinKey)
@@ -175,7 +189,10 @@ export const useTradeStore = create<TradeState>()(
           };
         }),
 
-      savePreset: (name) =>
+      savePreset: (name) => {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("academy-saved-preset"));
+        }
         set((state) => {
           const newPreset: TradePreset = {
             id: Date.now().toString(),
@@ -185,7 +202,8 @@ export const useTradeStore = create<TradeState>()(
           };
           // Insert at the beginning so newest presets are at the top
           return { presets: [newPreset, ...state.presets] };
-        }),
+        });
+      },
 
       renamePreset: (id, name) =>
         set((state) => ({

@@ -20,13 +20,8 @@ import {
 import { safeOpenExternal } from "../../../store/useExternalLinkStore";
 import { useToastStore } from "../../../store/useToastStore";
 import { ErrorState } from "../ui/ErrorState";
-
-const STATUS_COLORS = {
-  online: "#23a559",
-  dnd: "#ef4444",
-  invisible: "#888888",
-  offline: "#888888",
-};
+import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
+import { STATUS_COLORS, useEffectiveStatus } from "../../../hooks/usePresence";
 
 const ROLE_CONFIG = {
   master: { color: "#ed4245", label: "Master" },
@@ -77,15 +72,18 @@ export function MiniProfilePopout() {
   const setViewingProfile = useProfileStore((s) => s.setViewingProfile);
   const fetchProfile = useProfileStore((s) => s.fetchProfile);
   const addToast = useToastStore((s) => s.addToast);
+  const effectiveStatus = useEffectiveStatus(popoutUserId, profile?.status);
 
   const [copied, setCopied] = useState(false);
   const [fetchError, setFetchError] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
   const [bounds, setBounds] = useState({ top: 0, left: 0 });
   const popoutRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    setAvatarError(false);
     if (!popoutUserId) {
       setFetchError(false);
       setIsRetrying(false);
@@ -326,17 +324,34 @@ export function MiniProfilePopout() {
                 title="View Full Profile"
               >
                 <div className="relative">
-                  <img
-                    src={profile.avatar_url || getUnitAssetUrl("firezio") || ""}
-                    alt={profile.username}
-                    className="w-16 h-16 rounded-[8px] border-4 border-popover object-cover bg-muted shadow-md"
-                  />
+                  {profile.avatar_url && !avatarError ? (
+                    <img
+                      src={profile.avatar_url}
+                      alt={profile.username}
+                      width={64}
+                      height={64}
+                      onError={() => setAvatarError(true)}
+                      className="w-16 h-16 rounded-[8px] border-4 border-popover object-cover bg-muted shadow-md"
+                    />
+                  ) : (
+                    <div
+                      aria-label={profile.username}
+                      className="w-16 h-16 rounded-[8px] border-4 border-popover flex items-center justify-center text-[18px] font-bold text-white shadow-md select-none"
+                      style={{
+                        backgroundColor:
+                          profile.accent_color ||
+                          getAvatarStyle(profile.username || "Trader").background,
+                      }}
+                    >
+                      {getInitials(profile.username || "TR")}
+                    </div>
+                  )}
                   <div
                     className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-[3px] border-popover z-10"
                     style={{
-                      backgroundColor:
-                        STATUS_COLORS[profile.status] || STATUS_COLORS.offline,
+                      backgroundColor: STATUS_COLORS[effectiveStatus],
                     }}
+                    title={`Status: ${effectiveStatus.toUpperCase()}`}
                   />
                 </div>
               </div>

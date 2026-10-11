@@ -13,11 +13,17 @@ import {
 import { TradingAd } from "../store/useTradingAdsStore";
 import { useUnits } from "../context/UnitContext";
 import { triggerHaptic } from "../data/helpers";
+import {
+  EffectiveStatus,
+  getEffectiveStatus,
+  usePresenceStore,
+} from "./usePresence";
 
 export interface UserProfile
   extends AuthUserProfile,
     Omit<Partial<UserProfileData>, keyof AuthUserProfile> {
   assigned_roles: string[];
+  effectiveStatus?: EffectiveStatus;
 }
 
 export interface SystemMetrics {
@@ -462,10 +468,21 @@ export function useAdminIntel() {
     [showBannedOnly, canModerate]
   );
 
+  const presentUserIds = usePresenceStore((s) => s.presentUserIds);
+
   const filteredUsers = useMemo(() => {
-    if (roleFilter === "all") return users;
+    const withEffectiveStatus = users.map((u) => ({
+      ...u,
+      effectiveStatus: getEffectiveStatus({
+        userId: u.id,
+        preferredStatus: u.status,
+        presentUserIds,
+      }),
+    }));
+
+    if (roleFilter === "all") return withEffectiveStatus;
     if (roleFilter === "staff") {
-      return users.filter(
+      return withEffectiveStatus.filter(
         (u) =>
           u.role === "master" ||
           u.role === "admin" ||
@@ -473,10 +490,10 @@ export function useAdminIntel() {
           u.assigned_roles?.some((r) => ["master", "admin", "mod"].includes(r))
       );
     }
-    return users.filter(
+    return withEffectiveStatus.filter(
       (u) => u.role === roleFilter || u.assigned_roles?.includes(roleFilter)
     );
-  }, [users, roleFilter]);
+  }, [users, roleFilter, presentUserIds]);
 
   useEffect(() => {
     loadMetrics();

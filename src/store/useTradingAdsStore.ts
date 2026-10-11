@@ -4,6 +4,7 @@ import { TradeCard } from "../types";
 import DOMPurify from "dompurify";
 import { get as getIdb, set as setIdb } from "idb-keyval";
 import { useToastStore } from "./useToastStore";
+import { useProfileStore } from "./useProfileStore";
 
 export interface TradingAd {
   id: string;
@@ -182,12 +183,27 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "profiles" },
         (payload) => {
+          if (payload.new?.id) {
+            useProfileStore
+              .getState()
+              .updateLocalProfile(payload.new.id, {
+                status: payload.new.status,
+              });
+          }
           set((state) => ({
             ads: state.ads.map((ad) =>
-              ad.user_id === payload.new.id
+              ad.user_id === payload.new.id && ad.profiles
                 ? {
                     ...ad,
-                    profiles: { ...ad.profiles!, status: payload.new.status },
+                    profiles: { ...ad.profiles, status: payload.new.status },
+                  }
+                : ad
+            ),
+            userAdHistory: state.userAdHistory.map((ad) =>
+              ad.user_id === payload.new.id && ad.profiles
+                ? {
+                    ...ad,
+                    profiles: { ...ad.profiles, status: payload.new.status },
                   }
                 : ad
             ),

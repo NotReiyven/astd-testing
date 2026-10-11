@@ -1,3 +1,5 @@
+import { toUnitSlug } from "../../src/data/unitSlug.js";
+
 export interface ColorObj { red?: number; green?: number; blue?: number; }
 export interface CellData { 
   formattedValue?: string; 
@@ -208,7 +210,7 @@ export function parseSpreadsheet(data: SpreadsheetData) {
         name = `${name} (Pure)`;
       }
 
-      let baseId = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      let baseId = toUnitSlug(name);
       if (baseId === "ice-dragon" && subtitle.toLowerCase().includes("eis shenron")) {
         baseId = "eis";
       }

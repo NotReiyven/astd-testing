@@ -6,6 +6,15 @@ import {
   BootChannel,
 } from "../../store/useLayoutStore";
 import { triggerHaptic } from "../../data/helpers";
+import {
+  LEGAL_VERSION,
+  PRIVACY_POLICY,
+  TERMS_OF_SERVICE,
+  WELCOME_ACK_STORAGE_KEY,
+  WELCOME_VERSION_STORAGE_KEY,
+  hasAcceptedCurrentLegalVersion,
+} from "../../data/legal";
+import { LegalDocument } from "./shared/LegalDocument";
 
 const AQUA_AVATAR_URL =
   "https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png";
@@ -187,9 +196,7 @@ export function WelcomeModal() {
       setStep("legal");
       setLegalView(null);
       setAquaReply("default");
-      setHasConsented(
-        localStorage.getItem("astd_welcome_acknowledged") === "true"
-      );
+      setHasConsented(hasAcceptedCurrentLegalVersion());
       document.body.style.overflow = "hidden";
     };
 
@@ -203,7 +210,8 @@ export function WelcomeModal() {
 
   const handleFinishOnboarding = (startTutorial: boolean) => {
     triggerHaptic("success");
-    localStorage.setItem("astd_welcome_acknowledged", "true");
+    localStorage.setItem(WELCOME_ACK_STORAGE_KEY, "true");
+    localStorage.setItem(WELCOME_VERSION_STORAGE_KEY, LEGAL_VERSION);
     localStorage.setItem("astd_welcome_completed", "true");
     localStorage.setItem("astd_cookie_consent", "granted");
 
@@ -247,6 +255,7 @@ export function WelcomeModal() {
       className="fixed inset-0 z-[100000] flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/85 select-none font-sans overflow-y-auto"
       role="dialog"
       aria-modal="true"
+      aria-label="Welcome to ASTD Value List"
     >
       <div className="bg-card w-full max-w-[560px] rounded-[10px] flex flex-col border border-border shadow-2xl overflow-hidden my-auto">
         {/* Header Bar */}
@@ -254,8 +263,8 @@ export function WelcomeModal() {
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-primary" />
             <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-              {legalView === "tos" && "Terms of Service"}
-              {legalView === "pp" && "Privacy Policy"}
+              {legalView === "tos" && TERMS_OF_SERVICE.title}
+              {legalView === "pp" && PRIVACY_POLICY.title}
               {!legalView && step === "legal" && "Step 1 of 3: Before You Trade"}
               {!legalView &&
                 step === "personalization" &&
@@ -268,7 +277,7 @@ export function WelcomeModal() {
 
           <div className="flex items-center gap-3">
             {!legalView && (
-              <span className="text-[11px] font-bold text-muted-foreground">
+              <span className="text-[11px] font-bold text-muted-foreground tabular-nums">
                 {step === "legal"
                   ? "1/3"
                   : step === "personalization"
@@ -281,6 +290,7 @@ export function WelcomeModal() {
               onClick={() => handleFinishOnboarding(false)}
               className="p-1 text-muted-foreground hover:text-foreground rounded-[4px] hover:bg-muted transition-colors cursor-pointer"
               title="Close setup"
+              aria-label="Close setup"
             >
               <IconClose className="w-4 h-4" />
             </button>
@@ -290,59 +300,13 @@ export function WelcomeModal() {
         {/* INLINE LEGAL VIEWER */}
         {legalView && (
           <div className="flex flex-col h-[60vh] max-h-[480px]">
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 bg-card text-[13px] text-muted-foreground leading-relaxed flex flex-col gap-4">
-              {legalView === "tos" ? (
-                <>
-                  <h3 className="text-[18px] font-black text-foreground mb-1">
-                    Terms of Service
-                  </h3>
-                  <p>
-                    <strong className="text-foreground">
-                      1. Fan-Made Site:
-                    </strong>{" "}
-                    ASTD Value List is a community project. We are not
-                    affiliated with Roblox Corporation or the developers of All
-                    Star Tower Defense.
-                  </p>
-                  <p>
-                    <strong className="text-foreground">
-                      2. Market Estimates:
-                    </strong>{" "}
-                    All unit values, demand scores, and status tags are
-                    community estimates based on observed trades. You are
-                    responsible for your own trades in-game.
-                  </p>
-                  <p>
-                    <strong className="text-foreground">3. Fair Use:</strong>{" "}
-                    Do not use automated bots or scrapers to spam our endpoints.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <h3 className="text-[18px] font-black text-foreground mb-1">
-                    Privacy Policy
-                  </h3>
-                  <p>
-                    <strong className="text-foreground">
-                      1. No Passwords:
-                    </strong>{" "}
-                    You do not need an account to use the value list or
-                    calculator, and we never ask for your Roblox password.
-                  </p>
-                  <p>
-                    <strong className="text-foreground">
-                      2. Local Preferences:
-                    </strong>{" "}
-                    Your theme, compact mode, calculator settings, and custom
-                    slang are saved directly in your browser.
-                  </p>
-                  <p>
-                    <strong className="text-foreground">3. Analytics:</strong>{" "}
-                    We use basic page analytics to see which tools are used most
-                    and keep the site running smoothly.
-                  </p>
-                </>
-              )}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 bg-card">
+              <LegalDocument
+                document={
+                  legalView === "tos" ? TERMS_OF_SERVICE : PRIVACY_POLICY
+                }
+                variant="compact"
+              />
             </div>
             <div className="p-4 border-t border-border bg-popover shrink-0">
               <button
@@ -373,44 +337,39 @@ export function WelcomeModal() {
             </div>
 
             <div className="bg-popover rounded-[8px] p-4 border border-border flex flex-col gap-3 text-[12.5px] text-muted-foreground leading-relaxed">
-              <div>
-                <span className="text-foreground font-bold block">
-                  1. Community-Run Numbers
-                </span>
-                We are not the official game devs. Prices come from real trades
-                tracked by active traders in the community.
-              </div>
-              <div className="border-t border-border pt-2.5">
-                <span className="text-foreground font-bold block">
-                  2. Check Demand, Not Just Value
-                </span>
-                Values shift whenever a new update drops. A unit with high paper
-                value but terrible demand or a Dropping tag is hard to trade
-                away.
-              </div>
-              <div className="border-t border-border pt-2.5">
-                <span className="text-foreground font-bold block">
-                  3. Your Trades Are Your Call
-                </span>
-                Our tools help you spot bad deals, but once you click Accept in
-                Roblox, that trade is final. Read our{" "}
-                <button
-                  type="button"
-                  onClick={() => setLegalView("tos")}
-                  className="text-primary hover:underline font-bold cursor-pointer"
+              {TERMS_OF_SERVICE.summaryPoints.map((point, index) => (
+                <div
+                  key={point.title}
+                  className={index > 0 ? "border-t border-border pt-2.5" : ""}
                 >
-                  Terms of Service
-                </button>{" "}
-                and{" "}
-                <button
-                  type="button"
-                  onClick={() => setLegalView("pp")}
-                  className="text-primary hover:underline font-bold cursor-pointer"
-                >
-                  Privacy Policy
-                </button>
-                .
-              </div>
+                  <span className="text-foreground font-bold block">
+                    {point.title}
+                  </span>
+                  {point.description}
+                  {index === TERMS_OF_SERVICE.summaryPoints.length - 1 && (
+                    <>
+                      {" "}
+                      Read our{" "}
+                      <button
+                        type="button"
+                        onClick={() => setLegalView("tos")}
+                        className="text-primary hover:underline font-bold cursor-pointer"
+                      >
+                        {TERMS_OF_SERVICE.title}
+                      </button>{" "}
+                      and{" "}
+                      <button
+                        type="button"
+                        onClick={() => setLegalView("pp")}
+                        className="text-primary hover:underline font-bold cursor-pointer"
+                      >
+                        {PRIVACY_POLICY.title}
+                      </button>{" "}
+                      (v{LEGAL_VERSION}).
+                    </>
+                  )}
+                </div>
+              ))}
             </div>
 
             {/* Consent Checkbox */}
@@ -436,7 +395,7 @@ export function WelcomeModal() {
               </div>
               <span className="text-[12.5px] font-bold text-foreground leading-snug">
                 I understand that values are community estimates and I agree to
-                the Terms of Service.
+                the {TERMS_OF_SERVICE.title} and {PRIVACY_POLICY.title}.
               </span>
             </label>
 
@@ -448,7 +407,7 @@ export function WelcomeModal() {
                 setStep("personalization");
               }}
               disabled={!hasConsented}
-              className="w-full py-3 rounded-[6px] bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none text-[13px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+              className="w-full py-3 rounded-[6px] bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none text-[13px] font-black uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm"
             >
               Continue to Setup <IconArrowRight className="w-4 h-4" />
             </button>
@@ -492,7 +451,7 @@ export function WelcomeModal() {
                     backgroundColor: activeThemeInfo.previewCard,
                     borderColor: activeThemeInfo.previewBorder,
                   }}
-                  className={`rounded-[6px] border flex items-center justify-between transition-all ${
+                  className={`rounded-[6px] border flex items-center justify-between transition-colors ${
                     globalCompactMode ? "px-3 py-2" : "px-4 py-3"
                   }`}
                 >
@@ -560,7 +519,7 @@ export function WelcomeModal() {
                       triggerHaptic("light");
                       setTheme(t.id);
                     }}
-                    className={`p-2.5 rounded-[6px] border text-left flex flex-col transition-all cursor-pointer ${
+                    className={`p-2.5 rounded-[6px] border text-left flex flex-col transition-colors cursor-pointer ${
                       theme === t.id
                         ? "bg-popover border-primary ring-1 ring-primary/40 shadow-sm"
                         : "bg-muted border-border hover:bg-popover"
@@ -605,7 +564,7 @@ export function WelcomeModal() {
                       triggerHaptic("light");
                       setBootChannel(b.id);
                     }}
-                    className={`p-2.5 rounded-[6px] border text-left flex flex-col transition-all cursor-pointer ${
+                    className={`p-2.5 rounded-[6px] border text-left flex flex-col transition-colors cursor-pointer ${
                       bootChannel === b.id
                         ? "bg-popover border-primary ring-1 ring-primary/40 shadow-sm"
                         : "bg-muted border-border hover:bg-popover"
@@ -671,7 +630,7 @@ export function WelcomeModal() {
                   triggerHaptic("light");
                   setStep("crossroads");
                 }}
-                className="flex-1 py-3 rounded-[6px] bg-primary text-primary-foreground hover:bg-primary/90 text-[13px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                className="flex-1 py-3 rounded-[6px] bg-primary text-primary-foreground hover:bg-primary/90 text-[13px] font-black uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm"
               >
                 Confirm Setup <IconArrowRight className="w-4 h-4" />
               </button>
@@ -765,7 +724,7 @@ export function WelcomeModal() {
               <button
                 type="button"
                 onClick={() => handleFinishOnboarding(true)}
-                className="w-full py-3.5 px-4 rounded-[6px] bg-primary text-primary-foreground hover:bg-primary/90 text-[13px] font-black uppercase tracking-wider transition-all flex items-center justify-between cursor-pointer shadow-sm group"
+                className="w-full py-3.5 px-4 rounded-[6px] bg-primary text-primary-foreground hover:bg-primary/90 text-[13px] font-black uppercase tracking-wider transition-colors flex items-center justify-between cursor-pointer shadow-sm group"
               >
                 <span>Show Me Around (Quick Tour)</span>
                 <IconArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -775,14 +734,14 @@ export function WelcomeModal() {
                 <button
                   type="button"
                   onClick={() => setStep("personalization")}
-                  className="px-4 py-3 rounded-[6px] bg-muted hover:bg-popover text-muted-foreground hover:text-foreground border border-border text-[12px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                  className="px-4 py-3 rounded-[6px] bg-muted hover:bg-popover text-muted-foreground hover:text-foreground border border-border text-[12px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
                 >
                   Back
                 </button>
                 <button
                   type="button"
                   onClick={() => handleFinishOnboarding(false)}
-                  className="flex-1 py-3 px-4 rounded-[6px] bg-muted hover:bg-popover text-muted-foreground hover:text-foreground border border-border text-[12px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="flex-1 py-3 px-4 rounded-[6px] bg-muted hover:bg-popover text-muted-foreground hover:text-foreground border border-border text-[12px] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                   I Know What I&apos;m Doing (Skip to App)
                 </button>

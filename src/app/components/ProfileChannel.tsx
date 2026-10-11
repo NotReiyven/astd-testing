@@ -38,6 +38,11 @@ import { StatusIcon } from "./shared/Formatters";
 import { TradeCard, MasterUnit } from "../../types";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
 import { UnitAvatar } from "./shared/UnitAvatar";
+import {
+  STATUS_COLORS,
+  useEffectiveStatus,
+  useStatusPreference,
+} from "../../hooks/usePresence";
 
 /* -------------------------------------------------------------------------- */
 /* Custom Inline SVG Icons (Zero Lucide Dependencies)                         */
@@ -836,6 +841,10 @@ export function ProfileChannel() {
   );
 
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
+  const effectiveStatus = useEffectiveStatus(targetId, profileData?.status, {
+    includeInvisibleForSelf: isOwner,
+  });
+  const ownerStatusPreference = useStatusPreference();
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"board" | "wishlist" | "settings">(
     "board"
@@ -1500,16 +1509,8 @@ export function ProfileChannel() {
           )
         );
 
-  const liveStatus = isOwner
-    ? currentUser?.status || profileData.status || "online"
-    : profileData.status || "offline";
-
-  const statusDotColor =
-    liveStatus === "online"
-      ? "#23a559"
-      : liveStatus === "dnd"
-      ? "#ef4444"
-      : "#888888";
+  const liveStatus = effectiveStatus;
+  const statusDotColor = STATUS_COLORS[liveStatus];
 
   const isAdHistoryVisibleToVisitor =
     isOwner || (profileData.ad_history_public ?? true);
@@ -1633,7 +1634,7 @@ export function ProfileChannel() {
                       Presence:
                     </span>
                     {PRESENCE_OPTIONS.map((p) => {
-                      const active = liveStatus === p.id;
+                      const active = ownerStatusPreference === p.id;
                       return (
                         <button
                           key={p.id}

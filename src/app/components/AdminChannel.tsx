@@ -1424,12 +1424,13 @@ export function AdminChannel({
                             className="w-2 h-2 rounded-full absolute -bottom-0.5 -right-0.5 border border-card"
                             style={{
                               backgroundColor:
-                                u.status === "online"
+                                u.effectiveStatus === "online"
                                   ? "#23a559"
-                                  : u.status === "dnd"
+                                  : u.effectiveStatus === "dnd"
                                   ? "#ef4444"
                                   : "#71717a",
                             }}
+                            title={`Status: ${(u.effectiveStatus || "offline").toUpperCase()}`}
                           />
                         </div>
                         <div className="flex flex-col min-w-0">

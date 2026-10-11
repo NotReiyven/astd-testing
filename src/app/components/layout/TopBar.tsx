@@ -2,6 +2,11 @@ import { useState, useRef, useEffect } from "react";
 import { PanelLeft, Hash, Search, X, LogIn, LogOut, User, Check, Calculator } from "lucide-react";
 import { GiAbacus, GiMagicPortal, GiSparkles, GiRingingBell, GiChatBubble } from "react-icons/gi";
 import { LiveAvatars } from "./LiveAvatars";
+import {
+  STATUS_COLORS,
+  useEffectiveStatus,
+  useStatusPreference,
+} from "../../../hooks/usePresence";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useLayoutStore } from "../../../store/useLayoutStore";
 import { Link } from "react-router-dom";
@@ -28,13 +33,6 @@ interface TopBarProps {
   activeItemsCount: number;
   isDictionaryActive: boolean;
 }
-
-const STATUS_COLORS = {
-  online: "#23a559",
-  dnd: "#ef4444",
-  invisible: "#888888",
-  offline: "#888888",
-};
 
 export function TopBar({
   calcHeaderZ,
@@ -69,6 +67,10 @@ export function TopBar({
   const logout = useAuthStore((s) => s.logout);
   const updateStatus = useAuthStore((s) => s.updateStatus);
   const isAuthLoading = useAuthStore((s) => s.isLoading);
+  const statusPreference = useStatusPreference();
+  const selfEffectiveStatus = useEffectiveStatus(profile?.id, profile?.status, {
+    includeInvisibleForSelf: true,
+  });
 
   const notifications = useNotificationStore((s) => s.notifications);
   const unreadCount = useNotificationStore((s) => s.unreadCount);
@@ -404,7 +406,13 @@ export function TopBar({
                       alt="Avatar"
                       className="w-7 h-7 rounded-[2px] object-cover bg-background"
                     />
-                    
+                    <span
+                      aria-hidden="true"
+                      className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-popover"
+                      style={{
+                        backgroundColor: STATUS_COLORS[selfEffectiveStatus],
+                      }}
+                    />
                   </div>
                 </button>
 
@@ -425,12 +433,15 @@ export function TopBar({
                       className="flex items-center justify-between w-full px-2 py-2 rounded-[4px] hover:bg-muted transition-colors group cursor-pointer"
                     >
                       <div className="flex items-center gap-2.5">
-                        
+                        <span
+                          aria-hidden="true"
+                          className="w-2 h-2 rounded-full bg-[#23a559]"
+                        />
                         <span className="text-[13px] font-semibold text-foreground">
                           Online
                         </span>
                       </div>
-                      {profile.status === "online" && (
+                      {statusPreference === "online" && (
                         <Check className="w-4 h-4 text-foreground" />
                       )}
                     </button>
@@ -444,12 +455,15 @@ export function TopBar({
                       className="flex items-center justify-between w-full px-2 py-2 rounded-[4px] hover:bg-muted transition-colors group cursor-pointer"
                     >
                       <div className="flex items-center gap-2.5">
-                        
+                        <span
+                          aria-hidden="true"
+                          className="w-2 h-2 rounded-full bg-[#ef4444]"
+                        />
                         <span className="text-[13px] font-semibold text-foreground">
                           Do Not Disturb
                         </span>
                       </div>
-                      {profile.status === "dnd" && (
+                      {statusPreference === "dnd" && (
                         <Check className="w-4 h-4 text-foreground" />
                       )}
                     </button>
@@ -463,12 +477,15 @@ export function TopBar({
                       className="flex items-center justify-between w-full px-2 py-2 rounded-[4px] hover:bg-muted transition-colors group cursor-pointer"
                     >
                       <div className="flex items-center gap-2.5">
-                        
+                        <span
+                          aria-hidden="true"
+                          className="w-2 h-2 rounded-full bg-[#888888]"
+                        />
                         <span className="text-[13px] font-semibold text-foreground">
                           Invisible
                         </span>
                       </div>
-                      {profile.status === "invisible" && (
+                      {statusPreference === "invisible" && (
                         <Check className="w-4 h-4 text-foreground" />
                       )}
                     </button>

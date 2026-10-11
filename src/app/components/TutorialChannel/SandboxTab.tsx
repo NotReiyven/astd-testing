@@ -94,18 +94,22 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
   const [showCertificate, setShowCertificate] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("fundamentals");
 
-  // Derived Task States
-  const hasGiveGet = giveItems.length > 0 || getItems.length > 0;
-  const hasPinned = pinnedIds.length > 0;
-  const hasFiltered = !!completedGuides.hasFiltered;
-  const hasUsedParser = !!completedGuides.hasUsedParser;
-  const hasPresets = presets.length > 0;
-  const hasPassedSim = !!completedGuides.hasPassedSim;
+  // Derived Task States (one-way latch || live state)
+  const hasGiveGet =
+    Boolean(completedGuides.hasGiveGet) ||
+    giveItems.length > 0 ||
+    getItems.length > 0;
+  const hasPinned = Boolean(completedGuides.hasPinned) || pinnedIds.length > 0;
+  const hasFiltered = Boolean(completedGuides.hasFiltered);
+  const hasUsedParser = Boolean(completedGuides.hasUsedParser);
+  const hasPresets = Boolean(completedGuides.hasPresets) || presets.length > 0;
+  const hasPassedSim = Boolean(completedGuides.hasPassedSim);
 
-  const hasLogin = !!profile;
-  const hasVault = items.length > 0;
-  const hasWishlist = wishlistItems.length > 0;
-  const hasPostedAd = !!completedGuides.hasPostedAd;
+  const hasLogin = Boolean(completedGuides.hasLogin) || Boolean(profile);
+  const hasVault = Boolean(completedGuides.hasVault) || items.length > 0;
+  const hasWishlist =
+    Boolean(completedGuides.hasWishlist) || wishlistItems.length > 0;
+  const hasPostedAd = Boolean(completedGuides.hasPostedAd);
 
   const handleNavigate = (channel: string) => {
     triggerHaptic("light");
@@ -433,14 +437,14 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
           <div className="flex flex-col gap-2 w-full md:w-64 shrink-0">
             <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
               <span>Overall Progress</span>
-              <span className="font-mono text-foreground">
+              <span className="font-mono text-foreground tabular-nums">
                 {completedTasks}/{totalTasks}
               </span>
             </div>
             <div className="w-full h-2.5 bg-card border border-border rounded-full overflow-hidden shadow-inner">
               <div
-                className="h-full bg-primary transition-all duration-700 ease-out"
-                style={{ width: `${progressPct}%` }}
+                className="h-full w-full bg-primary origin-left transition-transform duration-700 ease-out"
+                style={{ transform: `scaleX(${progressPct / 100})` }}
               />
             </div>
           </div>
@@ -505,7 +509,7 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
             {phase1Tasks.map((task, i) => (
               <div
                 key={task.id}
-                className={`group p-4 md:p-5 flex flex-col sm:flex-row sm:items-center gap-4 transition-all duration-300 hover:bg-muted/30 ${
+                className={`group p-4 md:p-5 flex flex-col sm:flex-row sm:items-center gap-4 transition-colors duration-300 hover:bg-muted/30 ${
                   i !== phase1Tasks.length - 1 ? "border-b border-border" : ""
                 } ${task.isDone ? "bg-muted/30 opacity-75" : ""}`}
               >
@@ -555,13 +559,13 @@ export function SandboxTab({ completedGuides }: SandboxTabProps) {
           </div>
           <div
             className={`border border-border rounded-[8px] bg-card overflow-hidden shadow-sm flex flex-col transition-opacity ${
-              !profile ? "opacity-50 pointer-events-none" : ""
+              !profile && !hasLogin ? "opacity-50 pointer-events-none" : ""
             }`}
           >
             {phase2Tasks.map((task, i) => (
               <div
                 key={task.id}
-                className={`group p-4 md:p-5 flex flex-col sm:flex-row sm:items-center gap-4 transition-all duration-300 hover:bg-muted/30 ${
+                className={`group p-4 md:p-5 flex flex-col sm:flex-row sm:items-center gap-4 transition-colors duration-300 hover:bg-muted/30 ${
                   i !== phase2Tasks.length - 1 ? "border-b border-border" : ""
                 } ${task.isDone ? "bg-muted/30 opacity-75" : ""}`}
               >
