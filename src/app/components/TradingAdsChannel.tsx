@@ -19,7 +19,6 @@ import { useNotificationStore } from "../../store/useNotificationStore";
 import { AdInteractionModal } from "./AdInteractionModal";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
 import { ResponsiveToolbar } from "./shared/ResponsiveToolbar";
-import { HoldToConfirmButton } from "./shared/Formatters";
 import { useToastStore } from "../../store/useToastStore";
 import { useShowDelay } from "../../hooks/useShowDelay";
 import { EmptyState } from "./ui/EmptyState";
@@ -235,7 +234,7 @@ const VanguardAdCard = memo(
     ad,
     currentUserId,
     currentUserRole,
-    onDelete,
+    onRequestDelete,
     ALL_UNITS,
     onInspectUnit,
     onSendToCalculator,
@@ -243,7 +242,7 @@ const VanguardAdCard = memo(
     ad: TradingAd;
     currentUserId?: string;
     currentUserRole?: string;
-    onDelete: (id: string) => void;
+    onRequestDelete: (ad: TradingAd) => void;
     ALL_UNITS: MasterUnit[];
     onInspectUnit: (unitId: string) => void;
     onSendToCalculator: (give: TradeCard[], get: TradeCard[]) => void;
@@ -642,16 +641,18 @@ const VanguardAdCard = memo(
             </button>
 
             {canDelete && (
-              <HoldToConfirmButton
-                onConfirm={() => {
-                  triggerHaptic("heavy");
-                  onDelete(ad.id);
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic("light");
+                  onRequestDelete(ad);
                 }}
-                title="Hold to delete (permanently removes listing, votes & comments)"
+                aria-label="Delete listing"
+                title="Delete listing"
                 className="w-[var(--ui-height-btn)] h-[var(--ui-height-btn)] border border-border text-muted-foreground hover:text-destructive-foreground hover:border-destructive bg-muted hover:bg-destructive rounded-[4px] transition-colors focus-visible:outline-none flex items-center justify-center shrink-0 cursor-pointer"
               >
                 <Trash2 className="w-4 h-4" />
-              </HoldToConfirmButton>
+              </button>
             )}
           </div>
         </div>
@@ -751,6 +752,12 @@ export function TradingAdsChannel() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortMode, setSortMode] = useState("newest");
 
+  const [adPendingDelete, setAdPendingDelete] = useState<TradingAd | null>(null);
+  const [isDeletingAd, setIsDeletingAd] = useState(false);
+  const deleteDialogRef = useRef<HTMLDivElement>(null);
+  const deleteCancelBtnRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
   const showAdsSkeleton = useShowDelay(isLoading);
 
   useEffect(() => {
@@ -758,6 +765,50 @@ export function TradingAdsChannel() {
     const unsubscribe = subscribeToAds();
     return () => unsubscribe();
   }, [fetchAds, subscribeToAds]);
+
+  useEffect(() => {
+    if (!adPendingDelete) return;
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    const focusTimer = setTimeout(() => {
+      deleteCancelBtnRef.current?.focus();
+    }, 20);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isDeletingAd) {
+        e.preventDefault();
+        setAdPendingDelete(null);
+        return;
+      }
+      if (e.key === "Tab" && deleteDialogRef.current) {
+        const focusables =
+          deleteDialogRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          );
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      clearTimeout(focusTimer);
+      window.removeEventListener("keydown", handleKeyDown);
+      if (
+        previousFocusRef.current &&
+        typeof previousFocusRef.current.focus === "function"
+      ) {
+        previousFocusRef.current.focus();
+      }
+    };
+  }, [adPendingDelete, isDeletingAd]);
 
   const filteredAndSortedAds = useMemo(() => {
     const list = ads.filter((ad) => {
@@ -920,21 +971,19 @@ export function TradingAdsChannel() {
     );
   };
 
-  const handleDeleteAd = async (id: string) => {
+  const handleConfirmDeleteAd = async () => {
+    if (!adPendingDelete || isDeletingAd) return;
+    setIsDeletingAd(true);
+    triggerHaptic("heavy");
+    const targetAd = adPendingDelete;
     try {
-      const ok = await deleteAd(id);
+      const ok = await deleteAd(targetAd.id);
       if (ok) {
         addToast("Deleted trade listing from the Live Trading Board.", "info");
+        setAdPendingDelete(null);
       }
-    } catch {
-      addToast("Could not delete listing—try again.", "error", {
-        action: {
-          label: "Retry",
-          onClick: () => {
-            void handleDeleteAd(id);
-          },
-        },
-      });
+    } finally {
+      setIsDeletingAd(false);
     }
   };
 
@@ -1092,7 +1141,7 @@ export function TradingAdsChannel() {
                   ad={ad}
                   currentUserId={profile?.id}
                   currentUserRole={profile?.role}
-                  onDelete={handleDeleteAd}
+                  onRequestDelete={setAdPendingDelete}
                   ALL_UNITS={ALL_UNITS}
                   onInspectUnit={(unitId) => openHistoryModal(unitId)}
                   onSendToCalculator={handleSendToCalculator}
@@ -1102,6 +1151,77 @@ export function TradingAdsChannel() {
           )}
         </div>
       </div>
+
+      {/* Delete Ad Confirmation Modal */}
+      {adPendingDelete && (
+        <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/80"
+            onClick={() => {
+              if (!isDeletingAd) setAdPendingDelete(null);
+            }}
+          />
+          <div
+            ref={deleteDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm Delete Listing"
+            className="relative z-10 w-full max-w-md bg-popover border border-border rounded-[8px] shadow-2xl overflow-hidden flex flex-col"
+          >
+            <div className="px-5 py-4 border-b border-border bg-card flex items-center gap-2.5">
+              <Trash2 className="w-4 h-4 text-destructive shrink-0" />
+              <h3 className="text-[15px] font-bold text-foreground tracking-tight">
+                Delete Trade Listing?
+              </h3>
+            </div>
+            <div className="p-5 flex flex-col gap-3">
+              <p className="text-[13px] text-muted-foreground leading-relaxed">
+                This will permanently remove{" "}
+                <strong className="text-foreground">
+                  {adPendingDelete.user_id === profile?.id
+                    ? "your listing"
+                    : `${adPendingDelete.profiles?.username || "this trader"}'s listing`}
+                </strong>{" "}
+                from the Live Trading Board, including its{" "}
+                <strong className="text-foreground tabular-nums">
+                  {adPendingDelete.give_items.length} Offering
+                </strong>{" "}
+                {adPendingDelete.ad_type !== "inventory" && (
+                  <>
+                    &{" "}
+                    <strong className="text-foreground tabular-nums">
+                      {adPendingDelete.get_items.length} Requesting
+                    </strong>{" "}
+                  </>
+                )}
+                items, votes, and discussion thread. This action cannot be
+                undone.
+              </p>
+            </div>
+            <div className="px-5 py-3.5 border-t border-border bg-card flex justify-end gap-2">
+              <button
+                ref={deleteCancelBtnRef}
+                type="button"
+                disabled={isDeletingAd}
+                onClick={() => setAdPendingDelete(null)}
+                className="px-4 py-2 rounded-[4px] text-[12px] font-bold text-foreground hover:bg-muted border border-border focus-visible:outline-none cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <AsyncButton
+                type="button"
+                variant="destructive"
+                size="sm"
+                isLoading={isDeletingAd}
+                loadingAnnouncement="Deleting…"
+                onClick={handleConfirmDeleteAd}
+              >
+                Delete Listing
+              </AsyncButton>
+            </div>
+          </div>
+        </div>
+      )}
 
       <AdInteractionModal />
     </div>

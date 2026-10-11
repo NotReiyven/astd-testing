@@ -250,15 +250,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
 
   restoreItem: async (item: InventoryItem) => {
     if (get().viewingUserId) return;
-    const currentItems = get().items;
-    const alreadyExists = currentItems.some((i) => i.unit_id === item.unit_id);
-    if (alreadyExists) {
-      useToastStore
-        .getState()
-        .addToast("Unit is already present in your Vault.", "info");
-      return;
-    }
-    const previousItems = currentItems;
+    const previousItems = get().items;
     set({ items: [item, ...previousItems] });
 
     try {
@@ -275,12 +267,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       }
 
       const { error } = await supabase.from("user_inventory").insert(itemForDb);
-      if (error) {
-        if (error.code === "23505") {
-          return;
-        }
-        throw error;
-      }
+      if (error) throw error;
     } catch (error) {
       set({ items: previousItems });
       throw error;

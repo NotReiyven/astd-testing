@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type KeyboardEvent } from "react";
+import { useEffect, type KeyboardEvent } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { BellRing, Check, Trash2 } from "lucide-react";
 import {
@@ -53,6 +53,9 @@ export function NotificationsChannel() {
   const markAllAsRead = useNotificationStore((s) => s.markAllAsRead);
   const markAsRead = useNotificationStore((s) => s.markAsRead);
   const deleteNotification = useNotificationStore((s) => s.deleteNotification);
+  const restoreNotification = useNotificationStore(
+    (s) => s.restoreNotification
+  );
   const addToast = useToastStore((s) => s.addToast);
 
   const isNotificationsLoading = isLoading || isAuthLoading;
@@ -77,10 +80,22 @@ export function NotificationsChannel() {
     );
   };
 
-  const handleDeleteNotification = (notification: AppNotification) => {
+  const handleDeleteNotification = (
+    notification: AppNotification,
+    index: number
+  ) => {
+    const snapshot = { ...notification };
     triggerHaptic("light");
     void deleteNotification(notification.id);
-    addToast("Deleted notification.", "info");
+    addToast("Deleted notification.", "info", {
+      action: {
+        label: "Undo",
+        onClick: () => {
+          void restoreNotification(snapshot, index);
+          addToast("Restored notification.", "success");
+        },
+      },
+    });
   };
 
   const handleNotificationKeyDown = (
@@ -164,194 +179,118 @@ export function NotificationsChannel() {
           />
         ) : (
           <div className="flex flex-col gap-2">
-            {notifications.map((notification) => (
-              <NotificationRowItem
+            {notifications.map((notification, index) => (
+              <div
                 key={notification.id}
-                notification={notification}
-                onMarkAsRead={() => {
-                  if (!notification.is_read) {
-                    void markAsRead(notification.id);
+                className={`group relative flex flex-col md:flex-row items-start md:items-center gap-4 p-4 rounded-lg border transition-colors ${
+                  !notification.is_read
+                    ? "border-primary/50 bg-primary/5"
+                    : "border-border bg-card"
+                }`}
+              >
+                <div
+                  className="flex-1 flex items-start gap-4 min-w-0 w-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[4px]"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    if (!notification.is_read) {
+                      void markAsRead(notification.id);
+                    }
+                  }}
+                  onKeyDown={(event) =>
+                    handleNotificationKeyDown(event, notification)
                   }
-                }}
-                onDelete={() => handleDeleteNotification(notification)}
-                onKeyDown={(e) => handleNotificationKeyDown(e, notification)}
-              />
+                  aria-label={
+                    notification.is_read
+                      ? "Read notification"
+                      : "Mark notification as read"
+                  }
+                >
+                  <img
+                    src={
+                      notification.actor?.avatar_url ||
+                      getUnitAssetUrl("firezio") ||
+                      ""
+                    }
+                    alt=""
+                    className="w-10 h-10 rounded-full border border-border object-cover shrink-0 bg-muted"
+                  />
+
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <p className="text-[13.5px] text-foreground leading-snug">
+                      {notification.type === "warning" ? (
+                        <>
+                          <strong className="font-bold text-destructive">
+                            System Warning:
+                          </strong>{" "}
+                          {notification.message ||
+                            "A system warning requires your attention."}
+                        </>
+                      ) : notification.type === "system" ? (
+                        <>
+                          <strong className="font-bold text-[#23a559]">
+                            System:
+                          </strong>{" "}
+                          {notification.message ||
+                            "A system update was recorded."}
+                        </>
+                      ) : notification.type === "upvote" ? (
+                        <>
+                          <strong className="font-bold text-foreground">
+                            {notification.actor?.username || "Someone"}
+                          </strong>{" "}
+                          upvoted your trade ad.
+                        </>
+                      ) : (
+                        <>
+                          <strong className="font-bold text-foreground">
+                            {notification.actor?.username || "Someone"}
+                          </strong>{" "}
+                          {notification.type === "reply"
+                            ? "replied to your comment."
+                            : "commented on your trade ad."}
+                        </>
+                      )}
+                    </p>
+
+                    <span className="text-[11px] font-mono text-muted-foreground mt-1">
+                      {formatDistanceToNow(new Date(notification.created_at), {
+                        addSuffix: true,
+                      })}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 self-end md:self-auto shrink-0 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100 transition-opacity">
+                  {!notification.is_read && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        triggerHaptic("light");
+                        void markAsRead(notification.id);
+                      }}
+                      aria-label="Mark notification as read"
+                      className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-[6px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleDeleteNotification(notification, index)
+                    }
+                    aria-label="Delete notification"
+                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[6px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function NotificationRowItem({
-  notification,
-  onMarkAsRead,
-  onDelete,
-  onKeyDown,
-}: {
-  notification: AppNotification;
-  onMarkAsRead: () => void;
-  onDelete: () => void;
-  onKeyDown: (e: KeyboardEvent<HTMLDivElement>) => void;
-}) {
-  const [offsetX, setOffsetX] = useState(0);
-  const [isSwiping, setIsSwiping] = useState(false);
-  const startXRef = useRef<number | null>(null);
-  const currentXRef = useRef<number>(0);
-
-  const handlePointerDown = (e: React.PointerEvent) => {
-    if (e.pointerType === "mouse" && e.button !== 0) return;
-    startXRef.current = e.clientX;
-    currentXRef.current = 0;
-    setIsSwiping(true);
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (startXRef.current === null) return;
-    const diff = e.clientX - startXRef.current;
-    currentXRef.current = diff;
-    setOffsetX(diff);
-  };
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-    if (startXRef.current === null) return;
-    const diff = currentXRef.current;
-    startXRef.current = null;
-    setIsSwiping(false);
-    try {
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch {}
-
-    if (Math.abs(diff) > 100) {
-      triggerHaptic("light");
-      onDelete();
-    } else {
-      setOffsetX(0);
-    }
-  };
-
-  const handlePointerCancel = () => {
-    startXRef.current = null;
-    setIsSwiping(false);
-    setOffsetX(0);
-  };
-
-  return (
-    <div
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerCancel}
-      style={{
-        transform: `translateX(${offsetX}px)`,
-        opacity: Math.max(0.3, 1 - Math.abs(offsetX) / 250),
-        transition: isSwiping
-          ? "none"
-          : "transform 0.2s ease, opacity 0.2s ease",
-        touchAction: "pan-y",
-      }}
-      className={`group relative flex flex-col md:flex-row items-start md:items-center gap-4 p-4 rounded-lg border transition-colors select-none ${
-        !notification.is_read
-          ? "border-primary/50 bg-primary/5"
-          : "border-border bg-card"
-      }`}
-    >
-      <div
-        className="flex-1 flex items-start gap-4 min-w-0 w-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[4px]"
-        role="button"
-        tabIndex={0}
-        onClick={onMarkAsRead}
-        onKeyDown={onKeyDown}
-        aria-label={
-          notification.is_read
-            ? "Read notification"
-            : "Mark notification as read"
-        }
-      >
-        <img
-          src={
-            notification.actor?.avatar_url ||
-            getUnitAssetUrl("firezio") ||
-            ""
-          }
-          alt=""
-          className="w-10 h-10 rounded-full border border-border object-cover shrink-0 bg-muted"
-        />
-
-        <div className="flex flex-col flex-1 min-w-0">
-          <p className="text-[13.5px] text-foreground leading-snug">
-            {notification.type === "warning" ? (
-              <>
-                <strong className="font-bold text-destructive">
-                  System Warning:
-                </strong>{" "}
-                {notification.message ||
-                  "A system warning requires your attention."}
-              </>
-            ) : notification.type === "system" ? (
-              <>
-                <strong className="font-bold text-[#23a559]">
-                  System:
-                </strong>{" "}
-                {notification.message ||
-                  "A system update was recorded."}
-              </>
-            ) : notification.type === "upvote" ? (
-              <>
-                <strong className="font-bold text-foreground">
-                  {notification.actor?.username || "Someone"}
-                </strong>{" "}
-                upvoted your trade ad.
-              </>
-            ) : (
-              <>
-                <strong className="font-bold text-foreground">
-                  {notification.actor?.username || "Someone"}
-                </strong>{" "}
-                {notification.type === "reply"
-                  ? "replied to your comment."
-                  : "commented on your trade ad."}
-              </>
-            )}
-          </p>
-
-          <span className="text-[11px] font-mono text-muted-foreground mt-1">
-            {formatDistanceToNow(new Date(notification.created_at), {
-              addSuffix: true,
-            })}
-          </span>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 self-end md:self-auto shrink-0 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100 transition-opacity">
-        {!notification.is_read && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              triggerHaptic("light");
-              onMarkAsRead();
-            }}
-            aria-label="Mark notification as read"
-            className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-[6px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
-          >
-            <Check className="w-4 h-4" />
-          </button>
-        )}
-
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          aria-label="Delete notification"
-          className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[6px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
       </div>
     </div>
   );

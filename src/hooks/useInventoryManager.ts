@@ -128,12 +128,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
             action: {
               label: "Undo",
               onClick: () => {
-                const currentVault = useInventoryStore.getState().items;
-                if (currentVault.some((v) => v.unit_id === unitId)) {
-                  addToast(`${unitName} was already re-added to Vault.`, "info");
-                  return;
-                }
-                void restoreItem(prevSnapshot);
+                restoreItem(prevSnapshot);
                 addToast(`Restored ${unitName} to Vault.`, "success");
               },
             },
@@ -217,34 +212,9 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
               label: "Undo",
               onClick: () => {
                 if (isWishlistView) {
-                  const currentWishlist =
-                    useInventoryStore.getState().wishlistItems;
-                  if (
-                    currentWishlist.some(
-                      (w) => w.unit_id === itemSnapshot.unit_id
-                    )
-                  ) {
-                    addToast(
-                      `${master.name} was already re-added to Wishlist.`,
-                      "info"
-                    );
-                    return;
-                  }
                   void toggleWishlist(profile.id, itemSnapshot.unit_id);
                   addToast(`Restored ${master.name} to Wishlist.`, "success");
                 } else {
-                  const currentVault = useInventoryStore.getState().items;
-                  if (
-                    currentVault.some(
-                      (v) => v.unit_id === itemSnapshot.unit_id
-                    )
-                  ) {
-                    addToast(
-                      `${master.name} was already re-added to Vault.`,
-                      "info"
-                    );
-                    return;
-                  }
                   void restoreItem(itemSnapshot);
                   addToast(`Restored ${master.name} to Vault.`, "success");
                 }
