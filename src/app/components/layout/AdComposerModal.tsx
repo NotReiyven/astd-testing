@@ -647,6 +647,7 @@ export function AdComposerModal() {
                     </span>
                   </label>
                   <span
+                    aria-live="polite"
                     className={`text-[10px] font-mono tabular-nums ${
                       isNoteOverLimit
                         ? "text-destructive font-bold"
@@ -654,6 +655,13 @@ export function AdComposerModal() {
                     }`}
                   >
                     {note.length}/{MAX_NOTE_LENGTH}
+                    {isNoteOverLimit && (
+                      <span className="sr-only">
+                        {" "}
+                        (Exceeds character limit by {note.length - MAX_NOTE_LENGTH}{" "}
+                        characters)
+                      </span>
+                    )}
                   </span>
                 </div>
 
