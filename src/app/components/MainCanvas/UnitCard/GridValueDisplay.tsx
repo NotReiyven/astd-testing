@@ -18,15 +18,7 @@ export function GridValueDisplay({ unit }: { unit: GridUnit }) {
     unit.valueDisplay === "O/C"
   ) {
     return (
-      <span
-        className="text-[13px] md:text-[17px] font-black tracking-tight truncate block w-full"
-        style={{
-          background: "linear-gradient(90deg, #a78bfa, #f472b6)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          backgroundClip: "text",
-        }}
-      >
+      <span className="text-[13px] md:text-[17px] tracking-normal truncate block w-full text-[#c084fc]">
         <JargonWrap
           title="Owner's Choice (O/C)"
           tip="This unit is so rare the owner dictates the price. Value depends entirely on what they want."

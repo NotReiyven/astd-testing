@@ -1,11 +1,28 @@
-import { useState, useEffect, memo } from "react";
-import { Edit2, Check, X, ShieldAlert, Shield, Settings, ArrowRight, Copy, Share2, ArrowLeft, Palette, MousePointer2, Maximize, ArrowRightLeft, LogIn } from "lucide-react";
-import { GiCharacter, GiSpikedHalo, GiChatBubble, GiChest, GiMegaphone, GiTornado, GiGamepad, GiHourglass } from "react-icons/gi";
-import { useProfileStore, UserProfileData } from "../../store/useProfileStore";
-import { useAuthStore } from "../../store/useAuthStore";
-import { useTradingAdsStore } from "../../store/useTradingAdsStore";
+import React, { useState, useEffect, useMemo, memo } from "react";
+import {
+  GiCharacter,
+  GiSpikedHalo,
+  GiChatBubble,
+  GiChest,
+  GiMegaphone,
+  GiTornado,
+  GiGamepad,
+  GiHourglass,
+} from "react-icons/gi";
+import {
+  useProfileStore,
+  UserProfileData,
+  BannerStyleType,
+  TradingStanceType,
+  getBannerCssStyle,
+} from "../../store/useProfileStore";
+import { useAuthStore, UserProfile } from "../../store/useAuthStore";
+import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
 import { useInventoryStore } from "../../store/useInventoryStore";
-import { getUnitAssetUrl } from "../../data/helpers";
+import { useTradeStore } from "../../store/useTradeStore";
+import { useHistoryModalStore } from "../../store/useHistoryModalStore";
+import { useToastStore } from "../../store/useToastStore";
+import { getUnitAssetUrl, triggerHaptic } from "../../data/helpers";
 import {
   useLayoutStore,
   ThemeMode,
@@ -13,36 +30,335 @@ import {
 } from "../../store/useLayoutStore";
 import { useUnits } from "../../context/UnitContext";
 import { getUnitConservativeValue } from "./InventoryChannel/inventoryUtils";
-import { getProxyImage, handleImageError, GRID_STATUS_CFG } from "../../data";
-import { getAvatarStyle, getInitials } from "./TradeAnalyzer/summaryUtils";
-import { triggerHaptic } from "../../data/helpers";
+import { GRID_STATUS_CFG, TIER_CONFIG, getTier, getObtainability } from "../../data";
 import { StatusIcon } from "./shared/Formatters";
 import { TradeCard, MasterUnit } from "../../types";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
 import { UnitAvatar } from "./shared/UnitAvatar";
+
+/* -------------------------------------------------------------------------- */
+/* Custom Inline SVG Icons (Zero Lucide Dependencies)                         */
+/* -------------------------------------------------------------------------- */
+
+const IconCheck = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3.5 8.5L6.5 11.5L12.5 4.5" />
+  </svg>
+);
+
+const IconClose = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+  >
+    <path d="M4 4L12 12M12 4L4 12" />
+  </svg>
+);
+
+const IconEdit = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="1.75"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M11.5 2.5L13.5 4.5L5.5 12.5H3.5V10.5L11.5 2.5Z" />
+  </svg>
+);
+
+const IconCopy = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="1.6"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" />
+    <path d="M3 10.5V3.5C3 2.95 3.45 2.5 4 2.5H10.5" />
+  </svg>
+);
+
+const IconShare = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="1.75"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="3.5" r="2" />
+    <circle cx="4" cy="8" r="2" />
+    <circle cx="12" cy="12.5" r="2" />
+    <path d="M5.8 7L10.2 4.5M5.8 9L10.2 11.5" />
+  </svg>
+);
+
+const IconTrash = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="1.6"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M2.5 4.5H13.5M6 4.5V3C6 2.45 6.45 2 7 2H9C9.55 2 10 2.45 10 3V4.5M4 4.5L4.7 13C4.75 13.55 5.2 14 5.75 14H10.25C10.8 14 11.25 13.55 11.3 13L12 4.5" />
+  </svg>
+);
+
+const IconLock = ({
+  locked,
+  className = "w-3.5 h-3.5",
+}: {
+  locked: boolean;
+  className?: string;
+}) =>
+  locked ? (
+    <svg
+      viewBox="0 0 16 16"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3.5" y="7.5" width="9" height="6.5" rx="1.5" />
+      <path d="M5.5 7.5V5C5.5 3.62 6.62 2.5 8 2.5C9.38 2.5 10.5 3.62 10.5 5V7.5" />
+    </svg>
+  ) : (
+    <svg
+      viewBox="0 0 16 16"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="8" cy="8" r="6" />
+      <path d="M2 8H14M8 2C9.7 3.8 10.5 5.8 10.5 8C10.5 10.2 9.7 12.2 8 14C6.3 12.2 5.5 10.2 5.5 8C5.5 5.8 6.3 3.8 8 2Z" />
+    </svg>
+  );
+
+const IconSwap = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="1.75"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3 5.5H13L10 2.5M13 10.5H3L6 13.5" />
+  </svg>
+);
+
+const IconSliders = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="1.75"
+    strokeLinecap="round"
+  >
+    <path d="M2.5 4.5H13.5M2.5 8H13.5M2.5 11.5H13.5" />
+    <circle cx="5.5" cy="4.5" r="1.5" fill="var(--card)" />
+    <circle cx="10.5" cy="8" r="1.5" fill="var(--card)" />
+    <circle cx="6.5" cy="11.5" r="1.5" fill="var(--card)" />
+  </svg>
+);
+
+const IconArrowLeft = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12.5 8H3.5M7 4.5L3.5 8L7 11.5" />
+  </svg>
+);
+
+const IconArrowRight = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3.5 8H12.5M9 4.5L12.5 8L9 11.5" />
+  </svg>
+);
+
+const IconRefresh = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    className={className}
+    stroke="currentColor"
+    strokeWidth="1.75"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M13.5 3.5V7H10" />
+    <path d="M13.1 10C12.3 12.1 10.3 13.5 8 13.5C5 13.5 2.5 11 2.5 8C2.5 5 5 2.5 8 2.5C10.1 2.5 11.9 3.6 12.8 5.3L13.5 7" />
+  </svg>
+);
+
+/* -------------------------------------------------------------------------- */
+/* Configuration Constants                                                    */
+/* -------------------------------------------------------------------------- */
+
+const BANNER_SWATCHES = [
+  { label: "Midnight", hex: "#121214" },
+  { label: "Discord Blurple", hex: "#5865F2" },
+  { label: "Royal Violet", hex: "#6D28D9" },
+  { label: "Crimson", hex: "#B91C1C" },
+  { label: "Emerald", hex: "#15803D" },
+  { label: "Oceanic", hex: "#0369A1" },
+  { label: "Solar Gold", hex: "#B45309" },
+  { label: "Cyber Rose", hex: "#BE185D" },
+];
+
+const ACCENT_SWATCHES = [
+  { label: "Blurple", hex: "#7289da" },
+  { label: "Amethyst", hex: "#a855f7" },
+  { label: "Emerald", hex: "#23a559" },
+  { label: "Gold", hex: "#FAA61A" },
+  { label: "Crimson", hex: "#ef4444" },
+  { label: "Cyan", hex: "#38bdf8" },
+];
+
+const BANNER_STYLES: { id: BannerStyleType; label: string }[] = [
+  { id: "gradient", label: "Smooth Gradient" },
+  { id: "grid", label: "Tactical Grid" },
+  { id: "stripes", label: "Diagonal Stripes" },
+  { id: "dots", label: "Starfield Dots" },
+  { id: "solid", label: "Flat Solid" },
+];
+
+const TRADING_STANCES: {
+  id: TradingStanceType;
+  label: string;
+  desc: string;
+  color: string;
+  bg: string;
+}[] = [
+  {
+    id: "open",
+    label: "Open to Offers",
+    desc: "Actively accepting all fair trade offers",
+    color: "#23a559",
+    bg: "rgba(35,165,89,0.14)",
+  },
+  {
+    id: "upgrading",
+    label: "Upgrading Only",
+    desc: "Trading multiple units up into higher tiers",
+    color: "#FAA61A",
+    bg: "rgba(250,166,26,0.14)",
+  },
+  {
+    id: "downgrading",
+    label: "Downgrading",
+    desc: "Breaking down high-tier units for adds",
+    color: "#38bdf8",
+    bg: "rgba(56,189,248,0.14)",
+  },
+  {
+    id: "wishlist",
+    label: "Hunting Wishlist",
+    desc: "Primarily looking for Target Wishlist units",
+    color: "#c084fc",
+    bg: "rgba(192,132,252,0.14)",
+  },
+  {
+    id: "afk",
+    label: "AFK / Break",
+    desc: "Slow responses or temporarily away",
+    color: "#a1a1aa",
+    bg: "rgba(161,161,170,0.14)",
+  },
+];
+
+const PRESENCE_OPTIONS: {
+  id: UserProfile["status"];
+  label: string;
+  desc: string;
+  color: string;
+}[] = [
+  {
+    id: "online",
+    label: "Online",
+    desc: "Visible as active on the trading board",
+    color: "#23a559",
+  },
+  {
+    id: "dnd",
+    label: "Do Not Disturb",
+    desc: "Signals that you prefer fewer pings",
+    color: "#ef4444",
+  },
+  {
+    id: "invisible",
+    label: "Invisible",
+    desc: "Appear offline to other traders",
+    color: "#888888",
+  },
+];
 
 const getRoleConfig = (role: string) => {
   switch (role) {
     case "master":
     case "admin":
       return {
-        icon: ShieldAlert,
-        color: "var(--warning)",
-        bg: "bg-warning/10 border-warning/30 text-warning",
+        color: "#FAA61A",
+        bg: "rgba(250, 166, 26, 0.14)",
+        border: "rgba(250, 166, 26, 0.35)",
         label: role === "master" ? "Master" : "Admin",
       };
     case "mod":
       return {
-        icon: Shield,
-        color: "var(--primary)",
-        bg: "bg-primary/10 border-primary/30 text-primary",
+        color: "#5865F2",
+        bg: "rgba(88, 101, 242, 0.14)",
+        border: "rgba(88, 101, 242, 0.35)",
         label: "Moderator",
       };
     default:
       return {
-        icon: GiCharacter,
         color: "var(--muted-foreground)",
-        bg: "bg-muted border-border text-muted-foreground",
+        bg: "var(--muted)",
+        border: "var(--border)",
         label: "Trader",
       };
   }
@@ -57,7 +373,6 @@ const getReputationRank = (rep: number) => {
       bg: "bg-destructive/15",
       next: 0,
       min: -100,
-      icon: ShieldAlert,
     };
   if (rep < 10)
     return {
@@ -67,7 +382,6 @@ const getReputationRank = (rep: number) => {
       bg: "bg-muted",
       next: 10,
       min: 0,
-      icon: GiSpikedHalo,
     };
   if (rep < 50)
     return {
@@ -77,7 +391,6 @@ const getReputationRank = (rep: number) => {
       bg: "bg-[#cd7f32]/15",
       next: 50,
       min: 10,
-      icon: GiSpikedHalo,
     };
   if (rep < 150)
     return {
@@ -87,7 +400,6 @@ const getReputationRank = (rep: number) => {
       bg: "bg-[#c0c0c0]/15",
       next: 150,
       min: 50,
-      icon: GiSpikedHalo,
     };
   if (rep < 300)
     return {
@@ -97,7 +409,6 @@ const getReputationRank = (rep: number) => {
       bg: "bg-[#ffd700]/15",
       next: 300,
       min: 150,
-      icon: GiSpikedHalo,
     };
   if (rep < 500)
     return {
@@ -107,7 +418,6 @@ const getReputationRank = (rep: number) => {
       bg: "bg-info/15",
       next: 500,
       min: 300,
-      icon: GiSpikedHalo,
     };
   if (rep < 1000)
     return {
@@ -117,7 +427,6 @@ const getReputationRank = (rep: number) => {
       bg: "bg-[#3A7CE6]/15",
       next: 1000,
       min: 500,
-      icon: GiSpikedHalo,
     };
   return {
     label: "Legend",
@@ -126,57 +435,97 @@ const getReputationRank = (rep: number) => {
     bg: "bg-[#a855f7]/15",
     next: 1000,
     min: 1000,
-    icon: GiSpikedHalo,
   };
 };
 
+function formatTimeAgo(dateStr: string): string {
+  const ts = new Date(dateStr).getTime();
+  if (Number.isNaN(ts)) return "";
+  const diffSec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+  if (diffSec < 60) return "Just now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 30) return `${diffDay}d ago`;
+  return new Date(dateStr).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatRemainingTime(expiresStr: string): string | null {
+  const exp = new Date(expiresStr).getTime();
+  const diffMs = exp - Date.now();
+  if (Number.isNaN(exp) || diffMs <= 0) return null;
+  const hrs = Math.floor(diffMs / 3_600_000);
+  const mins = Math.floor((diffMs % 3_600_000) / 60_000);
+  if (hrs > 0) return `${hrs}h ${mins}m left`;
+  return `${Math.max(1, mins)}m left`;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Ad History Unit Tile (Clickable to open Market History Modal)              */
+/* -------------------------------------------------------------------------- */
+
 const AdItemTile = memo(
-  ({ item, ALL_UNITS }: { item: TradeCard; ALL_UNITS: MasterUnit[] }) => {
-    const [showTooltip, setShowTooltip] = useState(false);
+  ({
+    item,
+    ALL_UNITS,
+    onInspectUnit,
+  }: {
+    item: TradeCard;
+    ALL_UNITS: MasterUnit[];
+    onInspectUnit: (unitId: string) => void;
+  }) => {
     const master = ALL_UNITS.find((u) => u.id === item.id);
     const conservativeVal = master
       ? getUnitConservativeValue(master) * item.qty
       : item.value * item.qty;
-    const rarity = master?.rarity ?? "N/A";
+    const tierKey = master ? getTier(master) : "Untiered";
+    const tierColor = TIER_CONFIG[tierKey]?.badgeColor || "var(--border)";
 
     return (
-      <div
-        className="flex flex-col items-center gap-1 group relative cursor-pointer"
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
+      <button
+        type="button"
+        onClick={() => onInspectUnit(item.id)}
+        title={`Inspect ${master?.name || item.name} market history`}
+        className="w-full flex items-center gap-2.5 p-2 rounded-[6px] bg-popover hover:bg-muted/80 border border-border hover:border-foreground/40 transition-colors text-left cursor-pointer group min-w-0 overflow-hidden"
       >
-        <div className="relative aspect-square rounded-[4px] bg-muted border border-border flex items-center justify-center overflow-hidden shadow-sm group-hover:border-foreground transition-colors min-w-[56px] w-full">
+        <div
+          className="relative w-11 h-11 rounded-[5px] bg-muted border flex items-center justify-center overflow-hidden shrink-0"
+          style={{ borderColor: `${tierColor}66` }}
+        >
           <UnitAvatar
             unitId={item.id}
             unitName={item.name}
             imageUrl={master?.imageUrl}
-            fallbackClassName="absolute inset-0 flex items-center justify-center text-white font-black text-[12px] z-0"
-            imageClassName="absolute inset-0 w-full h-full object-cover z-10 bg-muted transition-transform group-hover:scale-105"
+            fallbackClassName="absolute inset-0 flex items-center justify-center text-white text-[11px] z-0"
+            imageClassName="absolute inset-0 w-full h-full object-cover z-10 bg-muted group-hover:scale-105 transition-transform"
           />
           {item.qty > 1 && (
-            <div className="absolute bottom-0 right-0 bg-popover text-foreground text-[10px] font-black px-1.5 py-0.5 rounded-tl-[4px] z-20 border-t border-l border-border leading-none font-mono">
+            <div className="absolute bottom-0 right-0 bg-black/85 text-white text-[10px] px-1 py-0.5 rounded-tl-[4px] z-20 leading-none font-mono">
               x{item.qty}
             </div>
           )}
         </div>
 
-        {showTooltip && master && (
-          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-popover border border-border text-foreground text-[11px] p-3 rounded-[4px] shadow-2xl pointer-events-none z-50 w-48 animate-fade-in flex flex-col gap-1">
-            <div className="font-extrabold text-foreground truncate">
-              {master.name}
-            </div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
-              {master.subtitle || "Official Unit"}
-            </div>
-            <div className="flex justify-between items-center mt-1 pt-1 border-t border-border font-mono">
-              <span className="text-[#4DB6AC]">R: {rarity}</span>
-              <span className="text-foreground font-bold">
-                {conservativeVal.toLocaleString()}
-              </span>
-            </div>
+        <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
+          <span className="text-[12.5px] text-foreground truncate leading-snug">
+            {master?.name || item.name}
+          </span>
+          <div className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground mt-0.5 whitespace-nowrap">
+            <span style={{ color: tierColor }}>T-{tierKey}</span>
+            <span>·</span>
+            <span className="text-foreground truncate">
+              {master?.value === "owner"
+                ? "O/C"
+                : conservativeVal.toLocaleString()}
+            </span>
           </div>
-        )}
-      </div>
+        </div>
+      </button>
     );
   }
 );
@@ -186,36 +535,262 @@ function AdItemGrid({
   ALL_UNITS,
   label,
   labelColor,
+  onInspectUnit,
 }: {
   items: TradeCard[];
   ALL_UNITS: MasterUnit[];
   label: string;
   labelColor: string;
+  onInspectUnit: (unitId: string) => void;
 }) {
   if (items.length === 0) return null;
   return (
     <div className="flex flex-col gap-2 flex-1 min-w-0">
-      <span
-        className="text-[11px] font-black uppercase tracking-wider"
-        style={{ color: labelColor }}
-      >
-        {label}
+      <span className="text-[11.5px] tracking-wide" style={{ color: labelColor }}>
+        {label} ({items.reduce((acc, i) => acc + i.qty, 0)})
       </span>
-      <div
-        className="grid gap-2"
-        style={{ gridTemplateColumns: "repeat(auto-fill, minmax(56px, 1fr))" }}
-      >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {items.map((item, idx) => (
           <AdItemTile
             key={`${item.id}-${idx}`}
             item={item}
             ALL_UNITS={ALL_UNITS}
+            onInspectUnit={onInspectUnit}
           />
         ))}
       </div>
     </div>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* Skeleton Loading Components (Zero Layout Shift)                            */
+/* -------------------------------------------------------------------------- */
+
+function AdHistorySkeletonList({ count = 2 }: { count?: number }) {
+  return (
+    <div
+      className="flex flex-col gap-4"
+      role="status"
+      aria-label="Loading ad history"
+    >
+      {Array.from({ length: count }).map((_, idx) => (
+        <div
+          key={idx}
+          className="bg-card border border-border rounded-[8px] p-5 flex flex-col gap-4 animate-pulse"
+        >
+          {/* Top Metadata & Action Bar Skeleton */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border">
+            <div className="flex items-center gap-2">
+              <div className="h-5 w-24 rounded-[4px] bg-muted" />
+              <div className="h-5 w-24 rounded-[4px] bg-popover border border-border" />
+              <div className="h-4 w-36 rounded-[4px] bg-muted/70" />
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-24 rounded-[5px] bg-popover border border-border" />
+              <div className="h-7 w-20 rounded-[5px] bg-popover border border-border" />
+              <div className="h-7 w-7 rounded-[5px] bg-popover border border-border" />
+            </div>
+          </div>
+
+          {/* Offering & Requesting Unit Tiles Skeleton */}
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto_1fr] gap-4 items-start">
+            <div className="flex flex-col gap-2">
+              <div className="h-3.5 w-24 rounded bg-muted/70" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[0, 1].map((tileIdx) => (
+                  <div
+                    key={tileIdx}
+                    className="flex items-center gap-2.5 p-2 rounded-[6px] bg-popover border border-border"
+                  >
+                    <div className="w-11 h-11 rounded-[5px] bg-muted shrink-0" />
+                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                      <div className="h-3.5 w-24 rounded bg-muted" />
+                      <div className="h-3 w-16 rounded bg-muted/70" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="hidden xl:flex items-center justify-center self-center w-8 h-8 rounded-[6px] bg-popover border border-border" />
+
+            <div className="flex flex-col gap-2">
+              <div className="h-3.5 w-24 rounded bg-muted/70" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[0, 1].map((tileIdx) => (
+                  <div
+                    key={tileIdx}
+                    className="flex items-center gap-2.5 p-2 rounded-[6px] bg-popover border border-border"
+                  >
+                    <div className="w-11 h-11 rounded-[5px] bg-muted shrink-0" />
+                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                      <div className="h-3.5 w-24 rounded bg-muted" />
+                      <div className="h-3 w-16 rounded bg-muted/70" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function WishlistGridSkeleton({ count = 6 }: { count?: number }) {
+  return (
+    <div
+      className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5"
+      role="status"
+      aria-label="Loading target wishlist"
+    >
+      {Array.from({ length: count }).map((_, idx) => (
+        <div
+          key={idx}
+          className="bg-card border border-border rounded-[8px] p-3.5 flex flex-col justify-between gap-3 animate-pulse"
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-14 h-14 rounded-[6px] bg-muted border border-border shrink-0" />
+            <div className="flex flex-col flex-1 gap-1.5 min-w-0">
+              <div className="h-4 w-28 rounded bg-muted" />
+              <div className="h-3 w-20 rounded bg-muted/70" />
+              <div className="flex items-center gap-2 mt-1">
+                <div className="h-4 w-16 rounded bg-muted" />
+                <div className="h-4 w-16 rounded bg-muted/70" />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-2.5 border-t border-border/70 flex flex-col gap-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="h-6 rounded-[5px] bg-popover border border-border/70" />
+              <div className="h-6 rounded-[5px] bg-popover border border-border/70" />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="h-7 rounded-[5px] bg-popover border border-border" />
+              <div className="h-7 rounded-[5px] bg-primary/10 border border-primary/25" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ProfileChannelSkeleton({ compact }: { compact?: boolean }) {
+  return (
+    <div
+      className="flex-1 w-full h-full font-sans relative overflow-y-auto custom-scrollbar pb-16 z-10 bg-background"
+      role="status"
+      aria-label="Loading trader profile"
+    >
+      {/* Banner & Identity Header Skeleton */}
+      <div className="w-full relative shrink-0 border-b border-border bg-card">
+        <div
+          className={`w-full relative overflow-hidden border-b border-border bg-muted/50 animate-pulse ${
+            compact ? "h-[96px] md:h-[116px]" : "h-[136px] md:h-[168px]"
+          }`}
+        />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pb-5 relative z-20">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 -mt-10 md:-mt-12">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4 min-w-0">
+              <div className="w-[84px] h-[84px] md:w-[96px] md:h-[96px] rounded-[10px] border-4 border-card bg-muted animate-pulse shrink-0 shadow-xl" />
+
+              <div className="flex flex-col gap-2 pb-0.5">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <div className="h-7 w-40 rounded-[6px] bg-muted animate-pulse" />
+                  <div className="h-5 w-20 rounded-[5px] bg-muted/80 animate-pulse" />
+                  <div className="h-5 w-28 rounded-[5px] bg-muted/80 animate-pulse" />
+                  <div className="h-5 w-28 rounded-[5px] bg-muted/80 animate-pulse" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-56 rounded-[4px] bg-muted/60 animate-pulse" />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 shrink-0">
+              <div className="h-9 w-32 rounded-[6px] bg-popover border border-border animate-pulse" />
+              <div className="h-9 w-36 rounded-[6px] bg-muted animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Container Skeleton */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6 flex flex-col gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 items-start">
+          {/* Left Sidebar Skeleton */}
+          <aside className="flex flex-col gap-4">
+            <div className="bg-card border border-border rounded-[8px] p-5 flex flex-col gap-4 shadow-sm animate-pulse">
+              <div className="grid grid-cols-2 gap-2.5">
+                {[0, 1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="bg-popover border border-border rounded-[6px] p-3 flex flex-col gap-1.5"
+                  >
+                    <div className="h-3 w-20 rounded bg-muted/70" />
+                    <div className="h-5 w-16 rounded bg-muted" />
+                    <div className="h-2.5 w-14 rounded bg-muted/60" />
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2 border-t border-border">
+                <div className="flex justify-between">
+                  <div className="h-3 w-24 rounded bg-muted/70" />
+                  <div className="h-3 w-20 rounded bg-muted" />
+                </div>
+                <div className="w-full h-2 rounded-full bg-popover border border-border/60" />
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2 border-t border-border">
+                <div className="h-3 w-16 rounded bg-muted/70" />
+                <div className="h-3.5 w-full rounded bg-muted" />
+                <div className="h-3.5 w-3/4 rounded bg-muted/80" />
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2 border-t border-border">
+                <div className="h-3 w-28 rounded bg-muted/70" />
+                <div className="h-9 w-full rounded-[6px] bg-popover border border-border" />
+                <div className="h-9 w-full rounded-[6px] bg-popover border border-border" />
+              </div>
+
+              <div className="h-10 w-full rounded-[6px] bg-popover border border-border" />
+            </div>
+          </aside>
+
+          {/* Right Workspace Skeleton */}
+          <div className="flex-1 flex flex-col min-w-0 gap-5">
+            <div className="flex items-center gap-2 border-b border-border pb-3">
+              <div className="h-9 w-36 rounded-[6px] bg-card border border-border animate-pulse" />
+              <div className="h-9 w-40 rounded-[6px] bg-card/50 border border-border/50 animate-pulse" />
+              <div className="h-9 w-44 rounded-[6px] bg-card/50 border border-border/50 animate-pulse" />
+            </div>
+
+            <div className="bg-card border border-border rounded-[8px] p-4 flex items-center justify-between gap-3 animate-pulse">
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-24 rounded-[5px] bg-muted" />
+                <div className="h-7 w-20 rounded-[5px] bg-popover border border-border" />
+                <div className="h-7 w-24 rounded-[5px] bg-popover border border-border" />
+              </div>
+              <div className="h-7 w-36 rounded-[6px] bg-popover border border-border" />
+            </div>
+
+            <AdHistorySkeletonList count={2} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Main ProfileChannel Component                                              */
+/* -------------------------------------------------------------------------- */
 
 export function ProfileChannel() {
   const {
@@ -225,7 +800,13 @@ export function ProfileChannel() {
     returnChannel,
     setViewingProfile,
   } = useProfileStore();
-  const { profile: currentUser, loginWithDiscord } = useAuthStore();
+  const {
+    session,
+    profile: currentUser,
+    isLoading: isAuthLoading,
+    loginWithDiscord,
+    updateStatus,
+  } = useAuthStore();
   const setViewingUser = useInventoryStore((s) => s.setViewingUser);
   const {
     theme,
@@ -236,26 +817,70 @@ export function ProfileChannel() {
     setBootChannel,
   } = useLayoutStore();
 
-  const targetId = viewingProfileId || currentUser?.id;
-  const isOwner = currentUser?.id === targetId;
+  const {
+    analyzerSettings,
+    updateAnalyzerSettings,
+    addCard,
+    overwrite,
+  } = useTradeStore();
+
+  const openHistoryModal = useHistoryModalStore((s) => s.openModal);
+
+  const targetId = viewingProfileId || currentUser?.id || session?.user?.id;
+  const isOwner = Boolean(
+    (currentUser?.id && currentUser.id === targetId) ||
+      (session?.user?.id && session.user.id === targetId)
+  );
 
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"board" | "wishlist" | "settings">(
     "board"
   );
+  const [adFilter, setAdFilter] = useState<
+    "all" | "live" | "expired" | "private"
+  >("all");
+  const [confirmDeleteAdId, setConfirmDeleteAdId] = useState<string | null>(
+    null
+  );
+  const [repostingAdId, setRepostingAdId] = useState<string | null>(null);
 
+  // Wishlist quick-add search state (for owner)
+  const [wishlistSearch, setWishlistSearch] = useState("");
+
+  // Edit Profile Modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editBio, setEditBio] = useState("");
   const [editBannerColor, setEditBannerColor] = useState("#121214");
+  const [editAccentColor, setEditAccentColor] = useState("#7289da");
+  const [editBannerStyle, setEditBannerStyle] =
+    useState<BannerStyleType>("gradient");
+  const [editTradingStance, setEditTradingStance] =
+    useState<TradingStanceType>("open");
   const [editRobloxName, setEditRobloxName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
   const [copiedProfileLink, setCopiedProfileLink] = useState(false);
   const [copiedDiscordId, setCopiedDiscordId] = useState(false);
+  const [copiedRoblox, setCopiedRoblox] = useState(false);
 
-  const { ads, fetchAds } = useTradingAdsStore();
-  const { fetchWishlist, viewedWishlist, viewedItems, fetchInventory } =
-    useInventoryStore();
+  const {
+    userAdHistory,
+    isLoadingHistory,
+    fetchUserAdHistory,
+    deleteAd,
+    repostAd,
+  } = useTradingAdsStore();
+  const {
+    fetchWishlist,
+    viewedWishlist,
+    wishlistItems,
+    viewedItems,
+    items: ownInventoryItems,
+    isLoading: isInventoryLoading,
+    fetchInventory,
+    toggleWishlist,
+  } = useInventoryStore();
   const { units: ALL_UNITS } = useUnits();
 
   useEffect(() => {
@@ -264,16 +889,29 @@ export function ProfileChannel() {
       if (!targetId) return;
       setIsLoading(true);
 
-      const data = await fetchProfile(targetId);
+      const data = await fetchProfile(targetId, true);
       if (mounted && data) {
         setProfileData(data);
         setEditBio(data.bio || "");
         setEditBannerColor(data.banner_color || "#121214");
+        setEditAccentColor(data.accent_color || "#7289da");
+        setEditBannerStyle(data.banner_style || "gradient");
+        setEditTradingStance(data.trading_stance || "open");
         setEditRobloxName(data.roblox_username || "");
 
-        fetchAds();
-        fetchInventory(targetId, true);
-        fetchWishlist(targetId, true);
+        const ownerMatch = Boolean(
+          currentUser?.id && currentUser.id === targetId
+        );
+
+        await Promise.all([
+          fetchUserAdHistory(targetId, {
+            isOwner: ownerMatch,
+            adHistoryPublic: data.ad_history_public ?? true,
+            privateAdIds: data.private_ad_ids ?? [],
+          }),
+          fetchInventory(targetId, !ownerMatch),
+          fetchWishlist(targetId, !ownerMatch),
+        ]);
       }
       if (mounted) setIsLoading(false);
     };
@@ -282,7 +920,17 @@ export function ProfileChannel() {
     return () => {
       mounted = false;
     };
-  }, [targetId, fetchProfile, fetchAds, fetchInventory, fetchWishlist]);
+  }, [
+    targetId,
+    currentUser?.id,
+    fetchProfile,
+    fetchUserAdHistory,
+    fetchInventory,
+    fetchWishlist,
+  ]);
+
+  const activeVaultItems = isOwner ? ownInventoryItems : viewedItems;
+  const activeWishlistItems = isOwner ? wishlistItems : viewedWishlist;
 
   const handleCloseProfile = () => {
     triggerHaptic("light");
@@ -299,14 +947,29 @@ export function ProfileChannel() {
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(" ");
 
-  const handleSave = async () => {
+  const openEditModal = () => {
+    if (!profileData) return;
+    triggerHaptic("light");
+    setEditBio(profileData.bio || "");
+    setEditBannerColor(profileData.banner_color || "#121214");
+    setEditAccentColor(profileData.accent_color || "#7289da");
+    setEditBannerStyle(profileData.banner_style || "gradient");
+    setEditTradingStance(profileData.trading_stance || "open");
+    setEditRobloxName(profileData.roblox_username || "");
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveProfile = async () => {
     if (!isOwner || !targetId) return;
     setIsSaving(true);
     triggerHaptic("medium");
 
-    const updates = {
+    const updates: Partial<UserProfileData> = {
       bio: editBio,
       banner_color: editBannerColor,
+      accent_color: editAccentColor,
+      banner_style: editBannerStyle,
+      trading_stance: editTradingStance,
       roblox_username: editRobloxName,
     };
 
@@ -315,15 +978,105 @@ export function ProfileChannel() {
       setProfileData((prev) => (prev ? { ...prev, ...updates } : null));
       setIsEditModalOpen(false);
       triggerHaptic("success");
-      window.dispatchEvent(
-        new CustomEvent("toast-message", {
-          detail: { message: "Profile saved successfully", type: "success" },
-        })
-      );
+      useToastStore
+        .getState()
+        .addToast("Profile customization saved!", "success");
     } else {
-      alert("Failed to save profile. Ensure your bio is under 190 characters.");
+      useToastStore
+        .getState()
+        .addToast(
+          "Could not save profile—check your connection and try again.",
+          "error"
+        );
     }
     setIsSaving(false);
+  };
+
+  const handleToggleProfilePrivacy = async (
+    field: "ad_history_public" | "wishlist_public" | "hide_discord_id"
+  ) => {
+    if (!isOwner || !targetId || !profileData) return;
+    triggerHaptic("light");
+
+    const currentVal =
+      field === "hide_discord_id"
+        ? Boolean(profileData.hide_discord_id)
+        : profileData[field] ?? true;
+    const nextVal = !currentVal;
+
+    const optimistic = { ...profileData, [field]: nextVal };
+    setProfileData(optimistic);
+
+    const { error } = await saveProfileUpdates(targetId, { [field]: nextVal });
+    if (error) {
+      setProfileData(profileData);
+      useToastStore
+        .getState()
+        .addToast("Failed to update privacy setting.", "error");
+    } else {
+      useToastStore
+        .getState()
+        .addToast("Privacy preference updated.", "success");
+    }
+  };
+
+  const handleToggleSingleAdPrivacy = async (adId: string) => {
+    if (!isOwner || !targetId || !profileData) return;
+    triggerHaptic("light");
+
+    const currentHidden = profileData.private_ad_ids || [];
+    const isCurrentlyPrivate = currentHidden.includes(adId);
+    const nextHidden = isCurrentlyPrivate
+      ? currentHidden.filter((id) => id !== adId)
+      : [...currentHidden, adId];
+
+    setProfileData({ ...profileData, private_ad_ids: nextHidden });
+    const { error } = await saveProfileUpdates(targetId, {
+      private_ad_ids: nextHidden,
+    });
+    if (error) {
+      setProfileData(profileData);
+      useToastStore
+        .getState()
+        .addToast("Failed to update ad visibility.", "error");
+    } else {
+      useToastStore
+        .getState()
+        .addToast(
+          isCurrentlyPrivate
+            ? "Ad is now visible on your public profile."
+            : "Ad hidden from visitors (Private).",
+          "info"
+        );
+    }
+  };
+
+  const handleDeleteAdFromHistory = async (adId: string) => {
+    if (!isOwner) return;
+    triggerHaptic("heavy");
+    const ok = await deleteAd(adId);
+    setConfirmDeleteAdId(null);
+    if (ok) {
+      useToastStore
+        .getState()
+        .addToast("Trade ad permanently deleted.", "success");
+    }
+  };
+
+  const handleRepostAd = async (ad: TradingAd) => {
+    if (!isOwner) return;
+    setRepostingAdId(ad.id);
+    triggerHaptic("medium");
+    await repostAd(ad);
+    setRepostingAdId(null);
+  };
+
+  const handleLoadAdIntoCalculator = (ad: TradingAd) => {
+    triggerHaptic("medium");
+    overwrite(ad.give_items, ad.get_items);
+    useToastStore
+      .getState()
+      .addToast("Loaded trade items into the Trade Analyzer!", "success");
   };
 
   const handleContact = () => {
@@ -338,7 +1091,11 @@ export function ProfileChannel() {
   const handleInspectVault = () => {
     if (!targetId || !profileData) return;
     triggerHaptic("medium");
-    setViewingUser(targetId, profileData.username, "profile");
+    if (isOwner) {
+      setViewingUser(null);
+    } else {
+      setViewingUser(targetId, profileData.username, "profile");
+    }
     window.document.dispatchEvent(
       new CustomEvent("navigate", { detail: "inventory" })
     );
@@ -359,146 +1116,120 @@ export function ProfileChannel() {
     setTimeout(() => setCopiedDiscordId(false), 2000);
   };
 
+  const handleCopyRoblox = () => {
+    if (!profileData?.roblox_username) return;
+    triggerHaptic("light");
+    navigator.clipboard.writeText(profileData.roblox_username);
+    setCopiedRoblox(true);
+    setTimeout(() => setCopiedRoblox(false), 2000);
+  };
+
+  // Filtered units for quick wishlist addition
+  const wishlistSearchResults = useMemo(() => {
+    const q = wishlistSearch.trim().toLowerCase();
+    if (!q) return [];
+    const existingSet = new Set(activeWishlistItems.map((w) => w.unit_id));
+    return ALL_UNITS.filter(
+      (u) =>
+        !existingSet.has(u.id) &&
+        (u.name.toLowerCase().includes(q) ||
+          (u.subtitle && u.subtitle.toLowerCase().includes(q)))
+    ).slice(0, 6);
+  }, [wishlistSearch, ALL_UNITS, activeWishlistItems]);
+
+  if (isAuthLoading && !targetId) {
+    return <ProfileChannelSkeleton compact={globalCompactMode} />;
+  }
+
   // UNAUTHENTICATED LOCAL PREFERENCES FALLBACK
   if (!targetId) {
     return (
-      <div className="flex-1 w-full h-full font-sans overflow-y-auto custom-scrollbar p-6 md:p-12 bg-background flex flex-col items-center">
-        <div className="max-w-2xl w-full flex flex-col gap-6">
+      <div className="flex-1 w-full h-full font-sans overflow-y-auto custom-scrollbar p-6 md:p-10 bg-background flex flex-col items-center">
+        <div className="max-w-3xl w-full flex flex-col gap-6">
           <div className="bg-card border border-border rounded-[8px] p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex flex-col text-center sm:text-left">
-              <h2 className="text-[18px] font-black text-foreground tracking-tight">
-                Preferences & Personalization
+            <div className="flex flex-col text-center sm:text-left gap-1">
+              <h2 className="text-[20px] text-foreground">
+                Trader Profile & Preferences
               </h2>
-              <p className="text-[13px] text-muted-foreground mt-1">
-                Configure your local interface settings. Log in with Discord to
-                unlock your public profile and trading board.
+              <p className="text-[13px] text-muted-foreground">
+                Customize your local theme and startup behavior, or sign in with
+                Discord to unlock your custom profile banner, Ad History, and
+                Target Wishlist.
               </p>
             </div>
             <button
+              type="button"
               onClick={() => {
                 triggerHaptic("medium");
                 loginWithDiscord();
               }}
-              className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[12px] uppercase tracking-wider rounded-[4px] flex items-center gap-2 transition-colors shrink-0 shadow-sm cursor-pointer focus-visible:outline-none border border-primary"
+              className="px-5 py-2.5 bg-[#5865F2] hover:bg-[#4752C4] text-white text-[13px] rounded-[6px] flex items-center gap-2 transition-colors shrink-0 shadow-sm cursor-pointer focus-visible:outline-none"
             >
-              <LogIn className="w-4 h-4" /> Login with Discord
+              <GiCharacter className="w-4 h-4" /> Sign In with Discord
             </button>
           </div>
 
           {/* Theme Mode */}
-          <div className="bg-card border border-border rounded-[8px] p-6 shadow-sm">
-            <h3 className="text-[13px] font-bold uppercase tracking-wider text-foreground mb-4 flex items-center gap-2">
-              <Palette className="w-4 h-4 text-primary" /> Application Theme
-            </h3>
+          <div className="bg-card border border-border rounded-[8px] p-6 shadow-sm flex flex-col gap-4">
+            <div className="flex flex-col gap-0.5">
+              <h3 className="text-[14px] text-foreground">Application Theme</h3>
+              <p className="text-[12.5px] text-muted-foreground">
+                Choose the color palette used across the value list and
+                calculator.
+              </p>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
-                { id: "dark", label: "Deep Dark", desc: "High contrast data." },
-                { id: "discord", label: "Blurple", desc: "Matches Discord." },
-                { id: "light", label: "Crisp Light", desc: "Daytime traders." },
+                {
+                  id: "dark",
+                  label: "Deep Dark",
+                  desc: "High-contrast dark surface",
+                  previewBg: "#0a0a0a",
+                  previewCard: "#171717",
+                },
+                {
+                  id: "discord",
+                  label: "Discord Blurple",
+                  desc: "Native Discord slate palette",
+                  previewBg: "#313338",
+                  previewCard: "#2B2D31",
+                },
+                {
+                  id: "light",
+                  label: "Crisp Light",
+                  desc: "Daylight trading mode",
+                  previewBg: "#fafafa",
+                  previewCard: "#ffffff",
+                },
               ].map((t) => (
                 <button
                   key={t.id}
+                  type="button"
                   onClick={() => {
                     triggerHaptic("light");
                     setTheme(t.id as ThemeMode);
                   }}
-                  className={`p-4 rounded-[6px] border text-left flex flex-col gap-1.5 focus-visible:outline-none cursor-pointer transition-colors ${
+                  className={`p-4 rounded-[6px] border text-left flex flex-col gap-2.5 focus-visible:outline-none cursor-pointer transition-colors ${
                     theme === t.id
-                      ? "bg-popover border-primary ring-1 ring-primary/30 shadow-md"
-                      : "bg-muted border-border hover:bg-popover"
+                      ? "bg-popover border-primary ring-1 ring-primary/40"
+                      : "bg-muted/60 border-border hover:bg-popover"
                   }`}
                 >
-                  <span className="text-[14px] font-bold text-foreground">
-                    {t.label}
-                  </span>
-                  <span className="text-[12px] text-muted-foreground font-medium">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[14px] text-foreground">
+                      {t.label}
+                    </span>
+                    <span
+                      className="w-5 h-5 rounded-full border border-border"
+                      style={{ backgroundColor: t.previewBg }}
+                    />
+                  </div>
+                  <span className="text-[12px] text-muted-foreground">
                     {t.desc}
                   </span>
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Boot Channel */}
-          <div className="bg-card border border-border rounded-[8px] p-6 shadow-sm">
-            <h3 className="text-[13px] font-bold uppercase tracking-wider text-foreground mb-4 flex items-center gap-2">
-              <MousePointer2 className="w-4 h-4 text-primary" /> Default Boot
-              Channel
-            </h3>
-            <p className="text-[13px] text-muted-foreground mb-4">
-              Choose where the application routes you immediately after the
-              loading screen finishes.
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                {
-                  id: "last-used",
-                  label: "Last Used",
-                  desc: "Open where you left off",
-                },
-                { id: "home", label: "Home", desc: "Check patch notes" },
-                {
-                  id: "value-list",
-                  label: "Value List",
-                  desc: "Immediate market data",
-                },
-                {
-                  id: "trading-ads",
-                  label: "Trading Ads",
-                  desc: "Live trading board",
-                },
-              ].map((opt) => (
-                <button
-                  key={opt.id}
-                  onClick={() => {
-                    triggerHaptic("light");
-                    setBootChannel(opt.id as BootChannel);
-                  }}
-                  className={`p-3 rounded-[6px] border text-left flex flex-col gap-1 focus-visible:outline-none cursor-pointer transition-colors ${
-                    bootChannel === opt.id
-                      ? "bg-popover border-primary shadow-sm"
-                      : "bg-muted border-border hover:bg-popover"
-                  }`}
-                >
-                  <span className="text-[13px] font-bold text-foreground">
-                    {opt.label}
-                  </span>
-                  <span className="text-[11px] text-muted-foreground font-medium truncate">
-                    {opt.desc}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Global Compact Mode */}
-          <div className="bg-card border border-border rounded-[8px] p-6 shadow-sm flex items-center justify-between">
-            <div className="flex flex-col pr-4">
-              <h3 className="text-[13px] font-bold uppercase tracking-wider text-foreground mb-1.5 flex items-center gap-2">
-                <Maximize className="w-4 h-4 text-primary" /> Global Compact
-                Mode
-              </h3>
-              <p className="text-[13px] text-muted-foreground">
-                Shrinks padding globally to fit more data on screen.
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                triggerHaptic("medium");
-                setGlobalCompactMode(!globalCompactMode);
-              }}
-              className={`relative w-12 h-6 rounded-full transition-colors focus-visible:outline-none shrink-0 cursor-pointer ${
-                globalCompactMode
-                  ? "bg-primary"
-                  : "bg-muted border border-border"
-              }`}
-            >
-              <div
-                className={`absolute top-0.5 left-0.5 bg-background w-5 h-5 rounded-full transition-transform shadow-sm ${
-                  globalCompactMode ? "translate-x-6" : "translate-x-0"
-                }`}
-              />
-            </button>
           </div>
         </div>
       </div>
@@ -506,142 +1237,265 @@ export function ProfileChannel() {
   }
 
   if (isLoading || !profileData) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-background gap-4">
-        <GiTornado className="w-8 h-8 text-primary animate-pulse" />
-        <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-widest">
-          Loading Profile...
-        </span>
-      </div>
-    );
+    return <ProfileChannelSkeleton compact={globalCompactMode} />;
   }
 
-  const activeAds = ads.filter((a) => a.user_id === targetId);
   const safeRep = profileData.global_rep ?? 0;
   const repRank = getReputationRank(safeRep);
   const roleCfg = getRoleConfig(profileData.role);
-  const RoleIcon = roleCfg.icon;
+  const accentColor = profileData.accent_color || "#7289da";
+  const stanceCfg =
+    TRADING_STANCES.find(
+      (s) => s.id === (profileData.trading_stance || "open")
+    ) || TRADING_STANCES[0];
 
-  const totalVaultValue = viewedItems.reduce((acc, i) => {
+  const privateAdSet = new Set(profileData.private_ad_ids || []);
+  const nowMs = Date.now();
+
+  const liveAdsCount = userAdHistory.filter(
+    (a) => new Date(a.expires_at).getTime() > nowMs
+  ).length;
+  const expiredAdsCount = userAdHistory.filter(
+    (a) => new Date(a.expires_at).getTime() <= nowMs
+  ).length;
+  const privateAdsCount = userAdHistory.filter((a) =>
+    privateAdSet.has(a.id)
+  ).length;
+
+  const filteredAdHistory = userAdHistory.filter((ad) => {
+    const isLive = new Date(ad.expires_at).getTime() > nowMs;
+    const isPriv = privateAdSet.has(ad.id);
+    if (adFilter === "live") return isLive;
+    if (adFilter === "expired") return !isLive;
+    if (adFilter === "private") return isPriv;
+    return true;
+  });
+
+  const totalVaultValue = activeVaultItems.reduce((acc, i) => {
     const m = ALL_UNITS.find((u) => u.id === i.unit_id);
     return acc + (m ? getUnitConservativeValue(m) * i.quantity : 0);
   }, 0);
 
+  const totalWishlistValue = activeWishlistItems.reduce((acc, i) => {
+    const m = ALL_UNITS.find((u) => u.id === i.unit_id);
+    return acc + (m ? getUnitConservativeValue(m) : 0);
+  }, 0);
+
+  const repProgressPct =
+    safeRep >= 1000
+      ? 100
+      : Math.max(
+          0,
+          Math.min(
+            100,
+            ((safeRep - repRank.min) /
+              Math.max(1, repRank.next - repRank.min)) *
+              100
+          )
+        );
+
+  const liveStatus = isOwner
+    ? currentUser?.status || profileData.status || "online"
+    : profileData.status || "offline";
+
+  const statusDotColor =
+    liveStatus === "online"
+      ? "#23a559"
+      : liveStatus === "dnd"
+      ? "#ef4444"
+      : "#888888";
+
+  const isAdHistoryVisibleToVisitor =
+    isOwner || (profileData.ad_history_public ?? true);
+  const isWishlistVisibleToVisitor =
+    isOwner || (profileData.wishlist_public ?? true);
+
   return (
-    <div className="flex-1 w-full h-full font-sans relative overflow-hidden flex flex-col overflow-y-auto custom-scrollbar pb-16 z-10 bg-background">
+    <div className="flex-1 w-full h-full font-sans relative overflow-y-auto custom-scrollbar pb-16 z-10 bg-background">
+      {/* Return Bar when inspecting another user's profile */}
       {viewingProfileId && (
-        <div className="w-full bg-card border-b border-border p-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+        <div className="w-full bg-popover border-b border-border px-4 py-2.5 flex items-center justify-between sticky top-0 z-50">
           <button
+            type="button"
             onClick={handleCloseProfile}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-card text-muted-foreground hover:text-foreground border border-border rounded-[4px] text-[12px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none cursor-pointer"
+            className="flex items-center gap-2 px-3 py-1.5 bg-card hover:bg-muted text-foreground border border-border rounded-[6px] text-[12px] transition-colors focus-visible:outline-none cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4" /> Back to{" "}
-            {returnChannel ? formatChannelName(returnChannel) : "Ads"}
+            <IconArrowLeft className="w-3.5 h-3.5" />
+            <span>
+              Back to{" "}
+              {returnChannel ? formatChannelName(returnChannel) : "Trading Ads"}
+            </span>
           </button>
+          <span className="text-[12px] text-muted-foreground">
+            Viewing <strong className="text-foreground">{profileData.username}</strong>’s Profile
+          </span>
         </div>
       )}
 
-      <div className="w-full relative shrink-0">
+      {/* Discord-Style Profile Banner & Identity Header */}
+      <div className="w-full relative shrink-0 border-b border-border bg-card">
+        {/* Customizable Banner Surface */}
         <div
-          className={`w-full transition-colors duration-300 relative border-b border-border ${
+          className={`w-full relative overflow-hidden border-b border-border transition-all ${
             globalCompactMode
-              ? "h-[60px] md:h-[80px]"
-              : "h-[140px] md:h-[160px]"
+              ? "h-[96px] md:h-[116px]"
+              : "h-[136px] md:h-[168px]"
           }`}
-          style={{ backgroundColor: profileData.banner_color || "#121214" }}
-        />
-
-        <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-20 pb-6 border-b border-border bg-card">
+          style={getBannerCssStyle(
+            profileData.banner_color,
+            accentColor,
+            profileData.banner_style || "gradient"
+          )}
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent pointer-events-none" />
+          {/* Subtle top accent trim */}
           <div
-            className={`flex flex-col md:flex-row md:items-end justify-between ${
-              globalCompactMode
-                ? "gap-4 -mt-8 md:-mt-10"
-                : "gap-6 -mt-12 md:-mt-14"
-            }`}
-          >
-            <div className="flex flex-col md:flex-row md:items-end gap-5">
-              <div className="relative shrink-0">
+            className="absolute top-0 left-0 right-0 h-[3px]"
+            style={{ backgroundColor: accentColor }}
+          />
+        </div>
+
+        {/* Identity Row */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pb-5 relative z-20">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 -mt-10 md:-mt-12">
+            {/* Avatar + Name + Badges */}
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4 min-w-0">
+              <div className="relative shrink-0 self-start">
                 <img
-                  src={profileData.avatar_url || getUnitAssetUrl("firezio") || ""}
+                  src={
+                    profileData.avatar_url || getUnitAssetUrl("firezio") || ""
+                  }
                   alt={profileData.username}
-                  className={`${
-                    globalCompactMode
-                      ? "w-[64px] h-[64px] border-[3px]"
-                      : "w-[100px] h-[100px] border-4"
-                  } rounded-[6px] border-card object-cover bg-muted shadow-md`}
+                  className="w-[84px] h-[84px] md:w-[96px] md:h-[96px] rounded-[10px] border-4 border-card object-cover bg-muted shadow-xl"
+                />
+                {/* Presence Indicator Dot */}
+                <div
+                  className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-4 border-card z-10"
+                  style={{ backgroundColor: statusDotColor }}
+                  title={`Status: ${liveStatus.toUpperCase()}`}
                 />
               </div>
 
-              <div className="flex flex-col gap-2 pb-1">
-                <h1
-                  className={`${
-                    globalCompactMode
-                      ? "text-[20px] md:text-[24px]"
-                      : "text-[26px] md:text-[30px]"
-                  } font-black text-foreground tracking-tight leading-none`}
-                >
-                  {profileData.username}
-                </h1>
+              <div className="flex flex-col gap-1.5 min-w-0 pb-0.5">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h1 className="text-[22px] sm:text-[26px] text-foreground leading-tight truncate">
+                    {profileData.username}
+                  </h1>
 
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <div
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border text-[11px] font-bold ${repRank.bg} ${repRank.border}`}
-                    style={{ color: repRank.color }}
-                  >
-                    <repRank.icon
-                      className="w-3.5 h-3.5"
-                      style={{ fill: safeRep >= 50 ? "currentColor" : "none" }}
-                    />
-                    {repRank.label} ({safeRep > 0 ? "+" : ""}
-                    {safeRep})
-                  </div>
-
-                  <div
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] border text-[11px] font-bold shadow-sm"
+                  {/* Role Pill */}
+                  <span
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[5px] border text-[11.5px]"
                     style={{
                       backgroundColor: roleCfg.bg,
                       color: roleCfg.color,
-                      borderColor: roleCfg.color + "40",
+                      borderColor: roleCfg.border,
                     }}
                   >
-                    <RoleIcon className="w-3.5 h-3.5" />
+                    <GiCharacter className="w-3.5 h-3.5" />
                     {roleCfg.label}
-                  </div>
+                  </span>
+
+                  {/* Reputation Pill */}
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[5px] border text-[11.5px] ${repRank.bg} ${repRank.border}`}
+                    style={{ color: repRank.color }}
+                  >
+                    <GiSpikedHalo className="w-3.5 h-3.5" />
+                    {repRank.label} ({safeRep > 0 ? `+${safeRep}` : safeRep})
+                  </span>
+
+                  {/* Trading Stance Pill */}
+                  <span
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[5px] text-[11.5px]"
+                    style={{
+                      backgroundColor: stanceCfg.bg,
+                      color: stanceCfg.color,
+                    }}
+                  >
+                    <span
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ backgroundColor: stanceCfg.color }}
+                    />
+                    {stanceCfg.label}
+                  </span>
                 </div>
+
+                {/* Quick Presence Switcher for Owner */}
+                {isOwner && (
+                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                    <span className="text-[11.5px] text-muted-foreground mr-1">
+                      Presence:
+                    </span>
+                    {PRESENCE_OPTIONS.map((p) => {
+                      const active = liveStatus === p.id;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            triggerHaptic("light");
+                            updateStatus(p.id);
+                            setProfileData((prev) =>
+                              prev ? { ...prev, status: p.id } : null
+                            );
+                          }}
+                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-[11px] border transition-colors cursor-pointer ${
+                            active
+                              ? "bg-popover border-foreground/40 text-foreground"
+                              : "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-popover/50"
+                          }`}
+                        >
+                          <span
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: p.color }}
+                          />
+                          {p.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0 pb-1">
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2.5 shrink-0">
               <button
+                type="button"
                 onClick={handleCopyProfileLink}
-                className="px-4 py-2 rounded-[4px] bg-muted hover:bg-card border border-border text-foreground text-[12px] font-bold flex items-center gap-2 transition-colors shadow-sm focus-visible:outline-none cursor-pointer"
+                className="px-3.5 py-2 rounded-[6px] bg-popover hover:bg-muted border border-border text-foreground text-[12px] flex items-center gap-1.5 transition-colors cursor-pointer focus-visible:outline-none"
               >
                 {copiedProfileLink ? (
-                  <Check className="w-4 h-4 text-success" />
+                  <>
+                    <IconCheck className="w-3.5 h-3.5 text-[#23a559]" />
+                    <span className="text-[#23a559]">Link Copied</span>
+                  </>
                 ) : (
-                  <Share2 className="w-4 h-4 text-muted-foreground" />
+                  <>
+                    <IconShare className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span>Share Profile</span>
+                  </>
                 )}
-                <span>Share</span>
               </button>
 
               {isOwner ? (
                 <button
-                  onClick={() => {
-                    setEditBio(profileData.bio || "");
-                    setEditBannerColor(profileData.banner_color || "#121214");
-                    setEditRobloxName(profileData.roblox_username || "");
-                    setIsEditModalOpen(true);
-                  }}
-                  className="px-5 py-2 rounded-[4px] bg-foreground hover:bg-foreground/90 text-background text-[12px] font-bold flex items-center gap-2 transition-colors shadow-sm focus-visible:outline-none cursor-pointer"
+                  type="button"
+                  onClick={openEditModal}
+                  className="px-4 py-2 rounded-[6px] text-white text-[12px] flex items-center gap-2 transition-opacity hover:opacity-95 shadow-sm cursor-pointer focus-visible:outline-none"
+                  style={{ backgroundColor: accentColor }}
                 >
-                  <Edit2 className="w-4 h-4" /> Edit Profile
+                  <IconEdit className="w-3.5 h-3.5" />
+                  <span>Customize Profile</span>
                 </button>
               ) : (
                 <button
+                  type="button"
                   onClick={handleContact}
-                  className="px-6 py-2 rounded-[4px] bg-primary hover:bg-primary/90 text-primary-foreground text-[12px] font-bold flex items-center gap-2 transition-colors shadow-sm focus-visible:outline-none cursor-pointer border border-primary"
+                  className="px-4 py-2 rounded-[6px] bg-[#5865F2] hover:bg-[#4752C4] text-white text-[12px] flex items-center gap-2 transition-colors shadow-sm cursor-pointer focus-visible:outline-none"
                 >
-                  <GiChatBubble className="w-4 h-4" /> Message
+                  <GiChatBubble className="w-4 h-4" />
+                  <span>Message on Discord</span>
                 </button>
               )}
             </div>
@@ -649,522 +1503,871 @@ export function ProfileChannel() {
         </div>
       </div>
 
-      <div
-        className={`px-4 md:px-8 max-w-7xl mx-auto w-full pt-6 flex flex-col ${
-          globalCompactMode ? "gap-3" : "gap-6"
-        }`}
-      >
-        <div
-          className={`grid grid-cols-2 lg:grid-cols-4 ${
-            globalCompactMode ? "gap-2" : "gap-4"
-          }`}
-        >
-          <div
-            className={`bg-card border border-border rounded-[6px] flex flex-col justify-between shadow-sm ${
-              globalCompactMode ? "p-2.5" : "p-4"
-            }`}
-          >
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              Reputation
-            </span>
-            <span
-              className={`${
-                globalCompactMode ? "text-[16px]" : "text-[20px]"
-              } font-black font-mono mt-2`}
-              style={{ color: repRank.color }}
-            >
-              {safeRep > 0 ? `+${safeRep}` : safeRep}
-            </span>
-          </div>
-          <div
-            className={`bg-card border border-border rounded-[6px] flex flex-col justify-between shadow-sm ${
-              globalCompactMode ? "p-2.5" : "p-4"
-            }`}
-          >
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              Active Ads
-            </span>
-            <span
-              className={`${
-                globalCompactMode ? "text-[16px]" : "text-[20px]"
-              } font-black font-mono text-foreground mt-2`}
-            >
-              {activeAds.length}
-            </span>
-          </div>
-          <div
-            className={`bg-card border border-border rounded-[6px] flex flex-col justify-between shadow-sm ${
-              globalCompactMode ? "p-2.5" : "p-4"
-            }`}
-          >
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              Vault Net Worth
-            </span>
-            <span
-              className={`${
-                globalCompactMode ? "text-[16px]" : "text-[20px]"
-              } font-black font-mono text-foreground mt-2`}
-            >
-              {totalVaultValue.toLocaleString()}
-            </span>
-          </div>
-          <div
-            className={`bg-card border border-border rounded-[6px] flex flex-col justify-between shadow-sm ${
-              globalCompactMode ? "p-2.5" : "p-4"
-            }`}
-          >
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              Member Since
-            </span>
-            <span
-              className={`${
-                globalCompactMode
-                  ? "text-[14px] md:text-[15px]"
-                  : "text-[16px] md:text-[18px]"
-              } font-black font-mono text-foreground mt-2`}
-            >
-              {new Date(profileData.created_at).toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "short",
-              })}
-            </span>
-          </div>
-        </div>
-
-        <div
-          className={`grid grid-cols-1 lg:grid-cols-[340px_1fr] items-start ${
-            globalCompactMode ? "gap-3" : "gap-6"
-          }`}
-        >
-          <div
-            className={`flex flex-col lg:sticky lg:top-6 ${
-              globalCompactMode ? "gap-3" : "gap-6"
-            }`}
-          >
+      {/* Main Content Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6 flex flex-col gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 items-start">
+          {/* LEFT SIDEBAR: Unified Trader Overview Card */}
+          <aside className="flex flex-col gap-4 lg:sticky lg:top-6">
             <div
-              className={`bg-card border border-border rounded-[6px] shadow-sm flex flex-col gap-4 ${
-                globalCompactMode ? "p-3.5" : "p-5"
-              }`}
+              className="bg-card border border-border rounded-[8px] p-5 flex flex-col gap-4 shadow-sm"
+              style={{ borderTop: `2px solid ${accentColor}` }}
             >
-              <h3 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground border-b border-border pb-3">
-                About Me
-              </h3>
-              {profileData.bio ? (
-                <p className="text-[13px] text-foreground leading-relaxed whitespace-pre-wrap break-words font-medium">
-                  {profileData.bio}
-                </p>
-              ) : (
-                <p className="text-[13px] text-muted-foreground italic font-medium">
-                  This trader hasn't written a bio yet.
-                </p>
-              )}
-
-              <div className="flex flex-col gap-2.5 pt-3 border-t border-border">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    Discord ID
+              {/* Compact 2x2 Key Metrics Grid */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="bg-popover border border-border rounded-[6px] p-3 flex flex-col gap-0.5">
+                  <span className="text-[11px] text-muted-foreground">
+                    Vault Net Worth
                   </span>
-                  <button
-                    onClick={handleCopyDiscordId}
-                    className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-foreground bg-muted px-2.5 py-1 rounded-[4px] border border-border hover:border-foreground transition-colors cursor-pointer"
-                  >
-                    <span>{profileData.discord_id}</span>
-                    {copiedDiscordId ? (
-                      <Check className="w-3 h-3 text-success" />
-                    ) : (
-                      <Copy className="w-3 h-3 text-muted-foreground" />
-                    )}
-                  </button>
+                  <span className="text-[16px] font-mono text-foreground truncate">
+                    {totalVaultValue.toLocaleString()}
+                  </span>
+                  <span className="text-[10.5px] text-muted-foreground font-mono">
+                    {activeVaultItems.reduce((a, b) => a + b.quantity, 0)} units
+                  </span>
                 </div>
 
-                {profileData.roblox_username && (
-                  <div className="flex items-center justify-between pt-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                      Roblox ID
-                    </span>
-                    <span className="text-[12px] font-bold text-foreground font-mono">
-                      {profileData.roblox_username}
+                <div className="bg-popover border border-border rounded-[6px] p-3 flex flex-col gap-0.5">
+                  <span className="text-[11px] text-muted-foreground">
+                    Ad History
+                  </span>
+                  <span className="text-[16px] font-mono text-foreground">
+                    {isAdHistoryVisibleToVisitor
+                      ? userAdHistory.length
+                      : "Private"}
+                  </span>
+                  <span className="text-[10.5px] text-[#23a559] font-mono">
+                    {isAdHistoryVisibleToVisitor
+                      ? `${liveAdsCount} live now`
+                      : "Hidden"}
+                  </span>
+                </div>
+
+                <div className="bg-popover border border-border rounded-[6px] p-3 flex flex-col gap-0.5">
+                  <span className="text-[11px] text-muted-foreground">
+                    Target Wishlist
+                  </span>
+                  <span className="text-[16px] font-mono text-foreground truncate">
+                    {isWishlistVisibleToVisitor
+                      ? activeWishlistItems.length
+                      : "Private"}
+                  </span>
+                  <span className="text-[10.5px] text-muted-foreground font-mono truncate">
+                    {isWishlistVisibleToVisitor
+                      ? `${totalWishlistValue.toLocaleString()} val`
+                      : "Hidden"}
+                  </span>
+                </div>
+
+                <div className="bg-popover border border-border rounded-[6px] p-3 flex flex-col gap-0.5">
+                  <span className="text-[11px] text-muted-foreground">
+                    Member Since
+                  </span>
+                  <span className="text-[15px] font-mono text-foreground">
+                    {new Date(profileData.created_at).toLocaleDateString(
+                      undefined,
+                      {
+                        year: "numeric",
+                        month: "short",
+                      }
+                    )}
+                  </span>
+                  <span className="text-[10.5px] text-muted-foreground">
+                    Verified Trader
+                  </span>
+                </div>
+              </div>
+
+              {/* Reputation Progress Bar */}
+              <div className="flex flex-col gap-1.5 pt-2 border-t border-border">
+                <div className="flex items-center justify-between text-[11.5px]">
+                  <span className="text-muted-foreground">Reputation Rank</span>
+                  <span className="font-mono" style={{ color: repRank.color }}>
+                    {repRank.label} ({safeRep} / {repRank.next})
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-popover rounded-full overflow-hidden border border-border/60">
+                  <div
+                    className="h-full transition-all duration-300 rounded-full"
+                    style={{
+                      width: `${repProgressPct}%`,
+                      backgroundColor: repRank.color,
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* About Me */}
+              <div className="flex flex-col gap-1.5 pt-2 border-t border-border">
+                <span className="text-[12px] text-muted-foreground">
+                  About Me
+                </span>
+                {profileData.bio ? (
+                  <p className="text-[13px] text-foreground leading-relaxed whitespace-pre-wrap break-words">
+                    {profileData.bio}
+                  </p>
+                ) : (
+                  <p className="text-[12.5px] text-muted-foreground italic">
+                    No bio added yet.
+                  </p>
+                )}
+              </div>
+
+              {/* Connected Accounts (Discord & Roblox) */}
+              <div className="flex flex-col gap-2 pt-2 border-t border-border">
+                <span className="text-[12px] text-muted-foreground">
+                  Trader Identifiers
+                </span>
+
+                {/* Discord ID (Respects Privacy Flag) */}
+                {!profileData.hide_discord_id || isOwner ? (
+                  <div className="flex items-center justify-between gap-2 bg-popover px-3 py-2 rounded-[6px] border border-border min-w-0 overflow-hidden">
+                    <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                      <span className="text-[11.5px] text-muted-foreground">
+                        Discord ID
+                      </span>
+                      {profileData.hide_discord_id && isOwner && (
+                        <span className="text-[9.5px] px-1.5 py-0.5 rounded bg-warning/15 text-warning leading-none">
+                          Hidden
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCopyDiscordId}
+                      className="flex items-center gap-1.5 text-[11.5px] font-mono text-foreground hover:text-primary transition-colors cursor-pointer min-w-0 overflow-hidden"
+                      title={`Copy Discord ID (${profileData.discord_id})`}
+                    >
+                      <span className="truncate">{profileData.discord_id}</span>
+                      {copiedDiscordId ? (
+                        <IconCheck className="w-3.5 h-3.5 text-[#23a559] shrink-0" />
+                      ) : (
+                        <IconCopy className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-2 bg-popover px-3 py-2 rounded-[6px] border border-border text-[11.5px] text-muted-foreground whitespace-nowrap">
+                    <span>Discord ID</span>
+                    <span className="flex items-center gap-1">
+                      <IconLock locked className="w-3 h-3" /> Private
                     </span>
                   </div>
                 )}
+
+                {/* Roblox Username */}
+                {profileData.roblox_username && (
+                  <div className="flex items-center justify-between gap-2 bg-popover px-3 py-2 rounded-[6px] border border-border min-w-0 overflow-hidden">
+                    <span className="text-[11.5px] text-muted-foreground flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                      <GiGamepad className="w-3.5 h-3.5 text-primary shrink-0" />
+                      Roblox
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopyRoblox}
+                      className="flex items-center gap-1.5 text-[12px] font-mono text-foreground hover:text-primary transition-colors cursor-pointer min-w-0 overflow-hidden"
+                      title={`Copy Roblox Username (${profileData.roblox_username})`}
+                    >
+                      <span className="truncate">
+                        {profileData.roblox_username}
+                      </span>
+                      {copiedRoblox ? (
+                        <IconCheck className="w-3.5 h-3.5 text-[#23a559] shrink-0" />
+                      ) : (
+                        <IconCopy className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
 
-            <button
-              onClick={handleInspectVault}
-              className="w-full py-3.5 bg-foreground hover:bg-foreground/90 text-background rounded-[6px] text-[12px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-colors shadow-sm focus-visible:outline-none cursor-pointer group border border-foreground"
-            >
-              <GiChest className="w-4 h-4 group-hover:scale-110 transition-transform" />{" "}
-              Access Public Vault{" "}
-              <ArrowRight className="w-4 h-4 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-            </button>
-          </div>
-
-          <div className="flex-1 flex flex-col min-w-0">
-            <div
-              className={`flex items-center gap-8 border-b border-border px-2 overflow-x-auto hide-scrollbar shrink-0 ${
-                globalCompactMode ? "mb-3" : "mb-6"
-              }`}
-            >
+              {/* Vault Action Button */}
               <button
-                onClick={() => setActiveTab("board")}
-                className={`pb-3 text-[13px] font-bold uppercase tracking-wider transition-colors relative flex items-center gap-2 focus-visible:outline-none cursor-pointer shrink-0 ${
-                  activeTab === "board"
-                    ? "text-foreground border-b-2 border-foreground -mb-[1px]"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                type="button"
+                onClick={handleInspectVault}
+                className="w-full py-2.5 px-4 bg-popover hover:bg-muted text-foreground rounded-[6px] text-[12.5px] flex items-center justify-between border border-border transition-colors cursor-pointer group focus-visible:outline-none"
               >
-                <GiMegaphone className="w-4 h-4" /> Active Ads{" "}
-                <span className="bg-muted border border-border px-2 py-0.5 rounded-[2px] text-[11px] font-mono">
-                  {activeAds.length}
+                <span className="flex items-center gap-2">
+                  <GiChest
+                    className="w-4 h-4"
+                    style={{ color: accentColor }}
+                  />
+                  <span>
+                    {isOwner ? "Open My Inventory Vault" : "Inspect Public Vault"}
+                  </span>
                 </span>
+                <IconArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
               </button>
+            </div>
+          </aside>
+
+          {/* RIGHT MAIN WORKSPACE: Ad History, Target Wishlist, Preferences */}
+          <div className="flex-1 flex flex-col min-w-0 gap-5">
+            {/* Clean Tab Navigation (No Overflow Scrollbar Artifacts) */}
+            <div
+              className="flex flex-wrap items-center gap-2 border-b border-border pb-3"
+              role="tablist"
+              aria-label="Profile sections"
+            >
               <button
-                onClick={() => setActiveTab("wishlist")}
-                className={`pb-3 text-[13px] font-bold uppercase tracking-wider transition-colors relative flex items-center gap-2 focus-visible:outline-none cursor-pointer shrink-0 ${
-                  activeTab === "wishlist"
-                    ? "text-foreground border-b-2 border-foreground -mb-[1px]"
-                    : "text-muted-foreground hover:text-foreground"
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "board"}
+                onClick={() => {
+                  triggerHaptic("light");
+                  setActiveTab("board");
+                }}
+                className={`px-4 py-2 rounded-[6px] text-[13px] transition-colors flex items-center gap-2 cursor-pointer focus-visible:outline-none ${
+                  activeTab === "board"
+                    ? "bg-card text-foreground border border-border shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
                 }`}
               >
-                <GiSpikedHalo className="w-4 h-4" /> Target Wishlist{" "}
-                <span className="bg-muted border border-border px-2 py-0.5 rounded-[2px] text-[11px] font-mono">
-                  {viewedWishlist.length}
-                </span>
+                <GiMegaphone
+                  className="w-4 h-4"
+                  style={{
+                    color: activeTab === "board" ? accentColor : undefined,
+                  }}
+                />
+                <span>Ad History</span>
+                {isAdHistoryVisibleToVisitor && (
+                  <span className="bg-popover border border-border px-2 py-0.5 rounded-[4px] text-[11px] font-mono">
+                    {userAdHistory.length}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "wishlist"}
+                onClick={() => {
+                  triggerHaptic("light");
+                  setActiveTab("wishlist");
+                }}
+                className={`px-4 py-2 rounded-[6px] text-[13px] transition-colors flex items-center gap-2 cursor-pointer focus-visible:outline-none ${
+                  activeTab === "wishlist"
+                    ? "bg-card text-foreground border border-border shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                }`}
+              >
+                <GiSpikedHalo
+                  className="w-4 h-4"
+                  style={{
+                    color: activeTab === "wishlist" ? accentColor : undefined,
+                  }}
+                />
+                <span>Target Wishlist</span>
+                {isWishlistVisibleToVisitor && (
+                  <span className="bg-popover border border-border px-2 py-0.5 rounded-[4px] text-[11px] font-mono">
+                    {activeWishlistItems.length}
+                  </span>
+                )}
               </button>
 
               {isOwner && (
                 <button
-                  onClick={() => setActiveTab("settings")}
-                  className={`pb-3 text-[13px] font-bold uppercase tracking-wider transition-colors relative flex items-center gap-2 focus-visible:outline-none cursor-pointer shrink-0 ${
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === "settings"}
+                  onClick={() => {
+                    triggerHaptic("light");
+                    setActiveTab("settings");
+                  }}
+                  className={`px-4 py-2 rounded-[6px] text-[13px] transition-colors flex items-center gap-2 cursor-pointer focus-visible:outline-none ${
                     activeTab === "settings"
-                      ? "text-foreground border-b-2 border-foreground -mb-[1px]"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-card text-foreground border border-border shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-card/50"
                   }`}
                 >
-                  <Settings className="w-4 h-4" /> Preferences
+                  <IconSliders className="w-4 h-4" />
+                  <span>Preferences & Privacy</span>
                 </button>
               )}
             </div>
 
-            <div className="flex-1 min-h-[400px]">
-              {activeTab === "settings" && isOwner && (
-                <div className="flex flex-col gap-6 animate-fade-in">
-                  {/* Theme Mode */}
-                  <div className="bg-card border border-border rounded-[8px] p-5 md:p-6 shadow-sm">
-                    <h3 className="text-[13px] font-bold uppercase tracking-wider text-foreground mb-4 flex items-center gap-2">
-                      <Palette className="w-4 h-4 text-primary" /> Application
-                      Theme
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <button
-                        onClick={() => {
-                          triggerHaptic("light");
-                          setTheme("dark");
-                        }}
-                        className={`p-4 rounded-[6px] border text-left flex flex-col gap-1.5 focus-visible:outline-none cursor-pointer transition-colors ${
-                          theme === "dark"
-                            ? "bg-popover border-primary ring-1 ring-primary/30 shadow-md"
-                            : "bg-muted border-border hover:bg-popover"
-                        }`}
-                      >
-                        <span className="text-[14px] font-bold text-foreground">
-                          Deep Dark
-                        </span>
-                        <span className="text-[12px] text-muted-foreground font-medium">
-                          High contrast data.
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          triggerHaptic("light");
-                          setTheme("discord");
-                        }}
-                        className={`p-4 rounded-[6px] border text-left flex flex-col gap-1.5 focus-visible:outline-none cursor-pointer transition-colors ${
-                          theme === "discord"
-                            ? "bg-popover border-[#5865F2] ring-1 ring-[#5865F2]/30 shadow-md"
-                            : "bg-muted border-border hover:bg-popover"
-                        }`}
-                      >
-                        <span className="text-[14px] font-bold text-foreground">
-                          Blurple
-                        </span>
-                        <span className="text-[12px] text-muted-foreground font-medium">
-                          Matches Discord's UI.
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          triggerHaptic("light");
-                          setTheme("light");
-                        }}
-                        className={`p-4 rounded-[6px] border text-left flex flex-col gap-1.5 focus-visible:outline-none cursor-pointer transition-colors ${
-                          theme === "light"
-                            ? "bg-popover border-primary ring-1 ring-primary/30 shadow-md"
-                            : "bg-muted border-border hover:bg-popover"
-                        }`}
-                      >
-                        <span className="text-[14px] font-bold text-foreground">
-                          Crisp Light
-                        </span>
-                        <span className="text-[12px] text-muted-foreground font-medium">
-                          For daytime traders.
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Boot Routing */}
-                  <div className="bg-card border border-border rounded-[8px] p-5 md:p-6 shadow-sm">
-                    <h3 className="text-[13px] font-bold uppercase tracking-wider text-foreground mb-4 flex items-center gap-2">
-                      <MousePointer2 className="w-4 h-4 text-primary" /> Default
-                      Boot Channel
-                    </h3>
-                    <p className="text-[13px] text-muted-foreground mb-4">
-                      Choose where the application routes you immediately after
-                      the loading screen finishes.
-                    </p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        {
-                          id: "last-used",
-                          label: "Last Used",
-                          desc: "Open where you left off",
-                        },
-                        {
-                          id: "home",
-                          label: "Home",
-                          desc: "Check patch notes",
-                        },
-                        {
-                          id: "value-list",
-                          label: "Value List",
-                          desc: "Immediate market data",
-                        },
-                        {
-                          id: "trading-ads",
-                          label: "Trading Ads",
-                          desc: "Live trading board",
-                        },
-                      ].map((opt) => (
+            {/* ============================================================== */}
+            {/* TAB 1: AD HISTORY (Public/Private + Delete + Repost + Load)    */}
+            {/* ============================================================== */}
+            {activeTab === "board" && (
+              <div className="flex flex-col gap-4 animate-fade-in">
+                {/* Ad History Toolbar */}
+                <div className="bg-card border border-border rounded-[8px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {(
+                      [
+                        { id: "all", label: "All Posts", count: userAdHistory.length },
+                        { id: "live", label: "Live", count: liveAdsCount },
+                        { id: "expired", label: "Expired", count: expiredAdsCount },
+                        ...(isOwner
+                          ? [
+                              {
+                                id: "private",
+                                label: "Private",
+                                count: privateAdsCount,
+                              },
+                            ]
+                          : []),
+                      ] as const
+                    ).map((f) => {
+                      const active = adFilter === f.id;
+                      return (
                         <button
-                          key={opt.id}
+                          key={f.id}
+                          type="button"
                           onClick={() => {
                             triggerHaptic("light");
-                            setBootChannel(opt.id as BootChannel);
+                            setAdFilter(f.id as any);
                           }}
-                          className={`p-3 rounded-[6px] border text-left flex flex-col gap-1 focus-visible:outline-none cursor-pointer transition-colors ${
-                            bootChannel === opt.id
-                              ? "bg-popover border-primary shadow-sm"
-                              : "bg-muted border-border hover:bg-popover"
+                          className={`px-3 py-1.5 rounded-[5px] text-[12px] flex items-center gap-1.5 transition-colors cursor-pointer ${
+                            active
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-popover text-muted-foreground hover:text-foreground border border-border"
                           }`}
                         >
-                          <span className="text-[13px] font-bold text-foreground">
-                            {opt.label}
-                          </span>
-                          <span className="text-[11px] text-muted-foreground font-medium truncate">
-                            {opt.desc}
+                          <span>{f.label}</span>
+                          <span className="font-mono text-[11px] opacity-80">
+                            {f.count}
                           </span>
                         </button>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
 
-                  {/* Global Compact Mode */}
-                  <div className="bg-card border border-border rounded-[8px] p-5 md:p-6 shadow-sm flex items-center justify-between">
-                    <div className="flex flex-col pr-4">
-                      <h3 className="text-[13px] font-bold uppercase tracking-wider text-foreground mb-1.5 flex items-center gap-2">
-                        <Maximize className="w-4 h-4 text-primary" /> Global
-                        Compact Mode
-                      </h3>
-                      <p className="text-[13px] text-muted-foreground">
-                        Shrinks padding globally to fit more data on screen.
-                        Great for small monitors.
-                      </p>
-                    </div>
+                  {/* Owner Master Privacy Toggle for Ad History */}
+                  {isOwner && (
                     <button
-                      onClick={() => {
-                        triggerHaptic("medium");
-                        setGlobalCompactMode(!globalCompactMode);
-                      }}
-                      className={`relative w-12 h-6 rounded-full transition-colors focus-visible:outline-none shrink-0 cursor-pointer ${
-                        globalCompactMode
-                          ? "bg-primary"
-                          : "bg-muted border border-border"
+                      type="button"
+                      onClick={() =>
+                        handleToggleProfilePrivacy("ad_history_public")
+                      }
+                      className={`px-3 py-1.5 rounded-[6px] border text-[12px] flex items-center gap-2 transition-colors cursor-pointer shrink-0 ${
+                        profileData.ad_history_public ?? true
+                          ? "bg-[#23a559]/10 border-[#23a559]/35 text-[#23a559]"
+                          : "bg-warning/10 border-warning/35 text-warning"
                       }`}
+                      title="Control whether visitors can view your Ad History"
                     >
-                      <div
-                        className={`absolute top-0.5 left-0.5 bg-background w-5 h-5 rounded-full transition-transform shadow-sm ${
-                          globalCompactMode ? "translate-x-6" : "translate-x-0"
-                        }`}
+                      <IconLock
+                        locked={!(profileData.ad_history_public ?? true)}
                       />
+                      <span>
+                        {profileData.ad_history_public ?? true
+                          ? "History: Public"
+                          : "History: Private (Only You)"}
+                      </span>
                     </button>
-                  </div>
+                  )}
                 </div>
-              )}
 
-              {activeTab === "board" && (
-                <div className="animate-fade-in flex flex-col gap-4">
-                  {activeAds.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center flex-1 text-center bg-card border border-border rounded-[6px] p-16 shadow-sm min-h-[350px]">
-                      <GiMegaphone className="w-12 h-12 text-muted-foreground mb-4 opacity-40" />
-                      <h3 className="text-[18px] font-black text-foreground">
-                        No Active Listings
-                      </h3>
-                      <p className="text-[13px] text-muted-foreground mt-1 max-w-sm">
-                        This user currently has no live trades posted on the
-                        trading board.
-                      </p>
+                {/* Ad History Content */}
+                {!isAdHistoryVisibleToVisitor ? (
+                  <div className="bg-card border border-border rounded-[8px] p-12 text-center flex flex-col items-center justify-center gap-2 min-h-[280px]">
+                    <div className="w-10 h-10 rounded-full bg-popover border border-border flex items-center justify-center text-muted-foreground mb-1">
+                      <IconLock locked className="w-5 h-5" />
                     </div>
-                  ) : (
-                    <div className="flex flex-col gap-4">
-                      {activeAds.map((ad) => {
-                        const isTakingOffers =
-                          ad.ad_type === "lf_offers" ||
-                          (ad.ad_type === "standard" &&
-                            ad.get_items.length === 0);
-                        const isInventory = ad.ad_type === "inventory";
+                    <h3 className="text-[16px] text-foreground">
+                      Ad History is Private
+                    </h3>
+                    <p className="text-[13px] text-muted-foreground max-w-sm">
+                      {profileData.username} has chosen to keep their trading ad
+                      history private.
+                    </p>
+                  </div>
+                ) : isLoadingHistory ? (
+                  <AdHistorySkeletonList count={2} />
+                ) : filteredAdHistory.length === 0 ? (
+                  <div className="bg-card border border-border rounded-[8px] p-12 text-center flex flex-col items-center justify-center gap-2 min-h-[280px]">
+                    <GiMegaphone className="w-10 h-10 text-muted-foreground opacity-40" />
+                    <h3 className="text-[16px] text-foreground">
+                      No Trade Ads Found
+                    </h3>
+                    <p className="text-[13px] text-muted-foreground max-w-sm">
+                      {adFilter === "all"
+                        ? "No trade listings have been posted yet."
+                        : `No ${adFilter} trade ads in history.`}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {filteredAdHistory.map((ad) => {
+                      const remaining = formatRemainingTime(ad.expires_at);
+                      const isLive = remaining !== null;
+                      const isPrivateAd = privateAdSet.has(ad.id);
 
-                        let statusLabel = "Specific Trade";
-                        let statusColor =
-                          "bg-muted border-border text-foreground";
-                        if (isInventory) {
-                          statusLabel = "Showcase";
-                          statusColor =
-                            "bg-muted border-border text-foreground";
-                        } else if (isTakingOffers) {
-                          statusLabel = "Taking Offers";
-                          statusColor =
-                            "bg-warning/10 border-warning/30 text-warning";
-                        }
+                      const isTakingOffers =
+                        ad.ad_type === "lf_offers" ||
+                        (ad.ad_type === "standard" && ad.get_items.length === 0);
+                      const isInventory = ad.ad_type === "inventory";
 
-                        const totalGiveVal = ad.give_items.reduce((acc, i) => {
-                          const m = ALL_UNITS.find((u) => u.id === i.id);
-                          const liveVal = m
-                            ? getUnitConservativeValue(m)
-                            : i.value;
-                          return acc + liveVal * i.qty;
-                        }, 0);
+                      let typeLabel = "Specific Trade";
+                      let typeStyle = "bg-popover border-border text-foreground";
+                      if (isInventory) {
+                        typeLabel = "Vault Showcase";
+                      } else if (isTakingOffers) {
+                        typeLabel = "Taking Offers";
+                        typeStyle =
+                          "bg-warning/10 border-warning/30 text-warning";
+                      }
 
-                        return (
-                          <div
-                            key={ad.id}
-                            className="bg-card border border-border rounded-[6px] p-5 shadow-sm flex flex-col gap-4"
-                          >
-                            <div className="flex items-center justify-between flex-wrap gap-3 border-b border-border pb-3">
-                              <div className="flex items-center gap-3">
-                                <span
-                                  className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[2px] border ${statusColor}`}
-                                >
-                                  {statusLabel}
+                      const totalGiveVal = ad.give_items.reduce((acc, i) => {
+                        const m = ALL_UNITS.find((u) => u.id === i.id);
+                        const liveVal = m
+                          ? getUnitConservativeValue(m)
+                          : i.value;
+                        return acc + liveVal * i.qty;
+                      }, 0);
+
+                      const totalGetVal = ad.get_items.reduce((acc, i) => {
+                        const m = ALL_UNITS.find((u) => u.id === i.id);
+                        const liveVal = m
+                          ? getUnitConservativeValue(m)
+                          : i.value;
+                        return acc + liveVal * i.qty;
+                      }, 0);
+
+                      return (
+                        <div
+                          key={ad.id}
+                          className={`bg-card border rounded-[8px] p-5 flex flex-col gap-4 transition-colors ${
+                            isLive ? "border-border" : "border-border/70 opacity-95"
+                          }`}
+                        >
+                          {/* Top Metadata & Action Bar */}
+                          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {/* Live vs Expired Badge */}
+                              {isLive ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[4px] bg-[#23a559]/15 border border-[#23a559]/35 text-[#23a559] text-[11px] font-mono">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#23a559]" />
+                                  LIVE · {remaining}
                                 </span>
-                                <span className="text-[12px] font-mono font-bold text-muted-foreground">
-                                  Total Value:{" "}
-                                  <strong className="text-foreground">
-                                    {totalGiveVal.toLocaleString()}
-                                  </strong>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[4px] bg-popover border border-border text-muted-foreground text-[11px] font-mono">
+                                  EXPIRED · {formatTimeAgo(ad.created_at)}
                                 </span>
-                              </div>
+                              )}
+
+                              <span
+                                className={`text-[11px] px-2.5 py-0.5 rounded-[4px] border ${typeStyle}`}
+                              >
+                                {typeLabel}
+                              </span>
+
+                              <span className="text-[12px] font-mono text-muted-foreground">
+                                Offer Value:{" "}
+                                <strong className="text-foreground">
+                                  {totalGiveVal.toLocaleString()}
+                                </strong>
+                                {totalGetVal > 0 && (
+                                  <>
+                                    {" "}
+                                    · Request:{" "}
+                                    <strong className="text-primary">
+                                      {totalGetVal.toLocaleString()}
+                                    </strong>
+                                  </>
+                                )}
+                              </span>
                             </div>
 
-                            {ad.note && (
-                              <blockquote className="border-l-2 border-primary pl-3.5 py-1 italic text-[13px] text-foreground/90 bg-muted rounded-r-[4px] border border-border">
-                                "{ad.note}"
-                              </blockquote>
-                            )}
+                            {/* Per-Ad Controls */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {/* Load into Trade Analyzer */}
+                              <button
+                                type="button"
+                                onClick={() => handleLoadAdIntoCalculator(ad)}
+                                className="px-2.5 py-1 rounded-[5px] bg-popover hover:bg-muted border border-border text-muted-foreground hover:text-foreground text-[11.5px] flex items-center gap-1.5 transition-colors cursor-pointer"
+                                title="Load these units into the Trade Analyzer"
+                              >
+                                <IconSwap className="w-3.5 h-3.5" />
+                                <span>Calculator</span>
+                              </button>
 
-                            {isInventory ? (
-                              <div className="pt-2">
-                                <AdItemGrid
-                                  items={ad.give_items}
-                                  ALL_UNITS={ALL_UNITS}
-                                  label="Showcase Assets"
-                                  labelColor="var(--muted-foreground)"
-                                />
-                              </div>
-                            ) : isTakingOffers ? (
-                              <div className="pt-2">
-                                <AdItemGrid
-                                  items={ad.give_items}
-                                  ALL_UNITS={ALL_UNITS}
-                                  label="Offering"
-                                  labelColor="var(--warning)"
-                                />
-                              </div>
-                            ) : (
-                              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center pt-2">
-                                <AdItemGrid
-                                  items={ad.give_items}
-                                  ALL_UNITS={ALL_UNITS}
-                                  label="Offering"
-                                  labelColor="var(--warning)"
-                                />
-                                <div className="flex justify-center text-muted-foreground bg-muted p-2 rounded-[4px] border border-border mx-auto md:mx-0">
-                                  <ArrowRightLeft className="w-4 h-4" />
-                                </div>
-                                <AdItemGrid
-                                  items={ad.get_items}
-                                  ALL_UNITS={ALL_UNITS}
-                                  label="Requesting"
-                                  labelColor="var(--primary)"
-                                />
-                              </div>
-                            )}
+                              {/* Owner-only Per-Ad Visibility, Repost & Delete */}
+                              {isOwner && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleToggleSingleAdPrivacy(ad.id)
+                                    }
+                                    className={`px-2.5 py-1 rounded-[5px] border text-[11.5px] flex items-center gap-1.5 transition-colors cursor-pointer ${
+                                      isPrivateAd
+                                        ? "bg-warning/15 border-warning/40 text-warning"
+                                        : "bg-popover hover:bg-muted border-border text-muted-foreground hover:text-foreground"
+                                    }`}
+                                    title={
+                                      isPrivateAd
+                                        ? "Hidden from visitors. Click to make Public."
+                                        : "Visible to visitors. Click to make Private."
+                                    }
+                                  >
+                                    <IconLock locked={isPrivateAd} />
+                                    <span>
+                                      {isPrivateAd ? "Private" : "Public"}
+                                    </span>
+                                  </button>
+
+                                  {!isLive && (
+                                    <button
+                                      type="button"
+                                      disabled={repostingAdId === ad.id}
+                                      onClick={() => handleRepostAd(ad)}
+                                      className="px-2.5 py-1 rounded-[5px] bg-primary/15 hover:bg-primary/25 border border-primary/35 text-primary text-[11.5px] flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                                      title="Repost this trade to the live Trading Board for 24 hours"
+                                    >
+                                      <IconRefresh className="w-3.5 h-3.5" />
+                                      <span>
+                                        {repostingAdId === ad.id
+                                          ? "Reposting…"
+                                          : "Repost"}
+                                      </span>
+                                    </button>
+                                  )}
+
+                                  {confirmDeleteAdId === ad.id ? (
+                                    <div className="inline-flex items-center gap-1 bg-destructive/15 border border-destructive/40 rounded-[5px] px-2 py-0.5">
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleDeleteAdFromHistory(ad.id)
+                                        }
+                                        className="text-[11px] text-destructive hover:underline px-1 cursor-pointer"
+                                      >
+                                        Confirm Delete
+                                      </button>
+                                      <span className="text-border">·</span>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setConfirmDeleteAdId(null)
+                                        }
+                                        className="text-[11px] text-muted-foreground hover:text-foreground px-1 cursor-pointer"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setConfirmDeleteAdId(ad.id)
+                                      }
+                                      className="p-1.5 rounded-[5px] bg-popover hover:bg-destructive/15 border border-border hover:border-destructive/40 text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
+                                      title="Delete ad permanently"
+                                      aria-label="Delete ad"
+                                    >
+                                      <IconTrash className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </>
+                              )}
+                            </div>
                           </div>
-                        );
-                      })}
+
+                          {/* Ad Note */}
+                          {ad.note && (
+                            <div className="border-l-2 border-primary pl-3 py-1 text-[12.5px] text-foreground/90 bg-popover/60 rounded-r-[4px]">
+                              “{ad.note}”
+                            </div>
+                          )}
+
+                          {/* Ad Units Grid */}
+                          {isInventory ? (
+                            <AdItemGrid
+                              items={ad.give_items}
+                              ALL_UNITS={ALL_UNITS}
+                              label="Showcase Units"
+                              labelColor="var(--muted-foreground)"
+                              onInspectUnit={(uid) =>
+                                openHistoryModal(uid, "value")
+                              }
+                            />
+                          ) : isTakingOffers ? (
+                            <AdItemGrid
+                              items={ad.give_items}
+                              ALL_UNITS={ALL_UNITS}
+                              label="Offering"
+                              labelColor="var(--warning)"
+                              onInspectUnit={(uid) =>
+                                openHistoryModal(uid, "value")
+                              }
+                            />
+                          ) : (
+                            <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto_1fr] gap-4 items-start">
+                              <AdItemGrid
+                                items={ad.give_items}
+                                ALL_UNITS={ALL_UNITS}
+                                label="Offering"
+                                labelColor="var(--warning)"
+                                onInspectUnit={(uid) =>
+                                  openHistoryModal(uid, "value")
+                                }
+                              />
+                              <div className="hidden xl:flex items-center justify-center self-center text-muted-foreground bg-popover p-2 rounded-[6px] border border-border">
+                                <IconSwap className="w-4 h-4" />
+                              </div>
+                              <AdItemGrid
+                                items={ad.get_items}
+                                ALL_UNITS={ALL_UNITS}
+                                label="Requesting"
+                                labelColor="var(--primary)"
+                                onInspectUnit={(uid) =>
+                                  openHistoryModal(uid, "value")
+                                }
+                              />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ============================================================== */}
+            {/* TAB 2: TARGET WISHLIST (Improved Layout + Inline Search Adder) */}
+            {/* ============================================================== */}
+            {activeTab === "wishlist" && (
+              <div className="flex flex-col gap-4 animate-fade-in">
+                {/* Wishlist Header & Owner Quick-Add Toolbar */}
+                <div className="bg-card border border-border rounded-[8px] p-4 flex flex-col gap-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-col gap-0.5">
+                      <h3 className="text-[14px] text-foreground">
+                        Target Wishlist
+                      </h3>
+                      <span className="text-[12px] font-mono text-muted-foreground">
+                        {isWishlistVisibleToVisitor
+                          ? `${activeWishlistItems.length} hunted units · Total Value: ${totalWishlistValue.toLocaleString()}`
+                          : "Wishlist hidden from visitors"}
+                      </span>
+                    </div>
+
+                    {isOwner && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleToggleProfilePrivacy("wishlist_public")
+                        }
+                        className={`px-3 py-1.5 rounded-[6px] border text-[12px] flex items-center gap-2 transition-colors cursor-pointer ${
+                          profileData.wishlist_public ?? true
+                            ? "bg-[#23a559]/10 border-[#23a559]/35 text-[#23a559]"
+                            : "bg-warning/10 border-warning/35 text-warning"
+                        }`}
+                      >
+                        <IconLock
+                          locked={!(profileData.wishlist_public ?? true)}
+                        />
+                        <span>
+                          {profileData.wishlist_public ?? true
+                            ? "Wishlist: Public"
+                            : "Wishlist: Private"}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Owner Inline Unit Search to Add to Wishlist */}
+                  {isOwner && currentUser && (
+                    <div className="pt-2 border-t border-border flex flex-col gap-2">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={wishlistSearch}
+                          onChange={(e) => setWishlistSearch(e.target.value)}
+                          placeholder="Search any unit to add to your Target Wishlist…"
+                          className="w-full bg-popover border border-border rounded-[6px] px-3.5 py-2 text-[12.5px] text-foreground outline-none focus:border-primary transition-colors"
+                        />
+                        {wishlistSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setWishlistSearch("")}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 cursor-pointer"
+                            aria-label="Clear wishlist search"
+                          >
+                            <IconClose className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      {wishlistSearchResults.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1">
+                          {wishlistSearchResults.map((unit) => (
+                            <button
+                              key={unit.id}
+                              type="button"
+                              onClick={() => {
+                                triggerHaptic("medium");
+                                toggleWishlist(currentUser.id, unit.id);
+                                setWishlistSearch("");
+                                useToastStore
+                                  .getState()
+                                  .addToast(
+                                    `Added ${unit.name} to your Target Wishlist!`,
+                                    "success"
+                                  );
+                              }}
+                              className="flex items-center justify-between gap-2 p-2 rounded-[6px] bg-popover hover:bg-muted border border-border text-left transition-colors cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-8 h-8 rounded-[4px] bg-muted overflow-hidden shrink-0 relative border border-border">
+                                  <UnitAvatar
+                                    unitId={unit.id}
+                                    unitName={unit.name}
+                                    imageUrl={unit.imageUrl}
+                                    fallbackClassName="absolute inset-0 flex items-center justify-center text-white text-[10px]"
+                                    imageClassName="absolute inset-0 w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-[12px] text-foreground truncate">
+                                    {unit.name}
+                                  </span>
+                                  <span className="text-[10.5px] font-mono text-muted-foreground">
+                                    {unit.value === "owner"
+                                      ? "O/C"
+                                      : getUnitConservativeValue(
+                                          unit
+                                        ).toLocaleString()}
+                                  </span>
+                                </div>
+                              </div>
+                              <span className="text-[11px] text-primary px-2 py-0.5 rounded bg-primary/10 shrink-0">
+                                + Add
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              )}
 
-              {activeTab === "wishlist" && (
-                <div className="animate-fade-in flex flex-col h-full">
-                  {viewedWishlist.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center flex-1 text-center bg-card border border-border rounded-[6px] p-16 shadow-sm min-h-[350px]">
-                      <GiSpikedHalo className="w-12 h-12 text-muted-foreground mb-4 opacity-40" />
-                      <h3 className="text-[18px] font-black text-foreground">
-                        Empty Wishlist
-                      </h3>
-                      <p className="text-[13px] text-muted-foreground mt-1 max-w-sm">
-                        This user isn't actively hunting for any specific units
-                        right now.
-                      </p>
+                {/* Wishlist Content */}
+                {!isWishlistVisibleToVisitor ? (
+                  <div className="bg-card border border-border rounded-[8px] p-12 text-center flex flex-col items-center justify-center gap-2 min-h-[280px]">
+                    <div className="w-10 h-10 rounded-full bg-popover border border-border flex items-center justify-center text-muted-foreground mb-1">
+                      <IconLock locked className="w-5 h-5" />
                     </div>
-                  ) : (
-                    <div
-                      className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 bg-card border border-border rounded-[6px] shadow-sm ${
-                        globalCompactMode ? "gap-2 p-3" : "gap-4 p-6"
-                      }`}
-                    >
-                      {viewedWishlist.map((item) => {
-                        const master = ALL_UNITS.find(
-                          (u) => u.id === item.unit_id
-                        );
-                        if (!master) return null;
-                        const cfg = master.status
-                          ? GRID_STATUS_CFG[
-                              master.status as keyof typeof GRID_STATUS_CFG
-                            ]
-                          : null;
+                    <h3 className="text-[16px] text-foreground">
+                      Target Wishlist is Private
+                    </h3>
+                    <p className="text-[13px] text-muted-foreground max-w-sm">
+                      {profileData.username} has set their Target Wishlist to
+                      private.
+                    </p>
+                  </div>
+                ) : isInventoryLoading && activeWishlistItems.length === 0 ? (
+                  <WishlistGridSkeleton count={6} />
+                ) : activeWishlistItems.length === 0 ? (
+                  <div className="bg-card border border-border rounded-[8px] p-12 text-center flex flex-col items-center justify-center gap-2 min-h-[280px]">
+                    <GiSpikedHalo className="w-10 h-10 text-muted-foreground opacity-40" />
+                    <h3 className="text-[16px] text-foreground">
+                      Empty Target Wishlist
+                    </h3>
+                    <p className="text-[13px] text-muted-foreground max-w-sm">
+                      {isOwner
+                        ? "Use the search bar above to add units you are actively hunting for."
+                        : "This trader hasn't listed any target units yet."}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
+                    {activeWishlistItems.map((item) => {
+                      const master = ALL_UNITS.find(
+                        (u) => u.id === item.unit_id
+                      );
+                      if (!master) return null;
 
-                        return (
-                          <div
-                            key={item.id}
-                            className="bg-muted border border-border rounded-[6px] flex flex-col overflow-hidden shadow-inner hover:border-foreground transition-all group"
-                          >
-                            <div className="w-full aspect-square bg-background relative flex items-center justify-center border-b border-border overflow-hidden">
+                      const tierKey = getTier(master);
+                      const tierColor =
+                        TIER_CONFIG[tierKey]?.badgeColor || "var(--primary)";
+                      const obtainability = getObtainability(master);
+                      const cfg = master.status
+                        ? GRID_STATUS_CFG[
+                            master.status as keyof typeof GRID_STATUS_CFG
+                          ]
+                        : null;
+                      const unitVal =
+                        master.value === "owner"
+                          ? "Owner's Choice"
+                          : getUnitConservativeValue(master).toLocaleString();
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="bg-card border border-border hover:border-foreground/35 rounded-[8px] p-3.5 flex flex-col justify-between gap-3 transition-colors group min-w-0 overflow-hidden"
+                        >
+                          <div className="flex items-start gap-3 min-w-0">
+                            {/* Unit Portrait */}
+                            <div
+                              onClick={() => openHistoryModal(master.id, "value")}
+                              className="w-14 h-14 rounded-[6px] bg-popover border overflow-hidden relative shrink-0 cursor-pointer"
+                              style={{ borderColor: `${tierColor}66` }}
+                              title="Inspect Market History"
+                            >
                               <UnitAvatar
                                 unitId={master.id}
                                 unitName={master.name}
                                 imageUrl={master.imageUrl}
-                                fallbackClassName="absolute inset-0 flex items-center justify-center text-white font-black text-2xl z-0"
-                                imageClassName="absolute inset-0 w-full h-full object-cover z-10 bg-background group-hover:scale-105 transition-transform duration-300"
+                                fallbackClassName="absolute inset-0 flex items-center justify-center text-white text-lg z-0"
+                                imageClassName="absolute inset-0 w-full h-full object-cover z-10 group-hover:scale-105 transition-transform"
                               />
-                              {cfg && (
-                                <div className="absolute top-2 right-2 z-20">
+                              <span
+                                className="absolute bottom-0 left-0 px-1.5 py-0.5 text-[9.5px] font-mono text-white z-20 rounded-tr-[4px]"
+                                style={{ backgroundColor: tierColor }}
+                              >
+                                {tierKey}
+                              </span>
+                            </div>
+
+                            {/* Unit Info */}
+                            <div className="flex flex-col min-w-0 flex-1 gap-0.5">
+                              <div className="flex items-start justify-between gap-1.5 min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    openHistoryModal(master.id, "value")
+                                  }
+                                  className="text-[14px] text-foreground hover:text-primary truncate text-left cursor-pointer min-w-0"
+                                  title={master.name}
+                                >
+                                  {master.name}
+                                </button>
+
+                                {isOwner && currentUser && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      triggerHaptic("light");
+                                      toggleWishlist(
+                                        currentUser.id,
+                                        master.id
+                                      );
+                                    }}
+                                    className="text-muted-foreground hover:text-destructive p-1 rounded-[4px] hover:bg-destructive/10 transition-colors cursor-pointer shrink-0"
+                                    title="Remove from Wishlist"
+                                    aria-label={`Remove ${master.name} from wishlist`}
+                                  >
+                                    <IconClose className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+
+                              <span className="text-[11.5px] text-muted-foreground truncate">
+                                {master.subtitle || "Official Unit"} ·{" "}
+                                {obtainability}
+                              </span>
+
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                <span className="text-[14px] font-mono text-foreground whitespace-nowrap">
+                                  {unitVal}
+                                </span>
+                                {cfg && (
                                   <span
-                                    className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-[2px] border shadow-sm inline-flex items-center gap-1"
+                                    className="text-[10px] px-1.5 py-0.5 rounded-[4px] border inline-flex items-center gap-1 leading-none whitespace-nowrap shrink-0"
                                     style={{
                                       backgroundColor: cfg.bg,
                                       color: cfg.color,
@@ -1172,120 +2375,764 @@ export function ProfileChannel() {
                                     }}
                                   >
                                     <StatusIcon status={master.status} />
+                                    {cfg.label}
                                   </span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="p-3 flex flex-col flex-1 justify-between">
-                              <span
-                                className="text-[13px] font-bold text-foreground truncate"
-                                title={master.name}
-                              >
-                                {master.name}
-                              </span>
-                              <span className="text-[12px] font-black font-mono text-foreground mt-2">
-                                {master.value === "owner"
-                                  ? "Owner's Choice"
-                                  : getUnitConservativeValue(
-                                      master
-                                    ).toLocaleString()}
-                              </span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        );
-                      })}
+
+                          {/* Card Footer: Stacked Metrics Strip + 2-Column Action Buttons */}
+                          <div className="pt-2.5 border-t border-border/70 flex flex-col gap-2">
+                            <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  openHistoryModal(master.id, "rarity")
+                                }
+                                className="flex items-center justify-between px-2.5 py-1 rounded-[5px] bg-popover/70 hover:bg-popover border border-border/70 transition-colors cursor-pointer whitespace-nowrap min-w-0"
+                                title="Inspect Rarity History"
+                              >
+                                <span className="text-muted-foreground">
+                                  Rarity
+                                </span>
+                                <span className="text-[#4DB6AC] ml-1.5">
+                                  {master.rarity ?? 0}
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  openHistoryModal(master.id, "liquidity")
+                                }
+                                className="flex items-center justify-between px-2.5 py-1 rounded-[5px] bg-popover/70 hover:bg-popover border border-border/70 transition-colors cursor-pointer whitespace-nowrap min-w-0 overflow-hidden"
+                                title="Inspect Liquidity History"
+                              >
+                                <span className="text-muted-foreground shrink-0">
+                                  Liq
+                                </span>
+                                <span className="text-[#81C784] truncate ml-1.5">
+                                  {master.liquidity || "Avg"}
+                                </span>
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  openHistoryModal(master.id, "value")
+                                }
+                                className="w-full px-2.5 py-1.5 rounded-[5px] bg-popover hover:bg-muted border border-border text-muted-foreground hover:text-foreground text-[11.5px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+                                title="View Market History"
+                              >
+                                <GiHourglass className="w-3.5 h-3.5 shrink-0" />
+                                <span>History</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  triggerHaptic("light");
+                                  addCard("get", {
+                                    id: master.id,
+                                    name: master.name,
+                                    subtitle: master.subtitle,
+                                    value: getUnitConservativeValue(master),
+                                    qty: 1,
+                                  });
+                                  useToastStore
+                                    .getState()
+                                    .addToast(
+                                      `Added ${master.name} to 'You Get'`,
+                                      "success"
+                                    );
+                                }}
+                                className="w-full px-2.5 py-1.5 rounded-[5px] bg-primary/15 hover:bg-primary/25 border border-primary/35 text-primary text-[11.5px] flex items-center justify-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
+                                title="Add unit to Trade Calculator"
+                              >
+                                <span>+ Calculator</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ============================================================== */}
+            {/* TAB 3: PREFERENCES & PRIVACY (Discord-Style Settings)          */}
+            {/* ============================================================== */}
+            {activeTab === "settings" && isOwner && (
+              <div className="flex flex-col gap-5 animate-fade-in">
+                {/* 1. Profile Privacy & Data Security */}
+                <div className="bg-card border border-border rounded-[8px] p-5 flex flex-col gap-4">
+                  <div className="flex flex-col gap-0.5 border-b border-border pb-3">
+                    <h3 className="text-[14px] text-foreground">
+                      Privacy & Data Security
+                    </h3>
+                    <p className="text-[12px] text-muted-foreground">
+                      Control what other traders can see when visiting your
+                      profile or mini-popout.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col divide-y divide-border/70">
+                    {/* Public Ad History Toggle */}
+                    <div className="py-3 first:pt-0 flex items-center justify-between gap-4">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[13px] text-foreground">
+                          Public Ad History
+                        </span>
+                        <span className="text-[12px] text-muted-foreground">
+                          Allow visitors to view your posted trade history on
+                          your profile. Individual ads marked Private remain
+                          hidden.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleToggleProfilePrivacy("ad_history_public")
+                        }
+                        className={`relative w-11 h-6 rounded-full transition-colors shrink-0 cursor-pointer ${
+                          profileData.ad_history_public ?? true
+                            ? "bg-[#23a559]"
+                            : "bg-muted border border-border"
+                        }`}
+                      >
+                        <div
+                          className={`absolute top-0.5 left-0.5 bg-white w-5 h-5 rounded-full transition-transform ${
+                            profileData.ad_history_public ?? true
+                              ? "translate-x-5"
+                              : "translate-x-0"
+                          }`}
+                        />
+                      </button>
                     </div>
-                  )}
+
+                    {/* Public Target Wishlist Toggle */}
+                    <div className="py-3 flex items-center justify-between gap-4">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[13px] text-foreground">
+                          Public Target Wishlist
+                        </span>
+                        <span className="text-[12px] text-muted-foreground">
+                          Show the units you are actively hunting for on your
+                          public profile.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleToggleProfilePrivacy("wishlist_public")
+                        }
+                        className={`relative w-11 h-6 rounded-full transition-colors shrink-0 cursor-pointer ${
+                          profileData.wishlist_public ?? true
+                            ? "bg-[#23a559]"
+                            : "bg-muted border border-border"
+                        }`}
+                      >
+                        <div
+                          className={`absolute top-0.5 left-0.5 bg-white w-5 h-5 rounded-full transition-transform ${
+                            profileData.wishlist_public ?? true
+                              ? "translate-x-5"
+                              : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Hide Raw Discord ID Toggle */}
+                    <div className="py-3 last:pb-0 flex items-center justify-between gap-4">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[13px] text-foreground">
+                          Mask Raw Discord ID on Profile
+                        </span>
+                        <span className="text-[12px] text-muted-foreground">
+                          Hide your numeric Discord ID badge from your profile
+                          card and mini-popout.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleToggleProfilePrivacy("hide_discord_id")
+                        }
+                        className={`relative w-11 h-6 rounded-full transition-colors shrink-0 cursor-pointer ${
+                          profileData.hide_discord_id
+                            ? "bg-primary"
+                            : "bg-muted border border-border"
+                        }`}
+                      >
+                        <div
+                          className={`absolute top-0.5 left-0.5 bg-white w-5 h-5 rounded-full transition-transform ${
+                            profileData.hide_discord_id
+                              ? "translate-x-5"
+                              : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
+
+                {/* 2. Appearance & Density */}
+                <div className="bg-card border border-border rounded-[8px] p-5 flex flex-col gap-4">
+                  <div className="flex items-center justify-between gap-2 border-b border-border pb-3">
+                    <div className="flex flex-col gap-0.5">
+                      <h3 className="text-[14px] text-foreground">
+                        Appearance & Layout Density
+                      </h3>
+                      <p className="text-[12px] text-muted-foreground">
+                        Customize the global color theme and information
+                        density.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={openEditModal}
+                      className="px-3 py-1.5 rounded-[5px] bg-popover hover:bg-muted border border-border text-foreground text-[12px] flex items-center gap-1.5 cursor-pointer shrink-0"
+                    >
+                      <IconEdit className="w-3.5 h-3.5" />
+                      <span>Edit Banner & Bio</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      {
+                        id: "dark",
+                        label: "Deep Dark",
+                        desc: "High-contrast dark mode",
+                        swatch: "#0a0a0a",
+                      },
+                      {
+                        id: "discord",
+                        label: "Discord Blurple",
+                        desc: "Matches Discord slate UI",
+                        swatch: "#313338",
+                      },
+                      {
+                        id: "light",
+                        label: "Crisp Light",
+                        desc: "High-visibility light mode",
+                        swatch: "#fafafa",
+                      },
+                    ].map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => {
+                          triggerHaptic("light");
+                          setTheme(t.id as ThemeMode);
+                        }}
+                        className={`p-3.5 rounded-[6px] border text-left flex flex-col gap-1.5 cursor-pointer transition-colors ${
+                          theme === t.id
+                            ? "bg-popover border-primary ring-1 ring-primary/40"
+                            : "bg-popover/40 border-border hover:bg-popover"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[13px] text-foreground">
+                            {t.label}
+                          </span>
+                          <span
+                            className="w-4 h-4 rounded-full border border-border"
+                            style={{ backgroundColor: t.swatch }}
+                          />
+                        </div>
+                        <span className="text-[11.5px] text-muted-foreground">
+                          {t.desc}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Global Compact Mode */}
+                  <div className="pt-3 border-t border-border/70 flex items-center justify-between gap-4">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[13px] text-foreground">
+                        Global Compact Mode
+                      </span>
+                      <span className="text-[12px] text-muted-foreground">
+                        Tightens padding and card spacing across the entire app
+                        to fit more units on screen.
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        triggerHaptic("medium");
+                        setGlobalCompactMode(!globalCompactMode);
+                      }}
+                      className={`relative w-11 h-6 rounded-full transition-colors shrink-0 cursor-pointer ${
+                        globalCompactMode
+                          ? "bg-primary"
+                          : "bg-muted border border-border"
+                      }`}
+                    >
+                      <div
+                        className={`absolute top-0.5 left-0.5 bg-white w-5 h-5 rounded-full transition-transform ${
+                          globalCompactMode ? "translate-x-5" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3. Startup Channel & Trade Calculator Preferences */}
+                <div className="bg-card border border-border rounded-[8px] p-5 flex flex-col gap-4">
+                  <div className="flex flex-col gap-0.5 border-b border-border pb-3">
+                    <h3 className="text-[14px] text-foreground">
+                      Navigation & Trade Analyzer Defaults
+                    </h3>
+                    <p className="text-[12px] text-muted-foreground">
+                      Configure your default startup channel and which panels
+                      appear in the Trade Analyzer.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[12px] text-muted-foreground">
+                      Default Startup Channel
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      {[
+                        {
+                          id: "last-used",
+                          label: "Last Used",
+                          desc: "Resume session",
+                        },
+                        {
+                          id: "value-list",
+                          label: "Value List",
+                          desc: "Live tier grid",
+                        },
+                        {
+                          id: "trading-ads",
+                          label: "Trading Ads",
+                          desc: "Community board",
+                        },
+                        {
+                          id: "home",
+                          label: "Home",
+                          desc: "Update logs",
+                        },
+                      ].map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => {
+                            triggerHaptic("light");
+                            setBootChannel(opt.id as BootChannel);
+                          }}
+                          className={`p-3 rounded-[6px] border text-left flex flex-col gap-0.5 cursor-pointer transition-colors ${
+                            bootChannel === opt.id
+                              ? "bg-popover border-primary"
+                              : "bg-popover/40 border-border hover:bg-popover"
+                          }`}
+                        >
+                          <span className="text-[12.5px] text-foreground">
+                            {opt.label}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground truncate">
+                            {opt.desc}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Trade Analyzer Panel Toggles */}
+                  <div className="pt-3 border-t border-border/70 flex flex-col gap-2">
+                    <span className="text-[12px] text-muted-foreground">
+                      Trade Analyzer Visible Sections
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {(
+                        [
+                          {
+                            key: "showSummaryMetrics",
+                            label: "Forecast & Metrics Bar",
+                            active: analyzerSettings?.showSummaryMetrics ?? true,
+                          },
+                          {
+                            key: "showMomentumSummary",
+                            label: "Status Momentum Summary",
+                            active:
+                              analyzerSettings?.showMomentumSummary ?? true,
+                          },
+                          {
+                            key: "showTermsInTrade",
+                            label: "Terms in This Trade",
+                            active: analyzerSettings?.showTermsInTrade ?? true,
+                          },
+                          {
+                            key: "showGiveNotices",
+                            label: "You Give Unit Notices",
+                            active: analyzerSettings?.showGiveNotices ?? true,
+                          },
+                          {
+                            key: "showGetNotices",
+                            label: "You Get Unit Notices",
+                            active: analyzerSettings?.showGetNotices ?? true,
+                          },
+                          {
+                            key: "collapseUnitsByDefault",
+                            label: "Collapse Analyzer Units by Default",
+                            active:
+                              analyzerSettings?.collapseUnitsByDefault ?? false,
+                          },
+                        ] as const
+                      ).map((item) => (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => {
+                            triggerHaptic("light");
+                            updateAnalyzerSettings({
+                              [item.key]: !item.active,
+                            });
+                          }}
+                          className="flex items-center justify-between px-3.5 py-2.5 rounded-[6px] bg-popover border border-border hover:border-foreground/30 transition-colors cursor-pointer text-left"
+                        >
+                          <span className="text-[12.5px] text-foreground">
+                            {item.label}
+                          </span>
+                          <span
+                            className={`text-[11px] font-mono px-2 py-0.5 rounded-[4px] ${
+                              item.active
+                                ? "bg-[#23a559]/15 text-[#23a559]"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {item.active ? "Shown" : "Hidden"}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
+      {/* ================================================================== */}
+      {/* DISCORD-STYLE PROFILE CUSTOMIZER MODAL WITH LIVE PREVIEW           */}
+      {/* ================================================================== */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-black/80 animate-fade-in">
-          <div className="bg-card border border-border rounded-[6px] p-6 max-w-md w-full shadow-2xl flex flex-col relative">
-            <div className="flex items-center justify-between pb-4 border-b border-border mb-5">
-              <h3 className="text-[16px] font-black text-foreground uppercase tracking-wide">
-                Edit Profile
-              </h3>
+        <div
+          className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-black/85 animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="customize-profile-title"
+        >
+          <div
+            className="absolute inset-0"
+            onClick={() => setIsEditModalOpen(false)}
+          />
+
+          <div className="bg-card border border-border rounded-[10px] max-w-2xl w-full max-h-[90vh] flex flex-col relative shadow-2xl overflow-hidden z-10 animate-slide-up">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-border bg-popover flex items-center justify-between shrink-0">
+              <div className="flex flex-col">
+                <h3
+                  id="customize-profile-title"
+                  className="text-[16px] text-foreground"
+                >
+                  Customize Trader Profile
+                </h3>
+                <span className="text-[12px] text-muted-foreground">
+                  Personalize your banner, accent trim, trading stance, and bio.
+                </span>
+              </div>
               <button
+                type="button"
                 onClick={() => setIsEditModalOpen(false)}
-                className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
+                className="text-muted-foreground hover:text-foreground p-1.5 rounded-[6px] hover:bg-muted transition-colors cursor-pointer"
+                aria-label="Close customize profile modal"
               >
-                <X className="w-5 h-5" />
+                <IconClose className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="flex flex-col gap-4">
+            {/* Scrollable Modal Body */}
+            <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col gap-5">
+              {/* LIVE PROFILE PREVIEW CARD */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Banner Color
-                </label>
-                <div className="flex items-center gap-3 bg-muted p-2.5 rounded-[4px] border border-border shadow-inner">
-                  <input
-                    type="color"
-                    value={editBannerColor}
-                    onChange={(e) => setEditBannerColor(e.target.value)}
-                    className="w-8 h-8 rounded-[2px] cursor-pointer bg-transparent border-none p-0"
-                  />
-                  <span className="text-[13px] font-mono text-foreground font-bold">
-                    {editBannerColor.toUpperCase()}
-                  </span>
+                <span className="text-[12px] text-muted-foreground">
+                  Live Profile Preview
+                </span>
+                <div
+                  className="rounded-[8px] border border-border bg-popover overflow-hidden shadow-md"
+                  style={{ borderTop: `3px solid ${editAccentColor}` }}
+                >
+                  <div
+                    className="h-[76px] w-full relative border-b border-border transition-all"
+                    style={getBannerCssStyle(
+                      editBannerColor,
+                      editAccentColor,
+                      editBannerStyle
+                    )}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  </div>
+                  <div className="px-4 pb-4 relative flex flex-col gap-2">
+                    <div className="flex items-end justify-between gap-3 -mt-7">
+                      <div className="flex items-end gap-3">
+                        <img
+                          src={
+                            profileData.avatar_url ||
+                            getUnitAssetUrl("firezio") ||
+                            ""
+                          }
+                          alt={profileData.username}
+                          className="w-14 h-14 rounded-[8px] border-4 border-popover object-cover bg-muted shadow-md"
+                        />
+                        <div className="flex flex-col pb-0.5">
+                          <span className="text-[15px] text-foreground leading-tight">
+                            {profileData.username}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground">
+                            {editRobloxName
+                              ? `Roblox: ${editRobloxName}`
+                              : "Verified Trader"}
+                          </span>
+                        </div>
+                      </div>
+                      {(() => {
+                        const previewStance =
+                          TRADING_STANCES.find(
+                            (s) => s.id === editTradingStance
+                          ) || TRADING_STANCES[0];
+                        return (
+                          <span
+                            className="text-[10.5px] px-2.5 py-0.5 rounded-[4px]"
+                            style={{
+                              backgroundColor: previewStance.bg,
+                              color: previewStance.color,
+                            }}
+                          >
+                            {previewStance.label}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                    {editBio && (
+                      <p className="text-[12px] text-foreground/90 pt-1 border-t border-border/60 line-clamp-2">
+                        {editBio}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  About Me
-                </label>
-                <textarea
-                  value={editBio}
-                  onChange={(e) => setEditBio(e.target.value)}
-                  maxLength={190}
-                  placeholder="Tell traders about yourself..."
-                  className="w-full bg-input border border-border rounded-[4px] p-3 text-[13px] text-foreground outline-none resize-none h-24 focus:border-primary transition-colors shadow-inner"
-                />
-                <span className="text-[10px] font-bold text-muted-foreground text-right font-mono">
-                  {editBio.length}/190
-                </span>
+              {/* Banner Color Swatches + Custom Picker */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[12px] text-muted-foreground">
+                    Banner Primary Color
+                  </label>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {BANNER_SWATCHES.map((sw) => (
+                      <button
+                        key={sw.hex}
+                        type="button"
+                        onClick={() => {
+                          triggerHaptic("light");
+                          setEditBannerColor(sw.hex);
+                        }}
+                        title={sw.label}
+                        className={`w-7 h-7 rounded-[6px] border transition-transform cursor-pointer ${
+                          editBannerColor.toLowerCase() === sw.hex.toLowerCase()
+                            ? "scale-110 ring-2 ring-white border-white"
+                            : "border-border hover:scale-105"
+                        }`}
+                        style={{ backgroundColor: sw.hex }}
+                      />
+                    ))}
+                    <label
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] bg-popover border border-border cursor-pointer text-[11.5px] font-mono text-foreground"
+                      title="Custom Hex Color"
+                    >
+                      <input
+                        type="color"
+                        value={editBannerColor}
+                        onChange={(e) => setEditBannerColor(e.target.value)}
+                        className="w-4 h-4 rounded cursor-pointer bg-transparent border-0 p-0"
+                      />
+                      <span>{editBannerColor.toUpperCase()}</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Accent Color Swatches */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-[12px] text-muted-foreground">
+                    Profile Accent Trim
+                  </label>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {ACCENT_SWATCHES.map((sw) => (
+                      <button
+                        key={sw.hex}
+                        type="button"
+                        onClick={() => {
+                          triggerHaptic("light");
+                          setEditAccentColor(sw.hex);
+                        }}
+                        title={sw.label}
+                        className={`w-7 h-7 rounded-[6px] border transition-transform cursor-pointer ${
+                          editAccentColor.toLowerCase() === sw.hex.toLowerCase()
+                            ? "scale-110 ring-2 ring-white border-white"
+                            : "border-border hover:scale-105"
+                        }`}
+                        style={{ backgroundColor: sw.hex }}
+                      />
+                    ))}
+                    <label
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] bg-popover border border-border cursor-pointer text-[11.5px] font-mono text-foreground"
+                      title="Custom Accent Color"
+                    >
+                      <input
+                        type="color"
+                        value={editAccentColor}
+                        onChange={(e) => setEditAccentColor(e.target.value)}
+                        className="w-4 h-4 rounded cursor-pointer bg-transparent border-0 p-0"
+                      />
+                      <span>{editAccentColor.toUpperCase()}</span>
+                    </label>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                  <GiGamepad className="w-3.5 h-3.5" /> Roblox Username
+              {/* Banner Pattern Style */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[12px] text-muted-foreground">
+                  Banner Pattern Style
                 </label>
-                <input
-                  type="text"
-                  value={editRobloxName}
-                  onChange={(e) => setEditRobloxName(e.target.value)}
-                  placeholder="Exact Roblox ID..."
-                  className="w-full bg-input border border-border rounded-[4px] p-3 text-[13px] text-foreground outline-none focus:border-primary transition-colors shadow-inner"
-                />
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {BANNER_STYLES.map((st) => (
+                    <button
+                      key={st.id}
+                      type="button"
+                      onClick={() => {
+                        triggerHaptic("light");
+                        setEditBannerStyle(st.id);
+                      }}
+                      className={`px-3 py-2 rounded-[6px] border text-[12px] transition-colors cursor-pointer ${
+                        editBannerStyle === st.id
+                          ? "bg-primary/15 border-primary text-foreground"
+                          : "bg-popover border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {st.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex items-center gap-3 mt-4 pt-4 border-t border-border">
-                <button
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="flex-1 py-2.5 bg-muted hover:bg-popover border border-border rounded-[4px] text-[13px] font-bold text-foreground transition-colors focus-visible:outline-none cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="flex-1 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-[4px] text-[13px] font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm disabled:opacity-50 focus-visible:outline-none cursor-pointer border border-primary"
-                >
-                  {isSaving ? (
-                    "Saving..."
-                  ) : (
-                    <span className="flex items-center gap-1.5">
-                      <Check className="w-4 h-4" /> Save Changes
+              {/* Trading Stance Selector */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[12px] text-muted-foreground">
+                  Trading Stance Badge
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {TRADING_STANCES.map((st) => {
+                    const active = editTradingStance === st.id;
+                    return (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => {
+                          triggerHaptic("light");
+                          setEditTradingStance(st.id);
+                        }}
+                        className={`p-2.5 rounded-[6px] border text-left flex flex-col gap-0.5 transition-colors cursor-pointer ${
+                          active
+                            ? "bg-popover border-primary"
+                            : "bg-popover/50 border-border hover:bg-popover"
+                        }`}
+                      >
+                        <span
+                          className="text-[12.5px]"
+                          style={{ color: st.color }}
+                        >
+                          {st.label}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {st.desc}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* About Me & Roblox Username */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[12px] text-muted-foreground">
+                      About Me
+                    </label>
+                    <span className="text-[11px] font-mono text-muted-foreground">
+                      {editBio.length} / 190
                     </span>
-                  )}
-                </button>
+                  </div>
+                  <textarea
+                    value={editBio}
+                    onChange={(e) => setEditBio(e.target.value)}
+                    maxLength={190}
+                    placeholder="Share your trading goals, time zone, or preferred offers…"
+                    className="w-full bg-popover border border-border rounded-[6px] p-3 text-[13px] text-foreground outline-none resize-none h-20 focus:border-primary transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <label className="text-[12px] text-muted-foreground flex items-center gap-1.5">
+                    <GiGamepad className="w-4 h-4 text-primary" />
+                    <span>Roblox Username</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editRobloxName}
+                    onChange={(e) => setEditRobloxName(e.target.value)}
+                    placeholder="Your Roblox username (optional)…"
+                    className="w-full bg-popover border border-border rounded-[6px] px-3.5 py-2.5 text-[13px] text-foreground outline-none focus:border-primary transition-colors"
+                  />
+                </div>
               </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-border bg-popover flex items-center justify-end gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="px-4 py-2 bg-card hover:bg-muted border border-border rounded-[6px] text-[12.5px] text-foreground transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveProfile}
+                disabled={isSaving}
+                className="px-5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-[6px] text-[12.5px] flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+              >
+                {isSaving ? (
+                  <span>Saving…</span>
+                ) : (
+                  <>
+                    <IconCheck className="w-4 h-4" />
+                    <span>Save Profile</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -1293,6 +3140,3 @@ export function ProfileChannel() {
     </div>
   );
 }
-
-
-

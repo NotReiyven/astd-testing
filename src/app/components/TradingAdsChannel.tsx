@@ -599,6 +599,79 @@ const VanguardAdCard = memo(
   }
 );
 
+const VanguardAdCardSkeleton = () => (
+  <div className="relative rounded-[8px] flex flex-col h-full bg-card border border-border p-4 animate-pulse">
+    {/* Header: Avatar + Username + Timestamp + Badge */}
+    <div className="flex items-start justify-between mb-4">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-muted border border-border shrink-0" />
+        <div className="flex flex-col gap-2 pt-0.5">
+          <div className="h-4 w-28 rounded bg-muted" />
+          <div className="h-3 w-16 rounded bg-muted/70" />
+        </div>
+      </div>
+      <div className="h-6 w-16 rounded-[4px] bg-muted shrink-0" />
+    </div>
+
+    {/* Note Callout Skeleton */}
+    <div className="mb-4 bg-muted/30 border border-border border-l-2 border-l-primary/40 rounded-[4px] p-3">
+      <div className="h-3.5 w-3/4 rounded bg-muted/80" />
+    </div>
+
+    {/* Offering & Requesting 8-Slot Grids */}
+    <div className="flex flex-col w-full flex-1 gap-4">
+      {["Offering", "Requesting"].map((section) => (
+        <div key={section} className="flex flex-col gap-3 w-full">
+          <div className="flex items-center justify-between border-b border-border pb-2">
+            <div className="h-4 w-20 rounded bg-muted" />
+            <div className="h-3.5 w-16 rounded bg-muted/70" />
+          </div>
+          <div className="grid grid-cols-4 gap-2 w-full">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className={`w-full aspect-square rounded-[6px] ${
+                  i < 3
+                    ? "bg-muted border border-border"
+                    : "bg-muted/25 border border-dashed border-border/60"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {/* Footer: Votes + Timer + Discord Button + Action Row */}
+    <div className="mt-auto pt-4 border-t border-border flex flex-col gap-3">
+      <div className="flex items-center justify-between w-full">
+        <div className="h-7 w-20 rounded-[4px] bg-muted border border-border" />
+        <div className="h-7 w-24 rounded-[4px] bg-muted border border-border" />
+      </div>
+      <div className="w-full h-[var(--ui-height-btn)] rounded-[4px] bg-primary/20 border border-primary/30" />
+      <div className="flex gap-2 w-full">
+        <div className="flex-1 h-[var(--ui-height-btn)] rounded-[4px] bg-muted border border-border" />
+        <div className="flex-1 h-[var(--ui-height-btn)] rounded-[4px] bg-muted border border-border" />
+      </div>
+    </div>
+  </div>
+);
+
+function TradingAdsBoardSkeleton({ count = 6 }: { count?: number }) {
+  return (
+    <div
+      className="grid w-full gap-6"
+      style={{ gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))" }}
+      role="status"
+      aria-label="Loading live trading board"
+    >
+      {Array.from({ length: count }).map((_, idx) => (
+        <VanguardAdCardSkeleton key={idx} />
+      ))}
+    </div>
+  );
+}
+
 export function TradingAdsChannel() {
   const [animationParent] = useAutoAnimate<HTMLDivElement>();
   const { ads, isLoading, fetchAds, subscribeToAds, deleteAd } = useTradingAdsStore();
@@ -759,12 +832,7 @@ export function TradingAdsChannel() {
       <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col bg-transparent relative z-10">
         <div className="w-full h-full max-w-[1400px] mx-auto pb-24 p-6">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
-              <GiTornado className="w-8 h-8 animate-pulse text-primary" />
-              <span className="text-sm font-medium text-muted-foreground">
-                Connecting to live market...
-              </span>
-            </div>
+            <TradingAdsBoardSkeleton count={6} />
           ) : filteredAndSortedAds.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center gap-4 px-4">
               <div className="w-16 h-16 md:w-20 md:h-20 bg-muted rounded-[8px] flex items-center justify-center border border-border mb-2 shadow-sm">

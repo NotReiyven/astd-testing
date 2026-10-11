@@ -1,7 +1,22 @@
+import React from "react";
 import { create } from "zustand";
 import { supabase } from "../lib/supabase";
 import { get as getIdb, set as setIdb } from "idb-keyval";
 import { useToastStore } from "./useToastStore";
+
+export type BannerStyleType =
+  | "solid"
+  | "gradient"
+  | "grid"
+  | "stripes"
+  | "dots";
+
+export type TradingStanceType =
+  | "open"
+  | "upgrading"
+  | "downgrading"
+  | "wishlist"
+  | "afk";
 
 export interface UserProfileData {
   id: string;
@@ -15,6 +30,161 @@ export interface UserProfileData {
   roblox_username: string;
   global_rep: number;
   status: "online" | "dnd" | "invisible" | "offline";
+  // Unpacked extended profile customization & privacy fields
+  accent_color?: string;
+  banner_style?: BannerStyleType;
+  trading_stance?: TradingStanceType;
+  ad_history_public?: boolean;
+  wishlist_public?: boolean;
+  hide_discord_id?: boolean;
+  private_ad_ids?: string[];
+}
+
+const VALID_HEX = /^#[0-9A-Fa-f]{6}$/;
+const VALID_STYLES: BannerStyleType[] = [
+  "solid",
+  "gradient",
+  "grid",
+  "stripes",
+  "dots",
+];
+const VALID_STANCES: TradingStanceType[] = [
+  "open",
+  "upgrading",
+  "downgrading",
+  "wishlist",
+  "afk",
+];
+
+export function unpackProfileRow(raw: any): UserProfileData {
+  const rawBanner = typeof raw?.banner_color === "string" ? raw.banner_color : "#121214";
+  const [hexPart, metaPart] = rawBanner.split("|");
+  const cleanHex = VALID_HEX.test(hexPart?.trim()) ? hexPart.trim() : "#121214";
+
+  let accent_color = "#7289da";
+  let banner_style: BannerStyleType = "gradient";
+  let trading_stance: TradingStanceType = "open";
+  let ad_history_public = true;
+  let wishlist_public = true;
+  let hide_discord_id = false;
+  let private_ad_ids: string[] = [];
+
+  if (metaPart) {
+    try {
+      const params = new URLSearchParams(metaPart);
+      const ac = params.get("ac");
+      if (ac && VALID_HEX.test(ac)) accent_color = ac;
+
+      const bs = params.get("bs") as BannerStyleType | null;
+      if (bs && VALID_STYLES.includes(bs)) banner_style = bs;
+
+      const ts = params.get("ts") as TradingStanceType | null;
+      if (ts && VALID_STANCES.includes(ts)) trading_stance = ts;
+
+      if (params.get("ahp") === "0") ad_history_public = false;
+      if (params.get("wlp") === "0") wishlist_public = false;
+      if (params.get("hdi") === "1") hide_discord_id = true;
+
+      const pids = params.get("pids");
+      if (pids) {
+        private_ad_ids = pids
+          .split(",")
+          .map((s) => s.trim())
+          .filter((s) => /^[0-9a-fA-F-]{8,36}$/.test(s))
+          .slice(0, 100);
+      }
+    } catch {
+      // Fallback to defaults if malformed
+    }
+  }
+
+  return {
+    ...raw,
+    banner_color: cleanHex,
+    accent_color,
+    banner_style,
+    trading_stance,
+    ad_history_public,
+    wishlist_public,
+    hide_discord_id,
+    private_ad_ids,
+  };
+}
+
+export function packBannerConfig(profile: Partial<UserProfileData>): string {
+  const cleanHex =
+    profile.banner_color && VALID_HEX.test(profile.banner_color.trim())
+      ? profile.banner_color.trim()
+      : "#121214";
+
+  const params = new URLSearchParams();
+  if (profile.accent_color && VALID_HEX.test(profile.accent_color.trim())) {
+    params.set("ac", profile.accent_color.trim());
+  }
+  if (profile.banner_style && VALID_STYLES.includes(profile.banner_style)) {
+    params.set("bs", profile.banner_style);
+  }
+  if (profile.trading_stance && VALID_STANCES.includes(profile.trading_stance)) {
+    params.set("ts", profile.trading_stance);
+  }
+  if (profile.ad_history_public === false) {
+    params.set("ahp", "0");
+  }
+  if (profile.wishlist_public === false) {
+    params.set("wlp", "0");
+  }
+  if (profile.hide_discord_id === true) {
+    params.set("hdi", "1");
+  }
+  if (Array.isArray(profile.private_ad_ids) && profile.private_ad_ids.length > 0) {
+    const validIds = profile.private_ad_ids
+      .filter((s) => /^[0-9a-fA-F-]{8,36}$/.test(s))
+      .slice(0, 100);
+    if (validIds.length > 0) {
+      params.set("pids", validIds.join(","));
+    }
+  }
+
+  const qs = params.toString();
+  return qs ? `${cleanHex}|${qs}` : cleanHex;
+}
+
+export function getBannerCssStyle(
+  bannerColor = "#121214",
+  accentColor = "#7289da",
+  bannerStyle: BannerStyleType = "gradient"
+): React.CSSProperties {
+  const base = VALID_HEX.test(bannerColor) ? bannerColor : "#121214";
+  const accent = VALID_HEX.test(accentColor) ? accentColor : "#7289da";
+
+  switch (bannerStyle) {
+    case "solid":
+      return { backgroundColor: base };
+    case "gradient":
+      return {
+        backgroundColor: base,
+        backgroundImage: `linear-gradient(135deg, ${base} 0%, ${accent}55 100%)`,
+      };
+    case "grid":
+      return {
+        backgroundColor: base,
+        backgroundImage: `linear-gradient(to right, rgba(255,255,255,0.07) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.07) 1px, transparent 1px), linear-gradient(135deg, ${base} 0%, ${accent}40 100%)`,
+        backgroundSize: "24px 24px, 24px 24px, 100% 100%",
+      };
+    case "stripes":
+      return {
+        backgroundColor: base,
+        backgroundImage: `repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 10px, transparent 10px, transparent 20px), linear-gradient(135deg, ${base} 0%, ${accent}45 100%)`,
+      };
+    case "dots":
+      return {
+        backgroundColor: base,
+        backgroundImage: `radial-gradient(rgba(255,255,255,0.14) 1.25px, transparent 1.25px), linear-gradient(135deg, ${base} 0%, ${accent}45 100%)`,
+        backgroundSize: "18px 18px, 100% 100%",
+      };
+    default:
+      return { backgroundColor: base };
+  }
 }
 
 interface CacheEntry {
@@ -91,7 +261,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       return null;
     }
 
-    const profileData = data as UserProfileData;
+    const profileData = unpackProfileRow(data);
 
     set((state) => ({
       cache: {
@@ -120,24 +290,59 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   },
 
   saveProfileUpdates: async (userId, updates) => {
-    // SECURITY FIX: Explicitly sanitize allowed update fields
-    const allowedUpdates: Partial<UserProfileData> = {};
-    if (typeof updates.bio === "string")
-      allowedUpdates.bio = updates.bio.trim().substring(0, 190);
-    if (typeof updates.roblox_username === "string")
-      allowedUpdates.roblox_username = updates.roblox_username
+    // SECURITY: Verify active authenticated session matches target userId
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.user || session.user.id !== userId) {
+      return { error: new Error("Unauthorized profile update attempt.") };
+    }
+
+    const existing = get().cache[userId]?.data;
+    const merged: Partial<UserProfileData> = {
+      banner_color: updates.banner_color ?? existing?.banner_color ?? "#121214",
+      accent_color: updates.accent_color ?? existing?.accent_color ?? "#7289da",
+      banner_style: updates.banner_style ?? existing?.banner_style ?? "gradient",
+      trading_stance:
+        updates.trading_stance ?? existing?.trading_stance ?? "open",
+      ad_history_public:
+        updates.ad_history_public ?? existing?.ad_history_public ?? true,
+      wishlist_public:
+        updates.wishlist_public ?? existing?.wishlist_public ?? true,
+      hide_discord_id:
+        updates.hide_discord_id ?? existing?.hide_discord_id ?? false,
+      private_ad_ids:
+        updates.private_ad_ids ?? existing?.private_ad_ids ?? [],
+    };
+
+    const dbPayload: Record<string, any> = {
+      banner_color: packBannerConfig(merged),
+    };
+
+    if (typeof updates.bio === "string") {
+      dbPayload.bio = updates.bio.trim().substring(0, 190);
+      merged.bio = dbPayload.bio;
+    }
+    if (typeof updates.roblox_username === "string") {
+      dbPayload.roblox_username = updates.roblox_username
         .trim()
-        .substring(0, 50);
-    if (typeof updates.banner_color === "string")
-      allowedUpdates.banner_color = updates.banner_color.trim().substring(0, 7);
+        .replace(/[^a-zA-Z0-9_]/g, "")
+        .substring(0, 30);
+      merged.roblox_username = dbPayload.roblox_username;
+    }
+
+    // Clean hex in local memory
+    if (merged.banner_color && !VALID_HEX.test(merged.banner_color)) {
+      merged.banner_color = "#121214";
+    }
 
     // OFFLINE QUEUE INTERCEPTION
     if (!navigator.onLine) {
       const queue: any[] = (await getIdb("astd_offline_profile")) || [];
-      queue.push({ userId, updates: allowedUpdates });
+      queue.push({ userId, updates: dbPayload });
       await setIdb("astd_offline_profile", queue);
 
-      get().updateLocalProfile(userId, allowedUpdates);
+      get().updateLocalProfile(userId, merged);
       useToastStore
         .getState()
         .addToast("Offline. Profile changes queued locally.", "info");
@@ -146,10 +351,10 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
     const { error } = await supabase
       .from("profiles")
-      .update(allowedUpdates)
+      .update(dbPayload)
       .eq("id", userId);
     if (!error) {
-      get().updateLocalProfile(userId, allowedUpdates);
+      get().updateLocalProfile(userId, merged);
     }
     return { error };
   },

@@ -186,7 +186,7 @@ export function TierBanner({
       
       <h2 
         className="text-2xl font-bold leading-none"
-        style={{ color: tier.badgeColor, textShadow: `0 2px 10px ${tier.badgeColor}40` }}
+        style={{ color: tier.badgeColor }}
       >
         {tier.label}
       </h2>

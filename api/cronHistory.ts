@@ -82,8 +82,9 @@ export async function GET(request: Request) {
     const batchRanges = ranges.map(r => `ranges=${encodeURIComponent(r)}`).join("&");
     const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batchRanges}&includeGridData=true&key=${API_KEY}`;
 
+    const retentionCutoffIso = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
     const [adPurgeResult, bannedUsersResult, sheetsResponse] = await Promise.all([
-      supabase.from('trading_ads').delete().lt('expires_at', nowIso),
+      supabase.from('trading_ads').delete().lt('expires_at', retentionCutoffIso),
       supabase.from('profiles').select('id').eq('role', 'banned'),
       fetch(sheetsUrl)
     ]);

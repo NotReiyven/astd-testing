@@ -23,12 +23,25 @@ export interface TradingAd {
   };
 }
 
+interface FetchHistoryOptions {
+  isOwner: boolean;
+  adHistoryPublic?: boolean;
+  privateAdIds?: string[];
+}
+
 interface TradingAdsState {
   ads: TradingAd[];
+  userAdHistory: TradingAd[];
   isLoading: boolean;
+  isLoadingHistory: boolean;
   fetchAds: () => Promise<void>;
+  fetchUserAdHistory: (
+    userId: string,
+    options: FetchHistoryOptions
+  ) => Promise<void>;
   subscribeToAds: () => () => void;
-  deleteAd: (id: string) => Promise<void>;
+  deleteAd: (id: string) => Promise<boolean>;
+  repostAd: (ad: TradingAd) => Promise<boolean>;
   createAd: (adData: any) => Promise<{ error: any | null }>;
 }
 
@@ -51,7 +64,9 @@ const containsPhishingOrLink = (text: string) => {
 
 export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
   ads: [],
+  userAdHistory: [],
   isLoading: true,
+  isLoadingHistory: false,
 
   fetchAds: async () => {
     set({ isLoading: true });
@@ -77,6 +92,44 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
     if (data) {
       set({ ads: data as TradingAd[], isLoading: false });
     }
+  },
+
+  fetchUserAdHistory: async (userId: string, options: FetchHistoryOptions) => {
+    // SECURITY: Never fetch or expose ad history if viewer is not the owner and history is set to private
+    if (!userId || (!options.isOwner && options.adHistoryPublic === false)) {
+      set({ userAdHistory: [], isLoadingHistory: false });
+      return;
+    }
+
+    set({ isLoadingHistory: true });
+
+    const { data, error } = await supabase
+      .from("trading_ads")
+      .select(
+        `
+        *,
+        profiles!trading_ads_user_id_fkey(username, avatar_url, role, discord_id, status)
+      `
+      )
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error("🚨 Error fetching user ad history:", error.message);
+      set({ userAdHistory: [], isLoadingHistory: false });
+      return;
+    }
+
+    let records = (data || []) as TradingAd[];
+
+    // SECURITY: Filter out individually hidden ads when viewed by visitors
+    if (!options.isOwner && Array.isArray(options.privateAdIds) && options.privateAdIds.length > 0) {
+      const hiddenSet = new Set(options.privateAdIds);
+      records = records.filter((ad) => !hiddenSet.has(ad.id));
+    }
+
+    set({ userAdHistory: records, isLoadingHistory: false });
   },
 
   subscribeToAds: () => {
@@ -105,10 +158,16 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
           } else if (eventType === "DELETE") {
             set((state) => ({
               ads: state.ads.filter((ad) => ad.id !== oldRecord.id),
+              userAdHistory: state.userAdHistory.filter(
+                (ad) => ad.id !== oldRecord.id
+              ),
             }));
           } else if (eventType === "UPDATE") {
             set((state) => ({
               ads: state.ads.map((ad) =>
+                ad.id === newRecord.id ? { ...ad, ...newRecord } : ad
+              ),
+              userAdHistory: state.userAdHistory.map((ad) =>
                 ad.id === newRecord.id ? { ...ad, ...newRecord } : ad
               ),
             }));
@@ -218,16 +277,74 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
   },
 
   deleteAd: async (id: string) => {
-    const currentAds = get().ads;
-    set({ ads: currentAds.filter((ad) => ad.id !== id) });
-    const { error } = await supabase.from("trading_ads").delete().eq("id", id);
-    if (error) {
-      console.error("🚨 Error deleting ad:", error.message);
-      set({ ads: currentAds });
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.user) {
       useToastStore
         .getState()
-        .addToast("Failed to delete ad. Rate limit or DB error.", "error");
+        .addToast("You must be signed in to delete an ad.", "error");
+      return false;
     }
+
+    const currentAds = get().ads;
+    const currentHistory = get().userAdHistory;
+    set({
+      ads: currentAds.filter((ad) => ad.id !== id),
+      userAdHistory: currentHistory.filter((ad) => ad.id !== id),
+    });
+
+    const { error } = await supabase
+      .from("trading_ads")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("🚨 Error deleting ad:", error.message);
+      set({ ads: currentAds, userAdHistory: currentHistory });
+      useToastStore
+        .getState()
+        .addToast("Unable to delete ad—please try again.", "error");
+      return false;
+    }
+    return true;
+  },
+
+  repostAd: async (ad: TradingAd) => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.user || session.user.id !== ad.user_id) {
+      useToastStore
+        .getState()
+        .addToast("You can only repost your own trade ads.", "error");
+      return false;
+    }
+
+    const newExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const { error } = await get().createAd({
+      user_id: session.user.id,
+      ad_type: ad.ad_type,
+      give_items: ad.give_items,
+      get_items: ad.get_items,
+      note: ad.note,
+      expires_at: newExpires,
+    });
+
+    if (error) {
+      useToastStore
+        .getState()
+        .addToast("Could not repost trade ad—check rate limits.", "error");
+      return false;
+    }
+
+    // Delete old expired record so history stays clean
+    await get().deleteAd(ad.id);
+    await get().fetchAds();
+    await get().fetchUserAdHistory(session.user.id, { isOwner: true });
+    useToastStore
+      .getState()
+      .addToast("Trade ad reposted to the live board for 24h!", "success");
+    return true;
   },
 }));
-

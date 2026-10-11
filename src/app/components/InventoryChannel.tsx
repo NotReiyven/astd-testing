@@ -55,10 +55,17 @@ import { ValueBreakdownModal } from "./InventoryChannel/ValueBreakdownModal";
 import { useInventoryManager } from "../../hooks/useInventoryManager";
 import { useHistoryModalStore } from "../../store/useHistoryModalStore";
 import { useTradeStore } from "../../store/useTradeStore";
+import { useInventoryStore } from "../../store/useInventoryStore";
+import { useAuthStore } from "../../store/useAuthStore";
+import { InventoryVaultSkeleton } from "./InventoryChannel/InventoryVaultSkeleton";
 
 export function InventoryChannel() {
   const [animationParent] = useAutoAnimate<HTMLDivElement>();
-  const { units: ALL_UNITS } = useUnits();
+  const { units: ALL_UNITS, isLoading: isUnitsLoading } = useUnits();
+  const isInventoryLoading = useInventoryStore((s) => s.isLoading);
+  const fetchInventory = useInventoryStore((s) => s.fetchInventory);
+  const fetchWishlist = useInventoryStore((s) => s.fetchWishlist);
+  const { session, isLoading: isAuthLoading } = useAuthStore();
   const openModal = useHistoryModalStore((state) => state.openModal);
   const { giveItems, getItems, addCard, overwrite, setComposerOpen } =
     useTradeStore();
@@ -158,7 +165,22 @@ export function InventoryChannel() {
     }
   };
 
-  if (!profile && !isReadOnly) {
+  const ownerUserId = profile?.id || session?.user?.id;
+
+  useEffect(() => {
+    if (!isReadOnly && ownerUserId) {
+      fetchInventory(ownerUserId, false);
+      fetchWishlist(ownerUserId, false);
+    }
+  }, [isReadOnly, ownerUserId, fetchInventory, fetchWishlist]);
+
+  const isVaultLoading =
+    isInventoryLoading ||
+    isAuthLoading ||
+    isUnitsLoading ||
+    Boolean(!isReadOnly && session?.user?.id && !profile);
+
+  if (!profile && !isReadOnly && !isVaultLoading) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-background p-6 text-center">
         <Package className="w-12 h-12 text-muted-foreground mb-3" />
@@ -540,7 +562,9 @@ export function InventoryChannel() {
         }`}
       >
         <div className="p-4 md:p-8 pb-32">
-          {displayInventory.length === 0 ? (
+          {isVaultLoading ? (
+            <InventoryVaultSkeleton />
+          ) : displayInventory.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center px-4">
               {searchQuery ? (
                 <>
