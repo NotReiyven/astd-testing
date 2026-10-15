@@ -180,7 +180,7 @@ export function GridStatusBadge({ status }: { status: string }) {
       onClick={toggleTip}
     >
       <div
-        className="inline-flex items-center px-2.5 py-1 rounded-[6px] gap-1.5 shadow-sm"
+        className="inline-flex items-center px-2 py-0.5 rounded-[4px] gap-1 shadow-xs font-mono font-bold tracking-wider uppercase text-[10.5px] select-none"
         style={{
           background: c.bg,
           border: `1px solid ${c.border}`,
@@ -188,7 +188,7 @@ export function GridStatusBadge({ status }: { status: string }) {
         }}
       >
         <StatusIcon status={status} />
-        <span className="text-xs font-semibold transition-colors leading-none">
+        <span className="leading-none">
           {c.label}
         </span>
       </div>
@@ -498,11 +498,11 @@ function TierGridCardImpl({
 
               <div className="flex items-center mt-1.5 h-[18px]">
                 {obtainability === "UNOB" ? (
-                  <span className="text-xs font-semibold text-muted-foreground bg-popover px-1.5 py-0.5 rounded-[4px] border border-transparent leading-none">
+                  <span className="text-[10px] font-bold font-mono tracking-wider uppercase text-white bg-[#ef4444] px-1.5 py-0.5 rounded-[4px] border border-[#ef4444]/40 leading-none shadow-xs">
                     UNOB
                   </span>
                 ) : (
-                  <span className="text-xs font-semibold text-foreground bg-white/5 px-1.5 py-0.5 rounded-[4px] border border-transparent leading-none">
+                  <span className="text-[10px] font-bold font-mono tracking-wider uppercase text-white bg-[#475569] px-1.5 py-0.5 rounded-[4px] border border-white/20 leading-none shadow-xs">
                     OBN
                   </span>
                 )}

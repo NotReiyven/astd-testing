@@ -112,7 +112,7 @@ export function StaticStatusBadge({ status }: { status: string }) {
   if (!cfg) return null;
   return (
     <span
-      className="text-[9px] font-bold uppercase px-2 py-1 rounded-[6px] border shadow-sm shrink-0 flex items-center gap-1"
+      className="text-[9.5px] font-mono font-bold tracking-wider uppercase px-2 py-0.5 rounded-[4px] border shadow-xs shrink-0 flex items-center gap-1 select-none"
       style={{
         backgroundColor: cfg.bg,
         color: cfg.color,

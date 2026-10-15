@@ -129,7 +129,7 @@ export function TradeNotices({
             {count}x
           </span>
           <span
-            className="text-[10px] font-bold uppercase px-1.5 py-[1px] rounded-[4px] border inline-flex items-center gap-1"
+            className="text-[10px] font-mono font-bold tracking-wider uppercase px-1.5 py-[1px] rounded-[4px] border inline-flex items-center gap-1 shadow-xs select-none"
             style={{
               backgroundColor: cfg.bg,
               color: cfg.color,
@@ -188,7 +188,7 @@ export function TradeNotices({
                   </span>
                   {cfg && (
                     <span
-                      className="text-[10px] font-bold uppercase px-1.5 py-[1px] rounded-[4px] border shadow-sm inline-flex items-center gap-1"
+                      className="text-[10px] font-mono font-bold tracking-wider uppercase px-1.5 py-[1px] rounded-[4px] border shadow-xs inline-flex items-center gap-1 select-none"
                       style={{
                         backgroundColor: cfg.bg,
                         color: cfg.color,
@@ -304,7 +304,7 @@ export function TradeNotices({
                       className="flex items-start gap-2.5 bg-black/20 p-2.5 rounded-[6px] border border-border shadow-inner"
                     >
                       <span
-                        className="text-[10px] font-bold uppercase px-1.5 py-[1px] rounded-[4px] border shrink-0 mt-[1px] shadow-sm inline-flex items-center gap-1"
+                        className="text-[10px] font-mono font-bold tracking-wider uppercase px-1.5 py-[1px] rounded-[4px] border shrink-0 mt-[1px] shadow-xs inline-flex items-center gap-1 select-none"
                         style={{
                           backgroundColor: cfg.bg,
                           color: cfg.color,

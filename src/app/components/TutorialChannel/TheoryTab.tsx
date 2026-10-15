@@ -164,7 +164,7 @@ export function TheoryTab() {
                         >
                           <td className="px-5 py-3.5 align-middle">
                             <span
-                              className="text-xs font-semibold px-2 py-1 rounded-[6px] border block text-center w-full shadow-sm"
+                              className="text-xs font-mono font-bold tracking-wider uppercase px-2 py-1 rounded-[4px] border block text-center w-full shadow-xs select-none"
                               style={{
                                 backgroundColor: bg,
                                 color: color,
@@ -189,7 +189,7 @@ export function TheoryTab() {
                         >
                           <td className="px-5 py-3.5 align-middle">
                             <span
-                              className="text-xs font-semibold px-2 py-1 rounded-[6px] border block text-center w-full shadow-sm"
+                              className="text-xs font-mono font-bold tracking-wider uppercase px-2 py-1 rounded-[4px] border block text-center w-full shadow-xs select-none"
                               style={{
                                 backgroundColor: t.bg,
                                 color: t.color,
@@ -218,7 +218,7 @@ export function TheoryTab() {
                         >
                           <td className="px-5 py-3.5 align-middle">
                             <span
-                              className="text-xs font-semibold px-2 py-1 rounded-[6px] border block text-center w-full shadow-sm"
+                              className="text-xs font-mono font-bold tracking-wider uppercase px-2 py-1 rounded-[4px] border block text-center w-full shadow-xs select-none"
                               style={{
                                 backgroundColor: t.bg,
                                 color: t.color,

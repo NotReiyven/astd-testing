@@ -238,7 +238,7 @@ export const TradingCardSlot = memo(
           {dropCfg && !isSelected && (
             <div className="absolute top-2 left-2 z-50">
               <div
-                className="inline-flex items-center px-2 py-0.5 rounded-[4px] gap-1.5 shadow-sm"
+                className="inline-flex items-center px-2 py-0.5 rounded-[4px] gap-1 shadow-xs font-mono font-bold tracking-wider uppercase text-[10.5px] select-none"
                 style={{
                   background: dropCfg.bg,
                   border: `1px solid ${dropCfg.border}`,
@@ -246,7 +246,7 @@ export const TradingCardSlot = memo(
                 }}
               >
                 <StatusIcon status={master.status} />
-                <span className="text-[10px] font-bold tracking-wide uppercase transition-colors leading-none">
+                <span className="leading-none">
                   {dropCfg.label}
                 </span>
               </div>

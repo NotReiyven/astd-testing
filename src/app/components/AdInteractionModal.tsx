@@ -226,7 +226,7 @@ const ItemTile = memo(
                 </div>
                 {statusCfg && (
                   <span
-                    className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-[4px] border shrink-0 inline-flex items-center gap-1 leading-none"
+                    className="text-[9.5px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-[4px] border shrink-0 inline-flex items-center gap-1 leading-none shadow-xs select-none"
                     style={{
                       backgroundColor: statusCfg.bg,
                       color: statusCfg.color,

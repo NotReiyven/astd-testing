@@ -536,9 +536,9 @@ export function AdComposerModal() {
                 <div
                   role="alert"
                   aria-live="polite"
-                  className="bg-destructive/15 border border-destructive/40 px-3.5 py-2.5 rounded-[6px] text-destructive text-[12px] font-bold flex items-center gap-2.5"
+                  className="bg-[#ef4444] text-white border border-[#ef4444]/40 px-3.5 py-2.5 rounded-[6px] text-[12px] font-bold flex items-center gap-2.5 shadow-xs"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
                   <span className="leading-snug">{error}</span>
                 </div>
               )}

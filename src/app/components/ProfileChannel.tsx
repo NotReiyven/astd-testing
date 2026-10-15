@@ -10,6 +10,10 @@ import {
   GiGamepad,
   GiHourglass,
   GiAbacus,
+  GiWorld,
+  GiPadlock,
+  GiCycle,
+  GiTrashCan,
 } from "react-icons/gi";
 import {
   useProfileStore,
@@ -302,41 +306,41 @@ const TRADING_STANCES: {
     id: "open",
     label: "Open to Offers",
     desc: "Actively accepting all fair trade offers",
-    color: "#4ade80",
-    bg: "#122317",
-    border: "#23a559",
+    color: "#ffffff",
+    bg: "#23a559",
+    border: "rgba(255, 255, 255, 0.2)",
   },
   {
     id: "upgrading",
     label: "Upgrading Only",
     desc: "Trading multiple units up into higher tiers",
-    color: "#fbbf24",
-    bg: "#281b0a",
-    border: "#f59e0b",
+    color: "#ffffff",
+    bg: "#d97706",
+    border: "rgba(255, 255, 255, 0.2)",
   },
   {
     id: "downgrading",
     label: "Downgrading",
     desc: "Breaking down high-tier units for adds",
-    color: "#7dd3fc",
-    bg: "#0c1d2e",
-    border: "#38bdf8",
+    color: "#ffffff",
+    bg: "#0284c7",
+    border: "rgba(255, 255, 255, 0.2)",
   },
   {
     id: "wishlist",
     label: "Hunting Wishlist",
     desc: "Primarily looking for Target Wishlist units",
-    color: "#d8b4fe",
-    bg: "#211133",
-    border: "#c084fc",
+    color: "#ffffff",
+    bg: "#8b5cf6",
+    border: "rgba(255, 255, 255, 0.2)",
   },
   {
     id: "afk",
     label: "AFK / Break",
     desc: "Slow responses or temporarily away",
-    color: "#cbd5e1",
-    bg: "#1c1f24",
-    border: "#64748b",
+    color: "#ffffff",
+    bg: "#475569",
+    border: "rgba(255, 255, 255, 0.2)",
   },
 ];
 
@@ -369,26 +373,32 @@ const PRESENCE_OPTIONS: {
 const getRoleConfig = (role: string) => {
   switch (role) {
     case "master":
+      return {
+        color: "#000000",
+        bg: "#eab308",
+        border: "rgba(0, 0, 0, 0.2)",
+        label: "Master",
+      };
     case "admin":
       return {
-        color: "#fbbf24",
-        bg: "#2b1f0b",
-        border: "#f59e0b",
-        label: role === "master" ? "Master" : "Admin",
+        color: "#ffffff",
+        bg: "#ef4444",
+        border: "rgba(255, 255, 255, 0.2)",
+        label: "Admin",
       };
     case "mod":
       return {
-        color: "#8ea1e1",
-        bg: "#161a33",
-        border: "#5865F2",
+        color: "#ffffff",
+        bg: "#3b82f6",
+        border: "rgba(255, 255, 255, 0.2)",
         label: "Moderator",
       };
     default:
       return {
-        color: "#cbd5e1",
-        bg: "#1e1f22",
-        border: "#35373c",
-        label: "Trader",
+        color: "#ffffff",
+        bg: "#64748b",
+        border: "rgba(255, 255, 255, 0.2)",
+        label: "Member",
       };
   }
 };
@@ -397,71 +407,71 @@ const getReputationRank = (rep: number) => {
   if (rep < 0)
     return {
       label: "Exiled",
-      color: "#f87171",
-      border: "#ef4444",
-      bg: "#241215",
+      color: "#ffffff",
+      border: "rgba(255, 255, 255, 0.2)",
+      bg: "#ef4444",
       next: 0,
       min: -100,
     };
   if (rep < 10)
     return {
       label: "Unranked",
-      color: "#94a3b8",
-      border: "#3f4147",
-      bg: "#1e1f22",
+      color: "#ffffff",
+      border: "rgba(255, 255, 255, 0.2)",
+      bg: "#475569",
       next: 10,
       min: 0,
     };
   if (rep < 50)
     return {
       label: "Apprentice",
-      color: "#fbbf24",
-      border: "#b45309",
-      bg: "#281b0a",
+      color: "#ffffff",
+      border: "rgba(255, 255, 255, 0.2)",
+      bg: "#d97706",
       next: 50,
       min: 10,
     };
   if (rep < 150)
     return {
       label: "Recognized",
-      color: "#cbd5e1",
-      border: "#475569",
-      bg: "#1e293b",
+      color: "#ffffff",
+      border: "rgba(255, 255, 255, 0.2)",
+      bg: "#475569",
       next: 150,
       min: 50,
     };
   if (rep < 300)
     return {
       label: "Trusted Merchant",
-      color: "#facc15",
-      border: "#ca8a04",
-      bg: "#2a220a",
+      color: "#000000",
+      border: "rgba(0, 0, 0, 0.2)",
+      bg: "#eab308",
       next: 300,
       min: 150,
     };
   if (rep < 500)
     return {
       label: "Elite Broker",
-      color: "#38bdf8",
-      border: "#0284c7",
-      bg: "#0c2238",
+      color: "#ffffff",
+      border: "rgba(255, 255, 255, 0.2)",
+      bg: "#0284c7",
       next: 500,
       min: 300,
     };
   if (rep < 1000)
     return {
       label: "Vanguard",
-      color: "#60a5fa",
-      border: "#2563eb",
-      bg: "#111d38",
+      color: "#ffffff",
+      border: "rgba(255, 255, 255, 0.2)",
+      bg: "#2563eb",
       next: 1000,
       min: 500,
     };
   return {
     label: "Legend",
-    color: "#c084fc",
-    border: "#9333ea",
-    bg: "#261338",
+    color: "#ffffff",
+    border: "rgba(255, 255, 255, 0.2)",
+    bg: "#9333ea",
     next: 1000,
     min: 1000,
   };
@@ -1456,10 +1466,10 @@ export function ProfileChannel() {
                       {item.label}
                     </span>
                     <span
-                      className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded-[4px] border ${
+                      className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-[4px] border shadow-xs ${
                         item.active
-                          ? "bg-[#122317] border-[#1f6f3e] text-[#34d399]"
-                          : "bg-[#1e1f22] border-[#3f4147] text-[#94a3b8]"
+                          ? "bg-[#23a559] border-[#23a559]/40 text-white"
+                          : "bg-[#475569] border-white/20 text-white"
                       }`}
                     >
                       {item.active ? "Shown" : "Hidden"}
@@ -1616,7 +1626,7 @@ export function ProfileChannel() {
                   {/* Sequence Rank Badge */}
                   {typeof joinNumber === "number" && (
                     <span
-                      className="inline-flex items-center text-[11px] font-mono font-semibold px-2 py-0.5 rounded-[4px] bg-[#1e1f22] text-[#94a3b8] border border-[#3f4147] shrink-0 select-none shadow-xs"
+                      className="inline-flex items-center text-[11px] font-mono font-bold px-2 py-0.5 rounded-[4px] bg-[#475569] text-white border border-white/20 shrink-0 select-none shadow-xs"
                       title={`User #${joinNumber}`}
                     >
                       User #{joinNumber}
@@ -1631,7 +1641,7 @@ export function ProfileChannel() {
                     if (!earlyRole) return null;
                     return (
                       <span
-                        className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[5px] text-[11px] font-bold border shrink-0 select-none shadow-xs"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[4px] text-[11px] font-bold border shrink-0 select-none shadow-xs"
                         style={{
                           backgroundColor: earlyRole.bg,
                           color: earlyRole.color,
@@ -1659,11 +1669,11 @@ export function ProfileChannel() {
                           .getState()
                           .addToast(`User ID copied: ${targetId}`, "info");
                       }}
-                      className="inline-flex items-center gap-1.5 text-[11px] font-mono px-2 py-0.5 rounded-[4px] bg-[#1e1f22] text-[#94a3b8] hover:text-foreground border border-[#3f4147] hover:border-foreground/40 shrink-0 cursor-pointer transition-colors shadow-xs"
+                      className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold px-2 py-0.5 rounded-[4px] bg-[#475569] hover:bg-[#334155] text-white border border-white/20 shrink-0 cursor-pointer transition-colors shadow-xs active:scale-95"
                       title={`Click to copy User ID: ${targetId}`}
                     >
                       <span>ID: {targetId.slice(0, 8)}…</span>
-                      <IconCopy className="w-3 h-3 opacity-70" />
+                      <IconCopy className="w-3 h-3 text-white/80" />
                     </button>
                   )}
 
@@ -1927,7 +1937,7 @@ export function ProfileChannel() {
                         Discord ID
                       </span>
                       {profileData.hide_discord_id && isOwner && (
-                        <span className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-[4px] bg-[#281b0a] border border-[#b45309] text-[#fbbf24] leading-none">
+                        <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded-[4px] bg-[#d97706] border border-[#f59e0b]/40 text-white leading-none shadow-xs font-mono">
                           Hidden
                         </span>
                       )}
@@ -2182,16 +2192,18 @@ export function ProfileChannel() {
                       onClick={() =>
                         handleToggleProfilePrivacy("ad_history_public")
                       }
-                      className={`px-3 py-1.5 rounded-[6px] border text-[12px] font-semibold flex items-center gap-2 transition-colors cursor-pointer shrink-0 ${
+                      className={`px-3 py-1.5 rounded-[4px] border text-[12px] font-bold flex items-center gap-2 transition-colors cursor-pointer shrink-0 shadow-xs active:scale-95 ${
                         profileData.ad_history_public ?? true
-                          ? "bg-[#122317] border-[#1f6f3e] text-[#34d399]"
-                          : "bg-[#281b0a] border-[#b45309] text-[#fbbf24]"
+                          ? "bg-[#23a559] hover:bg-[#1f934f] text-white border-[#23a559]/40"
+                          : "bg-[#d97706] hover:bg-[#b45309] text-white border-[#f59e0b]/40"
                       }`}
                       title="Control whether visitors can view your Ad History"
                     >
-                      <IconLock
-                        locked={!(profileData.ad_history_public ?? true)}
-                      />
+                      {profileData.ad_history_public ?? true ? (
+                        <GiWorld className="w-3.5 h-3.5 text-white shrink-0" />
+                      ) : (
+                        <GiPadlock className="w-3.5 h-3.5 text-white shrink-0" />
+                      )}
                       <span>
                         {profileData.ad_history_public ?? true
                           ? "History: Public"
@@ -2242,13 +2254,13 @@ export function ProfileChannel() {
                       const isInventory = ad.ad_type === "inventory";
 
                       let typeLabel = "Specific Trade";
-                      let typeStyle = "bg-[#1e1f22] border-[#3f4147] text-[#cbd5e1]";
+                      let typeStyle = "bg-[#5865F2] text-white border-[#5865F2]/40 shadow-xs";
                       if (isInventory) {
                         typeLabel = "Vault Showcase";
-                        typeStyle = "bg-[#161a33] border-[#3c45a5] text-[#818cf8]";
+                        typeStyle = "bg-[#8b5cf6] text-white border-[#8b5cf6]/40 shadow-xs";
                       } else if (isTakingOffers) {
                         typeLabel = "Taking Offers";
-                        typeStyle = "bg-[#281b0a] border-[#b45309] text-[#fbbf24]";
+                        typeStyle = "bg-[#d97706] text-white border-[#f59e0b]/40 shadow-xs";
                       }
 
                       const totalGiveVal = ad.give_items.reduce((acc, i) => {
@@ -2279,18 +2291,18 @@ export function ProfileChannel() {
                             <div className="flex items-center gap-2 flex-wrap">
                               {/* Live vs Expired Badge */}
                               {isLive ? (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[4px] bg-[#122317] border border-[#1f6f3e] text-[#34d399] text-[11px] font-mono font-semibold">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[4px] bg-[#23a559] text-white border border-[#23a559]/40 text-[11px] font-mono font-bold uppercase tracking-wider shadow-xs">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                                   LIVE · {remaining}
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[4px] bg-[#1e1f22] border border-[#3f4147] text-[#94a3b8] text-[11px] font-mono font-semibold">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[4px] bg-[#475569] text-white border border-white/20 text-[11px] font-mono font-bold uppercase tracking-wider shadow-xs">
                                   EXPIRED · {formatTimeAgo(ad.created_at)}
                                 </span>
                               )}
 
                               <span
-                                className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-[4px] border ${typeStyle}`}
+                                className={`text-[11px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-[4px] border ${typeStyle}`}
                               >
                                 {typeLabel}
                               </span>
@@ -2318,10 +2330,10 @@ export function ProfileChannel() {
                               <button
                                 type="button"
                                 onClick={() => handleLoadAdIntoCalculator(ad)}
-                                className="px-2.5 py-1 rounded-[5px] bg-popover hover:bg-muted border border-border text-muted-foreground hover:text-foreground text-[11.5px] flex items-center gap-1.5 transition-colors cursor-pointer"
+                                className="px-2.5 py-1 rounded-[4px] bg-[#475569] hover:bg-[#334155] border border-white/20 text-white text-[11.5px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-95"
                                 title="Load these units into the Trade Analyzer"
                               >
-                                <IconSwap className="w-3.5 h-3.5" />
+                                <GiAbacus className="w-3.5 h-3.5 shrink-0" />
                                 <span>Calculator</span>
                               </button>
 
@@ -2332,10 +2344,10 @@ export function ProfileChannel() {
                                   triggerHaptic("light");
                                   void openAdContext(ad.id, currentUser?.id);
                                 }}
-                                className="px-2.5 py-1 rounded-[5px] bg-popover hover:bg-muted border border-border text-muted-foreground hover:text-foreground text-[11.5px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                                className="px-2.5 py-1 rounded-[4px] bg-[#5865F2] hover:bg-[#4752c4] border border-[#5865F2]/40 text-white text-[11.5px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-95"
                                 title="View discussion, comments, and trade analytics for this listing"
                               >
-                                <GiChatBubble className="w-3.5 h-3.5 text-primary" />
+                                <GiChatBubble className="w-3.5 h-3.5 shrink-0 text-white" />
                                 <span>Discussion</span>
                               </button>
 
@@ -2347,10 +2359,10 @@ export function ProfileChannel() {
                                     onClick={() =>
                                       handleToggleSingleAdPrivacy(ad.id)
                                     }
-                                    className={`px-2.5 py-1 rounded-[5px] border text-[11.5px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                                    className={`px-2.5 py-1 rounded-[4px] border text-[11.5px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-95 ${
                                       isPrivateAd
-                                        ? "bg-[#281b0a] border-[#b45309] text-[#fbbf24]"
-                                        : "bg-[#1e1f22] hover:bg-muted border-[#3f4147] text-[#cbd5e1]"
+                                        ? "bg-[#d97706] hover:bg-[#b45309] text-white border-[#f59e0b]/40"
+                                        : "bg-[#23a559] hover:bg-[#1f934f] text-white border-[#23a559]/40"
                                     }`}
                                     title={
                                       isPrivateAd
@@ -2358,7 +2370,11 @@ export function ProfileChannel() {
                                         : "Visible to visitors. Click to make Private."
                                     }
                                   >
-                                    <IconLock locked={isPrivateAd} />
+                                    {isPrivateAd ? (
+                                      <GiPadlock className="w-3.5 h-3.5 text-white shrink-0" />
+                                    ) : (
+                                      <GiWorld className="w-3.5 h-3.5 text-white shrink-0" />
+                                    )}
                                     <span>
                                       {isPrivateAd ? "Private" : "Public"}
                                     </span>
@@ -2369,10 +2385,10 @@ export function ProfileChannel() {
                                       type="button"
                                       disabled={repostingAdId === ad.id}
                                       onClick={() => handleRepostAd(ad)}
-                                      className="px-2.5 py-1 rounded-[5px] bg-[#1a2333] hover:bg-[#202d42] border border-[#2563eb] text-[#60a5fa] font-semibold text-[11.5px] flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
+                                      className="px-2.5 py-1 rounded-[4px] bg-[#5865F2] hover:bg-[#4752c4] border border-[#5865F2]/40 text-white font-bold text-[11.5px] flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 shadow-xs active:scale-95"
                                       title="Repost this trade to the live Trading Board for 24 hours"
                                     >
-                                      <IconRefresh className="w-3.5 h-3.5" />
+                                      <GiCycle className="w-3.5 h-3.5 shrink-0" />
                                       <span>
                                         {repostingAdId === ad.id
                                           ? "Reposting…"
@@ -2382,23 +2398,23 @@ export function ProfileChannel() {
                                   )}
 
                                   {confirmDeleteAdId === ad.id ? (
-                                    <div className="inline-flex items-center gap-1 bg-[#241215] border border-[#ef4444] rounded-[5px] px-2 py-0.5 shadow-xs">
+                                    <div className="inline-flex items-center gap-1 bg-[#ef4444] border border-[#ef4444]/40 rounded-[4px] px-2 py-0.5 shadow-xs text-white">
                                       <button
                                         type="button"
                                         onClick={() =>
                                           handleDeleteAdFromHistory(ad.id)
                                         }
-                                        className="text-[11px] font-semibold text-[#f87171] hover:underline px-1 cursor-pointer"
+                                        className="text-[11px] font-bold text-white hover:underline px-1 cursor-pointer"
                                       >
                                         Confirm Delete
                                       </button>
-                                      <span className="text-[#7f1d1d]">·</span>
+                                      <span className="text-white/60">·</span>
                                       <button
                                         type="button"
                                         onClick={() =>
                                           setConfirmDeleteAdId(null)
                                         }
-                                        className="text-[11px] text-[#94a3b8] hover:text-foreground px-1 cursor-pointer"
+                                        className="text-[11px] font-bold text-white/90 hover:underline px-1 cursor-pointer"
                                       >
                                         Cancel
                                       </button>
@@ -2409,11 +2425,11 @@ export function ProfileChannel() {
                                       onClick={() =>
                                         setConfirmDeleteAdId(ad.id)
                                       }
-                                      className="p-1.5 rounded-[5px] bg-[#1e1f22] hover:bg-[#241215] border border-[#3f4147] hover:border-[#ef4444] text-[#94a3b8] hover:text-[#f87171] transition-colors cursor-pointer shadow-xs"
+                                      className="p-1.5 rounded-[4px] bg-[#ef4444] hover:bg-[#dc2626] border border-[#ef4444]/40 text-white transition-colors cursor-pointer shadow-xs active:scale-95"
                                       title="Delete ad permanently"
                                       aria-label="Delete ad"
                                     >
-                                      <IconTrash className="w-3.5 h-3.5" />
+                                      <GiTrashCan className="w-3.5 h-3.5 shrink-0" />
                                     </button>
                                   )}
                                 </>
@@ -2590,7 +2606,7 @@ export function ProfileChannel() {
                                   </span>
                                 </div>
                               </div>
-                              <span className="text-[11px] font-semibold text-[#60a5fa] px-2 py-0.5 rounded-[4px] bg-[#1a2333] border border-[#2563eb] shrink-0">
+                              <span className="text-[11px] font-bold text-white px-2 py-0.5 rounded-[4px] bg-[#5865F2] border border-[#5865F2]/40 shrink-0 shadow-xs">
                                 + Add
                               </span>
                             </button>
@@ -2703,7 +2719,7 @@ export function ProfileChannel() {
                                         master.id
                                       );
                                     }}
-                                    className="text-muted-foreground hover:text-[#f87171] p-1 rounded-[4px] hover:bg-[#241215] transition-colors cursor-pointer shrink-0"
+                                    className="text-muted-foreground hover:text-white p-1 rounded-[4px] hover:bg-[#ef4444] transition-colors cursor-pointer shrink-0 shadow-xs"
                                     title="Remove from Wishlist"
                                     aria-label={`Remove ${master.name} from wishlist`}
                                   >
@@ -2723,7 +2739,7 @@ export function ProfileChannel() {
                                 </span>
                                 {cfg && (
                                   <span
-                                    className="text-[10px] px-1.5 py-0.5 rounded-[4px] border inline-flex items-center gap-1 leading-none whitespace-nowrap shrink-0"
+                                    className="text-[10px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-[4px] border inline-flex items-center gap-1 leading-none whitespace-nowrap shrink-0 shadow-xs select-none"
                                     style={{
                                       backgroundColor: cfg.bg,
                                       color: cfg.color,
@@ -3198,10 +3214,10 @@ export function ProfileChannel() {
                             {item.label}
                           </span>
                           <span
-                            className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded-[4px] border ${
+                            className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-[4px] border shadow-xs ${
                               item.active
-                                ? "bg-[#122317] border-[#1f6f3e] text-[#34d399]"
-                                : "bg-[#1e1f22] border-[#3f4147] text-[#94a3b8]"
+                                ? "bg-[#23a559] border-[#23a559]/40 text-white"
+                                : "bg-[#475569] border-white/20 text-white"
                             }`}
                           >
                             {item.active ? "Shown" : "Hidden"}

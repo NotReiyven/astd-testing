@@ -386,7 +386,7 @@ export function MiniProfilePopout() {
               <div className="flex justify-end pt-2 gap-1.5 min-h-[34px] items-center flex-wrap">
                 {typeof profile.join_number === "number" && (
                   <span
-                    className="inline-flex items-center text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-[4px] bg-[#1e1f22] text-[#cbd5e1] border border-[#35373c] shrink-0 select-none shadow-xs"
+                    className="inline-flex items-center text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-[4px] bg-[#475569] text-white border border-white/20 shrink-0 select-none shadow-xs"
                     title={`User #${profile.join_number}`}
                   >
                     #{profile.join_number}
@@ -398,7 +398,7 @@ export function MiniProfilePopout() {
                   if (!earlyRole) return null;
                   return (
                     <span
-                      className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-[4px] border shrink-0"
+                      className="inline-flex items-center gap-1 text-[10px] font-bold font-mono uppercase tracking-wider px-2 py-0.5 rounded-[4px] border shrink-0 shadow-xs"
                       style={{
                         backgroundColor: earlyRole.bg,
                         color: earlyRole.color,
@@ -416,7 +416,7 @@ export function MiniProfilePopout() {
                 })()}
 
                 <span
-                  className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-[4px] border"
+                  className="inline-flex items-center gap-1 text-[10px] font-bold font-mono uppercase tracking-wider px-2 py-0.5 rounded-[4px] border shadow-xs"
                   style={{
                     backgroundColor: stanceCfg.bg,
                     color: stanceCfg.color,
@@ -455,29 +455,23 @@ export function MiniProfilePopout() {
                     {profile.username}
                   </h2>
                   <div
-                    className="flex items-center gap-1 px-2 py-0.5 rounded-[4px] border text-[11px] font-bold shrink-0"
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-[4px] border text-[11px] font-bold shrink-0 text-white shadow-xs font-mono"
                     style={{
                       backgroundColor:
-                        profile.global_rep > 0
-                          ? "#122317"
-                          : profile.global_rep < 0
-                          ? "#241215"
-                          : "#1e1f22",
-                      borderColor:
                         profile.global_rep > 0
                           ? "#23a559"
                           : profile.global_rep < 0
                           ? "#ef4444"
-                          : "#35373c",
-                      color:
+                          : "#475569",
+                      borderColor:
                         profile.global_rep > 0
-                          ? "#4ade80"
+                          ? "rgba(35, 165, 89, 0.4)"
                           : profile.global_rep < 0
-                          ? "#f87171"
-                          : "#cbd5e1",
+                          ? "rgba(239, 68, 68, 0.4)"
+                          : "rgba(255, 255, 255, 0.2)",
                     }}
                   >
-                    <GiSpikedHalo className="w-3 h-3" />
+                    <GiSpikedHalo className="w-3 h-3 text-white" />
                     <span>
                       {profile.global_rep > 0 ? "+" : ""}
                       {profile.global_rep} Rep

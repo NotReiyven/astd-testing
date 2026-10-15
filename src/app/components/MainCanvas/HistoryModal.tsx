@@ -261,20 +261,22 @@ function SnapshotDiffList({
           </span>
           <div className="flex items-center gap-1.5">
             <span
-              className="text-[11.5px] font-semibold capitalize px-1.5 py-0.5 rounded-[4px]"
+              className="text-[11px] font-bold font-mono uppercase tracking-wider px-2 py-0.5 rounded-[4px] border shadow-xs"
               style={{
-                backgroundColor: prevCfg?.bg || "var(--card)",
-                color: prevCfg?.color || "var(--muted-foreground)",
+                backgroundColor: prevCfg?.bg || "#52525b",
+                color: prevCfg?.color || "#ffffff",
+                borderColor: prevCfg?.border || "rgba(255, 255, 255, 0.2)",
               }}
             >
               {prevCfg?.label || prev.status || "Stable"}
             </span>
             <span className="text-muted-foreground font-mono">→</span>
             <span
-              className="text-[11.5px] font-semibold capitalize px-1.5 py-0.5 rounded-[4px]"
+              className="text-[11px] font-bold font-mono uppercase tracking-wider px-2 py-0.5 rounded-[4px] border shadow-xs"
               style={{
-                backgroundColor: currCfg?.bg || "var(--card)",
-                color: currCfg?.color || "var(--foreground)",
+                backgroundColor: currCfg?.bg || "#52525b",
+                color: currCfg?.color || "#ffffff",
+                borderColor: currCfg?.border || "rgba(255, 255, 255, 0.2)",
               }}
             >
               {currCfg?.label || curr.status || "Stable"}
@@ -1150,10 +1152,11 @@ export function HistoryModal() {
           <span>{point.fullDate}</span>
           {snapStatusCfg && (
             <span
-              className="text-[10px] font-sans font-semibold capitalize px-1.5 py-[1px] rounded-[3px] shrink-0"
+              className="text-[10px] font-mono font-bold uppercase tracking-wider px-1.5 py-[1px] rounded-[3px] shrink-0 border shadow-xs"
               style={{
                 backgroundColor: snapStatusCfg.bg,
                 color: snapStatusCfg.color,
+                borderColor: snapStatusCfg.border,
               }}
             >
               {snapStatusCfg.label}
@@ -1270,7 +1273,7 @@ export function HistoryModal() {
                     </h2>
                     {statusCfg && (
                       <span
-                        className="text-[11px] font-semibold capitalize px-2 py-0.5 rounded-[4px] border inline-flex items-center gap-1 leading-none"
+                        className="text-[10.5px] font-bold font-mono tracking-wider uppercase px-2 py-0.5 rounded-[4px] border inline-flex items-center gap-1 leading-none shadow-xs select-none"
                         style={{
                           backgroundColor: statusCfg.bg,
                           color: statusCfg.color,

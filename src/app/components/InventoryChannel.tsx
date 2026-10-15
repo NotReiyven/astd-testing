@@ -1503,7 +1503,7 @@ export function InventoryChannel() {
                     </h2>
                     {inspectTarget.master.status && (
                       <span
-                        className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-[2px] border tracking-wider inline-flex items-center gap-1"
+                        className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-[4px] border tracking-wider inline-flex items-center gap-1 shadow-xs select-none"
                         style={{
                           backgroundColor:
                             GRID_STATUS_CFG[

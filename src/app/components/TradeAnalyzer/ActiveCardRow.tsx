@@ -163,10 +163,11 @@ export const ActiveCardRow = memo(function ActiveCardRow({
             </span>
             {dropCfg && (
               <div
-                className="flex-shrink-0 flex items-center gap-1 px-1.5 py-[1px] rounded-[3px]"
+                className="flex-shrink-0 flex items-center gap-1 px-1.5 py-[1px] rounded-[3px] shadow-xs font-mono font-bold select-none"
                 style={{
                   background: dropCfg.bg,
                   border: `1px solid ${dropCfg.border}`,
+                  color: dropCfg.color,
                 }}
               >
                 <StatusIcon status={masterData?.status} />
