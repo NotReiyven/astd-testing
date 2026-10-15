@@ -148,38 +148,50 @@ export const TERMS_OF_SERVICE: LegalDocumentData = {
       ],
     },
     {
+      id: "no-fees",
+      title: "10. Free Service, No Payments & No Real-Money Purchases",
+      paragraphs: [
+        "ASTD Value List is a 100% free community project and academic research platform. We do not sell virtual items, charge subscription fees, or offer paid microtransactions.",
+      ],
+      bullets: [
+        "No Payment Processing: We never request, collect, or store credit cards, bank accounts, or real-world payment information.",
+        "No Refunds Required: Because the Service is completely free of charge, no refunds, billing terms, or recurring charges apply.",
+        "Fraud Prevention: Anyone attempting to sell items, demand payments, or claim official affiliation with this project in exchange for real money is committing fraud. Report suspicious activity to our moderators immediately.",
+      ],
+    },
+    {
       id: "no-warranty",
-      title: "10. No Warranty (\"As Is\")",
+      title: "11. No Warranty (\"As Is\")",
       paragraphs: [
         "THE SERVICE IS PROVIDED ON AN \"AS IS\" AND \"AS AVAILABLE\" BASIS WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF ACCURACY, MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT. WE DO NOT WARRANT THAT THE SERVICE, VALUE SYNCING, OR OFFLINE QUEUES WILL BE UNINTERRUPTED OR ERROR-FREE.",
       ],
     },
     {
       id: "limitation-of-liability",
-      title: "11. Limitation of Liability",
+      title: "12. Limitation of Liability",
       paragraphs: [
         "TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, ASTD VALUE LIST AND ITS OPERATORS, CONTRIBUTORS, AND MODERATORS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR EXEMPLARY DAMAGES, INCLUDING LOSS OF VIRTUAL ITEMS, IN-GAME VALUE, DATA, OR GOODWILL, ARISING OUT OF OR IN CONNECTION WITH YOUR USE OF (OR INABILITY TO USE) THE SERVICE.",
       ],
     },
     {
       id: "governing-law",
-      title: "12. Governing Law",
+      title: "13. Governing Law",
       paragraphs: [
         "These Terms shall be governed by and construed in accordance with the laws of the State of Delaware, United States, without regard to its conflict of law provisions.",
       ],
     },
     {
       id: "changes",
-      title: "13. Changes to Terms",
+      title: "14. Changes to Terms",
       paragraphs: [
         "We may revise these Terms from time to time. The \"Last Updated\" date and version identifier at the top of this page indicate when the Terms were last revised. Continued use of the Service after changes become effective constitutes acceptance of the revised Terms.",
       ],
     },
     {
       id: "contact",
-      title: "14. Contact Information",
+      title: "15. Contact Information",
       paragraphs: [
-        "For questions about these Terms, moderation appeals, or legal notices, please contact us via our official Discord support server at https://discord.gg/aS6RH9nav.",
+        "For questions about these Terms, moderation appeals, or legal notices, please contact us via our official Discord support server at https://discord.gg/aS6RH9nav or email us at astdvaluelist@gmail.com.",
       ],
     },
   ],
@@ -316,7 +328,7 @@ export const PRIVACY_POLICY: LegalDocumentData = {
       id: "contact",
       title: "10. Contact Us",
       paragraphs: [
-        "For privacy inquiries, data access requests, or account deletion requests, please contact us via our official Discord support server at https://discord.gg/aS6RH9nav.",
+        "For privacy inquiries, data access requests, or account deletion requests, please contact us via our official Discord support server at https://discord.gg/aS6RH9nav or email our data protection inquiries at astdvaluelist@gmail.com.",
       ],
     },
   ],

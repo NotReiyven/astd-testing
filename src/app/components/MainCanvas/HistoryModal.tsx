@@ -12,13 +12,8 @@ import { useAuthStore } from "../../../store/useAuthStore";
 import { useInventoryStore } from "../../../store/useInventoryStore";
 import { useToastStore } from "../../../store/useToastStore";
 import { useShowDelay } from "../../../hooks/useShowDelay";
-import {
-  GRID_STATUS_CFG,
-  TIER_CONFIG,
-  getProxyImage,
-  getTier,
-  handleImageError,
-} from "../../../data";
+import { logger } from "../../../lib/logger";
+import { GRID_STATUS_CFG, TIER_CONFIG, getProxyImage, getTier, handleImageError } from "../../../data";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 import { StatusIcon } from "./UnitGrid";
 import { triggerHaptic, copyTextWithFallback } from "../../../data/helpers";
@@ -417,7 +412,7 @@ export function HistoryModal() {
     if (isOpen && !RechartsLib) {
       import("recharts")
         .then((mod) => setRechartsLib(mod))
-        .catch((err) => console.error("Failed to load recharts", err));
+        .catch((err) => logger.error('ASTD-UI-012', 'Failed to load recharts', { err }));
     }
   }, [isOpen, RechartsLib]);
 

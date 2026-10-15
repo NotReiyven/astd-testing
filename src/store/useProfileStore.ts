@@ -1,7 +1,8 @@
 import React from "react";
 import { create } from "zustand";
 import { supabase } from "../lib/supabase";
-import { get as getIdb, set as setIdb } from "idb-keyval";
+import { logger } from '../lib/logger';
+import { get as getIdb, set as setIdb } from 'idb-keyval';
 import { useToastStore } from "./useToastStore";
 
 export type BannerStyleType =
@@ -367,7 +368,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       .single();
 
     if (error || !data) {
-      console.error(`Failed to fetch profile for ${userId}:`, error?.message);
+      logger.error('ASTD-UI-001', `Failed to fetch profile for ${userId}: ${error?.message ?? 'unknown'}`);
       set((state) => ({
         notFoundCache: { ...state.notFoundCache, [userId]: now },
       }));

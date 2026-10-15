@@ -1,5 +1,7 @@
 import { TradeCard, MasterUnit } from "../../../types";
 
+import { logger } from "../../../lib/logger";
+
 export type AmbiguousToken = {
   rawName: string;
   qty: number;
@@ -193,7 +195,7 @@ export const restoreSlangCache = (
   try {
     localStorage.setItem("astd_slang_cache", JSON.stringify(next));
   } catch (e) {
-    console.error("Failed to restore slang cache", e);
+    logger.error('ASTD-UI-034', 'Failed to restore slang cache', { err: e });
   }
   return { ...next };
 };

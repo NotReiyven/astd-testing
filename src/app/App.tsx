@@ -94,6 +94,11 @@ const ProfileChannel = lazy(() =>
     default: module.ProfileChannel,
   }))
 );
+const NotFoundChannel = lazy(() =>
+  import("./components/NotFoundChannel").then((module) => ({
+    default: module.NotFoundChannel,
+  }))
+);
 
 const CHANNEL_INFO: Record<string, { title: string; subtitle: string }> = {
   home: {
@@ -648,22 +653,7 @@ export default function App() {
                   element={<LegalChannel type="privacy" />}
                 />
                 <Route path="/admin-panel" element={<AdminChannel />} />
-                <Route
-                  path="*"
-                  element={
-                    <div className="flex-1 flex items-center justify-center bg-background px-4">
-                      <div className="text-center">
-                        <h2 className="text-2xl font-bold text-foreground mb-2 capitalize">
-                          Welcome to {activeChannel}
-                        </h2>
-                        <p className="text-muted-foreground">
-                          This channel is currently under construction or does
-                          not exist.
-                        </p>
-                      </div>
-                    </div>
-                  }
-                />
+                <Route path="*" element={<NotFoundChannel />} />
               </Routes>
             </div>
           </main>

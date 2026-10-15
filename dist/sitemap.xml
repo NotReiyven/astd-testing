@@ -2,27 +2,44 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://all-star-vl.vercel.app/</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-15</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://all-star-vl.vercel.app/?tab=inventory</loc>
-    <lastmod>2026-10-04</lastmod>
+    <loc>https://all-star-vl.vercel.app/value-list</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://all-star-vl.vercel.app/trading-ads</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://all-star-vl.vercel.app/tutorial</loc>
+    <lastmod>2026-10-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://all-star-vl.vercel.app/?tab=tutorial</loc>
-    <lastmod>2026-10-04</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://all-star-vl.vercel.app/inventory</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://all-star-vl.vercel.app/?tab=notices</loc>
-    <lastmod>2026-10-04</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
+    <loc>https://all-star-vl.vercel.app/terms-of-service</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://all-star-vl.vercel.app/privacy-policy</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
 </urlset>
-

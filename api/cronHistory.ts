@@ -48,11 +48,12 @@ export async function GET(request: Request) {
   try {
     const authHeader = request.headers.get('authorization');
     
-    if (!process.env.CRON_SECRET) {
-      return new Response(JSON.stringify({ error: "Unauthorized - Missing CRON_SECRET configuration" }), { status: 401, headers: { "Content-Type": "application/json" } });
+    const cronSecret = process.env.CRON_SECRET || process.env.SYNC_SECRET;
+    if (!cronSecret) {
+      return new Response(JSON.stringify({ error: "Unauthorized - Missing CRON_SECRET or SYNC_SECRET configuration" }), { status: 401, headers: { "Content-Type": "application/json" } });
     }
     
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (authHeader !== `Bearer ${cronSecret}`) {
       return new Response(JSON.stringify({ error: "Unauthorized - Invalid token" }), { status: 401, headers: { "Content-Type": "application/json" } });
     }
 
@@ -80,7 +81,10 @@ export async function GET(request: Request) {
       "Pure Tier!A:I", "Oddities!A:I", "Untiered!A:I"
     ];
     const batchRanges = ranges.map(r => `ranges=${encodeURIComponent(r)}`).join("&");
-    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batchRanges}&includeGridData=true&key=${API_KEY}`;
+    const fields = encodeURIComponent(
+      "properties.title,sheets(properties.title,data.rowData.values(formattedValue,effectiveFormat.backgroundColor))"
+    );
+    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batchRanges}&includeGridData=true&fields=${fields}&key=${API_KEY}`;
 
     const retentionCutoffIso = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
     const [adPurgeResult, bannedUsersResult, sheetsResponse] = await Promise.all([

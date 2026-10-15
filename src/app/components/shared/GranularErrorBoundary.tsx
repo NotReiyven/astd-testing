@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { logger } from "../../../lib/logger";
 
 interface Props {
   children: ReactNode;
@@ -22,11 +23,7 @@ export class GranularErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error(
-      `[Granular Boundary Caught] ${this.props.fallbackName || "Component"}:`,
-      error,
-      errorInfo
-    );
+    logger.error('ASTD-UI-013', 'Granular error boundary caught', { error, errorInfo });
   }
 
   public render() {

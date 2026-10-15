@@ -7,6 +7,7 @@ import "./styles/density.css";
 import { UnitProvider } from "./context/UnitContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as Sentry from "@sentry/react";
+import { logger } from './lib/logger';
 
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN,
@@ -63,7 +64,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("Uncaught app error:", error, errorInfo);
+    logger.error('ASTD-UI-002', `Uncaught app error: ${error}`, { errorInfo });
     Sentry.captureException(error, { extra: { errorInfo } });
   }
 

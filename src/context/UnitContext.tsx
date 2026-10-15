@@ -87,8 +87,8 @@ export const UnitProvider = ({ children }: { children: React.ReactNode }) => {
         lastUpdated: json.lastUpdated || new Date().toISOString(),
       };
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes before background refetch
-    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60 * 15, // 15 minutes before background refetch
+    refetchOnWindowFocus: false, // Prevent aggressive function invocations when testers switch tabs
   });
 
   const handleRefetch = useCallback(async () => {

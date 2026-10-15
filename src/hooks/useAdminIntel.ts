@@ -12,6 +12,7 @@ import {
 } from "../store/useProfileStore";
 import { TradingAd } from "../store/useTradingAdsStore";
 import { useUnits } from "../context/UnitContext";
+import { logger } from "../lib/logger";
 import { triggerHaptic } from "../data/helpers";
 import {
   EffectiveStatus,

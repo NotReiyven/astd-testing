@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { supabase } from "../lib/supabase";
 import { Session, RealtimeChannel } from "@supabase/supabase-js";
 
+import { logger } from "../lib/logger";
 export interface UserProfile {
   id: string;
   discord_id: string;
@@ -103,7 +104,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       },
     });
     if (error) {
-      console.error("Discord Login Error:", error);
+      logger.error('ASTD-UI-005', 'Discord OAuth login failed', { error });
       updateToast(toastId, {
         message:
           "Could not start Discord login. Clear your browser cache or try again.",

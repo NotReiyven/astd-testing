@@ -15,6 +15,7 @@ import { TradeCard } from "../../../types";
 import { useNotificationStore } from "../../../store/useNotificationStore";
 import { useToastStore } from "../../../store/useToastStore";
 import { triggerHaptic } from "../../../data/helpers";
+import { logger } from "../../../lib/logger";
 import { getProxyImage, handleImageError } from "../../../data";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 import { AsyncButton } from "../ui/AsyncButton";
@@ -347,7 +348,7 @@ export function AdComposerModal() {
         })
       );
     } catch (err: any) {
-      console.error("Failed to publish trade ad:", err);
+      logger.error('ASTD-UI-032', 'Ad publish failed', { err });
 
       const errMessage =
         typeof err?.message === "string" && err.message.trim().length > 0

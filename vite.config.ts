@@ -35,12 +35,30 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: 'ASTD Trading Server',
-        short_name: 'ASTD Trades',
-        description: 'Calculate and analyze ASTD unit trades.',
+        name: 'ASTD Value List & Trading Platform',
+        short_name: 'ASTD Values',
+        description: 'Official community-driven value list, trade calculator, and market analytics for All Star Tower Defense.',
         theme_color: '#2B2D31',
         background_color: '#313338',
         display: 'standalone',
+        icons: [
+          {
+            src: '/favicon-32x32.png',
+            sizes: '32x32',
+            type: 'image/png'
+          },
+          {
+            src: '/icon-192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: '/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ]
       }
     })
   ],

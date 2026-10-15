@@ -10,6 +10,7 @@ import {
 import { supabase } from "../../../lib/supabase";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useToastStore } from "../../../store/useToastStore";
+import { logger } from "../../../lib/logger";
 import { triggerHaptic } from "../../../data/helpers";
 import { z } from "zod";
 
@@ -255,7 +256,7 @@ export const SecuritySettingsTab = () => {
       await fetchAlerts();
     } catch (err) {
       addToast("Broadcast failed.", "error");
-      console.error(err);
+      logger.error('ASTD-UI-010', 'Broadcast failed', { err });
     } finally {
       setSubmitting(false);
     }
@@ -284,7 +285,7 @@ export const SecuritySettingsTab = () => {
       await fetchAlerts();
     } catch (err) {
       addToast("Failed to terminate alert.", "error");
-      console.error(err);
+      logger.error('ASTD-UI-011', 'Alert termination failed', { err });
     } finally {
       setSubmitting(false);
     }
