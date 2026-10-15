@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { Check, Copy } from "lucide-react";
 import {
   GiLockedFortress,
   GiSpikedHalo,
@@ -1933,12 +1934,14 @@ export function AdminChannel({
                                     "Discord ID"
                                   )
                                 }
-                                className="hover:text-foreground cursor-pointer"
+                                className="hover:text-foreground cursor-pointer inline-flex items-center gap-1"
                               >
-                                ID: {selectedUser.discord_id}{" "}
-                                {copiedId === selectedUser.discord_id
-                                  ? "✓"
-                                  : "📋"}
+                                <span>ID: {selectedUser.discord_id}</span>
+                                {copiedId === selectedUser.discord_id ? (
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                ) : (
+                                  <Copy className="w-3 h-3 text-muted-foreground" />
+                                )}
                               </button>
                             )}
                           {selectedUser.roblox_username && (

@@ -5,6 +5,7 @@ import React, {
   useMemo,
   useCallback,
 } from "react";
+import { Star } from "lucide-react";
 import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 import { useUnitHistory, HistorySnapshot } from "../../../hooks/useUnitHistory";
 import { useUnits } from "../../../context/UnitContext";
@@ -1366,11 +1367,16 @@ export function HistoryModal() {
                     : "Sign in with Discord to manage your Wishlist"
                 }
               >
-                {isWishlistPending
-                  ? "Saving…"
-                  : isWishlisted
-                  ? "★ Wishlisted"
-                  : "☆ Wishlist"}
+                <span className="flex items-center gap-1.5">
+                  <Star className={`w-3.5 h-3.5 ${isWishlisted ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
+                  <span>
+                    {isWishlistPending
+                      ? "Saving…"
+                      : isWishlisted
+                      ? "Wishlisted"
+                      : "Wishlist"}
+                  </span>
+                </span>
               </button>
 
               <button

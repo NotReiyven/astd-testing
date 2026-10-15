@@ -65,7 +65,7 @@ export async function GET(request: Request) {
     if (!API_KEY || !SHEET_ID || !SUPABASE_URL || !SUPABASE_KEY) {
       const msg = "Missing core environment variables for history sync.";
       await sendDiscordEmbed({
-        title: "🚨 ASTD Value List Critical Error",
+        title: "ASTD Value List Critical Error",
         description: msg,
         color: 15158332 // Red
       });
@@ -219,7 +219,7 @@ export async function GET(request: Request) {
     }
 
     await sendDiscordEmbed({
-      title: "✅ ASTD Value List Autonomous Sync",
+      title: "ASTD Value List Autonomous Sync",
       description: "Successfully processed live spreadsheet state and purged expired database ads.",
       color: 3066993, // Green
       fields: embedFields
@@ -230,7 +230,7 @@ export async function GET(request: Request) {
     const errorDetails = error instanceof Error ? error.message : String(error);
     console.error("Cron crash error:", errorDetails);
     await sendDiscordEmbed({
-      title: "🚨 ASTD Value List Critical Crash",
+      title: "ASTD Value List Critical Crash",
       description: `\`\`\`${errorDetails}\`\`\``,
       color: 15158332 // Red
     });

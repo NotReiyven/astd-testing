@@ -789,7 +789,7 @@ export function useAdminIntel() {
     });
 
     if (error) {
-      console.error("🚨 DB Insert Error for Moderation Log:", error.message);
+      console.error("[useAdminIntel] DB Insert Error for Moderation Log:", error.message);
       showToast("Audit log failed to save. Please try again.", "error");
       setModLogs((prev) => prev.filter((log) => log.id !== optimisticLog.id));
       setGlobalLogs((prev) => prev.filter((log) => log.id !== optimisticLog.id));

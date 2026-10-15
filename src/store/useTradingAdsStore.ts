@@ -87,7 +87,7 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("🚨 Error fetching ads:", error.message);
+      console.error("[useTradingAdsStore] Error fetching ads:", error.message);
       set({ isLoading: false });
       return;
     }
@@ -119,7 +119,7 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
       .limit(50);
 
     if (error) {
-      console.error("🚨 Error fetching user ad history:", error.message);
+      console.error("[useTradingAdsStore] Error fetching user ad history:", error.message);
       set({ userAdHistory: [], isLoadingHistory: false });
       return;
     }
@@ -153,7 +153,7 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
               .eq("id", newRecord.id)
               .single()
               .then(({ data, error }) => {
-                if (error) console.error("🚨 Realtime Fetch Error:", error);
+                if (error) console.error("[useTradingAdsStore] Realtime Fetch Error:", error);
                 if (data) {
                   set((state) => ({ ads: [data as TradingAd, ...state.ads] }));
                 }
@@ -373,7 +373,7 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
 
     const { error } = await supabase.from("trading_ads").insert(payload);
     if (error) {
-      console.error("🚨 Error posting ad:", error.message);
+      console.error("[useTradingAdsStore] Error posting ad:", error.message);
       return { error };
     }
 
@@ -435,7 +435,7 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
       .eq("id", id);
 
     if (error) {
-      console.error("🚨 Error deleting ad:", error.message);
+      console.error("[useTradingAdsStore] Error deleting ad:", error.message);
       set({ ads: currentAds, userAdHistory: currentHistory });
       useToastStore
         .getState()

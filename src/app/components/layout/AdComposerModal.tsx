@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Shield } from "lucide-react";
 import {
   GiTrade,
   GiMegaphone,
@@ -577,7 +578,10 @@ export function AdComposerModal() {
 
               {isStaff ? (
                 <div className="flex items-center justify-between px-3 py-1.5 rounded-[4px] bg-primary/10 border border-primary/25 text-primary text-[11px] font-medium">
-                  <span>🛡️ Staff Bypass Enabled</span>
+                  <span className="flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 shrink-0" />
+                    <span>Staff Bypass Enabled</span>
+                  </span>
                   <span>Unlimited listings · Zero cooldown</span>
                 </div>
               ) : (

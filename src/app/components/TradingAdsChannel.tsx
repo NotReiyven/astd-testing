@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, memo } from "react";
-import { Search, Plus, Trash2, Check, Send, Clock, ArrowBigUp, ArrowBigDown } from "lucide-react";
+import { Search, Plus, Trash2, Check, Send, Clock, ArrowBigUp, ArrowBigDown, Shield } from "lucide-react";
 import { GiMegaphone, GiHourglass, GiLockedFortress, GiAbacus, GiChest, GiChatBubble } from "react-icons/gi";
 import { supabase } from "../../lib/supabase";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
@@ -1077,7 +1077,8 @@ export function TradingAdsChannel() {
               title="Staff Role: Bypass active listings limit and post cooldowns"
               className="hidden sm:flex items-center gap-1.5 px-2.5 h-[var(--ui-height-btn)] rounded-[4px] bg-primary/10 border border-primary/30 text-primary text-xs font-semibold shrink-0"
             >
-              <span>🛡️ Staff Bypass</span>
+              <Shield className="w-3.5 h-3.5 shrink-0" />
+              <span>Staff Bypass</span>
             </div>
           ) : (
             <div

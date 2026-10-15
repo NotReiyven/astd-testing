@@ -12,6 +12,7 @@ import {
   GiRobberMask,
   GiHazardSign,
 } from "react-icons/gi";
+import { Equal, ArrowUpDown, ArrowDown } from "lucide-react";
 import { triggerHaptic } from "../../../data/helpers";
 
 export function JargonWrap({
@@ -146,24 +147,9 @@ export function StatusIcon({ status }: { status?: string | null }) {
   if (lower === "black-marketed") return <GiRobberMask className={sz} />;
   if (lower === "manipulated") return <GiHazardSign className={sz} />;
 
-  if (lower === "stable")
-    return (
-      <span className="flex items-center justify-center w-3 h-3 font-black text-[12px] leading-none shrink-0">
-        ≈
-      </span>
-    );
-  if (lower === "varies")
-    return (
-      <span className="flex items-center justify-center w-3 h-3 font-black text-[12px] leading-none shrink-0">
-        ↕
-      </span>
-    );
-  if (lower === "lowballed")
-    return (
-      <span className="flex items-center justify-center w-3 h-3 font-black text-[12px] leading-none shrink-0">
-        ↓
-      </span>
-    );
+  if (lower === "stable") return <Equal className={sz} />;
+  if (lower === "varies") return <ArrowUpDown className={sz} />;
+  if (lower === "lowballed") return <ArrowDown className={sz} />;
 
   return null;
 }

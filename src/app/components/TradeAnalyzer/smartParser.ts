@@ -644,7 +644,7 @@ export const parseSmartTrade = (
   if (smartInput.toUpperCase().includes("[I GIVE]")) {
     const gMatch = smartInput.match(/\[I GIVE\]([\s\S]*?)\[I GET\]/i);
     const tMatch = smartInput.match(
-      /\[I GET\]([\s\S]*?)(?:📊|\bDiff:|\bw\/l\b|$)/i
+      /\[I GET\]([\s\S]*?)(?:\u{1F4CA}|\bDiff:|\bw\/l\b|$)/iu
     );
     if (gMatch && tMatch) {
       const forceStr = `${gMatch[1].replace(/\n/g, " , ")} for ${tMatch[1].replace(/\n/g, " , ")}`;

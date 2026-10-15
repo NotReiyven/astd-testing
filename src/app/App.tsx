@@ -7,6 +7,7 @@ import {
   useRef,
 } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import { ExternalLink } from "lucide-react";
 import { FilterKey } from "../types";
 import { useStickyState, isBoolean } from "../hooks/useStickyState";
 import { useSEO } from "../hooks/useSEO";
@@ -474,7 +475,8 @@ export default function App() {
           rel="noopener noreferrer"
           className="px-8 py-3.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[13px] uppercase tracking-wider rounded-[4px] flex items-center justify-center gap-2 border border-border focus-visible:outline-none"
         >
-          Appeal in Discord <span>↗</span>
+          <span>Appeal in Discord</span>
+          <ExternalLink className="w-4 h-4" />
         </a>
       </div>
     );

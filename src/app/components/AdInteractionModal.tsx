@@ -18,6 +18,7 @@ import {
   Search,
   ChevronDown,
   ChevronUp,
+  Lock,
 } from "lucide-react";
 import {
   useAdInteractionStore,
@@ -1493,7 +1494,7 @@ export function AdInteractionModal() {
               {isExpired ? (
                 <div className="w-full bg-card/60 text-muted-foreground text-[12.5px] font-medium py-3 px-4 rounded-[6px] border border-border flex items-center justify-between gap-3">
                   <span className="flex items-center gap-2">
-                    <span className="text-[#fbbf24]">🔒</span>
+                    <Lock className="w-3.5 h-3.5 text-[#fbbf24] shrink-0" />
                     <span>
                       This trade listing has expired. Discussion is archived in read-only mode.
                     </span>

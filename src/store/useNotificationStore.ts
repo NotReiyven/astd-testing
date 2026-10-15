@@ -437,27 +437,27 @@ export const useNotificationStore = create<NotificationState>(
 
                   let toastText = "";
                   if (newNotif.type === "reply") {
-                    toastText = `💬 ${actorName} replied: ${
+                    toastText = `${actorName} replied: ${
                       newNotif.message
                         ? `"${newNotif.message}"`
                         : "to your comment"
                     }`;
                   } else if (newNotif.type === "comment") {
-                    toastText = `💬 ${actorName} commented: ${
+                    toastText = `${actorName} commented: ${
                       newNotif.message
                         ? `"${newNotif.message}"`
                         : "on your trade listing"
                     }`;
                   } else if (newNotif.type === "upvote") {
-                    toastText = `👍 ${actorName} upvoted your ${
+                    toastText = `${actorName} upvoted your ${
                       newNotif.comment_id ? "comment" : "trade listing"
                     }`;
                   } else if (newNotif.type === "warning") {
-                    toastText = `🚨 Staff Warning: ${
+                    toastText = `Staff Warning: ${
                       newNotif.message || "A formal staff warning was issued."
                     }`;
                   } else {
-                    toastText = `🔔 ${newNotif.message || "New notification"}`;
+                    toastText = `${newNotif.message || "New notification"}`;
                   }
 
                   useToastStore.getState().addToast(
