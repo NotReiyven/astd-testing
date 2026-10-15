@@ -5,8 +5,8 @@ import {
   Filter,
   AlignJustify,
   CheckSquare,
-  X
 } from "lucide-react";
+import { GiCrossMark } from "react-icons/gi";
 import { FilterKey } from "../../../types";
 import { FILTERS } from "../../../data";
 import { CustomDropdown } from "./CustomDropdown";
@@ -83,6 +83,7 @@ export function CanvasControls({
           if (s !== "all") window.dispatchEvent(new Event("academy-used-filter"));
         }}
         defaultLabel="All Statuses"
+        className="sm:min-w-[170px] md:min-w-[185px]"
       />
       <CustomDropdown
         icon={ArrowUpDown}
@@ -92,6 +93,7 @@ export function CanvasControls({
           triggerHaptic("light");
           setSortMode(s);
         }}
+        className="sm:min-w-[210px] md:min-w-[230px]"
       />
     </>
   );
@@ -120,11 +122,11 @@ export function CanvasControls({
               triggerHaptic("medium");
               handleResetFilters();
             }}
-            className="flex-shrink-0 flex items-center justify-center gap-1.5 px-4 h-[var(--ui-height-btn)] rounded-[4px] text-xs font-bold uppercase tracking-wider text-rose-400 bg-rose-400/10 hover:bg-rose-400 hover:text-white transition-[transform,background-color,border-color,color] duration-150 animate-fade-in border border-rose-400/20 active:scale-95 cursor-pointer shadow-sm flex-1 md:flex-none"
+            className="flex-shrink-0 flex items-center justify-center gap-1.5 px-3.5 h-[var(--ui-height-btn)] rounded-[4px] text-xs font-bold uppercase font-mono tracking-wider text-white bg-[#ef4444] hover:bg-[#dc2626] transition-[transform,background-color,border-color,color] duration-150 animate-fade-in border border-[#ef4444]/40 active:scale-95 cursor-pointer shadow-xs flex-1 md:flex-none"
             data-tooltip="Reset all filters"
             data-tooltip-side="bottom"
           >
-            <X className="w-4 h-4" />
+            <GiCrossMark className="w-3.5 h-3.5" />
             <span>Reset</span>
           </button>
         )}

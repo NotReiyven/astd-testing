@@ -430,14 +430,14 @@ const VanguardAdCard = memo(
     const score = votes.up - votes.down;
 
     let badgeTitle = "Trade";
-    let badgeClasses = "bg-primary text-primary-foreground border-primary";
+    let badgeClasses = "bg-[#5865F2] text-white border-[#5865F2]/40 shadow-xs";
 
     if (isTakingOffers) {
       badgeTitle = "LF Offers";
-      badgeClasses = "bg-foreground text-background border-foreground";
+      badgeClasses = "bg-[#d97706] text-white border-[#f59e0b]/40 shadow-xs";
     } else if (isInventory) {
       badgeTitle = "Showcase";
-      badgeClasses = "bg-muted text-foreground border-border";
+      badgeClasses = "bg-[#23a559] text-white border-[#23a559]/40 shadow-xs";
     }
 
     return (
@@ -499,26 +499,37 @@ const VanguardAdCard = memo(
             </div>
           </div>
           <span
-            className={`px-2 py-1 rounded-[4px] text-xs font-semibold shrink-0 ml-2 border ${badgeClasses}`}
+            className={`px-2 py-0.5 rounded-[4px] text-[10.5px] font-bold font-mono uppercase tracking-wider shrink-0 ml-2 border select-none ${badgeClasses}`}
           >
             {badgeTitle}
           </span>
         </div>
 
-        {ad.note && (
-          <div className="mb-4 bg-muted/30 border border-border border-l-2 border-l-primary rounded-[4px] p-3 shadow-inner">
+        {/* Consistent Height Context / Note Box across all cards */}
+        <div className="mb-4 h-[58px] shrink-0">
+          {ad.note ? (
             <div
-              className="text-[var(--ui-text-sm)] text-foreground font-medium leading-relaxed break-words overflow-hidden"
-              style={{
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-              }}
+              className="h-full bg-muted/40 border border-border border-l-2 border-l-primary rounded-[4px] px-3 py-2 shadow-xs flex items-center cursor-pointer hover:bg-muted/60 transition-colors"
+              onClick={() => openAdContext(ad.id, currentUserId)}
+              title={ad.note}
             >
-              {ad.note}
+              <div
+                className="text-[12.5px] text-foreground font-medium leading-snug break-words overflow-hidden"
+                style={{
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                }}
+              >
+                {ad.note}
+              </div>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="h-full border border-dashed border-border/40 rounded-[4px] px-3 flex items-center justify-center text-[11px] text-muted-foreground/45 italic select-none">
+              <span>No additional conditions</span>
+            </div>
+          )}
+        </div>
 
         <div className="flex flex-col w-full flex-1 relative z-10 gap-4">
           {isInventory ? (
@@ -609,10 +620,10 @@ const VanguardAdCard = memo(
           <button
             type="button"
             onClick={() => void handleDiscordContact()}
-            className={`w-full h-[var(--ui-height-btn)] flex items-center justify-center gap-2 text-[var(--ui-text-sm)] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer border ${
+            className={`w-full h-[var(--ui-height-btn)] flex items-center justify-center gap-2 text-[var(--ui-text-sm)] font-bold rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer border shadow-xs ${
               isContacting
                 ? "bg-[#23a559] text-white border-[#23a559]"
-                : "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
+                : "bg-[#5865F2] text-white border-[#5865F2]/40 hover:bg-[#4752c4]"
             }`}
           >
             {isContacting ? (
@@ -1061,7 +1072,7 @@ export function TradingAdsChannel() {
           </button>
         ))}
       </div>
-      <div className="w-full sm:w-[190px] shrink-0">
+      <div className="w-full sm:w-auto sm:min-w-[190px] md:min-w-[225px] shrink-0">
         <CustomDropdown
           icon={GiHourglass}
           value={sortMode}
@@ -1071,6 +1082,7 @@ export function TradingAdsChannel() {
             setSortMode(val);
           }}
           defaultLabel="Sort By"
+          className="sm:min-w-[190px] md:min-w-[225px]"
         />
       </div>
     </>

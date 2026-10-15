@@ -5,7 +5,7 @@ import React, {
   useMemo,
   useCallback,
 } from "react";
-import { Star } from "lucide-react";
+import { GiRoundStar } from "react-icons/gi";
 import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 import { useUnitHistory, HistorySnapshot } from "../../../hooks/useUnitHistory";
 import { useUnits } from "../../../context/UnitContext";
@@ -1337,7 +1337,7 @@ export function HistoryModal() {
                 type="button"
                 onClick={() => void handleAddToVault()}
                 disabled={isVaultPending}
-                className="px-2.5 py-1.5 rounded-[6px] border border-[#23a559]/40 bg-[#23a559]/15 hover:bg-[#23a559]/25 disabled:opacity-50 text-[#23a559] text-[12px] font-bold font-mono tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#23a559] cursor-pointer"
+                className="px-2.5 py-1.5 rounded-[4px] border border-[#23a559]/40 bg-[#23a559] hover:bg-[#1f934f] disabled:opacity-50 text-white text-[11.5px] font-bold font-mono uppercase tracking-wider tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#23a559] cursor-pointer shadow-xs"
                 title={
                   profile
                     ? "Add 1 copy to your Vault"
@@ -1354,10 +1354,10 @@ export function HistoryModal() {
                 onClick={() => void handleToggleWishlist()}
                 disabled={isWishlistPending}
                 aria-pressed={isWishlisted}
-                className={`px-2.5 py-1.5 rounded-[6px] border text-[12px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer ${
+                className={`px-2.5 py-1.5 rounded-[4px] border text-[11.5px] font-bold font-mono uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer shadow-xs ${
                   isWishlisted
-                    ? "border-purple-400/50 bg-purple-500/20 text-purple-300 hover:bg-purple-500/30"
-                    : "border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground"
+                    ? "border-[#8b5cf6]/40 bg-[#8b5cf6] text-white hover:bg-[#7c3aed]"
+                    : "border-border bg-card hover:bg-muted text-foreground"
                 }`}
                 title={
                   profile
@@ -1368,7 +1368,7 @@ export function HistoryModal() {
                 }
               >
                 <span className="flex items-center gap-1.5">
-                  <Star className={`w-3.5 h-3.5 ${isWishlisted ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
+                  <GiRoundStar className={`w-3.5 h-3.5 ${isWishlisted ? "text-amber-300" : "text-muted-foreground"}`} />
                   <span>
                     {isWishlistPending
                       ? "Saving…"

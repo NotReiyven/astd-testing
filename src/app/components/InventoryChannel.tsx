@@ -563,13 +563,14 @@ export function InventoryChannel() {
                   <span className="hidden sm:inline">Bulk Select</span>
                 </button>
               )}
-              <div className="shrink-0">
+              <div className="shrink-0 w-full sm:w-auto sm:min-w-[190px] md:min-w-[225px]">
                 <CustomDropdown
                   icon={IconArrowUpDown}
                   value={sortMode}
                   options={SORT_OPTIONS}
                   onChange={setSortMode}
                   defaultLabel="Sort By"
+                  className="sm:min-w-[190px] md:min-w-[225px]"
                 />
               </div>
             </div>

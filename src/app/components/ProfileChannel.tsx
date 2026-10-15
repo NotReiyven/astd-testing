@@ -9,6 +9,7 @@ import {
   GiTornado,
   GiGamepad,
   GiHourglass,
+  GiAbacus,
 } from "react-icons/gi";
 import {
   useProfileStore,
@@ -2506,10 +2507,10 @@ export function ProfileChannel() {
                         onClick={() =>
                           handleToggleProfilePrivacy("wishlist_public")
                         }
-                        className={`px-3 py-1.5 rounded-[6px] border text-[12px] flex items-center gap-2 transition-colors cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-[6px] border text-[12px] flex items-center gap-2 transition-colors cursor-pointer font-bold shadow-xs ${
                           profileData.wishlist_public ?? true
-                            ? "bg-[#23a559]/10 border-[#23a559]/35 text-[#23a559]"
-                            : "bg-warning/10 border-warning/35 text-warning"
+                            ? "bg-[#23a559] text-white border-[#23a559]/40 hover:bg-[#1f934f]"
+                            : "bg-[#d97706] text-white border-[#f59e0b]/40 hover:bg-[#b45309]"
                         }`}
                       >
                         <IconLock
@@ -2802,9 +2803,10 @@ export function ProfileChannel() {
                                       "success"
                                     );
                                 }}
-                                className="w-full px-2.5 py-1.5 rounded-[5px] bg-[#1a2333] hover:bg-[#202d42] border border-[#2563eb] text-[#60a5fa] font-semibold text-[11.5px] flex items-center justify-center gap-1 transition-colors cursor-pointer whitespace-nowrap shadow-xs"
+                                className="w-full px-2.5 py-1.5 rounded-[5px] bg-[#5865F2] hover:bg-[#4752c4] border border-[#5865F2]/40 text-white font-bold font-mono uppercase tracking-wider text-[11px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shadow-xs"
                                 title="Add unit to Trade Calculator"
                               >
+                                <GiAbacus className="w-3.5 h-3.5" />
                                 <span>+ Calculator</span>
                               </button>
                             </div>
