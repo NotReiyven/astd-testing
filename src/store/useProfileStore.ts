@@ -43,16 +43,6 @@ export interface UserProfileData {
   join_number?: number;
 }
 
-export interface OgTierInfo {
-  tier: "genesis" | "alpha" | "early" | "beta" | "veteran" | "member";
-  label: string;
-  badge: string;
-  desc: string;
-  color: string;
-  bg: string;
-  border: string;
-}
-
 const joinNumberCache: Record<string, number> = {};
 
 export async function getJoinNumber(createdAt: string): Promise<number | null> {
@@ -73,73 +63,6 @@ export async function getJoinNumber(createdAt: string): Promise<number | null> {
   return null;
 }
 
-export function getOgTier(joinNumber?: number | null): OgTierInfo {
-  const num = joinNumber || 0;
-  if (num === 1) {
-    return {
-      tier: "genesis",
-      label: "Genesis #1",
-      badge: "USER #1 • FOUNDER",
-      desc: "First registered trader in ASTD Value List history",
-      color: "#FFD700",
-      bg: "rgba(255, 215, 0, 0.14)",
-      border: "rgba(255, 215, 0, 0.40)",
-    };
-  }
-  if (num > 1 && num <= 10) {
-    return {
-      tier: "alpha",
-      label: "Alpha Pioneer",
-      badge: `USER #${num} • ALPHA OG`,
-      desc: `Pioneer Trader #${num} (Top 10 First Users)`,
-      color: "#FAA61A",
-      bg: "rgba(250, 166, 26, 0.14)",
-      border: "rgba(250, 166, 26, 0.40)",
-    };
-  }
-  if (num > 10 && num <= 25) {
-    return {
-      tier: "early",
-      label: "Early OG",
-      badge: `USER #${num} • EARLY OG`,
-      desc: `Early Pioneer Trader #${num} (Top 25 First Users)`,
-      color: "#c084fc",
-      bg: "rgba(168, 85, 247, 0.14)",
-      border: "rgba(168, 85, 247, 0.40)",
-    };
-  }
-  if (num > 25 && num <= 100) {
-    return {
-      tier: "beta",
-      label: "Beta OG",
-      badge: `USER #${num} • BETA OG`,
-      desc: `Early Adopter Trader #${num} (Top 100 Users)`,
-      color: "#34d399",
-      bg: "rgba(52, 211, 153, 0.14)",
-      border: "rgba(52, 211, 153, 0.40)",
-    };
-  }
-  if (num > 100 && num <= 500) {
-    return {
-      tier: "veteran",
-      label: "Veteran",
-      badge: `USER #${num} • VETERAN`,
-      desc: `Veteran Trader #${num} (Top 500 Users)`,
-      color: "#38bdf8",
-      bg: "rgba(56, 189, 248, 0.14)",
-      border: "rgba(56, 189, 248, 0.40)",
-    };
-  }
-  return {
-    tier: "member",
-    label: num > 0 ? `Member #${num}` : "Verified Member",
-    badge: num > 0 ? `USER #${num}` : "VERIFIED TRADER",
-    desc: num > 0 ? `Trader #${num} in ASTD Value List` : "Verified Community Member",
-    color: "#94a3b8",
-    bg: "rgba(148, 163, 184, 0.10)",
-    border: "rgba(148, 163, 184, 0.25)",
-  };
-}
 
 const VALID_HEX = /^#[0-9A-Fa-f]{6}$/;
 const VALID_STYLES: BannerStyleType[] = [

@@ -6,12 +6,10 @@ import {
   GiChatBubble,
   GiTornado,
   GiGamepad,
-  GiSparkles,
 } from "react-icons/gi";
 import {
   useProfileStore,
   getBannerCssStyle,
-  getOgTier,
   TradingStanceType,
 } from "../../../store/useProfileStore";
 import {
@@ -361,16 +359,10 @@ export function MiniProfilePopout() {
               <div className="flex justify-end pt-2 gap-1.5 min-h-[34px] items-center flex-wrap">
                 {typeof profile.join_number === "number" && (
                   <span
-                    className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-[4px] border shrink-0"
-                    style={{
-                      backgroundColor: getOgTier(profile.join_number).bg,
-                      color: getOgTier(profile.join_number).color,
-                      borderColor: getOgTier(profile.join_number).border,
-                    }}
-                    title={getOgTier(profile.join_number).desc}
+                    className="inline-flex items-center text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-[4px] bg-muted/80 text-muted-foreground border border-border shrink-0 select-none"
+                    title={`User #${profile.join_number}`}
                   >
-                    <GiSparkles className="w-2.5 h-2.5" />
-                    <span>#{profile.join_number}</span>
+                    #{profile.join_number}
                   </span>
                 )}
 
