@@ -8,6 +8,13 @@ import {
   GiTornado,
   GiGamepad,
   GiHourglass,
+  GiSparkles,
+  GiCrown,
+  GiQueenCrown,
+  GiLaurelCrown,
+  GiTrophy,
+  GiMedal,
+  GiProgression,
 } from "react-icons/gi";
 import {
   useProfileStore,
@@ -15,7 +22,10 @@ import {
   BannerStyleType,
   TradingStanceType,
   getBannerCssStyle,
+  getJoinNumber,
+  getOgTier,
 } from "../../store/useProfileStore";
+import { supabase } from "../../lib/supabase";
 import { useAuthStore, UserProfile } from "../../store/useAuthStore";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
 import { useInventoryStore } from "../../store/useInventoryStore";
@@ -846,9 +856,12 @@ export function ProfileChannel() {
   });
   const ownerStatusPreference = useStatusPreference();
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"board" | "wishlist" | "settings">(
-    "board"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "board" | "wishlist" | "stats" | "settings"
+  >("board");
+  const [joinNumber, setJoinNumber] = useState<number | null>(null);
+  const [lifetimeCommentsCount, setLifetimeCommentsCount] = useState<number>(0);
+  const [lifetimeAdsCount, setLifetimeAdsCount] = useState<number>(0);
   const [adFilter, setAdFilter] = useState<
     "all" | "live" | "expired" | "private"
   >("all");
@@ -915,7 +928,18 @@ export function ProfileChannel() {
           currentUser?.id && currentUser.id === targetId
         );
 
-        await Promise.all([
+        const [joinNum, commentsRes, adsRes] = await Promise.all([
+          data.created_at
+            ? getJoinNumber(data.created_at)
+            : Promise.resolve(null),
+          supabase
+            .from("ad_comments")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", targetId),
+          supabase
+            .from("trading_ads")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", targetId),
           fetchUserAdHistory(targetId, {
             isOwner: ownerMatch,
             adHistoryPublic: data.ad_history_public ?? true,
@@ -924,6 +948,12 @@ export function ProfileChannel() {
           fetchInventory(targetId, !ownerMatch),
           fetchWishlist(targetId, !ownerMatch),
         ]);
+
+        if (mounted) {
+          setJoinNumber(joinNum ?? data.join_number ?? null);
+          setLifetimeCommentsCount(commentsRes?.count || 0);
+          setLifetimeAdsCount(adsRes?.count || 0);
+        }
       }
       if (mounted) setIsLoading(false);
     };
@@ -1496,6 +1526,163 @@ export function ProfileChannel() {
     return acc + (m ? getUnitConservativeValue(m) : 0);
   }, 0);
 
+  const ogInfo = useMemo(() => getOgTier(joinNumber), [joinNumber]);
+
+  const accountTenureDays = useMemo(() => {
+    if (!profileData?.created_at) return 1;
+    return Math.max(
+      1,
+      Math.floor(
+        (Date.now() - new Date(profileData.created_at).getTime()) / 86400000
+      )
+    );
+  }, [profileData?.created_at]);
+
+  const crownJewel = useMemo(() => {
+    if (!activeVaultItems || activeVaultItems.length === 0) return null;
+    let bestUnit: MasterUnit | null = null;
+    let bestVal = -1;
+    let bestQty = 0;
+    for (const item of activeVaultItems) {
+      const u = ALL_UNITS.find((unit) => unit.id === item.unit_id);
+      if (u) {
+        const val = getUnitConservativeValue(u);
+        if (val > bestVal) {
+          bestVal = val;
+          bestUnit = u;
+          bestQty = item.quantity;
+        }
+      }
+    }
+    return bestUnit ? { unit: bestUnit, value: bestVal, quantity: bestQty } : null;
+  }, [activeVaultItems, ALL_UNITS]);
+
+  const vaultTierBreakdown = useMemo(() => {
+    const counts: Record<string, number> = {
+      S: 0,
+      A: 0,
+      B: 0,
+      C: 0,
+      Pure: 0,
+      Untiered: 0,
+    };
+    for (const item of activeVaultItems) {
+      const u = ALL_UNITS.find((unit) => unit.id === item.unit_id);
+      if (u) {
+        const t = (getTier(u) || "Untiered") as keyof typeof counts;
+        counts[t] = (counts[t] || 0) + item.quantity;
+      }
+    }
+    return counts;
+  }, [activeVaultItems, ALL_UNITS]);
+
+  const accolades = useMemo(() => {
+    const list = [
+      {
+        id: "og",
+        label:
+          ogInfo.tier === "genesis"
+            ? "Genesis Pioneer"
+            : ogInfo.tier === "alpha"
+            ? "Alpha Pioneer"
+            : ogInfo.tier === "early"
+            ? "Early OG"
+            : ogInfo.tier === "beta"
+            ? "Beta OG"
+            : ogInfo.tier === "veteran"
+            ? "Veteran Trader"
+            : "Platform Member",
+        icon:
+          ogInfo.tier === "genesis"
+            ? GiCrown
+            : ogInfo.tier === "alpha"
+            ? GiLaurelCrown
+            : GiSparkles,
+        unlocked: Boolean(joinNumber && joinNumber <= 100),
+        desc: joinNumber
+          ? `User #${joinNumber} • ${ogInfo.desc}`
+          : "Join within the first 100 traders",
+        color: ogInfo.color,
+        bg: ogInfo.bg,
+        border: ogInfo.border,
+      },
+      {
+        id: "broadcaster",
+        label: "Market Broadcaster",
+        icon: GiMegaphone,
+        unlocked: lifetimeAdsCount > 0,
+        desc:
+          lifetimeAdsCount > 0
+            ? `Published ${lifetimeAdsCount} trading ads on the market`
+            : "Publish at least 1 trade ad",
+        color: "#FAA61A",
+        bg: "rgba(250, 166, 26, 0.12)",
+        border: "rgba(250, 166, 26, 0.35)",
+      },
+      {
+        id: "voice",
+        label: "Community Voice",
+        icon: GiChatBubble,
+        unlocked: lifetimeCommentsCount > 0,
+        desc:
+          lifetimeCommentsCount > 0
+            ? `Posted ${lifetimeCommentsCount} comments in trade threads`
+            : "Participate in trade discussions",
+        color: "#38bdf8",
+        bg: "rgba(56, 189, 248, 0.12)",
+        border: "rgba(56, 189, 248, 0.35)",
+      },
+      {
+        id: "verified",
+        label: "Discord Verified",
+        icon: GiCharacter,
+        unlocked: Boolean(profileData?.discord_id),
+        desc: "Connected Discord identity verified",
+        color: "#5865F2",
+        bg: "rgba(88, 101, 242, 0.12)",
+        border: "rgba(88, 101, 242, 0.35)",
+      },
+      {
+        id: "vault",
+        label: "Vault Preserver",
+        icon: GiChest,
+        unlocked: activeVaultItems.length > 0,
+        desc:
+          activeVaultItems.length > 0
+            ? `Preserves ${activeVaultItems.reduce(
+                (a, b) => a + b.quantity,
+                0
+              )} units in inventory vault`
+            : "Store units in your inventory vault",
+        color: "#23a559",
+        bg: "rgba(35, 165, 89, 0.12)",
+        border: "rgba(35, 165, 89, 0.35)",
+      },
+      {
+        id: "live",
+        label: "Live Trader",
+        icon: GiTornado,
+        unlocked: liveAdsCount > 0,
+        desc:
+          liveAdsCount > 0
+            ? `${liveAdsCount} active trade ad(s) live right now`
+            : "Have an active ad live on the market",
+        color: "#c084fc",
+        bg: "rgba(192, 132, 252, 0.12)",
+        border: "rgba(192, 132, 252, 0.35)",
+      },
+    ];
+    return list;
+  }, [
+    ogInfo,
+    joinNumber,
+    lifetimeAdsCount,
+    lifetimeCommentsCount,
+    profileData?.discord_id,
+    activeVaultItems,
+    liveAdsCount,
+  ]);
+
   const repProgressPct =
     safeRep >= 1000
       ? 100
@@ -1588,6 +1775,32 @@ export function ProfileChannel() {
                   <h1 className="text-[22px] sm:text-[26px] text-foreground leading-tight truncate">
                     {profileData.username}
                   </h1>
+
+                  {/* OG Sequence / Pioneer Pill */}
+                  {joinNumber && (
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[5px] border text-[11.5px] font-bold tracking-tight shadow-xs transition-[transform,opacity] duration-150 active:scale-95 cursor-default select-none"
+                      style={{
+                        backgroundColor: ogInfo.bg,
+                        color: ogInfo.color,
+                        borderColor: ogInfo.border,
+                      }}
+                      data-tooltip={ogInfo.desc}
+                      data-tooltip-side="top"
+                    >
+                      {ogInfo.tier === "genesis" ? (
+                        <GiCrown className="w-3.5 h-3.5" />
+                      ) : ogInfo.tier === "alpha" ? (
+                        <GiLaurelCrown className="w-3.5 h-3.5" />
+                      ) : (
+                        <GiSparkles className="w-3.5 h-3.5" />
+                      )}
+                      <span className="font-mono">#{joinNumber}</span>
+                      <span className="uppercase text-[10px] tracking-wider font-extrabold border-l border-current/25 pl-1.5 ml-0.5">
+                        {ogInfo.label}
+                      </span>
+                    </span>
+                  )}
 
                   {/* Role Pill */}
                   <span
@@ -1766,9 +1979,24 @@ export function ProfileChannel() {
                 </div>
 
                 <div className="bg-popover border border-border rounded-[6px] p-3 flex flex-col gap-0.5">
-                  <span className="text-[11px] text-muted-foreground">
-                    Member Since
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-muted-foreground">
+                      Member Since
+                    </span>
+                    {joinNumber && (
+                      <span
+                        className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded border"
+                        style={{
+                          color: ogInfo.color,
+                          backgroundColor: ogInfo.bg,
+                          borderColor: ogInfo.border,
+                        }}
+                        data-tooltip={ogInfo.desc}
+                      >
+                        #{joinNumber}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-[15px] font-mono text-foreground">
                     {new Date(profileData.created_at).toLocaleDateString(
                       undefined,
@@ -1778,8 +2006,11 @@ export function ProfileChannel() {
                       }
                     )}
                   </span>
-                  <span className="text-[10.5px] text-muted-foreground">
-                    Verified Trader
+                  <span className="text-[10.5px] text-muted-foreground flex items-center justify-between">
+                    <span className="truncate">{ogInfo.label}</span>
+                    <span className="font-mono text-[9.5px] opacity-75 shrink-0">
+                      {accountTenureDays}d
+                    </span>
                   </span>
                 </div>
               </div>
@@ -1800,6 +2031,127 @@ export function ProfileChannel() {
                       backgroundColor: repRank.color,
                     }}
                   />
+                </div>
+              </div>
+
+              {/* Vault Crown Jewel Showcase */}
+              <div className="flex flex-col gap-2 pt-2 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] text-muted-foreground flex items-center gap-1.5">
+                    <GiQueenCrown className="w-3.5 h-3.5 text-[#FAA61A]" />
+                    Vault Crown Jewel
+                  </span>
+                  {crownJewel && (
+                    <span
+                      className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase"
+                      style={{
+                        backgroundColor: `${
+                          TIER_CONFIG[getTier(crownJewel.unit) || "S"]
+                            ?.badgeColor || "#FAA61A"
+                        }22`,
+                        color:
+                          TIER_CONFIG[getTier(crownJewel.unit) || "S"]
+                            ?.badgeColor || "#FAA61A",
+                        border: `1px solid ${
+                          TIER_CONFIG[getTier(crownJewel.unit) || "S"]
+                            ?.badgeColor || "#FAA61A"
+                        }44`,
+                      }}
+                    >
+                      Tier {crownJewel.unit.tier}
+                    </span>
+                  )}
+                </div>
+
+                {crownJewel ? (
+                  <div
+                    onClick={() => openHistoryModal(crownJewel.unit.id)}
+                    className="bg-popover hover:bg-muted/70 border border-border rounded-[6px] p-2.5 flex items-center gap-3 transition-colors cursor-pointer group"
+                    data-tooltip="Inspect Market History for Crown Jewel"
+                  >
+                    <div className="w-11 h-11 rounded-[4px] overflow-hidden bg-muted border border-border shrink-0 relative">
+                      <img
+                        src={getUnitAssetUrl(crownJewel.unit.id) || ""}
+                        alt={crownJewel.unit.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-[13px] font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                        {crownJewel.unit.name}
+                      </span>
+                      <div className="flex items-center gap-2 text-[11px] font-mono">
+                        <span className="text-foreground font-semibold">
+                          {crownJewel.value.toLocaleString()} Val
+                        </span>
+                        {crownJewel.quantity > 1 && (
+                          <span className="text-muted-foreground text-[10px]">
+                            x{crownJewel.quantity}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <IconArrowRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0" />
+                  </div>
+                ) : (
+                  <div className="bg-popover/60 border border-dashed border-border/80 rounded-[6px] p-3 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded bg-muted/40 border border-border/60 flex items-center justify-center text-muted-foreground shrink-0">
+                      <GiCrown className="w-4 h-4 opacity-40" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[11.5px] font-semibold text-foreground">
+                        No Crown Jewel
+                      </span>
+                      <span className="text-[10px] text-muted-foreground truncate">
+                        {isOwner
+                          ? "Add units in Vault to showcase your best flex"
+                          : "Vault has no public units"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Trader Accolades & Milestones */}
+              <div className="flex flex-col gap-2 pt-2 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] text-muted-foreground flex items-center gap-1.5">
+                    <GiTrophy className="w-3.5 h-3.5 text-[#FAA61A]" />
+                    Trader Accolades
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    {accolades.filter((a) => a.unlocked).length} / {accolades.length}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-1.5">
+                  {accolades.map((acc) => {
+                    const Icon = acc.icon;
+                    return (
+                      <div
+                        key={acc.id}
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[5px] border text-[11px] font-medium transition-[opacity,transform] duration-150 active:scale-95 cursor-default ${
+                          acc.unlocked
+                            ? "shadow-xs"
+                            : "opacity-40 grayscale bg-muted/40 border-border/50 text-muted-foreground"
+                        }`}
+                        style={
+                          acc.unlocked
+                            ? {
+                                backgroundColor: acc.bg,
+                                color: acc.color,
+                                borderColor: acc.border,
+                              }
+                            : undefined
+                        }
+                        data-tooltip={`${acc.label}: ${acc.desc}`}
+                        data-tooltip-side="top"
+                      >
+                        <Icon className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">{acc.label}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -1979,6 +2331,40 @@ export function ProfileChannel() {
                     }`}
                   >
                     {activeWishlistItems.length}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "stats"}
+                onClick={() => {
+                  triggerHaptic("light");
+                  setActiveTab("stats");
+                }}
+                className={`px-4 py-2 rounded-[3px] text-[13px] font-medium transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 flex items-center gap-2 cursor-pointer focus-visible:outline-none ${
+                  activeTab === "stats"
+                    ? "bg-foreground text-background shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
+                }`}
+              >
+                <GiProgression
+                  className="w-4 h-4"
+                  style={{
+                    color: activeTab === "stats" ? "inherit" : accentColor,
+                  }}
+                />
+                <span>Trader Intel</span>
+                {joinNumber && (
+                  <span
+                    className={`px-2 py-0.5 rounded-[3px] text-[11px] font-mono ${
+                      activeTab === "stats"
+                        ? "bg-background/20 text-background"
+                        : "bg-popover border border-border"
+                    }`}
+                  >
+                    #{joinNumber}
                   </span>
                 )}
               </button>
@@ -2682,7 +3068,280 @@ export function ProfileChannel() {
             )}
 
             {/* ============================================================== */}
-            {/* TAB 3: PREFERENCES & PRIVACY (Discord-Style Settings)          */}
+            {/* TAB 3: TRADER INTEL & MILESTONES (Analytics & Dossier)        */}
+            {/* ============================================================== */}
+            {activeTab === "stats" && (
+              <div className="flex flex-col gap-5 animate-fade-in">
+                {/* OG Pioneer Identity Dossier Banner */}
+                <div
+                  className="bg-card border border-border rounded-[8px] p-5 shadow-sm relative overflow-hidden"
+                  style={{
+                    borderTop: `3px solid ${ogInfo.color}`,
+                    backgroundImage: `radial-gradient(circle at top right, ${ogInfo.color}18 0%, transparent 65%)`,
+                  }}
+                >
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div
+                        className="w-14 h-14 rounded-[8px] flex items-center justify-center shrink-0 border shadow-xs"
+                        style={{
+                          backgroundColor: ogInfo.bg,
+                          color: ogInfo.color,
+                          borderColor: ogInfo.border,
+                        }}
+                      >
+                        {ogInfo.tier === "genesis" ? (
+                          <GiCrown className="w-8 h-8" />
+                        ) : ogInfo.tier === "alpha" ? (
+                          <GiLaurelCrown className="w-8 h-8" />
+                        ) : (
+                          <GiSparkles className="w-8 h-8" />
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h2 className="text-[18px] font-black text-foreground tracking-tight">
+                            {ogInfo.label}
+                          </h2>
+                          {joinNumber && (
+                            <span
+                              className="px-2 py-0.5 rounded-[4px] font-mono text-[11px] font-bold border"
+                              style={{
+                                backgroundColor: ogInfo.bg,
+                                color: ogInfo.color,
+                                borderColor: ogInfo.border,
+                              }}
+                            >
+                              USER #{joinNumber}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[12.5px] text-muted-foreground mt-0.5 max-w-xl">
+                          {ogInfo.desc}. Registered on{" "}
+                          <span className="font-mono text-foreground font-semibold">
+                            {new Date(profileData.created_at).toLocaleDateString(
+                              undefined,
+                              {
+                                month: "long",
+                                day: "numeric",
+                                year: "numeric",
+                              }
+                            )}
+                          </span>{" "}
+                          ({accountTenureDays} days active).
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0 self-start md:self-center">
+                      <div className="bg-popover border border-border rounded-[6px] px-3.5 py-2 flex flex-col items-center min-w-[76px]">
+                        <span className="text-[10px] text-muted-foreground uppercase font-mono">
+                          Join Rank
+                        </span>
+                        <span
+                          className="text-[18px] font-mono font-black"
+                          style={{ color: ogInfo.color }}
+                        >
+                          #{joinNumber || "—"}
+                        </span>
+                      </div>
+                      <div className="bg-popover border border-border rounded-[6px] px-3.5 py-2 flex flex-col items-center min-w-[76px]">
+                        <span className="text-[10px] text-muted-foreground uppercase font-mono">
+                          Tenure
+                        </span>
+                        <span className="text-[18px] font-mono font-black text-foreground">
+                          {accountTenureDays}d
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3-Column Detailed Intel Metrics */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Market Footprint */}
+                  <div className="bg-card border border-border rounded-[8px] p-4 flex flex-col gap-3 shadow-xs">
+                    <div className="flex items-center justify-between pb-2 border-b border-border/70">
+                      <span className="text-[12.5px] font-bold text-foreground flex items-center gap-1.5">
+                        <GiMegaphone className="w-4 h-4 text-primary" />
+                        Market Footprint
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        Trading Activity
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between text-[12px]">
+                        <span className="text-muted-foreground">Lifetime Ads Created</span>
+                        <span className="font-mono font-bold text-foreground">{lifetimeAdsCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[12px]">
+                        <span className="text-muted-foreground">Active Live Listings</span>
+                        <span className="font-mono font-bold text-[#23a559]">{liveAdsCount} live</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[12px]">
+                        <span className="text-muted-foreground">Discussion Comments</span>
+                        <span className="font-mono font-bold text-foreground">{lifetimeCommentsCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[12px]">
+                        <span className="text-muted-foreground">Global Reputation</span>
+                        <span className="font-mono font-bold" style={{ color: repRank.color }}>
+                          {safeRep > 0 ? `+${safeRep}` : safeRep} ({repRank.label})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Vault Breakdown */}
+                  <div className="bg-card border border-border rounded-[8px] p-4 flex flex-col gap-3 shadow-xs">
+                    <div className="flex items-center justify-between pb-2 border-b border-border/70">
+                      <span className="text-[12.5px] font-bold text-foreground flex items-center gap-1.5">
+                        <GiChest className="w-4 h-4 text-[#23a559]" />
+                        Vault Collection
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        Asset Net Worth
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between text-[12px]">
+                        <span className="text-muted-foreground">Conservative Value</span>
+                        <span className="font-mono font-bold text-foreground">{totalVaultValue.toLocaleString()} val</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[12px]">
+                        <span className="text-muted-foreground">Total Preserved Units</span>
+                        <span className="font-mono font-bold text-foreground">
+                          {activeVaultItems.reduce((a, b) => a + b.quantity, 0)} units
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[12px]">
+                        <span className="text-muted-foreground">Unique Catalog Entries</span>
+                        <span className="font-mono font-bold text-foreground">{activeVaultItems.length} unique</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[12px]">
+                        <span className="text-muted-foreground">Average Unit Value</span>
+                        <span className="font-mono font-bold text-foreground">
+                          {activeVaultItems.length > 0
+                            ? Math.round(
+                                totalVaultValue /
+                                  Math.max(
+                                    1,
+                                    activeVaultItems.reduce((a, b) => a + b.quantity, 0)
+                                  )
+                              ).toLocaleString()
+                            : 0}{" "}
+                          val
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Vault Tier Distribution */}
+                  <div className="bg-card border border-border rounded-[8px] p-4 flex flex-col gap-3 shadow-xs">
+                    <div className="flex items-center justify-between pb-2 border-b border-border/70">
+                      <span className="text-[12.5px] font-bold text-foreground flex items-center gap-1.5">
+                        <GiProgression className="w-4 h-4 text-[#FAA61A]" />
+                        Tier Distribution
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        Vault Density
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {(["S", "A", "B", "C", "Pure", "Untiered"] as const).map((tierKey) => {
+                        const count = vaultTierBreakdown[tierKey] || 0;
+                        const tierColor = TIER_CONFIG[tierKey]?.badgeColor || "#94a3b8";
+                        return (
+                          <div
+                            key={tierKey}
+                            className="bg-popover border border-border rounded-[6px] p-2 flex flex-col items-center"
+                          >
+                            <span className="text-[10px] font-bold" style={{ color: tierColor }}>
+                              Tier {tierKey}
+                            </span>
+                            <span className="text-[14px] font-mono font-black text-foreground">
+                              {count}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Milestones & Accolades Matrix */}
+                <div className="bg-card border border-border rounded-[8px] p-5 shadow-xs flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <h3 className="text-[14px] font-bold text-foreground flex items-center gap-2">
+                        <GiTrophy className="w-4 h-4 text-[#FAA61A]" />
+                        Trader Milestones & Accolades
+                      </h3>
+                      <p className="text-[11.5px] text-muted-foreground">
+                        Earn badges by trading, contributing, and preserving ASTD assets.
+                      </p>
+                    </div>
+                    <span className="text-[11px] font-mono px-2.5 py-1 rounded-[4px] bg-muted border border-border font-bold text-foreground">
+                      {accolades.filter((a) => a.unlocked).length} / {accolades.length} Achieved
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {accolades.map((acc) => {
+                      const Icon = acc.icon;
+                      return (
+                        <div
+                          key={acc.id}
+                          className={`p-3.5 rounded-[8px] border flex items-start gap-3 transition-colors ${
+                            acc.unlocked
+                              ? "bg-popover shadow-xs"
+                              : "bg-muted/20 border-border/50 opacity-45 grayscale"
+                          }`}
+                          style={{
+                            borderColor: acc.unlocked ? acc.border : undefined,
+                          }}
+                        >
+                          <div
+                            className="w-9 h-9 rounded-[6px] flex items-center justify-center shrink-0 border"
+                            style={
+                              acc.unlocked
+                                ? {
+                                    backgroundColor: acc.bg,
+                                    color: acc.color,
+                                    borderColor: acc.border,
+                                  }
+                                : {
+                                    backgroundColor: "transparent",
+                                    color: "var(--muted-foreground)",
+                                    borderColor: "var(--border)",
+                                  }
+                            }
+                          >
+                            <Icon className="w-5 h-5" />
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[12.5px] font-bold text-foreground truncate">
+                                {acc.label}
+                              </span>
+                              {acc.unlocked && (
+                                <IconCheck className="w-3 h-3 text-[#23a559] shrink-0" />
+                              )}
+                            </div>
+                            <span className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                              {acc.desc}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ============================================================== */}
+            {/* TAB 4: PREFERENCES & PRIVACY (Discord-Style Settings)          */}
             {/* ============================================================== */}
             {activeTab === "settings" && isOwner && (
               <div className="flex flex-col gap-5 animate-fade-in">
