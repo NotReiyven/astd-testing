@@ -342,11 +342,15 @@ export function MiniProfilePopout() {
             {/* Customized Banner */}
             <div
               className="h-[68px] w-full relative border-b border-border"
-              style={getBannerCssStyle(
-                profile.banner_color,
-                profile.accent_color,
-                profile.banner_style
-              )}
+              style={{
+                ...getBannerCssStyle(
+                  profile.banner_color,
+                  profile.accent_color,
+                  profile.banner_style,
+                  profile.banner_image_url
+                ),
+                contain: "paint",
+              }}
             >
               <div className="absolute inset-0 bg-black/20 pointer-events-none" />
             </div>

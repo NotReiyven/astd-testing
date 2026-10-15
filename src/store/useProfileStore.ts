@@ -193,11 +193,15 @@ export function unpackProfileRow(raw: any): UserProfileData {
 
       const burl = params.get("burl");
       if (burl) {
-        try {
-          banner_image_url = decodeURIComponent(burl);
-        } catch {
-          banner_image_url = burl;
+        let cleanBurl = burl;
+        if (cleanBurl.includes("%25") || cleanBurl.includes("%3A") || cleanBurl.includes("%2F")) {
+          try {
+            cleanBurl = decodeURIComponent(cleanBurl);
+          } catch {
+            // Keep cleanBurl
+          }
         }
+        banner_image_url = cleanBurl;
       }
 
       const ts = params.get("ts") as TradingStanceType | null;
@@ -318,8 +322,8 @@ export function packBannerConfig(profile: Partial<UserProfileData>): string {
   if (profile.banner_style && VALID_STYLES.includes(profile.banner_style)) {
     params.set("bs", profile.banner_style);
   }
-  if (profile.banner_image_url) {
-    params.set("burl", encodeURIComponent(profile.banner_image_url));
+  if (profile.banner_image_url && typeof profile.banner_image_url === "string" && profile.banner_image_url.trim()) {
+    params.set("burl", profile.banner_image_url.trim());
   }
   if (profile.trading_stance && VALID_STANCES.includes(profile.trading_stance)) {
     params.set("ts", profile.trading_stance);
@@ -740,6 +744,10 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       banner_color: updates.banner_color ?? existing?.banner_color ?? "#121214",
       accent_color: updates.accent_color ?? existing?.accent_color ?? "#7289da",
       banner_style: updates.banner_style ?? existing?.banner_style ?? "gradient",
+      banner_image_url:
+        "banner_image_url" in updates
+          ? (updates.banner_image_url || undefined)
+          : existing?.banner_image_url,
       trading_stance:
         updates.trading_stance ?? existing?.trading_stance ?? "open",
       ad_history_public:

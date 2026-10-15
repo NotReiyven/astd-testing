@@ -1560,17 +1560,20 @@ export function ProfileChannel() {
       <div className="w-full relative shrink-0 border-b border-border bg-card">
         {/* Customizable Banner Surface */}
         <div
-          className={`w-full relative overflow-hidden border-b border-border transition-all ${
+          className={`w-full relative overflow-hidden border-b border-border transition-[height] duration-200 ease-out ${
             globalCompactMode
               ? "h-[96px] md:h-[116px]"
               : "h-[136px] md:h-[168px]"
           }`}
-          style={getBannerCssStyle(
-            profileData.banner_color,
-            accentColor,
-            profileData.banner_style || "gradient",
-            profileData.banner_image_url
-          )}
+          style={{
+            ...getBannerCssStyle(
+              profileData.banner_color,
+              accentColor,
+              profileData.banner_style || "gradient",
+              profileData.banner_image_url
+            ),
+            contain: "paint",
+          }}
         >
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent pointer-events-none" />
           {/* Subtle top accent trim */}
