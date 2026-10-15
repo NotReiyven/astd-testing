@@ -406,14 +406,79 @@ export const useNotificationStore = create<NotificationState>(
             table: "notifications",
             filter: `user_id=eq.${userId}`,
           },
-          () => {
+          async (payload: any) => {
             if (
               activeUserId === userId &&
               subscriptionToken === token
             ) {
-              void get().fetchNotifications(
-                userId
-              );
+              void get().fetchNotifications(userId);
+
+              if (payload?.eventType === "INSERT" && payload?.new) {
+                const newNotif = payload.new;
+                if (newNotif.actor_id && newNotif.actor_id !== userId) {
+                  let actorName = "Someone";
+                  if (newNotif.actor_id) {
+                    const { data: actorProfile } = await supabase
+                      .from("profiles")
+                      .select("username")
+                      .eq("id", newNotif.actor_id)
+                      .maybeSingle();
+                    if (actorProfile?.username) {
+                      actorName = actorProfile.username;
+                    }
+                  }
+
+                  let toastText = "";
+                  if (newNotif.type === "reply") {
+                    toastText = `💬 ${actorName} replied: ${
+                      newNotif.message
+                        ? `"${newNotif.message}"`
+                        : "to your comment"
+                    }`;
+                  } else if (newNotif.type === "comment") {
+                    toastText = `💬 ${actorName} commented: ${
+                      newNotif.message
+                        ? `"${newNotif.message}"`
+                        : "on your trade listing"
+                    }`;
+                  } else if (newNotif.type === "upvote") {
+                    toastText = `👍 ${actorName} upvoted your ${
+                      newNotif.comment_id ? "comment" : "trade listing"
+                    }`;
+                  } else if (newNotif.type === "warning") {
+                    toastText = `🚨 Warning: ${
+                      newNotif.message || "Action required"
+                    }`;
+                  } else {
+                    toastText = `🔔 ${newNotif.message || "New notification"}`;
+                  }
+
+                  useToastStore.getState().addToast(
+                    toastText,
+                    newNotif.type === "warning" ? "error" : "info",
+                    newNotif.ad_id
+                      ? {
+                          action: {
+                            label: "View",
+                            onClick: async () => {
+                              const { useAdInteractionStore } = await import(
+                                "./useAdInteractionStore"
+                              );
+                              void useAdInteractionStore
+                                .getState()
+                                .openAdContext(newNotif.ad_id, userId);
+                              window.document.dispatchEvent(
+                                new CustomEvent("navigate", {
+                                  detail: "trading-ads",
+                                })
+                              );
+                            },
+                          },
+                        }
+                      : undefined
+                  );
+                }
+              }
             }
           }
         );

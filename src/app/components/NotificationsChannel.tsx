@@ -98,15 +98,35 @@ export function NotificationsChannel() {
     });
   };
 
+  const handleNotificationClick = async (notification: AppNotification) => {
+    if (!notification.is_read) {
+      void markAsRead(notification.id);
+    }
+    if (
+      notification.ad_id &&
+      (notification.type === "comment" ||
+        notification.type === "reply" ||
+        notification.type === "upvote")
+    ) {
+      const { useAdInteractionStore } = await import(
+        "../../store/useAdInteractionStore"
+      );
+      void useAdInteractionStore
+        .getState()
+        .openAdContext(notification.ad_id, profile?.id);
+      window.document.dispatchEvent(
+        new CustomEvent("navigate", { detail: "trading-ads" })
+      );
+    }
+  };
+
   const handleNotificationKeyDown = (
     event: KeyboardEvent<HTMLDivElement>,
     notification: AppNotification
   ) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      if (!notification.is_read) {
-        void markAsRead(notification.id);
-      }
+      void handleNotificationClick(notification);
     }
   };
 
@@ -193,9 +213,7 @@ export function NotificationsChannel() {
                   role="button"
                   tabIndex={0}
                   onClick={() => {
-                    if (!notification.is_read) {
-                      void markAsRead(notification.id);
-                    }
+                    void handleNotificationClick(notification);
                   }}
                   onKeyDown={(event) =>
                     handleNotificationKeyDown(event, notification)
@@ -239,7 +257,14 @@ export function NotificationsChannel() {
                           <strong className="font-bold text-foreground">
                             {notification.actor?.username || "Someone"}
                           </strong>{" "}
-                          upvoted your trade ad.
+                          {notification.comment_id
+                            ? "upvoted your comment in a trade discussion."
+                            : "upvoted your trade ad."}
+                          {notification.message && (
+                            <span className="block text-[12px] text-muted-foreground italic bg-muted/40 px-2.5 py-1 rounded-md mt-1 border-l-2 border-primary/50 font-sans break-words">
+                              "{notification.message}"
+                            </span>
+                          )}
                         </>
                       ) : (
                         <>
@@ -247,8 +272,13 @@ export function NotificationsChannel() {
                             {notification.actor?.username || "Someone"}
                           </strong>{" "}
                           {notification.type === "reply"
-                            ? "replied to your comment."
-                            : "commented on your trade ad."}
+                            ? "replied to your comment:"
+                            : "commented on your trade ad:"}
+                          {notification.message && (
+                            <span className="block text-[12px] text-muted-foreground/90 italic bg-muted/40 px-2.5 py-1.5 rounded-md mt-1.5 border-l-2 border-primary/60 font-sans break-words">
+                              "{notification.message}"
+                            </span>
+                          )}
                         </>
                       )}
                     </p>

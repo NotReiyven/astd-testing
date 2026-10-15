@@ -4,6 +4,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { get as getIdb, set as setIdb } from "idb-keyval";
 import { useToastStore } from "./useToastStore";
 import { useNotificationStore } from "./useNotificationStore";
+import { useTradingAdsStore } from "./useTradingAdsStore";
 
 export interface AdComment {
   id: string;
@@ -45,7 +46,8 @@ interface AdInteractionState {
     adId: string,
     userProfile: any,
     content: string,
-    parentId?: string | null
+    parentId?: string | null,
+    adOwnerId?: string | null
   ) => Promise<boolean>;
 
   deleteComment: (
@@ -340,7 +342,8 @@ export const useAdInteractionStore =
       adId,
       userProfile,
       content,
-      parentId = null
+      parentId = null,
+      adOwnerId = null
     ) => {
       if (containsPhishingOrLink(content)) {
         useToastStore
@@ -468,6 +471,110 @@ export const useAdInteractionStore =
         ),
         isActionPending: false,
       }));
+
+      // ── NOTIFICATION DISPATCH ──────────────────────────────────────────
+      try {
+        const preview =
+          cleanContent.length > 80
+            ? `${cleanContent.slice(0, 77)}...`
+            : cleanContent;
+
+        let replyTargetUserId: string | null = null;
+
+        // 1. If replying to an existing comment, notify the author of that comment!
+        if (parentId) {
+          const parentComment = get().comments.find((c) => c.id === parentId);
+          if (parentComment?.user_id) {
+            replyTargetUserId = parentComment.user_id;
+          } else {
+            const { data: parentRow } = await supabase
+              .from("ad_comments")
+              .select("user_id")
+              .eq("id", parentId)
+              .maybeSingle();
+            if (parentRow?.user_id) {
+              replyTargetUserId = parentRow.user_id;
+            }
+          }
+
+          if (replyTargetUserId && replyTargetUserId !== userProfile.id) {
+            void useNotificationStore.getState().createNotification({
+              user_id: replyTargetUserId,
+              actor_id: userProfile.id,
+              ad_id: adId,
+              comment_id: data.id,
+              type: "reply",
+              message: preview,
+            });
+          }
+        }
+
+        // 2. Notify the trade ad owner
+        let targetAdOwnerId = adOwnerId;
+        if (!targetAdOwnerId) {
+          const cachedAd = useTradingAdsStore
+            .getState()
+            .ads.find((a) => a.id === adId);
+          if (cachedAd?.user_id) {
+            targetAdOwnerId = cachedAd.user_id;
+          } else {
+            const { data: adRow } = await supabase
+              .from("trading_ads")
+              .select("user_id")
+              .eq("id", adId)
+              .maybeSingle();
+            if (adRow?.user_id) {
+              targetAdOwnerId = adRow.user_id;
+            }
+          }
+        }
+
+        if (
+          targetAdOwnerId &&
+          targetAdOwnerId !== userProfile.id &&
+          targetAdOwnerId !== replyTargetUserId
+        ) {
+          void useNotificationStore.getState().createNotification({
+            user_id: targetAdOwnerId,
+            actor_id: userProfile.id,
+            ad_id: adId,
+            comment_id: data.id,
+            type: parentId ? "reply" : "comment",
+            message: preview,
+          });
+        }
+
+        // 3. Handle @mentions in comment text
+        const mentions = cleanContent.match(/@([a-zA-Z0-9_.-]+)/g);
+        if (mentions && mentions.length > 0) {
+          const distinctNames = Array.from(
+            new Set(mentions.map((m) => m.slice(1).toLowerCase()))
+          );
+          for (const name of distinctNames) {
+            const matchedComment = get().comments.find(
+              (c) => c.profiles?.username?.toLowerCase() === name
+            );
+            const mentionedUserId = matchedComment?.user_id;
+            if (
+              mentionedUserId &&
+              mentionedUserId !== userProfile.id &&
+              mentionedUserId !== replyTargetUserId &&
+              mentionedUserId !== targetAdOwnerId
+            ) {
+              void useNotificationStore.getState().createNotification({
+                user_id: mentionedUserId,
+                actor_id: userProfile.id,
+                ad_id: adId,
+                comment_id: data.id,
+                type: "comment",
+                message: `@${userProfile.username} mentioned you: "${preview}"`,
+              });
+            }
+          }
+        }
+      } catch (notifErr) {
+        console.warn("Notification dispatch notice:", notifErr);
+      }
 
       return true;
     },
@@ -666,6 +773,7 @@ export const useAdInteractionStore =
               actor_id: userId,
               ad_id: adId,
               type: "upvote",
+              message: "upvoted your trade listing",
             });
         }
       } finally {
@@ -827,6 +935,11 @@ export const useAdInteractionStore =
             targetComment &&
             targetComment.user_id !== userId
           ) {
+            const commentSnippet =
+              targetComment.content.length > 50
+                ? `${targetComment.content.slice(0, 47)}...`
+                : targetComment.content;
+
             void useNotificationStore
               .getState()
               .createNotification({
@@ -837,6 +950,7 @@ export const useAdInteractionStore =
                   targetComment.ad_id,
                 comment_id: commentId,
                 type: "upvote",
+                message: `upvoted your comment: "${commentSnippet}"`,
               });
           }
         }

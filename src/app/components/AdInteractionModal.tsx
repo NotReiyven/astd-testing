@@ -481,7 +481,8 @@ export function AdInteractionModal() {
       activeAdId,
       profile,
       trimmed,
-      parentIdToSubmit
+      parentIdToSubmit,
+      activeAd?.user_id
     );
     if (success) {
       setNewComment("");

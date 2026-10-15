@@ -347,7 +347,9 @@ export function TopBar({
                                   <strong className="font-bold">
                                     {n.actor?.username || "Someone"}
                                   </strong>{" "}
-                                  upvoted your trade ad.
+                                  {n.comment_id
+                                    ? "upvoted your comment."
+                                    : "upvoted your trade ad."}
                                 </>
                               ) : (
                                 <>
@@ -355,8 +357,13 @@ export function TopBar({
                                     {n.actor?.username || "Someone"}
                                   </strong>{" "}
                                   {n.type === "reply"
-                                    ? "replied to your comment."
-                                    : "commented on your trade ad."}
+                                    ? "replied to your comment:"
+                                    : "commented on your trade ad:"}
+                                  {n.message && (
+                                    <span className="block text-[11px] text-muted-foreground italic truncate mt-0.5 max-w-[220px]">
+                                      "{n.message}"
+                                    </span>
+                                  )}
                                 </>
                               )}
                             </p>
