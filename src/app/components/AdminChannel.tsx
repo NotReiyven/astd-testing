@@ -1962,6 +1962,11 @@ export function AdminChannel({
                         type="button"
                         onClick={() => {
                           setViewingProfile(selectedUser.id, "admin-panel");
+                          setViewingUser(
+                            selectedUser.id,
+                            selectedUser.username,
+                            "admin-panel"
+                          );
                           jumpToChannel("profile");
                         }}
                         className="h-8 px-3 bg-input hover:bg-muted text-foreground rounded-[4px] text-[11px] font-mono border border-border cursor-pointer"
@@ -1972,6 +1977,7 @@ export function AdminChannel({
                       <button
                         type="button"
                         onClick={() => {
+                          setViewingProfile(selectedUser.id, "admin-panel");
                           setViewingUser(
                             selectedUser.id,
                             selectedUser.username,

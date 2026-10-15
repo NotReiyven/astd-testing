@@ -13,6 +13,7 @@ import {
   TradingStanceType,
   getEarlyUserRole,
 } from "../../../store/useProfileStore";
+import { useInventoryStore } from "../../../store/useInventoryStore";
 import {
   getUnitAssetUrl,
   triggerHaptic,
@@ -288,6 +289,9 @@ export function MiniProfilePopout() {
     }
 
     setViewingProfile(profile.id, activeChannel);
+    useInventoryStore
+      .getState()
+      .setViewingUser(profile.id, profile.username, activeChannel);
     window.document.dispatchEvent(
       new CustomEvent("navigate", { detail: "profile" })
     );

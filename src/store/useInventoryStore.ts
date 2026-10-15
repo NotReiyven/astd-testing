@@ -72,6 +72,21 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   returnChannel: null,
 
   setViewingUser: (userId, username = null, returnChannel = null) => {
+    const prevUserId = get().viewingUserId;
+    if (userId && prevUserId === userId) {
+      set((state) => ({
+        viewingUsername: username ?? state.viewingUsername,
+        returnChannel: returnChannel ?? state.returnChannel,
+      }));
+      if (get().viewedItems.length === 0) {
+        get().fetchInventory(userId, true);
+      }
+      if (get().viewedWishlist.length === 0) {
+        get().fetchWishlist(userId, true);
+      }
+      return;
+    }
+
     set({
       viewingUserId: userId,
       viewingUsername: username,

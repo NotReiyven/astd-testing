@@ -375,6 +375,7 @@ const VanguardAdCard = memo(
         ad.profiles?.username || "Trader",
         "trading-ads"
       );
+      useProfileStore.getState().setViewingProfile(ad.user_id, "trading-ads");
       window.document.dispatchEvent(
         new CustomEvent("navigate", { detail: "inventory" })
       );

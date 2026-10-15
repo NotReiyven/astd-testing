@@ -46,6 +46,7 @@ import { safeOpenExternal } from "../../store/useExternalLinkStore";
 import { UnitAvatar } from "./shared/UnitAvatar";
 import { UserAvatar } from "./shared/UserAvatar";
 import { DiscordRolePill } from "./shared/DiscordRolePill";
+import { ViewingUserBar } from "./shared/ViewingUserBar";
 import {
   STATUS_COLORS,
   useEffectiveStatus,
@@ -870,6 +871,7 @@ export function ProfileChannel() {
     (currentUser?.id && currentUser.id === targetId) ||
       (session?.user?.id && session.user.id === targetId)
   );
+  const isInspectingOtherUser = Boolean(!isOwner && targetId);
 
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
   const effectiveStatus = useEffectiveStatus(targetId, profileData?.status, {
@@ -973,10 +975,11 @@ export function ProfileChannel() {
   const handleCloseProfile = () => {
     triggerHaptic("light");
     const target = returnChannel || "trading-ads";
+    setViewingProfile(null);
+    setViewingUser(null, null, null);
     window.document.dispatchEvent(
       new CustomEvent("navigate", { detail: target })
     );
-    setTimeout(() => setViewingProfile(null), 150);
   };
 
   const formatChannelName = (id: string) =>
@@ -1117,7 +1120,9 @@ export function ProfileChannel() {
     if (isOwner) {
       setViewingUser(null);
     } else {
-      setViewingUser(targetId, profileData.username, "profile");
+      const origin = returnChannel || "trading-ads";
+      setViewingUser(targetId, profileData.username, origin);
+      setViewingProfile(targetId, origin);
     }
     window.document.dispatchEvent(
       new CustomEvent("navigate", { detail: "inventory" })
@@ -1537,23 +1542,19 @@ export function ProfileChannel() {
   return (
     <div className="flex-1 w-full h-full font-sans relative overflow-y-auto custom-scrollbar pb-16 z-10 bg-background">
       {/* Return Bar when inspecting another user's profile */}
-      {viewingProfileId && (
-        <div className="w-full bg-popover border-b border-border px-4 py-2.5 flex items-center justify-between sticky top-0 z-50">
-          <button
-            type="button"
-            onClick={handleCloseProfile}
-            className="flex items-center gap-2 px-3 py-1.5 bg-card hover:bg-muted text-foreground border border-border rounded-[6px] text-[12px] transition-colors focus-visible:outline-none cursor-pointer"
-          >
-            <IconArrowLeft className="w-3.5 h-3.5" />
-            <span>
-              Back to{" "}
-              {returnChannel ? formatChannelName(returnChannel) : "Trading Ads"}
-            </span>
-          </button>
-          <span className="text-[12px] text-muted-foreground">
-            Viewing <strong className="text-foreground">{profileData.username}</strong>’s Profile
-          </span>
-        </div>
+      {isInspectingOtherUser && (
+        <ViewingUserBar
+          targetUserId={targetId!}
+          targetUsername={profileData?.username || "Trader"}
+          activeTab="profile"
+          returnChannel={returnChannel}
+          onSwitchTab={(tab) => {
+            if (tab === "vault") {
+              handleInspectVault();
+            }
+          }}
+          onClose={handleCloseProfile}
+        />
       )}
 
       {/* Discord-Style Profile Banner & Identity Header */}

@@ -34,6 +34,7 @@ import { useUnits } from "../../context/UnitContext";
 import { getTier } from "../../data";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useProfileStore } from "../../store/useProfileStore";
+import { useInventoryStore } from "../../store/useInventoryStore";
 import { triggerHaptic } from "../../data/helpers";
 import { useNotificationStore } from "../../store/useNotificationStore";
 
@@ -204,6 +205,9 @@ export function Sidebar({
     triggerHaptic("light");
     if (channelId === "profile") {
       setViewingProfile(null);
+    }
+    if (channelId === "inventory") {
+      useInventoryStore.getState().setViewingUser(null, null, null);
     }
     setActiveChannel(channelId);
   };

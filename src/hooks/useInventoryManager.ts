@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useInventoryStore, InventoryItem } from "../store/useInventoryStore";
 import { useAuthStore } from "../store/useAuthStore";
+import { useProfileStore } from "../store/useProfileStore";
 import { useTradeStore } from "../store/useTradeStore";
 import { MasterUnit, FilterKey, TradeCard } from "../types";
 import { getTier } from "../data";
@@ -83,13 +84,23 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
   const handleCloseVault = useCallback(() => {
     triggerHaptic("light");
     const target = returnChannel || "trading-ads";
+    setViewingUser(null, null, null);
+    useProfileStore.getState().setViewingProfile(null);
     window.document.dispatchEvent(
       new CustomEvent("navigate", { detail: target })
     );
-    setTimeout(() => {
-      setViewingUser(null, null, null);
-    }, 100);
   }, [returnChannel, setViewingUser]);
+
+  const handleSwitchToProfile = useCallback(() => {
+    if (!viewingUserId) return;
+    triggerHaptic("light");
+    const origin = returnChannel || "trading-ads";
+    useProfileStore.getState().setViewingProfile(viewingUserId, origin);
+    setViewingUser(viewingUserId, viewingUsername, origin);
+    window.document.dispatchEvent(
+      new CustomEvent("navigate", { detail: "profile" })
+    );
+  }, [viewingUserId, viewingUsername, returnChannel, setViewingUser]);
 
   const handleTabSwitch = (view: "owned" | "wishlist") => {
     triggerHaptic("light");
@@ -819,6 +830,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     confirmClear,
     setConfirmClear,
     isReadOnly,
+    viewingUserId,
     viewingUsername,
     returnChannel,
     setViewingUser,
@@ -842,5 +854,6 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     handleQuickAdd,
     executeMassImport,
     handleCloseVault,
+    handleSwitchToProfile,
   };
 }

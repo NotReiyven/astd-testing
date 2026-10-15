@@ -1,4 +1,5 @@
 import { BulkSelectionDock } from "./shared/BulkSelectionDock";
+import { ViewingUserBar } from "./shared/ViewingUserBar";
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   GiChest,
@@ -242,6 +243,9 @@ export function InventoryChannel() {
     handleQuickAdd,
     executeMassImport,
     handleCloseVault,
+    viewingUserId,
+    returnChannel,
+    handleSwitchToProfile,
   } = useInventoryManager(ALL_UNITS);
 
   const [isOmniboxOpen, setIsOmniboxOpen] = useState(false);
@@ -399,25 +403,20 @@ export function InventoryChannel() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full select-none font-sans relative bg-background">
-      {/* Read-Only Banner Header */}
+      {/* Read-Only Viewing Header Bar */}
       {isReadOnly && (
-        <div className="flex items-center justify-between px-4 py-2.5 bg-foreground text-background shrink-0 z-30">
-          <div className="flex items-center gap-2.5">
-            <span className="text-[12px] font-bold uppercase tracking-wider bg-background text-foreground px-2 py-0.5 rounded-[2px]">
-              Viewing
-            </span>
-            <span className="text-[14px] font-black truncate">
-              {viewingUsername || "Trader"}'s{" "}
-              {vaultView === "wishlist" ? "Wishlist" : "Collection"}
-            </span>
-          </div>
-          <button
-            onClick={handleCloseVault}
-            className="flex items-center gap-1.5 px-3 py-1 bg-background/10 hover:bg-background/20 rounded-[4px] text-[12px] font-bold transition-colors focus-visible:outline-none cursor-pointer"
-          >
-            <IconArrowLeft className="w-3.5 h-3.5" /> Return to My Vault
-          </button>
-        </div>
+        <ViewingUserBar
+          targetUserId={viewingUserId || ""}
+          targetUsername={viewingUsername || "Trader"}
+          activeTab="vault"
+          returnChannel={returnChannel}
+          onSwitchTab={(tab) => {
+            if (tab === "profile") {
+              handleSwitchToProfile();
+            }
+          }}
+          onClose={handleCloseVault}
+        />
       )}
 
       {/* Master Tabs */}
