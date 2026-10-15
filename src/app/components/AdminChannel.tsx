@@ -37,6 +37,7 @@ import {
 import { SecuritySettingsTab } from "./Admin/SecuritySettingsTab";
 import { AuditStreamTab } from "./Admin/AuditStreamTab";
 import { CommentsStreamTab } from "./Admin/CommentsStreamTab";
+import { DiscordRolePill, getContrastTextColor } from "./shared/DiscordRolePill";
 
 type AdminTab =
   | "users"
@@ -542,16 +543,7 @@ export function AdminChannel({
 
         {/* Right Status & Sync */}
         <div className="flex items-center gap-2 ml-auto shrink-0">
-          <span
-            className="px-2 py-0.5 rounded-[4px] text-[10px] font-mono uppercase border"
-            style={{
-              backgroundColor: `${roleTone}15`,
-              borderColor: `${roleTone}45`,
-              color: roleTone,
-            }}
-          >
-            {callerRole}
-          </span>
+          <DiscordRolePill name={callerRole} color={roleTone} size="sm" />
           <button
             type="button"
             onClick={() => {
@@ -1002,18 +994,11 @@ export function AdminChannel({
             <div className="lg:col-span-7 bg-card border border-border rounded-[6px] p-4 flex flex-col gap-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-border">
                 <div className="flex items-center gap-2">
-                  <span
-                    className="px-2 py-0.5 rounded-[4px] text-[11px] uppercase border"
-                    style={{
-                      backgroundColor: `${getRoleColor(
-                        selectedRoleForRoster
-                      )}18`,
-                      color: getRoleColor(selectedRoleForRoster),
-                      borderColor: `${getRoleColor(selectedRoleForRoster)}55`,
-                    }}
-                  >
-                    {selectedRoleForRoster}
-                  </span>
+                  <DiscordRolePill
+                    name={selectedRoleForRoster}
+                    color={getRoleColor(selectedRoleForRoster)}
+                    size="sm"
+                  />
                   <span className="text-[11px] font-mono text-muted-foreground">
                     {roleRosterUsers.length} listed
                   </span>
@@ -1061,14 +1046,14 @@ export function AdminChannel({
                             <div className="text-[12px] text-foreground truncate">
                               {u.username}
                             </div>
-                            <div className="flex flex-wrap gap-1 mt-0.5">
+                            <div className="flex flex-wrap gap-1 mt-1">
                               {(u.assigned_roles || [u.role]).map((ar) => (
-                                <span
+                                <DiscordRolePill
                                   key={ar}
-                                  className="text-[9px] font-mono text-muted-foreground bg-card px-1.5 rounded border border-border"
-                                >
-                                  {ar}
-                                </span>
+                                  name={ar}
+                                  color={getRoleColor(ar)}
+                                  size="xs"
+                                />
                               ))}
                             </div>
                           </div>
@@ -1098,12 +1083,12 @@ export function AdminChannel({
                                 }`
                               )
                             }
-                            className={`h-7 px-2.5 rounded text-[10px] font-mono border flex items-center gap-1 ${
+                            className={`h-7 px-2.5 rounded text-[10px] font-mono font-bold border flex items-center gap-1 transition-colors ${
                               !allowedToToggle
                                 ? "opacity-40 cursor-not-allowed bg-muted border-border text-muted-foreground"
                                 : hasThisRole
-                                ? "bg-destructive/15 hover:bg-destructive text-destructive hover:text-white border-destructive/40 cursor-pointer"
-                                : "bg-[#23a559]/15 hover:bg-[#23a559] text-[#23a559] hover:text-white border-[#23a559]/40 cursor-pointer"
+                                ? "bg-[#ef4444] hover:bg-[#dc2626] text-white border-black/20 shadow-xs cursor-pointer"
+                                : "bg-[#23a559] hover:bg-[#16a34a] text-white border-black/20 shadow-xs cursor-pointer"
                             }`}
                           >
                             {!allowedToToggle && (
@@ -1209,10 +1194,15 @@ export function AdminChannel({
                                     setActiveTab("users");
                                   }
                                 }}
-                                className="text-[12px] text-foreground hover:text-primary truncate cursor-pointer"
+                                className="text-[12px] text-foreground hover:text-primary truncate cursor-pointer font-bold"
                               >
                                 {ad.profiles?.username || "Unknown"}
                               </button>
+                              <DiscordRolePill
+                                name={ad.profiles?.role || "user"}
+                                color={getRoleColor(ad.profiles?.role || "user")}
+                                size="xs"
+                              />
                               <span className="text-[10px] font-mono text-muted-foreground">
                                 #{ad.id.slice(0, 6)}
                               </span>
@@ -1236,7 +1226,7 @@ export function AdminChannel({
                               isDestructive: true,
                             })
                           }
-                          className="h-7 px-2.5 rounded-[4px] bg-destructive/15 hover:bg-destructive text-destructive hover:text-white border border-destructive/40 text-[10.5px] font-mono flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
+                          className="h-7 px-2.5 rounded-[4px] bg-[#ef4444] hover:bg-[#dc2626] text-white font-bold font-mono text-[10.5px] flex items-center gap-1 shrink-0 transition-colors cursor-pointer border border-black/20 shadow-xs"
                         >
                           <GiTrashCan className="w-3 h-3" />
                           Delete
@@ -1763,16 +1753,12 @@ export function AdminChannel({
                         </div>
                       </div>
 
-                      <span
-                        className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-[4px] border shrink-0 ml-2"
-                        style={{
-                          backgroundColor: `${getRoleColor(u.role)}18`,
-                          color: getRoleColor(u.role),
-                          borderColor: `${getRoleColor(u.role)}45`,
-                        }}
-                      >
-                        {u.role || "user"}
-                      </span>
+                      <DiscordRolePill
+                        name={u.role || "user"}
+                        color={getRoleColor(u.role)}
+                        size="xs"
+                        className="ml-2"
+                      />
                     </button>
                   );
                 })
@@ -1850,16 +1836,11 @@ export function AdminChannel({
                               {u.username}
                             </span>
                           </div>
-                          <span
-                            className="text-[8.5px] font-mono uppercase px-1.5 py-0.2 rounded border shrink-0"
-                            style={{
-                              backgroundColor: `${getRoleColor(u.role)}18`,
-                              color: getRoleColor(u.role),
-                              borderColor: `${getRoleColor(u.role)}45`,
-                            }}
-                          >
-                            {u.role}
-                          </span>
+                          <DiscordRolePill
+                            name={u.role}
+                            color={getRoleColor(u.role)}
+                            size="xs"
+                          />
                         </button>
                       ))}
                     </div>
@@ -1932,17 +1913,12 @@ export function AdminChannel({
                           {(
                             selectedUser.assigned_roles || [selectedUser.role]
                           ).map((rName) => (
-                            <span
+                            <DiscordRolePill
                               key={rName}
-                              className="text-[9.5px] font-mono uppercase px-1.5 py-0.5 rounded-[4px] border"
-                              style={{
-                                backgroundColor: `${getRoleColor(rName)}18`,
-                                color: getRoleColor(rName),
-                                borderColor: `${getRoleColor(rName)}45`,
-                              }}
-                            >
-                              {rName}
-                            </span>
+                              name={rName}
+                              color={getRoleColor(rName)}
+                              size="sm"
+                            />
                           ))}
                         </div>
 
@@ -2185,13 +2161,15 @@ export function AdminChannel({
                                 }
                                 style={{
                                   borderColor: hasRole
-                                    ? r.color
+                                    ? getContrastTextColor(r.color) === "#000000"
+                                      ? "rgba(0, 0, 0, 0.25)"
+                                      : "rgba(255, 255, 255, 0.2)"
                                     : "var(--border)",
                                   backgroundColor: hasRole
-                                    ? `${r.color}18`
+                                    ? r.color
                                     : "var(--input)",
                                   color: hasRole
-                                    ? r.color
+                                    ? getContrastTextColor(r.color)
                                     : "var(--muted-foreground)",
                                 }}
                                 className={`h-7 px-2.5 rounded-[4px] border text-[10.5px] font-mono uppercase flex items-center gap-1 ${
@@ -2316,7 +2294,7 @@ export function AdminChannel({
                                 isDestructive: true,
                               })
                             }
-                            className="h-8 px-3 rounded-[4px] bg-destructive/15 hover:bg-destructive text-destructive hover:text-white border border-destructive/40 text-[11px] font-mono flex items-center justify-between cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="h-8 px-3 rounded-[4px] bg-[#ef4444] hover:bg-[#dc2626] text-white border border-black/20 shadow-xs text-[11px] font-mono font-bold flex items-center justify-between cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                           >
                             <span>Ban Account</span>
                             <span className="text-[9.5px] opacity-80">
@@ -2337,7 +2315,7 @@ export function AdminChannel({
                                 isDestructive: false,
                               })
                             }
-                            className="h-8 px-3 rounded-[4px] bg-[#23a559]/15 hover:bg-[#23a559] text-[#23a559] hover:text-white border border-[#23a559]/40 text-[11px] font-mono flex items-center justify-between cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="h-8 px-3 rounded-[4px] bg-[#23a559] hover:bg-[#16a34a] text-white border border-black/20 shadow-xs text-[11px] font-mono font-bold flex items-center justify-between cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                           >
                             <span>Unban Account</span>
                             <span className="text-[9.5px] opacity-80">

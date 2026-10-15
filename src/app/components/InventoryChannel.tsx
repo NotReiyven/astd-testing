@@ -10,6 +10,7 @@ import { useUnits } from "../../context/UnitContext";
 import { useShowDelay } from "../../hooks/useShowDelay";
 import { EmptyState } from "./ui/EmptyState";
 import { AsyncButton } from "./ui/AsyncButton";
+import { getContrastTextColor } from "./shared/DiscordRolePill";
 
 // Inline SVG icons — no lucide-react
 const IconSearch = ({ className }: { className?: string }) => (
@@ -805,10 +806,14 @@ export function InventoryChannel() {
                               </span>
                               <span className="text-border text-[10px]">·</span>
                               <span
-                                className="text-[10px] font-bold px-1.5 py-0.2 rounded-[2px]"
+                                className="text-[10px] font-bold px-1.5 py-0.2 rounded-[3px] border shadow-xs"
                                 style={{
-                                  color: tierColor,
-                                  backgroundColor: `${tierColor}18`,
+                                  backgroundColor: tierColor,
+                                  color: getContrastTextColor(tierColor),
+                                  borderColor:
+                                    getContrastTextColor(tierColor) === "#000000"
+                                      ? "rgba(0, 0, 0, 0.25)"
+                                      : "rgba(255, 255, 255, 0.2)",
                                 }}
                               >
                                 {tier}

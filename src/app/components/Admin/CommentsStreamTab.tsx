@@ -10,6 +10,7 @@ import {
 } from "react-icons/gi";
 import { AdminComment } from "../../../hooks/useAdminIntel";
 import { UserAvatar } from "../shared/UserAvatar";
+import { DiscordRolePill } from "../shared/DiscordRolePill";
 import { triggerHaptic } from "../../../data/helpers";
 
 interface CommentsStreamTabProps {
@@ -29,15 +30,6 @@ interface CommentsStreamTabProps {
   ) => Promise<boolean>;
   onInspectUser: (userId: string) => void;
   onRefresh: () => void;
-}
-
-function getRoleBadgeColor(role?: string) {
-  const r = (role || "user").toLowerCase();
-  if (r === "master") return "bg-[#eab308] text-black border-[#ca8a04]";
-  if (r === "admin") return "bg-[#3b82f6] text-white border-[#2563eb]";
-  if (r === "mod") return "bg-[#22c55e] text-white border-[#16a34a]";
-  if (r === "banned") return "bg-[#ef4444] text-white border-[#dc2626]";
-  return "bg-[#2b2d31] text-[#949ba4] border-[#383a40]";
 }
 
 export function CommentsStreamTab({
@@ -265,13 +257,7 @@ export function CommentsStreamTab({
                         {authorName}
                       </span>
 
-                      <span
-                        className={`text-[9.5px] uppercase font-bold px-1.5 py-0.2 rounded border ${getRoleBadgeColor(
-                          authorRole
-                        )}`}
-                      >
-                        {authorRole}
-                      </span>
+                      <DiscordRolePill name={authorRole} size="xs" />
 
                       <span className="text-[11px] font-mono text-muted-foreground bg-[#2b2d31] px-1.5 py-0.5 rounded border border-border">
                         Ad #{comment.ad_id ? comment.ad_id.slice(0, 8) : "N/A"}
@@ -298,7 +284,7 @@ export function CommentsStreamTab({
                       setActingComment({ type: "delete", comment });
                       setActionReason("");
                     }}
-                    className="h-6 px-2.5 rounded-[3px] bg-[#ef4444]/15 hover:bg-[#ef4444]/25 text-[#ef4444] border border-[#ef4444]/30 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                    className="h-6 px-2.5 rounded-[3px] bg-[#ef4444] hover:bg-[#dc2626] text-white text-[10px] font-bold font-mono flex items-center gap-1 cursor-pointer transition-colors border border-black/20 shadow-xs"
                   >
                     <GiTrashCan className="w-3 h-3" />
                     <span>Delete</span>
@@ -311,7 +297,7 @@ export function CommentsStreamTab({
                       setActingComment({ type: "warn", comment });
                       setActionReason("");
                     }}
-                    className="h-6 px-2.5 rounded-[3px] bg-[#f97316]/15 hover:bg-[#f97316]/25 text-[#f97316] border border-[#f97316]/30 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                    className="h-6 px-2.5 rounded-[3px] bg-[#f97316] hover:bg-[#ea580c] text-white text-[10px] font-bold font-mono flex items-center gap-1 cursor-pointer transition-colors border border-black/20 shadow-xs"
                   >
                     <GiHammerDrop className="w-3 h-3" />
                     <span>Warn</span>
