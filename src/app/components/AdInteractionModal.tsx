@@ -50,6 +50,7 @@ import { TradeCard, MasterUnit } from "../../types";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
 import { AsyncButton } from "./ui/AsyncButton";
 import { EmptyState } from "./ui/EmptyState";
+import { UserAvatar } from "./shared/UserAvatar";
 
 const MAX_COMMENT_LENGTH = 500;
 
@@ -760,16 +761,21 @@ export function AdInteractionModal() {
         }`}
       >
         <div className="flex items-start gap-3 group">
-          <img
-            src={comment.profiles.avatar_url || getUnitAssetUrl("firezio") || ""}
-            className="w-8 h-8 rounded-full bg-muted object-cover shrink-0 cursor-pointer hover:opacity-80 transition-opacity mt-0.5 border border-border"
-            alt=""
+          <div
+            className="shrink-0 cursor-pointer hover:opacity-80 transition-opacity mt-0.5"
             onClick={(e) => {
               triggerHaptic("light");
               const rect = e.currentTarget.getBoundingClientRect();
               openPopout(comment.user_id, rect.left, rect.bottom);
             }}
-          />
+          >
+            <UserAvatar
+              avatarUrl={comment.profiles.avatar_url}
+              username={comment.profiles.username}
+              discordId={comment.profiles.discord_id}
+              className="w-8 h-8 rounded-full bg-muted border border-border"
+            />
+          </div>
 
           <div className="flex flex-col flex-1 min-w-0 bg-muted hover:bg-muted/80 p-3 rounded-[6px] border border-border transition-colors">
             <div className="flex items-center justify-between gap-2 mb-1">
@@ -1064,16 +1070,21 @@ export function AdInteractionModal() {
             <div className="p-[var(--panel-p)] flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-[var(--gap-md)]">
               <div className="flex items-center justify-between gap-2 bg-muted p-3.5 rounded-[6px] border border-border shadow-sm">
                 <div className="flex items-center gap-3 min-w-0">
-                  <img
-                    src={activeAd.profiles?.avatar_url || getUnitAssetUrl("firezio") || ""}
-                    className="w-11 h-11 rounded-full bg-background object-cover cursor-pointer hover:opacity-80 transition-opacity shrink-0 border border-border"
-                    alt=""
+                  <div
+                    className="shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
                     onClick={(e) => {
                       triggerHaptic("light");
                       const rect = e.currentTarget.getBoundingClientRect();
                       openPopout(activeAd.user_id, rect.left, rect.bottom);
                     }}
-                  />
+                  >
+                    <UserAvatar
+                      avatarUrl={activeAd.profiles?.avatar_url}
+                      username={activeAd.profiles?.username}
+                      discordId={activeAd.profiles?.discord_id}
+                      className="w-11 h-11 rounded-full bg-background border border-border"
+                    />
+                  </div>
                   <div className="flex flex-col min-w-0">
                     <span
                       className="text-[15px] font-black text-foreground truncate cursor-pointer hover:underline"
@@ -1425,10 +1436,11 @@ export function AdInteractionModal() {
                 >
                   <div className="relative flex items-end gap-2">
                     <div className="flex items-center gap-2 mb-1 shrink-0">
-                      <img
-                        src={profile.avatar_url || getUnitAssetUrl("firezio") || ""}
-                        className="w-8 h-8 rounded-full bg-card object-cover border border-border"
-                        alt=""
+                      <UserAvatar
+                        avatarUrl={profile.avatar_url}
+                        username={profile.username}
+                        discordId={profile.discord_id}
+                        className="w-8 h-8 rounded-full bg-card border border-border"
                       />
                     </div>
 

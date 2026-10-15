@@ -25,6 +25,7 @@ import { useInventoryStore } from "../../store/useInventoryStore";
 import { useUnits } from "../../context/UnitContext";
 import { triggerHaptic } from "../../data/helpers";
 import { getAvatarStyle, getInitials } from "./TradeAnalyzer/summaryUtils";
+import { UserAvatar } from "./shared/UserAvatar";
 import { getProxyImage, handleImageError } from "../../data";
 import {
   useAdminIntel,
@@ -714,20 +715,12 @@ export function AdminChannel({
                         className="p-2.5 rounded-[5px] bg-input/60 border border-border flex items-center justify-between gap-2"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div
-                            className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] text-white shrink-0 overflow-hidden border border-border"
-                            style={getAvatarStyle(u.username)}
-                          >
-                            {u.avatar_url ? (
-                              <img
-                                src={u.avatar_url}
-                                alt=""
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              getInitials(u.username)
-                            )}
-                          </div>
+                          <UserAvatar
+                            avatarUrl={u.avatar_url}
+                            username={u.username}
+                            discordId={u.discord_id}
+                            className="w-7 h-7 rounded-full shrink-0 border border-border"
+                          />
                           <div className="min-w-0">
                             <div className="text-[12px] text-foreground truncate">
                               {u.username}
@@ -861,22 +854,12 @@ export function AdminChannel({
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
-                          <div
-                            className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] text-white shrink-0 overflow-hidden border border-border"
-                            style={getAvatarStyle(
-                              ad.profiles?.username || "Trader"
-                            )}
-                          >
-                            {ad.profiles?.avatar_url ? (
-                              <img
-                                src={ad.profiles.avatar_url}
-                                alt=""
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              getInitials(ad.profiles?.username || "Trader")
-                            )}
-                          </div>
+                          <UserAvatar
+                            avatarUrl={ad.profiles?.avatar_url}
+                            username={ad.profiles?.username}
+                            discordId={ad.profiles?.discord_id}
+                            className="w-7 h-7 rounded-full shrink-0 border border-border"
+                          />
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
                               <button
@@ -1406,20 +1389,12 @@ export function AdminChannel({
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="relative shrink-0">
-                          <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px] overflow-hidden border border-border"
-                            style={getAvatarStyle(u.username)}
-                          >
-                            {u.avatar_url ? (
-                              <img
-                                src={u.avatar_url}
-                                alt=""
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              getInitials(u.username)
-                            )}
-                          </div>
+                          <UserAvatar
+                            avatarUrl={u.avatar_url}
+                            username={u.username}
+                            discordId={u.discord_id}
+                            className="w-8 h-8 rounded-full border border-border"
+                          />
                           <span
                             className="w-2 h-2 rounded-full absolute -bottom-0.5 -right-0.5 border border-card"
                             style={{
@@ -1529,20 +1504,12 @@ export function AdminChannel({
                           className="p-2 rounded-[5px] bg-input/50 hover:bg-input border border-border flex items-center justify-between gap-2 text-left transition-colors cursor-pointer"
                         >
                           <div className="flex items-center gap-2 min-w-0">
-                            <div
-                              className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] text-white shrink-0 overflow-hidden"
-                              style={getAvatarStyle(u.username)}
-                            >
-                              {u.avatar_url ? (
-                                <img
-                                  src={u.avatar_url}
-                                  alt=""
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                getInitials(u.username)
-                              )}
-                            </div>
+                            <UserAvatar
+                              avatarUrl={u.avatar_url}
+                              username={u.username}
+                              discordId={u.discord_id}
+                              className="w-6 h-6 rounded-full shrink-0"
+                            />
                             <span className="text-[11.5px] text-foreground truncate">
                               {u.username}
                             </span>
@@ -1614,20 +1581,12 @@ export function AdminChannel({
                 <div className="bg-card border border-border rounded-[6px] overflow-hidden">
                   <div className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className="w-12 h-12 rounded-full flex items-center justify-center text-white text-[16px] shrink-0 overflow-hidden border border-border"
-                        style={getAvatarStyle(selectedUser.username)}
-                      >
-                        {selectedUser.avatar_url ? (
-                          <img
-                            src={selectedUser.avatar_url}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          getInitials(selectedUser.username)
-                        )}
-                      </div>
+                      <UserAvatar
+                        avatarUrl={selectedUser.avatar_url}
+                        username={selectedUser.username}
+                        discordId={selectedUser.discord_id}
+                        className="w-12 h-12 rounded-full shrink-0 border border-border"
+                      />
 
                       <div className="flex flex-col gap-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5">

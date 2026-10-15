@@ -14,7 +14,7 @@ import { useNotificationStore } from "../../../store/useNotificationStore";
 import { useAdInteractionStore } from "../../../store/useAdInteractionStore";
 import { CommandPalette } from "./CommandPalette";
 import { getUnitAssetUrl, triggerHaptic } from "../../../data/helpers";
-
+import { UserAvatar } from "../shared/UserAvatar";
 import { useToastStore } from "../../../store/useToastStore";
 import {
   MOTION_TRANSITION,
@@ -325,10 +325,11 @@ export function TopBar({
                             !n.is_read ? "bg-primary/5" : ""
                           }`}
                         >
-                          <img
-                            src={n.actor?.avatar_url || getUnitAssetUrl("firezio") || ""}
-                            className="w-8 h-8 rounded-full border border-border bg-muted object-cover shrink-0"
-                            alt=""
+                          <UserAvatar
+                            avatarUrl={n.actor?.avatar_url}
+                            username={n.actor?.username}
+                            discordId={n.actor?.discord_id}
+                            className="w-8 h-8 rounded-full border border-border bg-muted shrink-0"
                           />
                           <div className="flex flex-col min-w-0 flex-1">
                             <p className="text-[12.5px] text-foreground leading-snug">
@@ -413,10 +414,12 @@ export function TopBar({
                   data-tooltip-side="bottom"
                 >
                   <div className="relative">
-                    <img
-                      src={profile.avatar_url}
+                    <UserAvatar
+                      avatarUrl={profile.avatar_url}
+                      username={profile.username}
+                      discordId={profile.discord_id}
+                      className="w-7 h-7 rounded-[2px] bg-background"
                       alt="Avatar"
-                      className="w-7 h-7 rounded-[2px] object-cover bg-background"
                     />
                     <span
                       aria-hidden="true"

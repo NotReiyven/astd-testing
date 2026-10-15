@@ -23,6 +23,7 @@ import { useToastStore } from "../../../store/useToastStore";
 import { ErrorState } from "../ui/ErrorState";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 import { STATUS_COLORS, useEffectiveStatus } from "../../../hooks/usePresence";
+import { UserAvatar } from "../shared/UserAvatar";
 
 const ROLE_CONFIG: Record<
   string,
@@ -111,13 +112,11 @@ export function MiniProfilePopout() {
   const [copied, setCopied] = useState(false);
   const [fetchError, setFetchError] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
-  const [avatarError, setAvatarError] = useState(false);
   const [bounds, setBounds] = useState({ top: 0, left: 0 });
   const popoutRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    setAvatarError(false);
     if (!popoutUserId) {
       setFetchError(false);
       setIsRetrying(false);
@@ -358,28 +357,13 @@ export function MiniProfilePopout() {
                 title="View Full Profile"
               >
                 <div className="relative">
-                  {profile.avatar_url && !avatarError ? (
-                    <img
-                      src={profile.avatar_url}
-                      alt={profile.username}
-                      width={64}
-                      height={64}
-                      onError={() => setAvatarError(true)}
-                      className="w-16 h-16 rounded-[8px] border-4 border-popover object-cover bg-muted shadow-md"
-                    />
-                  ) : (
-                    <div
-                      aria-label={profile.username}
-                      className="w-16 h-16 rounded-[8px] border-4 border-popover flex items-center justify-center text-[18px] font-bold text-white shadow-md select-none"
-                      style={{
-                        backgroundColor:
-                          profile.accent_color ||
-                          getAvatarStyle(profile.username || "Trader").background,
-                      }}
-                    >
-                      {getInitials(profile.username || "TR")}
-                    </div>
-                  )}
+                  <UserAvatar
+                    avatarUrl={profile.avatar_url}
+                    username={profile.username}
+                    discordId={profile.discord_id}
+                    className="w-16 h-16 rounded-[8px] border-4 border-popover shadow-md"
+                    alt={profile.username}
+                  />
                   <div
                     className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-[3px] border-popover z-10"
                     style={{

@@ -9,6 +9,7 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { useToastStore } from "../../store/useToastStore";
 import { useShowDelay } from "../../hooks/useShowDelay";
 import { getUnitAssetUrl, triggerHaptic } from "../../data/helpers";
+import { UserAvatar } from "./shared/UserAvatar";
 import { EmptyState } from "./ui/EmptyState";
 
 function NotificationsSkeletonList({ count = 4 }: { count?: number }) {
@@ -224,14 +225,11 @@ export function NotificationsChannel() {
                       : "Mark notification as read"
                   }
                 >
-                  <img
-                    src={
-                      notification.actor?.avatar_url ||
-                      getUnitAssetUrl("firezio") ||
-                      ""
-                    }
-                    alt=""
-                    className="w-10 h-10 rounded-full border border-border object-cover shrink-0 bg-muted"
+                  <UserAvatar
+                    avatarUrl={notification.actor?.avatar_url}
+                    username={notification.actor?.username}
+                    discordId={notification.actor?.discord_id}
+                    className="w-10 h-10 rounded-full border border-border shrink-0 bg-muted"
                   />
 
                   <div className="flex flex-col flex-1 min-w-0">

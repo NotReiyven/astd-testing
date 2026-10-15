@@ -578,6 +578,10 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       dbPayload.bio = updates.bio.trim().substring(0, 190);
       merged.bio = dbPayload.bio;
     }
+    if (typeof updates.avatar_url === "string") {
+      dbPayload.avatar_url = updates.avatar_url.trim();
+      merged.avatar_url = dbPayload.avatar_url;
+    }
     if (typeof updates.roblox_username === "string") {
       dbPayload.roblox_username = updates.roblox_username
         .trim()

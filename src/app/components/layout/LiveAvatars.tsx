@@ -8,6 +8,7 @@ import {
 import { useProfileStore, UserProfileData } from "../../../store/useProfileStore";
 import { getUnitAssetUrl } from "../../../data/helpers";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
+import { UserAvatar } from "../shared/UserAvatar";
 
 function resolveAvatarSrc(avatarUrl?: string | null): string | null {
   if (!avatarUrl) return null;
@@ -73,35 +74,18 @@ export function LiveAvatars() {
                 const rect = e.currentTarget.getBoundingClientRect();
                 openPopout(user.id, rect.left, rect.bottom);
               }}
-              className="w-8 h-8 rounded-full flex items-center justify-center border-[2px] border-background text-white shadow-sm relative group cursor-pointer transition-transform hover:-translate-y-1 hover:z-50 focus-visible:z-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary overflow-visible"
+              className="w-8 h-8 rounded-full flex items-center justify-center border-[2px] border-background shadow-sm relative group cursor-pointer transition-transform hover:-translate-y-1 hover:z-50 focus-visible:z-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary overflow-visible"
               style={{
-                backgroundColor: user.accent_color || fallbackStyle.background,
                 marginLeft: i > 0 ? "-10px" : "0",
                 zIndex: 40 - i,
               }}
             >
-              <span
-                aria-hidden="true"
-                className="absolute inset-0 flex items-center justify-center text-[10px] font-bold z-0 select-none"
-              >
-                {getInitials(user.username || "TR")}
-              </span>
-
-              {showImg && resolvedSrc && (
-                <img
-                  src={resolvedSrc}
-                  alt=""
-                  aria-hidden="true"
-                  width={32}
-                  height={32}
-                  className="w-full h-full object-cover rounded-full absolute inset-0 z-10"
-                  onError={() =>
-                    setFailedAvatars((prev) =>
-                      prev[user.id] ? prev : { ...prev, [user.id]: true }
-                    )
-                  }
-                />
-              )}
+              <UserAvatar
+                avatarUrl={user.avatar_url}
+                username={user.username}
+                discordId={user.discord_id}
+                className="w-full h-full rounded-full"
+              />
 
               {/* Online / DND status dot */}
               <span

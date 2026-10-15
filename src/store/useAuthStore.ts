@@ -22,6 +22,7 @@ interface AuthState {
   fetchProfile: (userId: string) => Promise<void>;
   initialize: () => void;
   updateStatus: (status: UserProfile["status"]) => Promise<void>;
+  syncDiscordAvatar: () => Promise<boolean>;
 }
 
 import { del as delIdb } from "idb-keyval";
@@ -233,6 +234,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       }
 
+      // Auto-sync fresh Discord avatar if user changed it on Discord
+      const currentSession = get().session;
+      if (currentSession?.user && currentSession.user.id === userId) {
+        const metadataAvatar =
+          currentSession.user.user_metadata?.avatar_url ||
+          currentSession.user.user_metadata?.picture ||
+          currentSession.user.identities?.[0]?.identity_data?.avatar_url;
+
+        if (
+          metadataAvatar &&
+          typeof metadataAvatar === "string" &&
+          metadataAvatar !== data.avatar_url
+        ) {
+          data.avatar_url = metadataAvatar;
+          void supabase
+            .from("profiles")
+            .update({ avatar_url: metadataAvatar })
+            .eq("id", userId);
+        }
+      }
+
       set({ profile: data as UserProfile });
       useProfileStore.getState().seedProfile(data);
 
@@ -262,6 +284,48 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           }
         )
         .subscribe();
+    }
+  },
+
+  syncDiscordAvatar: async () => {
+    const { session, profile } = get();
+    if (!session?.user || !profile) return false;
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const freshAvatar =
+        user?.user_metadata?.avatar_url ||
+        user?.user_metadata?.picture ||
+        user?.identities?.[0]?.identity_data?.avatar_url;
+
+      if (freshAvatar && typeof freshAvatar === "string") {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ avatar_url: freshAvatar })
+          .eq("id", profile.id);
+
+        if (!error) {
+          set({ profile: { ...profile, avatar_url: freshAvatar } });
+          useProfileStore
+            .getState()
+            .updateLocalProfile(profile.id, { avatar_url: freshAvatar });
+          useToastStore
+            .getState()
+            .addToast("Avatar synced with Discord successfully!", "success");
+          return true;
+        }
+      }
+      useToastStore
+        .getState()
+        .addToast("Avatar is already up to date with Discord.", "info");
+      return false;
+    } catch {
+      useToastStore
+        .getState()
+        .addToast("Could not sync Discord avatar. Try again.", "error");
+      return false;
     }
   },
 

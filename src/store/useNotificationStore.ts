@@ -16,6 +16,7 @@ export interface AppNotification {
   actor?: {
     username: string;
     avatar_url: string;
+    discord_id?: string;
   } | null;
 }
 
@@ -260,7 +261,7 @@ export const useNotificationStore = create<NotificationState>(
         .select(
           `
           *,
-          actor:actor_id (username, avatar_url)
+          actor:actor_id (username, avatar_url, discord_id)
         `
         )
         .eq("user_id", userId)

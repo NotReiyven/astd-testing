@@ -42,6 +42,7 @@ import { StatusIcon } from "./shared/Formatters";
 import { TradeCard, MasterUnit } from "../../types";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
 import { UnitAvatar } from "./shared/UnitAvatar";
+import { UserAvatar } from "./shared/UserAvatar";
 import {
   STATUS_COLORS,
   useEffectiveStatus,
@@ -899,6 +900,7 @@ export function ProfileChannel() {
     useState<TradingStanceType>("open");
   const [editRobloxName, setEditRobloxName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isSyncingAvatar, setIsSyncingAvatar] = useState(false);
 
   const [copiedProfileLink, setCopiedProfileLink] = useState(false);
   const [copiedDiscordId, setCopiedDiscordId] = useState(false);
@@ -1608,12 +1610,12 @@ export function ProfileChannel() {
             {/* Avatar + Name + Badges */}
             <div className="flex flex-col sm:flex-row sm:items-end gap-4 min-w-0">
               <div className="relative shrink-0 self-start">
-                <img
-                  src={
-                    profileData.avatar_url || getUnitAssetUrl("firezio") || ""
-                  }
+                <UserAvatar
+                  avatarUrl={profileData.avatar_url}
+                  username={profileData.username}
+                  discordId={profileData.discord_id}
+                  className="w-[84px] h-[84px] md:w-[96px] md:h-[96px] rounded-[10px] border-4 border-card bg-muted shadow-xl"
                   alt={profileData.username}
-                  className="w-[84px] h-[84px] md:w-[96px] md:h-[96px] rounded-[10px] border-4 border-card object-cover bg-muted shadow-xl"
                 />
                 {/* Presence Indicator Dot */}
                 <div
@@ -3247,14 +3249,12 @@ export function ProfileChannel() {
                   <div className="px-4 pb-4 relative flex flex-col gap-2">
                     <div className="flex items-end justify-between gap-3 -mt-7">
                       <div className="flex items-end gap-3">
-                        <img
-                          src={
-                            profileData.avatar_url ||
-                            getUnitAssetUrl("firezio") ||
-                            ""
-                          }
+                        <UserAvatar
+                          avatarUrl={profileData.avatar_url}
+                          username={profileData.username}
+                          discordId={profileData.discord_id}
+                          className="w-14 h-14 rounded-[8px] border-4 border-popover bg-muted shadow-md"
                           alt={profileData.username}
-                          className="w-14 h-14 rounded-[8px] border-4 border-popover object-cover bg-muted shadow-md"
                         />
                         <div className="flex flex-col pb-0.5">
                           <span className="text-[15px] text-foreground leading-tight">
@@ -3290,6 +3290,46 @@ export function ProfileChannel() {
                       <p className="text-[12px] text-foreground/90 pt-1 border-t border-border/60 line-clamp-2">
                         {editBio}
                       </p>
+                    )}
+                    {isOwner && (
+                      <div className="pt-2 border-t border-border/60 flex items-center justify-between">
+                        <span className="text-[11px] text-muted-foreground">
+                          Discord Avatar
+                        </span>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setIsSyncingAvatar(true);
+                            try {
+                              const success =
+                                await useAuthStore.getState().syncDiscordAvatar();
+                              if (success) {
+                                const currentAvatar =
+                                  useAuthStore.getState().profile?.avatar_url;
+                                if (currentAvatar) {
+                                  setProfileData((prev) => ({
+                                    ...prev,
+                                    avatar_url: currentAvatar,
+                                  }));
+                                }
+                              }
+                            } finally {
+                              setIsSyncingAvatar(false);
+                            }
+                          }}
+                          disabled={isSyncingAvatar}
+                          className="text-[11.5px] font-semibold text-primary hover:underline flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          <IconRefresh
+                            className={`w-3 h-3 ${
+                              isSyncingAvatar ? "animate-spin" : ""
+                            }`}
+                          />
+                          <span>
+                            {isSyncingAvatar ? "Syncing…" : "Re-sync Discord Avatar"}
+                          </span>
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
