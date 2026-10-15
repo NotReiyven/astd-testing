@@ -1179,6 +1179,168 @@ export function ProfileChannel() {
     ).slice(0, 6);
   }, [wishlistSearch, ALL_UNITS, activeWishlistItems]);
 
+  const nowMs = Date.now();
+  const liveAdsCount = userAdHistory.filter(
+    (a) => new Date(a.expires_at).getTime() > nowMs
+  ).length;
+
+  const ogInfo = useMemo(() => getOgTier(joinNumber), [joinNumber]);
+
+  const accountTenureDays = useMemo(() => {
+    if (!profileData?.created_at) return 1;
+    return Math.max(
+      1,
+      Math.floor(
+        (Date.now() - new Date(profileData.created_at).getTime()) / 86400000
+      )
+    );
+  }, [profileData?.created_at]);
+
+  const crownJewel = useMemo(() => {
+    if (!activeVaultItems || activeVaultItems.length === 0) return null;
+    let bestUnit: MasterUnit | null = null;
+    let bestVal = -1;
+    let bestQty = 0;
+    for (const item of activeVaultItems) {
+      const u = ALL_UNITS.find((unit) => unit.id === item.unit_id);
+      if (u) {
+        const val = getUnitConservativeValue(u);
+        if (val > bestVal) {
+          bestVal = val;
+          bestUnit = u;
+          bestQty = item.quantity;
+        }
+      }
+    }
+    return bestUnit ? { unit: bestUnit, value: bestVal, quantity: bestQty } : null;
+  }, [activeVaultItems, ALL_UNITS]);
+
+  const vaultTierBreakdown = useMemo(() => {
+    const counts: Record<string, number> = {
+      S: 0,
+      A: 0,
+      B: 0,
+      C: 0,
+      Pure: 0,
+      Untiered: 0,
+    };
+    for (const item of activeVaultItems) {
+      const u = ALL_UNITS.find((unit) => unit.id === item.unit_id);
+      if (u) {
+        const t = (getTier(u) || "Untiered") as keyof typeof counts;
+        counts[t] = (counts[t] || 0) + item.quantity;
+      }
+    }
+    return counts;
+  }, [activeVaultItems, ALL_UNITS]);
+
+  const accolades = useMemo(() => {
+    const list = [
+      {
+        id: "og",
+        label:
+          ogInfo.tier === "genesis"
+            ? "Genesis Pioneer"
+            : ogInfo.tier === "alpha"
+            ? "Alpha Pioneer"
+            : ogInfo.tier === "early"
+            ? "Early OG"
+            : ogInfo.tier === "beta"
+            ? "Beta OG"
+            : ogInfo.tier === "veteran"
+            ? "Veteran Trader"
+            : "Platform Member",
+        icon:
+          ogInfo.tier === "genesis"
+            ? GiCrown
+            : ogInfo.tier === "alpha"
+            ? GiLaurelCrown
+            : GiSparkles,
+        unlocked: Boolean(joinNumber && joinNumber <= 100),
+        desc: joinNumber
+          ? `User #${joinNumber} • ${ogInfo.desc}`
+          : "Join within the first 100 traders",
+        color: ogInfo.color,
+        bg: ogInfo.bg,
+        border: ogInfo.border,
+      },
+      {
+        id: "broadcaster",
+        label: "Market Broadcaster",
+        icon: GiMegaphone,
+        unlocked: lifetimeAdsCount > 0,
+        desc:
+          lifetimeAdsCount > 0
+            ? `Published ${lifetimeAdsCount} trading ads on the market`
+            : "Publish at least 1 trade ad",
+        color: "#FAA61A",
+        bg: "rgba(250, 166, 26, 0.12)",
+        border: "rgba(250, 166, 26, 0.35)",
+      },
+      {
+        id: "voice",
+        label: "Community Voice",
+        icon: GiChatBubble,
+        unlocked: lifetimeCommentsCount > 0,
+        desc:
+          lifetimeCommentsCount > 0
+            ? `Posted ${lifetimeCommentsCount} comments in trade threads`
+            : "Participate in trade discussions",
+        color: "#38bdf8",
+        bg: "rgba(56, 189, 248, 0.12)",
+        border: "rgba(56, 189, 248, 0.35)",
+      },
+      {
+        id: "verified",
+        label: "Discord Verified",
+        icon: GiCharacter,
+        unlocked: Boolean(profileData?.discord_id),
+        desc: "Connected Discord identity verified",
+        color: "#5865F2",
+        bg: "rgba(88, 101, 242, 0.12)",
+        border: "rgba(88, 101, 242, 0.35)",
+      },
+      {
+        id: "vault",
+        label: "Vault Preserver",
+        icon: GiChest,
+        unlocked: activeVaultItems.length > 0,
+        desc:
+          activeVaultItems.length > 0
+            ? `Preserves ${activeVaultItems.reduce(
+                (a, b) => a + b.quantity,
+                0
+              )} units in inventory vault`
+            : "Store units in your inventory vault",
+        color: "#23a559",
+        bg: "rgba(35, 165, 89, 0.12)",
+        border: "rgba(35, 165, 89, 0.35)",
+      },
+      {
+        id: "live",
+        label: "Live Trader",
+        icon: GiTornado,
+        unlocked: liveAdsCount > 0,
+        desc:
+          liveAdsCount > 0
+            ? `${liveAdsCount} active trade ad(s) live right now`
+            : "Have an active ad live on the market",
+        color: "#c084fc",
+        bg: "rgba(192, 132, 252, 0.12)",
+        border: "rgba(192, 132, 252, 0.35)",
+      },
+    ];
+    return list;
+  }, [
+    ogInfo,
+    joinNumber,
+    lifetimeAdsCount,
+    lifetimeCommentsCount,
+    profileData?.discord_id,
+    activeVaultItems,
+    liveAdsCount,
+  ]);
+
   if (isAuthLoading && !targetId) {
     return <ProfileChannelSkeleton compact={globalCompactMode} />;
   }
@@ -1495,11 +1657,7 @@ export function ProfileChannel() {
     ) || TRADING_STANCES[0];
 
   const privateAdSet = new Set(profileData.private_ad_ids || []);
-  const nowMs = Date.now();
 
-  const liveAdsCount = userAdHistory.filter(
-    (a) => new Date(a.expires_at).getTime() > nowMs
-  ).length;
   const expiredAdsCount = userAdHistory.filter(
     (a) => new Date(a.expires_at).getTime() <= nowMs
   ).length;
@@ -1525,163 +1683,6 @@ export function ProfileChannel() {
     const m = ALL_UNITS.find((u) => u.id === i.unit_id);
     return acc + (m ? getUnitConservativeValue(m) : 0);
   }, 0);
-
-  const ogInfo = useMemo(() => getOgTier(joinNumber), [joinNumber]);
-
-  const accountTenureDays = useMemo(() => {
-    if (!profileData?.created_at) return 1;
-    return Math.max(
-      1,
-      Math.floor(
-        (Date.now() - new Date(profileData.created_at).getTime()) / 86400000
-      )
-    );
-  }, [profileData?.created_at]);
-
-  const crownJewel = useMemo(() => {
-    if (!activeVaultItems || activeVaultItems.length === 0) return null;
-    let bestUnit: MasterUnit | null = null;
-    let bestVal = -1;
-    let bestQty = 0;
-    for (const item of activeVaultItems) {
-      const u = ALL_UNITS.find((unit) => unit.id === item.unit_id);
-      if (u) {
-        const val = getUnitConservativeValue(u);
-        if (val > bestVal) {
-          bestVal = val;
-          bestUnit = u;
-          bestQty = item.quantity;
-        }
-      }
-    }
-    return bestUnit ? { unit: bestUnit, value: bestVal, quantity: bestQty } : null;
-  }, [activeVaultItems, ALL_UNITS]);
-
-  const vaultTierBreakdown = useMemo(() => {
-    const counts: Record<string, number> = {
-      S: 0,
-      A: 0,
-      B: 0,
-      C: 0,
-      Pure: 0,
-      Untiered: 0,
-    };
-    for (const item of activeVaultItems) {
-      const u = ALL_UNITS.find((unit) => unit.id === item.unit_id);
-      if (u) {
-        const t = (getTier(u) || "Untiered") as keyof typeof counts;
-        counts[t] = (counts[t] || 0) + item.quantity;
-      }
-    }
-    return counts;
-  }, [activeVaultItems, ALL_UNITS]);
-
-  const accolades = useMemo(() => {
-    const list = [
-      {
-        id: "og",
-        label:
-          ogInfo.tier === "genesis"
-            ? "Genesis Pioneer"
-            : ogInfo.tier === "alpha"
-            ? "Alpha Pioneer"
-            : ogInfo.tier === "early"
-            ? "Early OG"
-            : ogInfo.tier === "beta"
-            ? "Beta OG"
-            : ogInfo.tier === "veteran"
-            ? "Veteran Trader"
-            : "Platform Member",
-        icon:
-          ogInfo.tier === "genesis"
-            ? GiCrown
-            : ogInfo.tier === "alpha"
-            ? GiLaurelCrown
-            : GiSparkles,
-        unlocked: Boolean(joinNumber && joinNumber <= 100),
-        desc: joinNumber
-          ? `User #${joinNumber} • ${ogInfo.desc}`
-          : "Join within the first 100 traders",
-        color: ogInfo.color,
-        bg: ogInfo.bg,
-        border: ogInfo.border,
-      },
-      {
-        id: "broadcaster",
-        label: "Market Broadcaster",
-        icon: GiMegaphone,
-        unlocked: lifetimeAdsCount > 0,
-        desc:
-          lifetimeAdsCount > 0
-            ? `Published ${lifetimeAdsCount} trading ads on the market`
-            : "Publish at least 1 trade ad",
-        color: "#FAA61A",
-        bg: "rgba(250, 166, 26, 0.12)",
-        border: "rgba(250, 166, 26, 0.35)",
-      },
-      {
-        id: "voice",
-        label: "Community Voice",
-        icon: GiChatBubble,
-        unlocked: lifetimeCommentsCount > 0,
-        desc:
-          lifetimeCommentsCount > 0
-            ? `Posted ${lifetimeCommentsCount} comments in trade threads`
-            : "Participate in trade discussions",
-        color: "#38bdf8",
-        bg: "rgba(56, 189, 248, 0.12)",
-        border: "rgba(56, 189, 248, 0.35)",
-      },
-      {
-        id: "verified",
-        label: "Discord Verified",
-        icon: GiCharacter,
-        unlocked: Boolean(profileData?.discord_id),
-        desc: "Connected Discord identity verified",
-        color: "#5865F2",
-        bg: "rgba(88, 101, 242, 0.12)",
-        border: "rgba(88, 101, 242, 0.35)",
-      },
-      {
-        id: "vault",
-        label: "Vault Preserver",
-        icon: GiChest,
-        unlocked: activeVaultItems.length > 0,
-        desc:
-          activeVaultItems.length > 0
-            ? `Preserves ${activeVaultItems.reduce(
-                (a, b) => a + b.quantity,
-                0
-              )} units in inventory vault`
-            : "Store units in your inventory vault",
-        color: "#23a559",
-        bg: "rgba(35, 165, 89, 0.12)",
-        border: "rgba(35, 165, 89, 0.35)",
-      },
-      {
-        id: "live",
-        label: "Live Trader",
-        icon: GiTornado,
-        unlocked: liveAdsCount > 0,
-        desc:
-          liveAdsCount > 0
-            ? `${liveAdsCount} active trade ad(s) live right now`
-            : "Have an active ad live on the market",
-        color: "#c084fc",
-        bg: "rgba(192, 132, 252, 0.12)",
-        border: "rgba(192, 132, 252, 0.35)",
-      },
-    ];
-    return list;
-  }, [
-    ogInfo,
-    joinNumber,
-    lifetimeAdsCount,
-    lifetimeCommentsCount,
-    profileData?.discord_id,
-    activeVaultItems,
-    liveAdsCount,
-  ]);
 
   const repProgressPct =
     safeRep >= 1000
