@@ -11,6 +11,7 @@ import {
   useProfileStore,
   getBannerCssStyle,
   TradingStanceType,
+  getEarlyUserRole,
 } from "../../../store/useProfileStore";
 import {
   getUnitAssetUrl,
@@ -23,42 +24,75 @@ import { ErrorState } from "../ui/ErrorState";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 import { STATUS_COLORS, useEffectiveStatus } from "../../../hooks/usePresence";
 
-const ROLE_CONFIG = {
-  master: { color: "#ed4245", label: "Master" },
-  admin: { color: "#FAA61A", label: "Admin" },
-  mod: { color: "#5865F2", label: "Moderator" },
-  user: { color: "#a1a1aa", label: "Trader" },
-  banned: { color: "#888888", label: "Banned" },
+const ROLE_CONFIG: Record<
+  string,
+  { color: string; bg: string; border: string; label: string }
+> = {
+  master: {
+    color: "#fbbf24",
+    bg: "#2b1f0b",
+    border: "#f59e0b",
+    label: "Master",
+  },
+  admin: {
+    color: "#f87171",
+    bg: "#261417",
+    border: "#ef4444",
+    label: "Admin",
+  },
+  mod: {
+    color: "#8ea1e1",
+    bg: "#161a33",
+    border: "#5865F2",
+    label: "Moderator",
+  },
+  user: {
+    color: "#cbd5e1",
+    bg: "#1e1f22",
+    border: "#35373c",
+    label: "Trader",
+  },
+  banned: {
+    color: "#94a3b8",
+    bg: "#1e1f22",
+    border: "#475569",
+    label: "Banned",
+  },
 };
 
 const STANCE_LABELS: Record<
   TradingStanceType,
-  { label: string; color: string; bg: string }
+  { label: string; color: string; bg: string; border: string }
 > = {
   open: {
     label: "Open to Offers",
-    color: "#23a559",
-    bg: "rgba(35,165,89,0.14)",
+    color: "#4ade80",
+    bg: "#122317",
+    border: "#23a559",
   },
   upgrading: {
     label: "Upgrading Only",
-    color: "#FAA61A",
-    bg: "rgba(250,166,26,0.14)",
+    color: "#fbbf24",
+    bg: "#281b0a",
+    border: "#f59e0b",
   },
   downgrading: {
     label: "Downgrading",
-    color: "#38bdf8",
-    bg: "rgba(56,189,248,0.14)",
+    color: "#7dd3fc",
+    bg: "#0c1d2e",
+    border: "#38bdf8",
   },
   wishlist: {
     label: "Hunting Wishlist",
-    color: "#c084fc",
-    bg: "rgba(192,132,252,0.14)",
+    color: "#d8b4fe",
+    bg: "#211133",
+    border: "#c084fc",
   },
   afk: {
     label: "AFK / Break",
-    color: "#a1a1aa",
-    bg: "rgba(161,161,170,0.14)",
+    color: "#94a3b8",
+    bg: "#1c1f24",
+    border: "#64748b",
   },
 };
 
@@ -359,27 +393,58 @@ export function MiniProfilePopout() {
               <div className="flex justify-end pt-2 gap-1.5 min-h-[34px] items-center flex-wrap">
                 {typeof profile.join_number === "number" && (
                   <span
-                    className="inline-flex items-center text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-[4px] bg-muted/80 text-muted-foreground border border-border shrink-0 select-none"
+                    className="inline-flex items-center text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-[4px] bg-[#1e1f22] text-[#cbd5e1] border border-[#35373c] shrink-0 select-none shadow-xs"
                     title={`User #${profile.join_number}`}
                   >
                     #{profile.join_number}
                   </span>
                 )}
 
+                {(() => {
+                  const earlyRole = getEarlyUserRole(profile.join_number);
+                  if (!earlyRole) return null;
+                  return (
+                    <span
+                      className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-[4px] border shrink-0"
+                      style={{
+                        backgroundColor: earlyRole.bg,
+                        color: earlyRole.color,
+                        borderColor: earlyRole.border,
+                      }}
+                      title={`${earlyRole.label} Community Member`}
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ backgroundColor: earlyRole.dotColor }}
+                      />
+                      {earlyRole.label}
+                    </span>
+                  );
+                })()}
+
                 <span
-                  className="text-[10px] px-2 py-0.5 rounded-[4px]"
+                  className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-[4px] border"
                   style={{
                     backgroundColor: stanceCfg.bg,
                     color: stanceCfg.color,
+                    borderColor: stanceCfg.border,
                   }}
                 >
+                  <span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ backgroundColor: stanceCfg.color }}
+                  />
                   {stanceCfg.label}
                 </span>
 
                 {profile.role !== "user" && (
                   <div
-                    className="flex items-center gap-1 px-2 py-0.5 rounded-[4px] bg-muted border border-border text-[10px]"
-                    style={{ color: ROLE_CONFIG[profile.role]?.color }}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-[4px] border text-[10px] font-bold"
+                    style={{
+                      backgroundColor: ROLE_CONFIG[profile.role]?.bg || "#1e1f22",
+                      color: ROLE_CONFIG[profile.role]?.color,
+                      borderColor: ROLE_CONFIG[profile.role]?.border || "#35373c",
+                    }}
                   >
                     <GiCharacter className="w-3 h-3" />
                     <span>{ROLE_CONFIG[profile.role]?.label}</span>
@@ -391,19 +456,33 @@ export function MiniProfilePopout() {
               <div className="mt-2 flex flex-col bg-card p-3.5 rounded-[6px] border border-border shadow-inner gap-2.5">
                 <div className="flex items-center justify-between gap-2">
                   <h2
-                    className="text-[16px] text-foreground leading-none truncate cursor-pointer hover:underline"
+                    className="text-[16px] text-foreground leading-none truncate cursor-pointer hover:underline font-bold"
                     onClick={handleViewFullProfile}
                   >
                     {profile.username}
                   </h2>
                   <div
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded-[4px] border text-[11px] shrink-0 ${
-                      profile.global_rep > 0
-                        ? "bg-[#23a559]/10 border-[#23a559]/30 text-[#23a559]"
-                        : profile.global_rep < 0
-                        ? "bg-destructive/10 border-destructive/30 text-destructive"
-                        : "bg-muted border-border text-foreground"
-                    }`}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-[4px] border text-[11px] font-bold shrink-0"
+                    style={{
+                      backgroundColor:
+                        profile.global_rep > 0
+                          ? "#122317"
+                          : profile.global_rep < 0
+                          ? "#241215"
+                          : "#1e1f22",
+                      borderColor:
+                        profile.global_rep > 0
+                          ? "#23a559"
+                          : profile.global_rep < 0
+                          ? "#ef4444"
+                          : "#35373c",
+                      color:
+                        profile.global_rep > 0
+                          ? "#4ade80"
+                          : profile.global_rep < 0
+                          ? "#f87171"
+                          : "#cbd5e1",
+                    }}
                   >
                     <GiSpikedHalo className="w-3 h-3" />
                     <span>
@@ -425,7 +504,7 @@ export function MiniProfilePopout() {
                         {profile.discord_id}
                       </span>
                       {copied ? (
-                        <span className="text-[10px] text-[#23a559]">
+                        <span className="text-[10px] text-[#23a559] font-bold">
                           Copied
                         </span>
                       ) : (
@@ -444,7 +523,7 @@ export function MiniProfilePopout() {
                   )}
 
                   {profile.roblox_username && (
-                    <span className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground bg-muted px-2 py-1 rounded-[4px] border border-border">
+                    <span className="flex items-center gap-1 text-[11px] font-mono text-foreground bg-[#1e1f22] px-2 py-1 rounded-[4px] border border-[#35373c]">
                       <GiGamepad className="w-3.5 h-3.5 text-primary" />
                       {profile.roblox_username}
                     </span>
@@ -464,14 +543,38 @@ export function MiniProfilePopout() {
                 <button
                   type="button"
                   onClick={handleViewFullProfile}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[5px] bg-muted hover:bg-card border border-border text-foreground text-[12px] transition-colors focus-visible:outline-none cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[5px] bg-muted hover:bg-card border border-border text-foreground text-[12px] transition-colors focus-visible:outline-none cursor-pointer font-medium"
                 >
                   <GiCharacter className="w-4 h-4" /> Full Profile
                 </button>
                 <button
                   type="button"
+                  onClick={() => {
+                    triggerHaptic("light");
+                    navigator.clipboard.writeText(
+                      `${window.location.origin}/profile/${profile.id}`
+                    );
+                    addToast("Unique profile link copied!", "success");
+                  }}
+                  className="p-2 rounded-[5px] bg-[#1e1f22] hover:bg-[#2b2d31] border border-[#35373c] text-foreground transition-colors cursor-pointer shrink-0"
+                  title="Share Unique Profile Link"
+                  aria-label="Share Unique Profile Link"
+                >
+                  <svg
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    className="w-4 h-4"
+                  >
+                    <path d="M6 9a3 3 0 0 0 4.24 0l2-2a3 3 0 0 0-4.24-4.24L7 3.76" />
+                    <path d="M10 7a3 3 0 0 0-4.24 0l-2 2a3 3 0 0 0 4.24 4.24L9 12.24" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
                   onClick={handleContact}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[5px] bg-[#5865F2] hover:bg-[#4752C4] text-white text-[12px] transition-colors shadow-sm focus-visible:outline-none cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-[5px] bg-[#5865F2] hover:bg-[#4752C4] text-white text-[12px] transition-colors shadow-sm focus-visible:outline-none cursor-pointer font-medium"
                 >
                   <GiChatBubble className="w-4 h-4" /> Message
                 </button>

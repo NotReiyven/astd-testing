@@ -127,6 +127,10 @@ const CHANNEL_INFO: Record<string, { title: string; subtitle: string }> = {
     title: "user-profile",
     subtitle: "Trader Identity and Public Records",
   },
+  users: {
+    title: "user-profile",
+    subtitle: "Trader Identity and Public Records",
+  },
   "extra-notices": {
     title: "extra-notices",
     subtitle: "Additional rules, exceptions, and community notes.",
@@ -401,10 +405,13 @@ export default function App() {
     }
   }, [setIsAnalyzerOpen, guideState, setGuideState]);
 
-  const currentChannelInfo = CHANNEL_INFO[activeChannel] || {
-    title: activeChannel,
-    subtitle: "",
-  };
+  const channelBase = activeChannel.split("/")[0];
+  const currentChannelInfo =
+    CHANNEL_INFO[activeChannel] ||
+    CHANNEL_INFO[channelBase === "users" ? "profile" : channelBase] || {
+      title: activeChannel,
+      subtitle: "",
+    };
 
   useSEO({
     title: `ASTD Value List | ${
@@ -634,6 +641,9 @@ export default function App() {
                   element={<NotificationsChannel />}
                 />
                 <Route path="/profile" element={<ProfileChannel />} />
+                <Route path="/profile/:userId" element={<ProfileChannel />} />
+                <Route path="/users/:userId" element={<ProfileChannel />} />
+                <Route path="/users/:userId/profile" element={<ProfileChannel />} />
                 <Route
                   path="/trading-ads"
                   element={

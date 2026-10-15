@@ -249,7 +249,11 @@ export function Sidebar({
                 >
                   <div className="flex flex-col">
                     {cat.channels.map((channel) => {
-                      const isActive = activeChannel === channel.id;
+                      const isActive =
+                        activeChannel === channel.id ||
+                        (channel.id === "profile" &&
+                          (activeChannel.startsWith("profile") ||
+                            activeChannel.startsWith("users")));
                       const isTarget =
                         guideState?.type === "main" &&
                         guideState.step === 1 &&

@@ -8,6 +8,11 @@ import { useToastStore } from "./useToastStore";
 export type BannerStyleType =
   | "solid"
   | "gradient"
+  | "carbon"
+  | "mesh"
+  | "waves"
+  | "circuit"
+  | "aurora"
   | "grid"
   | "stripes"
   | "dots";
@@ -18,6 +23,56 @@ export type TradingStanceType =
   | "downgrading"
   | "wishlist"
   | "afk";
+
+export interface EarlyRoleBadge {
+  id: "founder" | "og" | "veteran";
+  label: string;
+  dotColor: string;
+  bg: string;
+  border: string;
+  color: string;
+  tooltip: string;
+}
+
+export function getEarlyUserRole(
+  joinNumber?: number | null
+): EarlyRoleBadge | null {
+  if (typeof joinNumber !== "number" || joinNumber <= 0) return null;
+  if (joinNumber <= 5) {
+    return {
+      id: "founder",
+      label: "Founder",
+      dotColor: "#f59e0b",
+      bg: "#261a06",
+      border: "#f59e0b",
+      color: "#fbbf24",
+      tooltip: "Early Adopter: Top 5 Founding Member",
+    };
+  }
+  if (joinNumber <= 25) {
+    return {
+      id: "og",
+      label: "OG",
+      dotColor: "#f97316",
+      bg: "#26160a",
+      border: "#f97316",
+      color: "#fdba74",
+      tooltip: "Early Adopter: Top 25 Community Member",
+    };
+  }
+  if (joinNumber <= 100) {
+    return {
+      id: "veteran",
+      label: "Veteran",
+      dotColor: "#38bdf8",
+      bg: "#0c1d2e",
+      border: "#38bdf8",
+      color: "#7dd3fc",
+      tooltip: "Early Adopter: Top 100 Community Member",
+    };
+  }
+  return null;
+}
 
 export interface UserProfileData {
   id: string;
@@ -68,6 +123,11 @@ const VALID_HEX = /^#[0-9A-Fa-f]{6}$/;
 const VALID_STYLES: BannerStyleType[] = [
   "solid",
   "gradient",
+  "carbon",
+  "mesh",
+  "waves",
+  "circuit",
+  "aurora",
   "grid",
   "stripes",
   "dots",
@@ -217,6 +277,33 @@ export function getBannerCssStyle(
       return {
         backgroundColor: base,
         backgroundImage: `linear-gradient(135deg, ${base} 0%, ${accent}55 100%)`,
+      };
+    case "carbon":
+      return {
+        backgroundColor: base,
+        backgroundImage: `repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 2px, transparent 2px, transparent 4px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 2px, transparent 2px, transparent 4px), linear-gradient(135deg, ${base} 0%, ${accent}40 100%)`,
+        backgroundSize: "8px 8px, 8px 8px, 100% 100%",
+      };
+    case "mesh":
+      return {
+        backgroundColor: base,
+        backgroundImage: `radial-gradient(circle at 15% 25%, ${accent}55 0%, transparent 55%), radial-gradient(circle at 85% 75%, ${base} 0%, transparent 65%), linear-gradient(135deg, ${base} 0%, #060608 100%)`,
+      };
+    case "waves":
+      return {
+        backgroundColor: base,
+        backgroundImage: `repeating-radial-gradient(ellipse at 50% -20%, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 1px, transparent 1px, transparent 14px), linear-gradient(135deg, ${base} 0%, ${accent}45 100%)`,
+      };
+    case "circuit":
+      return {
+        backgroundColor: base,
+        backgroundImage: `linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(180deg, rgba(255,255,255,0.04) 1px, transparent 1px), radial-gradient(circle at 100% 0%, ${accent}50 0%, transparent 60%), linear-gradient(135deg, ${base} 0%, #0a0a0e 100%)`,
+        backgroundSize: "28px 28px, 28px 28px, 100% 100%, 100% 100%",
+      };
+    case "aurora":
+      return {
+        backgroundColor: base,
+        backgroundImage: `radial-gradient(ellipse at 20% 0%, ${accent}60 0%, transparent 70%), radial-gradient(ellipse at 80% 100%, ${accent}35 0%, transparent 60%), linear-gradient(135deg, ${base} 0%, #0b0c10 100%)`,
       };
     case "grid":
       return {
