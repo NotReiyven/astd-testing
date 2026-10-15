@@ -44,6 +44,7 @@ import { TradeCard, MasterUnit } from "../../types";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
 import { UnitAvatar } from "./shared/UnitAvatar";
 import { UserAvatar } from "./shared/UserAvatar";
+import { DiscordRolePill } from "./shared/DiscordRolePill";
 import {
   STATUS_COLORS,
   useEffectiveStatus,
@@ -1589,6 +1590,7 @@ export function ProfileChannel() {
                   discordId={profileData.discord_id}
                   className="w-[84px] h-[84px] md:w-[96px] md:h-[96px] rounded-[10px] border-4 border-card bg-muted shadow-xl"
                   alt={profileData.username}
+                  priority={true}
                 />
                 {/* Presence Indicator Dot */}
                 <div
@@ -1658,18 +1660,23 @@ export function ProfileChannel() {
                     </button>
                   )}
 
-                  {/* Role Pill */}
-                  <span
-                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[5px] border text-[11.5px] font-semibold shadow-xs"
-                    style={{
-                      backgroundColor: roleCfg.bg,
-                      color: roleCfg.color,
-                      borderColor: roleCfg.border,
-                    }}
-                  >
-                    <GiCharacter className="w-3.5 h-3.5" />
-                    {roleCfg.label}
-                  </span>
+                  {/* Discord Role Pills */}
+                  {profileData.role_details && profileData.role_details.length > 0 ? (
+                    profileData.role_details.map((r) => (
+                      <DiscordRolePill
+                        key={r.name}
+                        name={r.name}
+                        label={r.label}
+                        color={r.color}
+                        size="sm"
+                      />
+                    ))
+                  ) : profileData.role && profileData.role !== "user" ? (
+                    <DiscordRolePill
+                      name={profileData.role}
+                      size="sm"
+                    />
+                  ) : null}
 
                   {/* Reputation Pill */}
                   <span
@@ -1966,6 +1973,35 @@ export function ProfileChannel() {
                   </div>
                 )}
               </div>
+
+              {/* Discord-Standard Roles Section */}
+              {((profileData.role_details && profileData.role_details.length > 0) || (profileData.role && profileData.role !== "user")) && (
+                <div className="bg-card border border-border rounded-[6px] p-4 flex flex-col gap-2.5 shadow-xs">
+                  <div className="flex items-center justify-between border-b border-border pb-2">
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                      Roles ({profileData.role_details?.length || 1})
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    {profileData.role_details && profileData.role_details.length > 0 ? (
+                      profileData.role_details.map((r) => (
+                        <DiscordRolePill
+                          key={r.name}
+                          name={r.name}
+                          label={r.label}
+                          color={r.color}
+                          size="md"
+                        />
+                      ))
+                    ) : (
+                      <DiscordRolePill
+                        name={profileData.role}
+                        size="md"
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Vault Action Button */}
               <button

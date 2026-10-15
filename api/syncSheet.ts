@@ -110,7 +110,7 @@ export async function GET(request: Request) {
   const ranges = [
     "S Tier!A:I", "A Tier!A:I", "B Tier!A:I", "C Tier!A:I",
     "Pure Tier!A:I", "Oddities!A:I", "Untiered!A:I",
-    "Home!A:K", "Extra Notices!A:B",
+    "Home!A:K", "Extra Notices!A:B", "Tutorial!A:I",
   ];
   const batchRanges = ranges.map((r) => `ranges=${encodeURIComponent(r)}`).join("&");
 

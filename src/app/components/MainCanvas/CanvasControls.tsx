@@ -35,6 +35,7 @@ const FILTER_OPTIONS = {
   highballed: "Highballed",
   gatekept: "Gatekept",
   hyped: "Hyped",
+  manipulated: "Manipulated",
   "black-marketed": "Black Market",
 };
 

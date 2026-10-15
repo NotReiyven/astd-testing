@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from "react";
+import React, { useState, useEffect, useRef, useCallback, memo } from "react";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 import { getUnitAssetUrl } from "../../../data/helpers";
 
@@ -13,9 +13,6 @@ export function getDiscordDefaultAvatar(discordId?: string | null): string {
   }
 }
 
-// Global cache of known broken avatar URLs to immediately skip them on other cards
-const BROKEN_AVATAR_URLS = new Set<string>();
-
 export interface UserAvatarProps {
   avatarUrl?: string | null;
   username?: string | null;
@@ -25,6 +22,7 @@ export interface UserAvatarProps {
   alt?: string;
   onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
   title?: string;
+  priority?: boolean;
 }
 
 export const UserAvatar = memo(function UserAvatar({
@@ -36,13 +34,14 @@ export const UserAvatar = memo(function UserAvatar({
   alt,
   onClick,
   title,
+  priority = false,
 }: UserAvatarProps) {
   // 0: Custom avatarUrl
   // 1: Discord permanent default embed avatar
   // 2: Local firezio asset (/units/firezio.webp)
   // 3: Pure styled initials fallback (zero image loading)
   const [stage, setStage] = useState<number>(() => {
-    if (avatarUrl && !BROKEN_AVATAR_URLS.has(avatarUrl)) {
+    if (avatarUrl && avatarUrl.trim()) {
       return 0;
     }
     if (discordId) {
@@ -52,10 +51,19 @@ export const UserAvatar = memo(function UserAvatar({
   });
 
   const [imgLoaded, setImgLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  // Check if image is already completed in browser cache on ref attach
+  const handleImageRef = useCallback((node: HTMLImageElement | null) => {
+    imgRef.current = node;
+    if (node && node.complete && node.naturalWidth > 0) {
+      setImgLoaded(true);
+    }
+  }, []);
 
   useEffect(() => {
     setImgLoaded(false);
-    if (avatarUrl && !BROKEN_AVATAR_URLS.has(avatarUrl)) {
+    if (avatarUrl && avatarUrl.trim()) {
       setStage(0);
     } else if (discordId) {
       setStage(1);
@@ -67,7 +75,7 @@ export const UserAvatar = memo(function UserAvatar({
   const currentSrc = (() => {
     switch (stage) {
       case 0:
-        return avatarUrl && !BROKEN_AVATAR_URLS.has(avatarUrl) ? avatarUrl : null;
+        return avatarUrl && avatarUrl.trim() ? avatarUrl : null;
       case 1:
         return getDiscordDefaultAvatar(discordId);
       case 2:
@@ -77,11 +85,14 @@ export const UserAvatar = memo(function UserAvatar({
     }
   })();
 
-  const handleError = () => {
-    if (stage === 0 && avatarUrl) {
-      BROKEN_AVATAR_URLS.add(avatarUrl);
+  // Re-check completed state whenever currentSrc changes
+  useEffect(() => {
+    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+      setImgLoaded(true);
     }
+  }, [currentSrc]);
 
+  const handleError = () => {
     setImgLoaded(false);
     setStage((prev) => {
       if (prev === 0) {
@@ -115,9 +126,10 @@ export const UserAvatar = memo(function UserAvatar({
       {/* Image Layer: gracefully loaded on top, hidden on error */}
       {currentSrc && stage < 3 && (
         <img
+          ref={handleImageRef}
           src={currentSrc}
           alt={alt || username || "User avatar"}
-          loading="lazy"
+          loading={priority ? "eager" : "lazy"}
           decoding="async"
           referrerPolicy="no-referrer"
           onLoad={() => setImgLoaded(true)}

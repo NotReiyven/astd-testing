@@ -4,6 +4,11 @@ import { supabase } from "../lib/supabase";
 import { logger } from '../lib/logger';
 import { get as getIdb, set as setIdb } from 'idb-keyval';
 import { useToastStore } from "./useToastStore";
+import {
+  formatRoleLabel,
+  getStandardRoleColor,
+  getStandardRoleRank,
+} from "../app/components/shared/DiscordRolePill";
 
 export type BannerStyleType =
   | "solid"
@@ -78,6 +83,14 @@ export function getEarlyUserRole(
   return null;
 }
 
+export interface UserRoleBadge {
+  id: string;
+  name: string;
+  label: string;
+  color: string;
+  rank: number;
+}
+
 export interface UserProfileData {
   id: string;
   discord_id: string;
@@ -101,6 +114,8 @@ export interface UserProfileData {
   private_ad_ids?: string[];
   master_rep_override?: number | null;
   join_number?: number;
+  assigned_roles?: string[];
+  role_details?: UserRoleBadge[];
 }
 
 const joinNumberCache: Record<string, number> = {};
@@ -217,6 +232,59 @@ export function unpackProfileRow(raw: any): UserProfileData {
       ? raw.global_rep
       : 0;
 
+  // Unpack user roles from relational query or assigned array
+  let assigned_roles: string[] = [];
+  const roleDetailsMap = new Map<string, UserRoleBadge>();
+
+  if (Array.isArray(raw?.user_roles)) {
+    for (const ur of raw.user_roles) {
+      const rName = ur?.roles?.name || ur?.role_name || (typeof ur === "string" ? ur : null);
+      if (typeof rName === "string" && rName.trim()) {
+        const cleanName = rName.trim();
+        const roleRank = typeof ur?.roles?.rank === "number" ? ur.roles.rank : getStandardRoleRank(cleanName);
+        const roleColor = ur?.roles?.color || getStandardRoleColor(cleanName);
+        roleDetailsMap.set(cleanName.toLowerCase(), {
+          id: cleanName.toLowerCase(),
+          name: cleanName,
+          label: formatRoleLabel(cleanName),
+          color: roleColor,
+          rank: roleRank,
+        });
+      }
+    }
+  }
+
+  if (Array.isArray(raw?.assigned_roles)) {
+    for (const rName of raw.assigned_roles) {
+      if (typeof rName === "string" && rName.trim()) {
+        const cleanName = rName.trim();
+        if (!roleDetailsMap.has(cleanName.toLowerCase())) {
+          roleDetailsMap.set(cleanName.toLowerCase(), {
+            id: cleanName.toLowerCase(),
+            name: cleanName,
+            label: formatRoleLabel(cleanName),
+            color: getStandardRoleColor(cleanName),
+            rank: getStandardRoleRank(cleanName),
+          });
+        }
+      }
+    }
+  }
+
+  // Ensure base profile.role is included if special
+  if (raw?.role && raw.role !== "user" && !roleDetailsMap.has(raw.role.toLowerCase())) {
+    roleDetailsMap.set(raw.role.toLowerCase(), {
+      id: raw.role.toLowerCase(),
+      name: raw.role,
+      label: formatRoleLabel(raw.role),
+      color: getStandardRoleColor(raw.role),
+      rank: getStandardRoleRank(raw.role),
+    });
+  }
+
+  const role_details = Array.from(roleDetailsMap.values()).sort((a, b) => a.rank - b.rank);
+  assigned_roles = role_details.map((r) => r.name);
+
   return {
     ...raw,
     global_rep: resolvedRep,
@@ -232,6 +300,8 @@ export function unpackProfileRow(raw: any): UserProfileData {
     master_rep_override,
     join_number:
       typeof raw?.join_number === "number" ? raw.join_number : undefined,
+    assigned_roles,
+    role_details,
   };
 }
 
@@ -480,10 +550,28 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     });
 
     if (missingIds.length > 0) {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .in("id", missingIds);
+      let data: any[] | null = null;
+      let error: any = null;
+
+      try {
+        const res = await supabase
+          .from("profiles")
+          .select("*, user_roles(roles(name, color, rank))")
+          .in("id", missingIds);
+        data = res.data;
+        error = res.error;
+      } catch (e) {
+        error = e;
+      }
+
+      if (error || !data) {
+        const fallbackRes = await supabase
+          .from("profiles")
+          .select("*")
+          .in("id", missingIds);
+        data = fallbackRes.data;
+        error = fallbackRes.error;
+      }
 
       if (!error && Array.isArray(data)) {
         const foundIds = new Set<string>();
@@ -538,7 +626,9 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       }
     }
 
-    let query = supabase.from("profiles").select("*");
+    let query = supabase
+      .from("profiles")
+      .select("*, user_roles(roles(name, color, rank))");
     if (UUID_REGEX.test(cleanId)) {
       query = query.eq("id", cleanId);
     } else if (/^\d{17,21}$/.test(cleanId)) {
@@ -547,7 +637,24 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       query = query.ilike("username", cleanId);
     }
 
-    const { data, error } = await query.maybeSingle();
+    let { data, error } = await query.maybeSingle();
+
+    if (error || !data) {
+      // Fallback query without relational join if restricted
+      let fallbackQuery = supabase.from("profiles").select("*");
+      if (UUID_REGEX.test(cleanId)) {
+        fallbackQuery = fallbackQuery.eq("id", cleanId);
+      } else if (/^\d{17,21}$/.test(cleanId)) {
+        fallbackQuery = fallbackQuery.eq("discord_id", cleanId);
+      } else {
+        fallbackQuery = fallbackQuery.ilike("username", cleanId);
+      }
+      const fallbackRes = await fallbackQuery.maybeSingle();
+      if (!fallbackRes.error && fallbackRes.data) {
+        data = fallbackRes.data;
+        error = null;
+      }
+    }
 
     if (error || !data) {
       logger.error('ASTD-UI-001', `Failed to fetch profile for ${cleanId}: ${error?.message ?? 'unknown'}`);

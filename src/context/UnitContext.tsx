@@ -7,10 +7,20 @@ import {
 } from "../data/units";
 import { getObtainability, getUnitAssetUrl } from "../data/helpers";
 
+export interface DynamicMarketTag {
+  tag: string;
+  slug: string;
+  def: string;
+  color?: string;
+  bg?: string;
+  border?: string;
+}
+
 type UnitContextType = {
   units: MasterUnit[];
   changelog: string[];
   notices: { title: string; date: string | null; content: string }[];
+  tags: DynamicMarketTag[];
   sheetTitle: string;
   lastUpdated: string;
   isLoading: boolean;
@@ -33,6 +43,7 @@ const UnitContext = createContext<UnitContextType>({
   units: LOCAL_FALLBACK_UNITS,
   changelog: [],
   notices: [],
+  tags: [],
   sheetTitle: "ASTD Official Value List",
   lastUpdated: DEFAULT_LAST_UPDATED,
   isLoading: true,
@@ -83,6 +94,7 @@ export const UnitProvider = ({ children }: { children: React.ReactNode }) => {
         units: Array.from(uniqueUnitsMap.values()),
         changelog: json.changelog || [],
         notices: json.notices || [],
+        tags: json.tags || [],
         sheetTitle: json.sheetTitle || "ASTD Official Value List",
         lastUpdated: json.lastUpdated || new Date().toISOString(),
       };
@@ -103,6 +115,7 @@ export const UnitProvider = ({ children }: { children: React.ReactNode }) => {
       units: data?.units?.length ? data.units : LOCAL_FALLBACK_UNITS,
       changelog: data?.changelog || [],
       notices: data?.notices || [],
+      tags: data?.tags || [],
       sheetTitle: data?.sheetTitle || "ASTD Official Value List",
       lastUpdated: data?.lastUpdated || DEFAULT_LAST_UPDATED,
       isLoading,

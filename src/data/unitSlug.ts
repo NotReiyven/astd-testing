@@ -140,6 +140,8 @@ export const UNIT_IMAGE_SLUG_MAP: Record<string, string> = {
   "snowman": "snowman-1",
 
   // ── Pure Tier ──
+  "demise-pure": "demise",
+  "lucina-pure": "lucina",
   "death-pure": "death",
   "legendary-borul-alternative-pure": "brol-alt",
   "old-will-pure": "old-will",

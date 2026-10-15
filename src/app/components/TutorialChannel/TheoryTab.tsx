@@ -10,12 +10,15 @@ import {
   THEORY_SECONDARY_TAGS,
   THEORY_RARITY_SCALE,
   THEORY_LIQUIDITY_SCALE,
+  GRID_STATUS_CFG,
 } from "../../../data";
+import { useUnits } from "../../../context/UnitContext";
 
 const AQUA_AVATAR_URL =
   "https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png";
 
 export function TheoryTab() {
+  const { tags: dynamicTags } = useUnits();
   const [activeSection, setActiveSection] = useState<string>("tags");
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -148,57 +151,90 @@ export function TheoryTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {THEORY_STATUS_TAGS.map((t) => (
-                    <tr
-                      key={t.tag}
-                      className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors"
-                    >
-                      <td className="px-5 py-3.5 align-middle">
-                        <span
-                          className="text-xs font-semibold px-2 py-1 rounded-[6px] border block text-center w-full shadow-sm"
-                          style={{
-                            backgroundColor: t.bg,
-                            color: t.color,
-                            borderColor: t.border,
-                          }}
+                  {dynamicTags && dynamicTags.length > 0 ? (
+                    dynamicTags.map((t) => {
+                      const cfg = GRID_STATUS_CFG[t.slug as keyof typeof GRID_STATUS_CFG];
+                      const bg = cfg?.bg || t.bg || "rgba(30, 33, 36, 0.95)";
+                      const color = cfg?.color || t.color || "#dbdee1";
+                      const border = cfg?.border || t.border || "rgba(255, 255, 255, 0.1)";
+                      return (
+                        <tr
+                          key={t.slug}
+                          className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors"
                         >
-                          {t.tag}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5 text-foreground text-[13px] leading-relaxed font-medium">
-                        {t.def}
-                      </td>
-                    </tr>
-                  ))}
-
-                  <tr className="bg-popover text-muted-foreground text-[10px] uppercase tracking-widest border-y border-border">
-                    <td colSpan={2} className="px-5 py-3 font-bold">
-                      Secondary Multipliers
-                    </td>
-                  </tr>
-
-                  {THEORY_SECONDARY_TAGS.map((t) => (
-                    <tr
-                      key={t.tag}
-                      className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors"
-                    >
-                      <td className="px-5 py-3.5 align-middle">
-                        <span
-                          className="text-xs font-semibold px-2 py-1 rounded-[6px] border block text-center w-full shadow-sm"
-                          style={{
-                            backgroundColor: t.bg,
-                            color: t.color,
-                            borderColor: t.border,
-                          }}
+                          <td className="px-5 py-3.5 align-middle">
+                            <span
+                              className="text-xs font-semibold px-2 py-1 rounded-[6px] border block text-center w-full shadow-sm"
+                              style={{
+                                backgroundColor: bg,
+                                color: color,
+                                borderColor: border,
+                              }}
+                            >
+                              {t.tag}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3.5 text-foreground text-[13px] leading-relaxed font-medium">
+                            {t.def}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <>
+                      {THEORY_STATUS_TAGS.map((t) => (
+                        <tr
+                          key={t.tag}
+                          className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors"
                         >
-                          {t.tag}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5 text-foreground text-[13px] leading-relaxed font-medium">
-                        {t.def}
-                      </td>
-                    </tr>
-                  ))}
+                          <td className="px-5 py-3.5 align-middle">
+                            <span
+                              className="text-xs font-semibold px-2 py-1 rounded-[6px] border block text-center w-full shadow-sm"
+                              style={{
+                                backgroundColor: t.bg,
+                                color: t.color,
+                                borderColor: t.border,
+                              }}
+                            >
+                              {t.tag}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3.5 text-foreground text-[13px] leading-relaxed font-medium">
+                            {t.def}
+                          </td>
+                        </tr>
+                      ))}
+
+                      <tr className="bg-popover text-muted-foreground text-[10px] uppercase tracking-widest border-y border-border">
+                        <td colSpan={2} className="px-5 py-3 font-bold">
+                          Secondary Multipliers
+                        </td>
+                      </tr>
+
+                      {THEORY_SECONDARY_TAGS.map((t) => (
+                        <tr
+                          key={t.tag}
+                          className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors"
+                        >
+                          <td className="px-5 py-3.5 align-middle">
+                            <span
+                              className="text-xs font-semibold px-2 py-1 rounded-[6px] border block text-center w-full shadow-sm"
+                              style={{
+                                backgroundColor: t.bg,
+                                color: t.color,
+                                borderColor: t.border,
+                              }}
+                            >
+                              {t.tag}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3.5 text-foreground text-[13px] leading-relaxed font-medium">
+                            {t.def}
+                          </td>
+                        </tr>
+                      ))}
+                    </>
+                  )}
                 </tbody>
               </table>
             </div>

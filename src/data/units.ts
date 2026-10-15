@@ -1,4 +1,4 @@
-import { MasterUnit } from "../types";
+import { MasterUnit, UnitStatus } from "../types";
 import { getUnitAssetUrl } from "./helpers";
 
 export interface UnitMeta {
@@ -7,11 +7,14 @@ export interface UnitMeta {
   aliases?: string[];
   notice?: string;
   obtainability?: "OBT" | "UNOB";
+  status?: UnitStatus;
+  value?: number | "owner" | "range";
 }
 
 export const UNIT_METADATA: Record<string, UnitMeta> = {
   // ── Top S Tier ──
-  "demise": { subtitle: "Rem Shinigami", aliases: ["rem shinigami"], notice: "Obtainable from winning the VOTW contest. 3 Copies exist.", obtainability: "UNOB" },
+  "demise": { subtitle: "Rem Shinigami", aliases: ["rem shinigami"], notice: "Obtainable from winning the VOTW contest. 3 Copies exist.", obtainability: "UNOB", status: "black-marketed", value: "owner" },
+  "lucina": { subtitle: "Lucyna Kushinada", aliases: ["lucina", "lucyna kushinada", "lucy", "lucyna"], notice: "(>25 Copies) Obtained by Testers/Contributors during the OG Astd Update (Unobtainable)", obtainability: "UNOB", status: "black-marketed", value: "owner" },
   "galaxy-girl": { subtitle: "Sasaki Miyo", aliases: ["sasaki miyo", "fem gojo", "female gojo", "gg"], notice: "Female Gojo reskin, GAME contributor unit.", obtainability: "UNOB" },
   "beardcutter": { subtitle: "Goblin Slayer", aliases: ["goblin slayer", "brick slayer", "gob", "gob slayer", "goblin"], notice: "Given out during Pucci update for Wiki workers.", obtainability: "UNOB" },
   "ultra-legendary-borul-alternative": { name: "Ultra Legendary Borul (Alternative)", subtitle: "Ultra DBZ Broly", aliases: ["ultra legendary borul", "ultra dbz broly", "ultra broly", "udbz", "ultra dbz", "LSSJ Broly", "ul-borul-alt"], obtainability: "UNOB" },
@@ -48,7 +51,7 @@ export const UNIT_METADATA: Record<string, UnitMeta> = {
   "flame-servant": { subtitle: "Senji Muramasa", aliases: ["senji muramasa", "senji", "mura", "muramasa", "masa"], obtainability: "UNOB" },
   "water-goddess": { subtitle: "Aqua", aliases: ["aqua", "konosuba"], obtainability: "UNOB" },
   "the-ripper": { subtitle: "Riyo Reaper", aliases: ["riyo reaper", "riyo", "riyou", "rippa"], obtainability: "UNOB" },
-  "zaruto-grr-iii": { subtitle: "Naruto (GRR III)", aliases: ["naruto (grr iii)", "naruto grr 3", "grr3", "grr 3", "zaruto grr3"], obtainability: "UNOB" },
+  "zaruto-grr-iii": { subtitle: "Naruto (GRR III)", aliases: ["naruto (grr iii)", "naruto grr 3", "grr3", "grr 3", "zaruto grr3"], obtainability: "UNOB", status: "manipulated" },
   "dark-wing": { subtitle: "Ulquiorra", aliases: ["ulquiorra", "ulq"], obtainability: "UNOB" },
   "leaf": { subtitle: "Koishi Komeji", aliases: ["koishi komeji"], obtainability: "UNOB" },
   "crimson-mommy": { subtitle: "Rias Gremory", aliases: ["rias gremory", "rias", "crimson", "mommy"], obtainability: "UNOB" },
@@ -390,13 +393,15 @@ export const UNIT_METADATA: Record<string, UnitMeta> = {
   "10-egg": { name: "10% Egg - Water", subtitle: "Egg", aliases: ["Juvia", "Water Mage"], obtainability: "UNOB" },
   
   // ── Pure Tier ──
+  "demise-pure": { name: "Demise (Pure)", subtitle: "Rem Shinigami", aliases: ["rem shinigami"], obtainability: "UNOB", status: "black-marketed", value: "owner" },
+  "lucina-pure": { name: "Lucina (Pure)", subtitle: "Lucyna Kushinada", aliases: ["lucina", "lucy"], obtainability: "UNOB", status: "black-marketed", value: "owner" },
   "death-pure": { name: "Death (Pure)", subtitle: "Ryuk", aliases: ["ryuk"], obtainability: "UNOB" },
   "legendary-borul-alternative-pure": { name: "Legendary Borul (Alternative) (Pure)", subtitle: "DBZ Broly", aliases: ["dbz broly", "dbz", "DBZ BROLY"], obtainability: "UNOB" },
   "old-will-pure": { name: "Old Will (Pure)", subtitle: "Yamamoto", aliases: ["yamamoto", "yama"], obtainability: "UNOB" },
   "club-beast-pure": { name: "Club Beast (Pure)", subtitle: "Kaido", aliases: ["kaido", "kido"], obtainability: "UNOB" },
   "first-wood-bender-pure": { name: "First Wood Bender (Pure)", subtitle: "Hashirama", aliases: ["hashirama", "hashi"], obtainability: "UNOB" },
   "illusiva-pure": { name: "Illusiva (Pure)", subtitle: "Nero Padoru", aliases: ["nero padoru", "padoru"], obtainability: "UNOB" },
-  "zaruto-grr-iii-pure": { name: "Zaruto (GRR III) (Pure)", subtitle: "Naruto (GRR III)", aliases: ["naruto (grr iii)", "naruto grr 3"], obtainability: "UNOB" },
+  "zaruto-grr-iii-pure": { name: "Zaruto (GRR III) (Pure)", subtitle: "Naruto (GRR III)", aliases: ["naruto (grr iii)", "naruto grr 3"], obtainability: "UNOB", status: "manipulated" },
   "water-goddess-pure": { name: "Water Goddess (Pure)", subtitle: "Aqua", aliases: ["aqua", "konosuba"], obtainability: "UNOB" },
   "varaq-pure": { name: "Varaq (Pure)", subtitle: "Sinbad", aliases: ["sinbad"], obtainability: "UNOB" },
   "hog-eyezen-normal-pure": { name: "Hog Eyezen (NORMAL) (Pure)", subtitle: "Hogyoku Aizen", aliases: ["hogyoku aizen"], obtainability: "UNOB" },
@@ -434,12 +439,13 @@ export const ALL_UNITS: MasterUnit[] = Object.entries(UNIT_METADATA).map(([id, m
   id,
   name: meta.name || id.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
   subtitle: meta.subtitle || "",
-  value: 0,
+  value: meta.value ?? 0,
   rarity: 0,
   supply: 0,
   demand: 0,
   aliases: meta.aliases || [],
   notice: meta.notice || "",
+  status: meta.status || "stable",
   obtainability: meta.obtainability || "UNOB",
   imageUrl: getUnitAssetUrl(id) || undefined
 }));

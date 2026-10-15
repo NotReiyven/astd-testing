@@ -24,6 +24,7 @@ import { ErrorState } from "../ui/ErrorState";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 import { STATUS_COLORS, useEffectiveStatus } from "../../../hooks/usePresence";
 import { UserAvatar } from "../shared/UserAvatar";
+import { DiscordRolePill } from "../shared/DiscordRolePill";
 
 const ROLE_CONFIG: Record<
   string,
@@ -421,19 +422,19 @@ export function MiniProfilePopout() {
                   {stanceCfg.label}
                 </span>
 
-                {profile.role !== "user" && (
-                  <div
-                    className="flex items-center gap-1 px-2 py-0.5 rounded-[4px] border text-[10px] font-bold"
-                    style={{
-                      backgroundColor: ROLE_CONFIG[profile.role]?.bg || "#1e1f22",
-                      color: ROLE_CONFIG[profile.role]?.color,
-                      borderColor: ROLE_CONFIG[profile.role]?.border || "#35373c",
-                    }}
-                  >
-                    <GiCharacter className="w-3 h-3" />
-                    <span>{ROLE_CONFIG[profile.role]?.label}</span>
-                  </div>
-                )}
+                {profile.role_details && profile.role_details.length > 0 ? (
+                  <DiscordRolePill
+                    name={profile.role_details[0].name}
+                    label={profile.role_details[0].label}
+                    color={profile.role_details[0].color}
+                    size="sm"
+                  />
+                ) : profile.role && profile.role !== "user" ? (
+                  <DiscordRolePill
+                    name={profile.role}
+                    size="sm"
+                  />
+                ) : null}
               </div>
 
               {/* Profile Info Box */}
@@ -519,6 +520,44 @@ export function MiniProfilePopout() {
                     <p className="text-[12px] text-foreground/90 leading-relaxed break-words whitespace-pre-wrap">
                       {profile.bio}
                     </p>
+                  </div>
+                )}
+
+                {/* Dedicated Discord Roles Section */}
+                {((profile.role_details && profile.role_details.length > 0) || (profile.role && profile.role !== "user")) && (
+                  <div className="pt-2.5 border-t border-border flex flex-col gap-1.5">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                      Roles
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {profile.role_details && profile.role_details.length > 0 ? (
+                        <>
+                          {profile.role_details.slice(0, 3).map((r) => (
+                            <DiscordRolePill
+                              key={r.name}
+                              name={r.name}
+                              label={r.label}
+                              color={r.color}
+                              size="sm"
+                            />
+                          ))}
+                          {profile.role_details.length > 3 && (
+                            <span
+                              onClick={handleViewFullProfile}
+                              className="inline-flex items-center px-1.5 py-0.5 rounded-[4px] bg-[#2b2d31] hover:bg-[#35373c] border border-[#35373c] text-[10.5px] font-semibold text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                              title={`+${profile.role_details.length - 3} more roles (View Full Profile)`}
+                            >
+                              +{profile.role_details.length - 3}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <DiscordRolePill
+                          name={profile.role}
+                          size="sm"
+                        />
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

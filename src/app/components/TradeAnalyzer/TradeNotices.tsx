@@ -28,6 +28,8 @@ const STATUS_DEFS: Record<string, string> = {
     "If a unit is gatekept, it means owners are refusing to trade this unit for any reason, waiting for a gain in value.",
   "black-marketed":
     "If a unit has this tag, it means that people who buy units with outside-game currency are heavily impacting it.",
+  manipulated:
+    "If a unit has this tag, it is currently being influenced or vote manipulated to change its value or situation.",
   varies:
     "If a unit varies, then it can trade fairly but it can also fluctuate significantly.",
 };

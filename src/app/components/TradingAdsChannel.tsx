@@ -25,6 +25,7 @@ import { EmptyState } from "./ui/EmptyState";
 import { AsyncButton } from "./ui/AsyncButton";
 import { STATUS_COLORS, useEffectiveStatus } from "../../hooks/usePresence";
 import { UserAvatar } from "./shared/UserAvatar";
+import { DiscordRolePill } from "./shared/DiscordRolePill";
 
 const SORT_OPTIONS = {
   newest: "Recently Posted",
@@ -463,16 +464,25 @@ const VanguardAdCard = memo(
               />
             </div>
             <div className="flex flex-col min-w-0 pt-0.5">
-              <span
-                className="text-[var(--ui-text-base)] font-bold text-foreground tracking-tight leading-none mb-1.5 truncate cursor-pointer hover:underline"
-                onClick={(e) => {
-                  triggerHaptic("light");
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  openPopout(ad.user_id, rect.left, rect.bottom);
-                }}
-              >
-                {ad.profiles?.username || "Unknown"}
-              </span>
+              <div className="flex items-center gap-2 mb-1 min-w-0">
+                <span
+                  className="text-[var(--ui-text-base)] font-bold text-foreground tracking-tight leading-none truncate cursor-pointer hover:underline"
+                  onClick={(e) => {
+                    triggerHaptic("light");
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    openPopout(ad.user_id, rect.left, rect.bottom);
+                  }}
+                >
+                  {ad.profiles?.username || "Unknown"}
+                </span>
+                {ad.profiles?.role && ad.profiles.role !== "user" && (
+                  <DiscordRolePill
+                    name={ad.profiles.role}
+                    size="sm"
+                    className="shrink-0"
+                  />
+                )}
+              </div>
               <span className="text-[var(--ui-text-xs)] text-muted-foreground font-medium leading-none flex items-center gap-1.5">
                 {getTimeAgo(ad.created_at)}
               </span>
