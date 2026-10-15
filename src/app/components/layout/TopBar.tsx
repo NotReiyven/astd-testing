@@ -402,7 +402,7 @@ export function TopBar({
                     <Link
                       to="/notifications"
                       onClick={() => setIsNotifMenuOpen(false)}
-                      className="block w-full text-center text-[12px] font-bold text-primary hover:text-white transition-colors p-2 bg-primary/10 hover:bg-primary/20 rounded-md"
+                      className="block w-full text-center text-[12px] font-bold text-white transition-colors p-2 bg-[#5865F2] hover:bg-[#4752c4] rounded-md shadow-xs"
                     >
                       View all notifications
                     </Link>

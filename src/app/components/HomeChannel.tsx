@@ -488,8 +488,8 @@ export function HomeChannel({
               <div className="flex flex-col items-center sm:items-start text-center sm:text-left flex-1">
                 <div className="flex flex-wrap justify-center sm:justify-start items-center gap-2 mb-1.5">
                   <h4 className="text-[20px] font-black text-foreground tracking-tight">Reiyven</h4>
-                  <span className="bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] border border-primary/30 flex items-center gap-1.5">
-                    <GiSpellBook className="w-3 h-3" /> Lead Web Developer
+                  <span className="bg-[#5865F2] text-white text-[10.5px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-[4px] border border-[#5865F2]/40 flex items-center gap-1.5 shadow-xs font-mono">
+                    <GiSpellBook className="w-3.5 h-3.5" /> Lead Web Developer
                   </span>
                 </div>
                 <p className="text-[12px] font-bold text-muted-foreground mb-3 uppercase tracking-wide">Raven • 3rd Year BSCS @ PHILIPPINES</p>

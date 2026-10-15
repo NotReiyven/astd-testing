@@ -1,6 +1,7 @@
 import { useEffect, type KeyboardEvent } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { BellRing, Check, Trash2 } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
+import { GiRingingBell } from "react-icons/gi";
 import {
   useNotificationStore,
   type AppNotification,
@@ -141,7 +142,7 @@ export function NotificationsChannel() {
       <div className="w-full h-full flex flex-col items-center justify-center px-4 md:px-8 py-8 bg-background text-foreground">
         <div className="w-full max-w-md">
           <EmptyState
-            icon={<BellRing className="w-5 h-5" />}
+            icon={<GiRingingBell className="w-5 h-5" />}
             title="Sign In to View Notifications"
             description="Connect your Discord account to receive alerts when traders upvote, comment on, or reply to your trade listings."
             action={{
@@ -160,10 +161,10 @@ export function NotificationsChannel() {
         <div className="flex items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
             <h1 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
-              <BellRing className="w-6 h-6 text-primary" />
+              <GiRingingBell className="w-6 h-6 text-primary" />
               Notifications
               {unreadCount > 0 && (
-                <span className="text-[12px] font-mono font-bold px-2 py-0.5 rounded-[4px] bg-primary/15 text-primary border border-primary/30 tabular-nums">
+                <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-[4px] bg-[#5865F2] text-white border border-[#5865F2]/40 tabular-nums uppercase tracking-wider shadow-xs">
                   {unreadCount} unread
                 </span>
               )}
@@ -191,7 +192,7 @@ export function NotificationsChannel() {
           ) : null
         ) : notifications.length === 0 ? (
           <EmptyState
-            icon={<BellRing className="w-5 h-5" />}
+            icon={<GiRingingBell className="w-5 h-5" />}
             title="All Caught Up"
             description="You have no notifications yet. Activity on your trade listings and comments will appear here."
             action={{

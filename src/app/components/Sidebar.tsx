@@ -3,14 +3,6 @@ import {
   Hash,
   ChevronDown,
   Plus,
-  Lock,
-  Megaphone,
-  Shield,
-  FileText,
-  Package,
-  ShieldAlert,
-  User,
-  BellRing,
 } from "lucide-react";
 import {
   GiCastle,
@@ -27,7 +19,9 @@ import {
   GiFeather,
   GiSwordsEmblem,
   GiShieldEchoes,
-  GiCharacter
+  GiCharacter,
+  GiRingingBell,
+  GiPadlock,
 } from "react-icons/gi";
 import { FilterKey } from "../../types";
 import { useUnits } from "../../context/UnitContext";
@@ -66,7 +60,7 @@ const BASE_CATEGORIES: CategoryConfig[] = [
     id: "trading",
     label: "trading",
     channels: [
-      { id: "notifications", label: "notifications", isLocked: true, icon: BellRing },
+      { id: "notifications", label: "notifications", isLocked: true, icon: GiRingingBell },
         { id: "profile", label: "my-profile", isLocked: true, icon: GiCharacter },
       { id: "inventory", label: "my-inventory", isLocked: true, icon: GiBackpack },
       {
@@ -137,7 +131,7 @@ export function Sidebar({
             id: "admin-panel",
             label: "admin-panel",
             isLocked: true,
-            icon: ShieldAlert,
+            icon: GiShieldEchoes,
           },
         ],
       });
@@ -283,7 +277,7 @@ export function Sidebar({
                               {channel.isLocked ? (
                                 <div className="relative flex items-center justify-center w-4 h-4 flex-shrink-0">
                                   <Icon className="w-4 h-4" />
-                                  <Lock
+                                  <GiPadlock
                                     className={`w-2.5 h-2.5 absolute -bottom-1 -right-1 rounded-full p-[1px] ${
                                       isTarget ? "bg-primary" : "bg-card"
                                     }`}

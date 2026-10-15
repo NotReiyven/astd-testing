@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { Shield } from "lucide-react";
 import {
   GiTrade,
   GiMegaphone,
   GiChest,
   GiHourglass,
+  GiShieldEchoes,
 } from "react-icons/gi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTradeStore } from "../../../store/useTradeStore";
@@ -547,16 +547,16 @@ export function AdComposerModal() {
               {isOnCooldown && (
                 <div
                   role="alert"
-                  className="bg-[#281b0a] border border-[#b45309] px-3.5 py-2.5 rounded-[6px] text-[#fbbf24] text-[12px] font-medium flex items-center justify-between gap-2.5"
+                  className="bg-[#d97706] text-white border border-[#f59e0b]/40 px-3.5 py-2.5 rounded-[6px] text-[12px] font-bold flex items-center justify-between gap-2.5 shadow-xs"
                 >
                   <div className="flex items-center gap-2">
                     <GiHourglass
-                      className="w-4 h-4 text-[#fbbf24] animate-spin"
+                      className="w-4 h-4 text-white animate-spin"
                       style={{ animationDuration: "8s" }}
                     />
                     <span>Posting cooldown active:</span>
                   </div>
-                  <span className="font-mono font-bold px-2 py-0.5 rounded bg-black/40 text-foreground tabular-nums">
+                  <span className="font-mono font-bold px-2 py-0.5 rounded bg-black/30 text-white tabular-nums">
                     {formattedCooldown}
                   </span>
                 </div>
@@ -565,36 +565,36 @@ export function AdComposerModal() {
               {isAtMaxActiveAds && !isOnCooldown && (
                 <div
                   role="alert"
-                  className="bg-[#241215] border border-[#ef4444] px-3.5 py-2.5 rounded-[6px] text-[#f87171] text-[12px] font-medium flex items-center justify-between gap-2.5"
+                  className="bg-[#ef4444] text-white border border-[#ef4444]/40 px-3.5 py-2.5 rounded-[6px] text-[12px] font-bold flex items-center justify-between gap-2.5 shadow-xs"
                 >
                   <span>
                     Listing limit reached (3/3 active). Delete an existing ad to post.
                   </span>
-                  <span className="font-mono font-bold px-2 py-0.5 rounded bg-black/40 text-[#f87171]">
+                  <span className="font-mono font-bold px-2 py-0.5 rounded bg-black/30 text-white">
                     3/3
                   </span>
                 </div>
               )}
 
               {isStaff ? (
-                <div className="flex items-center justify-between px-3 py-1.5 rounded-[4px] bg-primary/10 border border-primary/25 text-primary text-[11px] font-medium">
-                  <span className="flex items-center gap-1.5">
-                    <Shield className="w-3.5 h-3.5 shrink-0" />
+                <div className="flex items-center justify-between px-3 py-1.5 rounded-[4px] bg-[#5865F2] text-white border border-[#5865F2]/40 text-[11px] font-bold shadow-xs">
+                  <span className="flex items-center gap-1.5 uppercase font-mono tracking-wider">
+                    <GiShieldEchoes className="w-3.5 h-3.5 shrink-0" />
                     <span>Staff Bypass Enabled</span>
                   </span>
-                  <span>Unlimited listings · Zero cooldown</span>
+                  <span className="opacity-95 font-medium normal-case font-sans">Unlimited listings · Zero cooldown</span>
                 </div>
               ) : (
-                <div className="flex items-center justify-between px-3 py-1.5 rounded-[4px] bg-muted/40 border border-border text-muted-foreground text-[11px]">
+                <div className="flex items-center justify-between px-3 py-1.5 rounded-[4px] bg-muted/60 border border-border text-foreground text-[11px]">
                   <span>
                     Active Listings:{" "}
-                    <strong className="text-foreground font-mono">
+                    <strong className="text-white font-mono">
                       {activeAdsCount}/3
                     </strong>
                   </span>
                   <span>
                     Cooldown:{" "}
-                    <strong className="text-foreground">15 min</strong>
+                    <strong className="text-white">15 min</strong>
                   </span>
                 </div>
               )}

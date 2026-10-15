@@ -7,8 +7,6 @@ import {
   ArrowBigDown,
   Send,
   Trash2,
-  ShieldAlert,
-  Clock,
   Reply,
   Calculator,
   Share2,
@@ -18,8 +16,12 @@ import {
   Search,
   ChevronDown,
   ChevronUp,
-  Lock,
 } from "lucide-react";
+import {
+  GiShieldEchoes,
+  GiHourglass,
+  GiPadlock,
+} from "react-icons/gi";
 import {
   useAdInteractionStore,
   AdComment,
@@ -837,14 +839,14 @@ export function AdInteractionModal() {
                 </span>
 
                 {isOp && (
-                  <span className="bg-primary/20 text-primary border border-primary/30 text-[9px] font-black px-1.5 py-0.5 rounded-[2px] uppercase tracking-wider">
+                  <span className="bg-primary text-primary-foreground border border-primary/40 text-[9px] font-black font-mono px-1.5 py-0.5 rounded-[3px] uppercase tracking-wider shadow-xs">
                     OP
                   </span>
                 )}
 
                 {["mod", "admin", "master"].includes(comment.profiles.role) && (
-                  <span className="bg-muted text-foreground border border-border text-[9px] font-black px-1.5 py-0.5 rounded-[2px] uppercase tracking-wider flex items-center gap-1">
-                    <ShieldAlert className="w-2.5 h-2.5 text-primary" /> Staff
+                  <span className="bg-[#5865F2] text-white border border-[#5865F2]/40 text-[9px] font-black font-mono px-1.5 py-0.5 rounded-[3px] uppercase tracking-wider flex items-center gap-1 shadow-xs">
+                    <GiShieldEchoes className="w-2.5 h-2.5" /> Staff
                   </span>
                 )}
               </div>
@@ -979,13 +981,13 @@ export function AdInteractionModal() {
   const isInventory = activeAd.ad_type === "inventory";
 
   let statusLabel = "Specific Trade";
-  let statusColor = "bg-popover border-border text-foreground";
+  let statusColor = "bg-[#5865F2] text-white border-[#5865F2]/40 shadow-xs";
   if (isInventory) {
-    statusLabel = "Showcase";
-    statusColor = "bg-popover border-border text-foreground";
+    statusLabel = "Vault Showcase";
+    statusColor = "bg-[#23a559] text-white border-[#23a559]/40 shadow-xs";
   } else if (isTakingOffers) {
     statusLabel = "Taking Offers";
-    statusColor = "bg-primary/10 border-primary/30 text-primary";
+    statusColor = "bg-[#d97706] text-white border-[#f59e0b]/40 shadow-xs";
   }
 
   const totalGiveVal = activeAd.give_items.reduce((acc, i) => {
@@ -1027,7 +1029,7 @@ export function AdInteractionModal() {
               {statusLabel}
             </span>
             <span className="text-[12px] font-mono font-medium text-muted-foreground flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5" /> Posted{" "}
+              <GiHourglass className="w-3.5 h-3.5" /> Posted{" "}
               {getTimeAgoShort(activeAd.created_at)}
             </span>
           </div>
@@ -1494,7 +1496,7 @@ export function AdInteractionModal() {
               {isExpired ? (
                 <div className="w-full bg-card/60 text-muted-foreground text-[12.5px] font-medium py-3 px-4 rounded-[6px] border border-border flex items-center justify-between gap-3">
                   <span className="flex items-center gap-2">
-                    <Lock className="w-3.5 h-3.5 text-[#fbbf24] shrink-0" />
+                    <GiPadlock className="w-3.5 h-3.5 text-[#fbbf24] shrink-0" />
                     <span>
                       This trade listing has expired. Discussion is archived in read-only mode.
                     </span>

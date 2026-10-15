@@ -1,6 +1,14 @@
 import { useState, useEffect, useMemo, useRef, memo } from "react";
-import { Search, Plus, Trash2, Check, Send, Clock, ArrowBigUp, ArrowBigDown, Shield } from "lucide-react";
-import { GiMegaphone, GiHourglass, GiLockedFortress, GiAbacus, GiChest, GiChatBubble } from "react-icons/gi";
+import { Search, Plus, Trash2, Check, ArrowBigUp, ArrowBigDown } from "lucide-react";
+import {
+  GiMegaphone,
+  GiHourglass,
+  GiLockedFortress,
+  GiAbacus,
+  GiChest,
+  GiChatBubble,
+  GiShieldEchoes,
+} from "react-icons/gi";
 import { supabase } from "../../lib/supabase";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -610,7 +618,7 @@ const VanguardAdCard = memo(
             {isContacting ? (
               <Check className="w-4 h-4" />
             ) : (
-              <Send className="w-4 h-4" />
+              <GiChatBubble className="w-4 h-4" />
             )}
             {isContacting ? "Copied! Paste in Discord" : "Contact on Discord"}
           </button>
@@ -1055,7 +1063,7 @@ export function TradingAdsChannel() {
       </div>
       <div className="w-full sm:w-[190px] shrink-0">
         <CustomDropdown
-          icon={Clock}
+          icon={GiHourglass}
           value={sortMode}
           options={SORT_OPTIONS}
           onChange={(val: string) => {
@@ -1076,18 +1084,18 @@ export function TradingAdsChannel() {
           {isStaff ? (
             <div
               title="Staff Role: Bypass active listings limit and post cooldowns"
-              className="hidden sm:flex items-center gap-1.5 px-2.5 h-[var(--ui-height-btn)] rounded-[4px] bg-primary/10 border border-primary/30 text-primary text-xs font-semibold shrink-0"
+              className="hidden sm:flex items-center gap-1.5 px-2.5 h-[var(--ui-height-btn)] rounded-[4px] bg-[#5865F2] text-white border border-[#5865F2]/40 text-xs font-bold font-mono uppercase tracking-wider shrink-0 shadow-xs select-none"
             >
-              <Shield className="w-3.5 h-3.5 shrink-0" />
+              <GiShieldEchoes className="w-3.5 h-3.5 shrink-0" />
               <span>Staff Bypass</span>
             </div>
           ) : (
             <div
               title="Your active trade listings (Max 3)"
-              className={`hidden sm:flex items-center gap-1.5 px-2.5 h-[var(--ui-height-btn)] rounded-[4px] border text-xs font-semibold shrink-0 ${
+              className={`hidden sm:flex items-center gap-1.5 px-2.5 h-[var(--ui-height-btn)] rounded-[4px] border text-xs font-semibold shrink-0 select-none ${
                 isAtMaxActiveAds
-                  ? "bg-[#241215] border-[#ef4444] text-[#f87171]"
-                  : "bg-muted border border-border text-muted-foreground"
+                  ? "bg-[#ef4444] text-white border-[#ef4444]/40 font-bold shadow-xs"
+                  : "bg-muted border border-border text-foreground font-medium"
               }`}
             >
               <span>Ads:</span>
@@ -1101,10 +1109,10 @@ export function TradingAdsChannel() {
           {isOnCooldown && (
             <div
               title="Trade listing cooldown remaining"
-              className="flex items-center gap-1.5 px-2.5 h-[var(--ui-height-btn)] rounded-[4px] bg-[#281b0a] border border-[#b45309] text-[#fbbf24] text-xs font-mono font-bold shrink-0 tabular-nums shadow-xs"
+              className="flex items-center gap-1.5 px-2.5 h-[var(--ui-height-btn)] rounded-[4px] bg-[#d97706] border border-[#f59e0b]/40 text-white text-xs font-mono font-bold shrink-0 tabular-nums shadow-xs select-none"
             >
               <GiHourglass
-                className="w-3.5 h-3.5 text-[#fbbf24] animate-spin"
+                className="w-3.5 h-3.5 text-white animate-spin"
                 style={{ animationDuration: "8s" }}
               />
               <span>{formattedCooldown}</span>
@@ -1120,7 +1128,7 @@ export function TradingAdsChannel() {
                 : "bg-primary hover:bg-primary/90 text-primary-foreground border-primary"
             }`}
           >
-            <Plus className="w-4 h-4" />
+            <GiMegaphone className="w-4 h-4" />
             <span>
               {isOnCooldown ? `Create Ad (${formattedCooldown})` : "Create Ad"}
             </span>

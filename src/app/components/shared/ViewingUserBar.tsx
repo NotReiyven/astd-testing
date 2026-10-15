@@ -61,7 +61,7 @@ export function ViewingUserBar({
 
       {/* Middle: Trader Identity Context */}
       <div className="flex items-center gap-2 min-w-0 mx-2">
-        <span className="bg-primary/20 text-primary border border-primary/30 text-[10px] sm:text-[10.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] shrink-0">
+        <span className="bg-[#5865F2] text-white border border-[#5865F2]/40 text-[10px] sm:text-[10.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] shrink-0 font-mono shadow-xs">
           Viewing
         </span>
         <span

@@ -51,10 +51,10 @@ export function getEarlyUserRole(
     return {
       id: "founder",
       label: "Founder",
-      dotColor: "#f59e0b",
-      bg: "#261a06",
-      border: "#f59e0b",
-      color: "#fbbf24",
+      dotColor: "#000000",
+      bg: "#f59e0b",
+      border: "rgba(0, 0, 0, 0.25)",
+      color: "#000000",
       tooltip: "Early Adopter: Top 5 Founding Member",
     };
   }
@@ -62,10 +62,10 @@ export function getEarlyUserRole(
     return {
       id: "og",
       label: "OG",
-      dotColor: "#f97316",
-      bg: "#26160a",
-      border: "#f97316",
-      color: "#fdba74",
+      dotColor: "#000000",
+      bg: "#f97316",
+      border: "rgba(0, 0, 0, 0.25)",
+      color: "#000000",
       tooltip: "Early Adopter: Top 25 Community Member",
     };
   }
@@ -73,10 +73,10 @@ export function getEarlyUserRole(
     return {
       id: "veteran",
       label: "Veteran",
-      dotColor: "#38bdf8",
-      bg: "#0c1d2e",
-      border: "#38bdf8",
-      color: "#7dd3fc",
+      dotColor: "#ffffff",
+      bg: "#0284c7",
+      border: "rgba(255, 255, 255, 0.25)",
+      color: "#ffffff",
       tooltip: "Early Adopter: Top 100 Community Member",
     };
   }

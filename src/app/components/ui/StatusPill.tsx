@@ -45,12 +45,12 @@ const DEFAULT_LABELS: Record<StatusPillState, string> = {
 };
 
 const TONE_CLASSES: Record<StatusPillState, string> = {
-  syncing: "border-primary/40 bg-primary/10 text-primary",
-  synced: "border-success/35 bg-success/10 text-success",
-  offline: "border-warning/40 bg-warning/10 text-warning",
-  warning: "border-warning/40 bg-warning/10 text-warning",
-  error: "border-destructive/45 bg-destructive/10 text-destructive",
-  idle: "border-border bg-secondary/60 text-muted-foreground",
+  syncing: "border-[#5865F2]/40 bg-[#5865F2] text-white shadow-xs",
+  synced: "border-[#23a559]/40 bg-[#23a559] text-white shadow-xs",
+  offline: "border-[#d97706]/40 bg-[#d97706] text-white shadow-xs",
+  warning: "border-[#d97706]/40 bg-[#d97706] text-white shadow-xs",
+  error: "border-[#ef4444]/40 bg-[#ef4444] text-white shadow-xs",
+  idle: "border-border bg-muted text-foreground",
 };
 
 export function StatusPill({
@@ -140,13 +140,13 @@ export function StatusPill({
       <span>{displayLabel}</span>
 
       {resolvedTimestamp !== null && state !== "syncing" && (
-        <span className="text-muted-foreground font-medium">
+        <span className={state === "idle" ? "text-muted-foreground font-medium" : "text-white/90 font-medium"}>
           · {formatRelativeTime(resolvedTimestamp)}
         </span>
       )}
 
       {nextStepHint && (
-        <span className="text-muted-foreground font-medium hidden sm:inline">
+        <span className={state === "idle" ? "text-muted-foreground font-medium hidden sm:inline" : "text-white/90 font-medium hidden sm:inline"}>
           · {nextStepHint}
         </span>
       )}
