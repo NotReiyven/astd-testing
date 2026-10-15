@@ -16,11 +16,90 @@ export interface DynamicMarketTag {
   border?: string;
 }
 
+export interface ParsedCredits {
+  foundedBy: string[];
+  valueListTeam: string[];
+  exStaff: string[];
+  qualityAssurance: string[];
+}
+
+export const DEFAULT_CREDITS: ParsedCredits = {
+  foundedBy: ["EpicInfinity", "Soupermunki"],
+  valueListTeam: [
+    "Batata_Uy142",
+    "Gabe",
+    "Azking",
+    "Vex",
+    "iamtoostupid",
+    "bidniman",
+    "sr.jean32",
+  ],
+  qualityAssurance: [
+    "aezkmi.",
+    "Dark",
+    "dummy",
+    "george",
+    "JC",
+    "kushu",
+    "plouf",
+    "YuZO",
+  ],
+  exStaff: [
+    "Ded_Sen",
+    "Crimson Desire",
+    "Brysans",
+    "SquidyMotion",
+    "Luk",
+    "Hero",
+    "soupermunki",
+    "dennis.67",
+    "hopper duper",
+    "Poxie",
+    "Iridescent Equinox",
+    "Pchongle",
+    "unobium",
+    "Demonfox",
+    "73r02",
+    "GorillaTactics92",
+    "MicroJillyWilly",
+    "Doggod",
+    "kosu",
+    "Paker",
+    "Terry Preforms the Hottest Dance",
+    "Kiwami",
+    "brogee",
+    "Leo.",
+    ".arkss",
+    "Trvz",
+    "Up",
+    "Vantagehgc",
+    "fortnitekid",
+    "Mikoto",
+    "En Thobias12",
+    "Miro.y",
+    "arkysesh",
+    "brickz7",
+    "Venus",
+    "AdamSBDG7",
+    ".halw",
+    "NathanPlayz",
+    "orangehairfunnyman",
+    ".olivia.rodrigo.",
+    "Felta",
+    "VerotObelyn",
+    "Kyo",
+    "kushuonkush",
+    "yourlocalsalt",
+    "GoofyIsMad",
+  ],
+};
+
 type UnitContextType = {
   units: MasterUnit[];
   changelog: string[];
   notices: { title: string; date: string | null; content: string }[];
   tags: DynamicMarketTag[];
+  credits: ParsedCredits;
   sheetTitle: string;
   lastUpdated: string;
   isLoading: boolean;
@@ -44,6 +123,7 @@ const UnitContext = createContext<UnitContextType>({
   changelog: [],
   notices: [],
   tags: [],
+  credits: DEFAULT_CREDITS,
   sheetTitle: "ASTD Official Value List",
   lastUpdated: DEFAULT_LAST_UPDATED,
   isLoading: true,
@@ -95,6 +175,7 @@ export const UnitProvider = ({ children }: { children: React.ReactNode }) => {
         changelog: json.changelog || [],
         notices: json.notices || [],
         tags: json.tags || [],
+        credits: json.credits || DEFAULT_CREDITS,
         sheetTitle: json.sheetTitle || "ASTD Official Value List",
         lastUpdated: json.lastUpdated || new Date().toISOString(),
       };
@@ -116,6 +197,7 @@ export const UnitProvider = ({ children }: { children: React.ReactNode }) => {
       changelog: data?.changelog || [],
       notices: data?.notices || [],
       tags: data?.tags || [],
+      credits: data?.credits || DEFAULT_CREDITS,
       sheetTitle: data?.sheetTitle || "ASTD Official Value List",
       lastUpdated: data?.lastUpdated || DEFAULT_LAST_UPDATED,
       isLoading,

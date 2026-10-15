@@ -15,7 +15,7 @@ import {
   GiClockwork,
   GiCastle,
 } from "react-icons/gi";
-import { useUnits, useUnitSync } from "../../context/UnitContext";
+import { useUnits, useUnitSync, DEFAULT_CREDITS } from "../../context/UnitContext";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
 import { useLayoutStore } from "../../store/useLayoutStore";
 import { useToastStore } from "../../store/useToastStore";
@@ -56,7 +56,8 @@ function CreditBadge({ name, color }: { name: string; color: string }) {
       type="button"
       onClick={() => void handleCopy()}
       title={`Copy ${name} to clipboard`}
-      className="bg-popover hover:bg-muted border border-border px-2.5 py-1.5 rounded-[4px] text-[12px] font-bold shadow-sm transition-colors active:scale-95 flex items-center justify-center min-w-[60px] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      aria-label={`Copy ${name} to clipboard`}
+      className="bg-popover hover:bg-muted border border-border px-2.5 py-1.5 rounded-[4px] text-[12px] font-bold shadow-sm transition-[background-color,border-color,transform] active:scale-95 flex items-center justify-center min-w-[60px] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       style={{
         color: copied ? "#000000" : "inherit",
         backgroundColor: copied ? color : undefined,
@@ -77,7 +78,7 @@ export function HomeChannel({
   guideState?: { type: string | null; step: number };
 }) {
   const [activeSection, setActiveSection] = useState<string>("info");
-  const { changelog } = useUnits();
+  const { changelog, credits } = useUnits();
   const { isLoading, isSyncing, isError, lastUpdatedAt, refetch } =
     useUnitSync();
   const showChangelogSkeleton = useShowDelay(isLoading);
@@ -157,49 +158,21 @@ export function HomeChannel({
     return blocks;
   }, [changelog]);
 
-  const exStaffList = [
-    "Ded_Sen",
-    "Crimson Desire",
-    "Brysans",
-    "SquidyMotion",
-    "Luk",
-    "Hero",
-    "soupermunki",
-    "dennis.67",
-    "hopper duper",
-    "Poxie",
-    "Iridescent Equinox",
-    "Pchongle",
-    "unobium",
-    "Demonfox",
-    "GorillaTactics92",
-    "MicroJillyWilly",
-    "Doggod",
-    "kosu",
-    "Paker",
-    "Kiwami",
-    "brogee",
-    "Leo",
-    "arkss",
-    "Trvz",
-    "Up",
-    "Vantagehgc",
-    "fortnitekid",
-    "Mikoto",
-    "En Thobias12",
-    "Miro_y",
-    "arkysesh",
-    "brickz7",
-    "Venus",
-    "AdamSBDG7",
-    "halw",
-    "NathanPlayz",
-    "orangehairfunnyman",
-    "olivia.rodrigo",
-    "Felta",
-    "VerotObelyn",
-    "Kyo",
-  ];
+  const foundedBy = useMemo(() => {
+    return credits?.foundedBy?.length ? credits.foundedBy : DEFAULT_CREDITS.foundedBy;
+  }, [credits?.foundedBy]);
+
+  const valueListTeam = useMemo(() => {
+    return credits?.valueListTeam?.length ? credits.valueListTeam : DEFAULT_CREDITS.valueListTeam;
+  }, [credits?.valueListTeam]);
+
+  const qualityAssurance = useMemo(() => {
+    return credits?.qualityAssurance?.length ? credits.qualityAssurance : DEFAULT_CREDITS.qualityAssurance;
+  }, [credits?.qualityAssurance]);
+
+  const exStaffList = useMemo(() => {
+    return credits?.exStaff?.length ? credits.exStaff : DEFAULT_CREDITS.exStaff;
+  }, [credits?.exStaff]);
 
   const creditsBottomImage = getUnitAssetUrl("all-star") || "";
   const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
@@ -530,28 +503,31 @@ export function HomeChannel({
               <div className="bg-card border border-border rounded-[8px] p-5 shadow-sm">
                 <h3 className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-3">List Founded By</h3>
                 <div className="flex flex-wrap gap-2">
-                  <CreditBadge name="EpicInfinity" color="#ededed" />
-                  <CreditBadge name="Soupermunki" color="#ededed" />
+                  {foundedBy.map((n) => (
+                    <CreditBadge key={n} name={n} color="#ededed" />
+                  ))}
                 </div>
               </div>
               <div className="bg-card border border-border rounded-[8px] p-5 shadow-sm">
                 <h3 className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Value List Team</h3>
                 <div className="flex flex-wrap gap-2">
-                  {["Batata_Uy142", "Gabe", "Goofyismad", "Azking", "Codythechickenman", "Suns_Radiance", "Vex"].map((n) => (
+                  {valueListTeam.map((n) => (
                     <CreditBadge key={n} name={n} color="#ededed" />
                   ))}
                 </div>
               </div>
             </div>
 
-            <div className="bg-card border border-border rounded-[8px] p-5 shadow-sm">
-              <h3 className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Quality Assurance</h3>
-              <div className="flex flex-wrap gap-2">
-                {["aezkmi.", "Dark", "dummy", "george", "JC", "kushu", "plouf", "YuZO"].map((n) => (
-                  <CreditBadge key={n} name={n} color="#22c55e" />
-                ))}
+            {qualityAssurance.length > 0 && (
+              <div className="bg-card border border-border rounded-[8px] p-5 shadow-sm">
+                <h3 className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Quality Assurance</h3>
+                <div className="flex flex-wrap gap-2">
+                  {qualityAssurance.map((n) => (
+                    <CreditBadge key={n} name={n} color="#22c55e" />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="bg-card border border-border rounded-[8px] p-5 shadow-sm">
               <h3 className="flex items-center gap-2 text-[12px] font-bold text-muted-foreground uppercase tracking-wider mb-3">

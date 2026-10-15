@@ -125,14 +125,170 @@ export function cleanText(input: string | undefined): string {
   return input.replace(/<[^>]*>?/gm, '').trim();
 }
 
+export interface ParsedCredits {
+  foundedBy: string[];
+  valueListTeam: string[];
+  exStaff: string[];
+  qualityAssurance: string[];
+}
+
+export function parseCreditsFromHomeSheet(rowData: RowData[]): ParsedCredits {
+  let foundedBy: string[] = ["EpicInfinity", "Soupermunki"];
+  const valueListTeam: string[] = [];
+  const exStaff: string[] = [];
+  const qualityAssurance: string[] = [
+    "aezkmi.",
+    "Dark",
+    "dummy",
+    "george",
+    "JC",
+    "kushu",
+    "plouf",
+    "YuZO",
+  ];
+
+  let inCredits = false;
+  let currentSection: "team" | "ex-staff" | "qa" | "" = "";
+
+  for (const row of rowData) {
+    if (!row.values) continue;
+    const colB = cleanText(row.values[1]?.formattedValue);
+    if (!colB) continue;
+
+    const lower = colB.toLowerCase();
+
+    if (lower === "credits") {
+      inCredits = true;
+      currentSection = "";
+      continue;
+    }
+
+    if (!inCredits) continue;
+
+    if (lower.startsWith("list founded by")) {
+      const raw = colB.replace(/^list founded by:?/i, "").trim();
+      const parsedFounders = raw
+        .split(/\s*(?:and|,|&)\s*/i)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (parsedFounders.length > 0) {
+        foundedBy = parsedFounders;
+      }
+      currentSection = "";
+      continue;
+    }
+
+    if (lower.includes("value list team") && !lower.includes("note")) {
+      currentSection = "team";
+      continue;
+    }
+
+    if (lower.includes("ex-staff") || lower.includes("ex-staffs")) {
+      currentSection = "ex-staff";
+      continue;
+    }
+
+    if (lower.includes("quality assurance") || lower === "qa") {
+      currentSection = "qa";
+      continue;
+    }
+
+    if (currentSection === "team") {
+      const names = colB
+        .split(/,\s*/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      valueListTeam.push(...names);
+      currentSection = "";
+      continue;
+    }
+
+    if (currentSection === "qa") {
+      const names = colB
+        .split(/,\s*/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (names.length > 0) {
+        qualityAssurance.length = 0;
+        qualityAssurance.push(...names);
+      }
+      currentSection = "";
+      continue;
+    }
+
+    if (currentSection === "ex-staff") {
+      const sanitized = colB.replace(/\p{Extended_Pictographic}/gu, " ");
+      const lines = sanitized.split(/[\r\n,]+/);
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+
+        const taggedRegex = /([^\n#]+?)#\d{3,5}(?:\s+|$)/g;
+        let match;
+        let lastIndex = 0;
+
+        while ((match = taggedRegex.exec(line)) !== null) {
+          let rawChunk = match[1].trim();
+          rawChunk = rawChunk.replace(/^[•\s\-_.]+/, "").trim();
+          if (rawChunk) {
+            exStaff.push(rawChunk);
+          }
+          lastIndex = taggedRegex.lastIndex;
+        }
+
+        const tail = line.slice(lastIndex).trim();
+        if (tail) {
+          const tokens = tail
+            .split(/\s+/)
+            .map((t) => t.trim())
+            .filter(Boolean);
+          for (let i = 0; i < tokens.length; i++) {
+            if (
+              tokens[i].toLowerCase() === "en" &&
+              tokens[i + 1]?.toLowerCase()?.startsWith("thobias")
+            ) {
+              exStaff.push(`${tokens[i]} ${tokens[i + 1]}`);
+              i++;
+            } else {
+              exStaff.push(tokens[i]);
+            }
+          }
+        }
+      }
+      currentSection = "";
+      continue;
+    }
+  }
+
+  const cleanExStaff = Array.from(
+    new Set(exStaff.map((s) => s.trim()))
+  ).filter((s) => s.length > 1);
+
+  return {
+    foundedBy,
+    valueListTeam:
+      valueListTeam.length > 0
+        ? valueListTeam
+        : ["Batata_Uy142", "Gabe", "Azking", "Vex", "iamtoostupid", "bidniman", "sr.jean32"],
+    exStaff: cleanExStaff,
+    qualityAssurance,
+  };
+}
+
 export function parseSpreadsheet(data: SpreadsheetData) {
   const parsedUnits: ParsedUnit[] = [];
   const changelog: string[] = [];
   const notices: ParsedNotice[] = [];
+  let parsedCredits: ParsedCredits = {
+    foundedBy: ["EpicInfinity", "Soupermunki"],
+    valueListTeam: ["Batata_Uy142", "Gabe", "Azking", "Vex", "iamtoostupid", "bidniman", "sr.jean32"],
+    exStaff: [],
+    qualityAssurance: ["aezkmi.", "Dark", "dummy", "george", "JC", "kushu", "plouf", "YuZO"],
+  };
   const idTracker = new Map<string, number>(); 
   const sheetTitle = data.properties?.title || "ASTD Official Value List";
 
-  if (!data.sheets) return { units: parsedUnits, changelog, notices, sheetTitle, tags: [] };
+  if (!data.sheets) return { units: parsedUnits, changelog, notices, sheetTitle, tags: [], credits: parsedCredits };
 
   // 1. Dynamic Tag Extraction from official Tutorial sheet
   const dynamicTagTargets: { tag: string; r: number; g: number; b: number }[] = [];
@@ -190,6 +346,7 @@ export function parseSpreadsheet(data: SpreadsheetData) {
     if (!rowData) continue;
 
     if (tabName === "Home") {
+      parsedCredits = parseCreditsFromHomeSheet(rowData);
       let changelogColIdx = -1;
       rowData.forEach((row: RowData) => {
         if (!row.values) return;
@@ -408,5 +565,5 @@ export function parseSpreadsheet(data: SpreadsheetData) {
     }
   }
 
-  return { units: parsedUnits, changelog, notices, sheetTitle, tags: parsedTutorialTags };
+  return { units: parsedUnits, changelog, notices, sheetTitle, tags: parsedTutorialTags, credits: parsedCredits };
 }
