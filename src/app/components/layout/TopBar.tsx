@@ -187,7 +187,8 @@ export function TopBar({
       notif.ad_id &&
       (notif.type === "comment" ||
         notif.type === "reply" ||
-        notif.type === "upvote")
+        notif.type === "upvote" ||
+        notif.type === "warning")
     ) {
       void openAdContext(notif.ad_id, profile?.id);
       window.document.dispatchEvent(
@@ -332,14 +333,23 @@ export function TopBar({
                             className="w-8 h-8 rounded-full border border-border bg-muted shrink-0"
                           />
                           <div className="flex flex-col min-w-0 flex-1">
-                            <p className="text-[12.5px] text-foreground leading-snug">
+                            <div className="text-[12.5px] text-foreground leading-snug">
                               {n.type === "warning" ? (
-                                <>
-                                  <strong className="font-bold text-destructive">
-                                    System Warning:
-                                  </strong>{" "}
-                                  {n.message || "A system warning requires your attention."}
-                                </>
+                                <div className="flex flex-col gap-1 min-w-0">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="px-1.5 py-0.2 rounded-[3px] bg-[#f97316] text-[#000000] font-black text-[9px] uppercase tracking-wider font-mono shrink-0">
+                                      Warning
+                                    </span>
+                                    {n.actor?.username && (
+                                      <span className="text-[10.5px] text-muted-foreground truncate">
+                                        from @{n.actor.username}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="text-[12px] text-foreground font-medium line-clamp-2">
+                                    {n.message || "A formal staff warning was issued."}
+                                  </span>
+                                </div>
                               ) : n.type === "system" ? (
                                 <>
                                   <strong className="font-bold text-success">
@@ -371,7 +381,7 @@ export function TopBar({
                                   )}
                                 </>
                               )}
-                            </p>
+                            </div>
                             <span className="text-[10px] text-muted-foreground font-mono mt-1">
                               {new Date(n.created_at).toLocaleDateString()} at{" "}
                               {new Date(n.created_at).toLocaleTimeString([], {

@@ -24,7 +24,8 @@ interface CommentsStreamTabProps {
   onWarnUser: (
     userId: string,
     username: string,
-    reason: string
+    reason: string,
+    context?: { commentId?: string; adId?: string }
   ) => Promise<boolean>;
   onInspectUser: (userId: string) => void;
   onRefresh: () => void;
@@ -83,7 +84,11 @@ export function CommentsStreamTab({
       await onWarnUser(
         actingComment.comment.user_id,
         authorName,
-        actionReason.trim()
+        actionReason.trim(),
+        {
+          commentId: actingComment.comment.id,
+          adId: actingComment.comment.ad_id,
+        }
       );
     }
 

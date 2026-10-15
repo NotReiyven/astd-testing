@@ -162,7 +162,9 @@ export const useNotificationStore = create<NotificationState>(
 
       // Refresh immediately so notifications still appear
       // even when the realtime WebSocket is unavailable.
-      await get().fetchNotifications(userId);
+      if (activeUserId && activeUserId === userId) {
+        await get().fetchNotifications(userId);
+      }
     },
 
     deleteNotification: async (id) => {
@@ -271,6 +273,7 @@ export const useNotificationStore = create<NotificationState>(
         .limit(50);
 
       if (activeUserId !== userId) {
+        set({ isLoading: false });
         return;
       }
 
@@ -447,8 +450,8 @@ export const useNotificationStore = create<NotificationState>(
                       newNotif.comment_id ? "comment" : "trade listing"
                     }`;
                   } else if (newNotif.type === "warning") {
-                    toastText = `🚨 Warning: ${
-                      newNotif.message || "Action required"
+                    toastText = `🚨 Staff Warning: ${
+                      newNotif.message || "A formal staff warning was issued."
                     }`;
                   } else {
                     toastText = `🔔 ${newNotif.message || "New notification"}`;

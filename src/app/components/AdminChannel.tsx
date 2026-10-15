@@ -248,6 +248,7 @@ export function AdminChannel({
     type:
       | "role"
       | "ban"
+      | "warn"
       | "reset_profile"
       | "purge_ads"
       | "purge_comments"
@@ -315,7 +316,9 @@ export function AdminChannel({
 
     if (!selectedUser) return;
 
-    if (type === "role" && payload) {
+    if (type === "warn") {
+      await warnUser(selectedUser.id, selectedUser.username, reason);
+    } else if (type === "role" && payload) {
       await updateUserRole(selectedUser.id, payload, reason);
     } else if (type === "ban" && payload) {
       await updateUserRole(selectedUser.id, payload, reason);
@@ -2217,6 +2220,25 @@ export function AdminChannel({
                       </span>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {/* Mod+ Action: Issue Warning */}
+                        <button
+                          type="button"
+                          disabled={targetIsProtectedFromCaller}
+                          onClick={() =>
+                            setModActionData({
+                              type: "warn",
+                              label: `Issue Formal Warning to @${selectedUser.username}`,
+                              isDestructive: false,
+                            })
+                          }
+                          className="h-8 px-3 rounded-[4px] bg-input hover:bg-[#f97316]/15 border border-border hover:border-[#f97316]/50 text-foreground hover:text-[#f97316] text-[11px] font-mono flex items-center justify-between cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <span>Issue Warning</span>
+                          <span className="text-[9.5px] opacity-70">
+                            MOD+
+                          </span>
+                        </button>
+
                         {/* Mod+ Action: Purge Ads */}
                         <button
                           type="button"

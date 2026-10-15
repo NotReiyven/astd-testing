@@ -107,7 +107,8 @@ export function NotificationsChannel() {
       notification.ad_id &&
       (notification.type === "comment" ||
         notification.type === "reply" ||
-        notification.type === "upvote")
+        notification.type === "upvote" ||
+        notification.type === "warning")
     ) {
       const { useAdInteractionStore } = await import(
         "../../store/useAdInteractionStore"
@@ -204,7 +205,11 @@ export function NotificationsChannel() {
               <div
                 key={notification.id}
                 className={`group relative flex flex-col md:flex-row items-start md:items-center gap-4 p-4 rounded-lg border transition-[border-color,background-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md animate-fade-in ${
-                  !notification.is_read
+                  notification.type === "warning"
+                    ? !notification.is_read
+                      ? "border-[#f97316] bg-[#f97316]/10 shadow-sm"
+                      : "border-[#f97316]/40 bg-card"
+                    : !notification.is_read
                     ? "border-primary/50 bg-primary/5 shadow-sm"
                     : "border-border bg-card"
                 }`}
@@ -233,16 +238,35 @@ export function NotificationsChannel() {
                   />
 
                   <div className="flex flex-col flex-1 min-w-0">
-                    <p className="text-[13.5px] text-foreground leading-snug">
-                      {notification.type === "warning" ? (
-                        <>
-                          <strong className="font-bold text-destructive">
-                            System Warning:
-                          </strong>{" "}
+                    {notification.type === "warning" ? (
+                      <div className="flex flex-col gap-1.5 w-full">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2 py-0.5 rounded-[3px] bg-[#f97316] text-[#000000] font-black text-[10px] uppercase tracking-wider font-mono">
+                            Staff Warning
+                          </span>
+                          {notification.actor?.username ? (
+                            <span className="text-[12px] text-muted-foreground font-mono">
+                              from @{notification.actor.username}
+                            </span>
+                          ) : (
+                            <span className="text-[12px] text-muted-foreground font-mono">
+                              from Moderation Team
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[13px] text-foreground font-medium bg-[#1e1f22] p-2.5 rounded-[4px] border border-border border-l-4 border-l-[#f97316] break-words">
                           {notification.message ||
-                            "A system warning requires your attention."}
-                        </>
-                      ) : notification.type === "system" ? (
+                            "A formal staff warning was issued."}
+                        </div>
+                        {notification.ad_id && (
+                          <span className="text-[11px] font-mono text-primary hover:underline">
+                            Associated Trade Ad #{notification.ad_id.slice(0, 8)} →
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-[13.5px] text-foreground leading-snug">
+                        {notification.type === "system" ? (
                         <>
                           <strong className="font-bold text-[#23a559]">
                             System:
@@ -280,6 +304,7 @@ export function NotificationsChannel() {
                         </>
                       )}
                     </p>
+                    )}
 
                     <span className="text-[11px] font-mono text-muted-foreground mt-1">
                       {formatDistanceToNow(new Date(notification.created_at), {

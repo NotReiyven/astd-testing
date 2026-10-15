@@ -11,6 +11,7 @@ import {
   UserProfileData,
 } from "../store/useProfileStore";
 import { TradingAd } from "../store/useTradingAdsStore";
+import { useNotificationStore } from "../store/useNotificationStore";
 import { useUnits } from "../context/UnitContext";
 import { logger } from "../lib/logger";
 import { triggerHaptic } from "../data/helpers";
@@ -1090,7 +1091,8 @@ export function useAdminIntel() {
   const warnUser = async (
     targetUserId: string,
     targetUsername: string,
-    reason: string
+    reason: string,
+    context?: { commentId?: string; adId?: string }
   ) => {
     const clearance = await verifyLiveClearance(["master", "admin", "mod"]);
     if (!clearance.ok) return false;
@@ -1102,7 +1104,20 @@ export function useAdminIntel() {
       reason
     );
 
-    showToast(`Formal warning logged for @${targetUsername}.`);
+    try {
+      await useNotificationStore.getState().createNotification({
+        user_id: targetUserId,
+        actor_id: profile?.id || useAuthStore.getState().profile?.id || targetUserId,
+        type: "warning",
+        message: reason,
+        comment_id: context?.commentId || null,
+        ad_id: context?.adId || null,
+      });
+    } catch (err) {
+      console.error("Failed to send warning notification:", err);
+    }
+
+    showToast(`Formal warning logged & sent to @${targetUsername}.`);
     return true;
   };
 
