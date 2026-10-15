@@ -188,7 +188,7 @@ export function GridStatusBadge({ status }: { status: string }) {
         }}
       >
         <StatusIcon status={status} />
-        <span className="leading-none">
+        <span className="leading-none relative -top-[0.5px]">
           {c.label}
         </span>
       </div>

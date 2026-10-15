@@ -141,7 +141,7 @@ export function CustomDropdown({
   return (
     <div
       ref={ref}
-      className={`relative w-full sm:w-auto sm:min-w-[190px] md:min-w-[225px] ${className}`}
+      className={`relative w-full ${className}`}
     >
       <button
         ref={buttonRef}
@@ -151,14 +151,14 @@ export function CustomDropdown({
         aria-expanded={isOpen}
         aria-controls={isOpen ? "custom-dropdown-list" : undefined}
         aria-activedescendant={activeDescendant}
-        className="w-full flex items-center justify-between bg-popover hover:bg-muted rounded-[4px] border border-border px-3 h-[36px] md:h-[32px] transition-all shadow-inner whitespace-nowrap active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="w-full flex items-center justify-between bg-popover hover:bg-muted rounded-[4px] border border-border px-3 h-[34px] sm:h-[32px] transition-all shadow-inner whitespace-nowrap active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <div className="flex items-center min-w-0 pointer-events-none flex-1 pr-1">
           <Icon
             className="w-3.5 h-3.5 text-muted-foreground mr-2 shrink-0"
             aria-hidden="true"
           />
-          <span className="text-[13px] font-medium text-foreground px-1 truncate md:overflow-visible md:whitespace-nowrap">
+          <span className="text-[12.5px] sm:text-[13px] font-bold text-foreground px-0.5 truncate leading-none relative -top-[0.5px]">
             {value === "all" && defaultLabel ? defaultLabel : options[value]}
           </span>
         </div>

@@ -246,7 +246,7 @@ export const TradingCardSlot = memo(
                 }}
               >
                 <StatusIcon status={master.status} />
-                <span className="leading-none">
+                <span className="leading-none relative -top-[0.5px]">
                   {dropCfg.label}
                 </span>
               </div>
@@ -300,7 +300,8 @@ export const TradingCardSlot = memo(
                 }}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] font-bold py-2 rounded-[4px] shadow-sm flex items-center justify-center gap-1.5 transition-transform active:scale-95 cursor-pointer"
               >
-                <GiChest className="w-3.5 h-3.5" /> To Vault
+                <GiChest className="w-3.5 h-3.5 shrink-0" />
+                <span className="leading-none relative -top-[0.5px]">To Vault</span>
               </button>
             </div>
           )}
@@ -318,13 +319,13 @@ export const TradingCardSlot = memo(
             </p>
             <div className="flex mt-2">
               <span
-                className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[2px] border tracking-widest leading-none ${
+                className={`text-[9.5px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-[4px] border tracking-wider shadow-xs ${
                   obtainability === "UNOB"
-                    ? "bg-popover text-muted-foreground border-transparent"
-                    : "bg-white/5 text-foreground border-transparent"
+                    ? "bg-[#ef4444] text-white border-white/20"
+                    : "bg-[#23a559] text-white border-white/20"
                 }`}
               >
-                {obtainability}
+                <span className="leading-none relative -top-[0.5px]">{obtainability}</span>
               </span>
             </div>
           </div>

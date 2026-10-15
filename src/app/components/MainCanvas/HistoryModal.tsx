@@ -261,25 +261,29 @@ function SnapshotDiffList({
           </span>
           <div className="flex items-center gap-1.5">
             <span
-              className="text-[11px] font-bold font-mono uppercase tracking-wider px-2 py-0.5 rounded-[4px] border shadow-xs"
+              className="text-[11px] font-bold font-mono uppercase tracking-wider px-2 py-0.5 rounded-[4px] border shadow-xs inline-flex items-center"
               style={{
                 backgroundColor: prevCfg?.bg || "#ffe599",
                 color: prevCfg?.color || "#18181b",
                 borderColor: prevCfg?.border || "rgba(0, 0, 0, 0.15)",
               }}
             >
-              {prevCfg?.label || prev.status || "Stable"}
+              <span className="leading-none relative -top-[0.5px]">
+                {prevCfg?.label || prev.status || "Stable"}
+              </span>
             </span>
             <span className="text-muted-foreground font-mono">→</span>
             <span
-              className="text-[11px] font-bold font-mono uppercase tracking-wider px-2 py-0.5 rounded-[4px] border shadow-xs"
+              className="text-[11px] font-bold font-mono uppercase tracking-wider px-2 py-0.5 rounded-[4px] border shadow-xs inline-flex items-center"
               style={{
                 backgroundColor: currCfg?.bg || "#ffe599",
                 color: currCfg?.color || "#18181b",
                 borderColor: currCfg?.border || "rgba(0, 0, 0, 0.15)",
               }}
             >
-              {currCfg?.label || curr.status || "Stable"}
+              <span className="leading-none relative -top-[0.5px]">
+                {currCfg?.label || curr.status || "Stable"}
+              </span>
             </span>
           </div>
         </div>
@@ -1281,7 +1285,9 @@ export function HistoryModal() {
                         }}
                       >
                         <StatusIcon status={currentUnit.status} />
-                        {statusCfg.label}
+                        <span className="leading-none relative -top-[0.5px]">
+                          {statusCfg.label}
+                        </span>
                       </span>
                     )}
                   </div>

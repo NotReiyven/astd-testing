@@ -137,7 +137,7 @@ export function TradeNotices({
             }}
           >
             <StatusIcon status={status} />
-            {cfg.label}
+            <span className="leading-none relative -top-[0.5px]">{cfg.label}</span>
           </span>
           {i < counts.length - 1 && (
             <span className="text-muted-foreground ml-1 mr-0.5">•</span>
@@ -196,7 +196,7 @@ export function TradeNotices({
                       }}
                     >
                       <StatusIcon status={item.status} />
-                      {cfg.label}
+                      <span className="leading-none relative -top-[0.5px]">{cfg.label}</span>
                     </span>
                   )}
                 </div>
@@ -312,7 +312,7 @@ export function TradeNotices({
                         }}
                       >
                         <StatusIcon status={status} />
-                        {cfg.label}
+                        <span className="leading-none relative -top-[0.5px]">{cfg.label}</span>
                       </span>
                       <p className="text-[11.5px] text-foreground leading-relaxed">
                         {def}

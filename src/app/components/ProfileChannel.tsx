@@ -2335,11 +2335,11 @@ export function ProfileChannel() {
                               <button
                                 type="button"
                                 onClick={() => handleLoadAdIntoCalculator(ad)}
-                                className="px-2.5 py-1 rounded-[4px] bg-[#475569] hover:bg-[#334155] border border-white/20 text-white text-[11.5px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-95"
+                                className="h-7 px-2.5 rounded-[4px] bg-[#475569] hover:bg-[#334155] border border-white/20 text-white text-[11px] font-bold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-95 shrink-0"
                                 title="Load these units into the Trade Analyzer"
                               >
                                 <GiAbacus className="w-3.5 h-3.5 shrink-0" />
-                                <span>Calculator</span>
+                                <span className="leading-none relative -top-[0.5px]">Calculator</span>
                               </button>
 
                               {/* View Comments / Discussion */}
@@ -2349,11 +2349,11 @@ export function ProfileChannel() {
                                   triggerHaptic("light");
                                   void openAdContext(ad.id, currentUser?.id);
                                 }}
-                                className="px-2.5 py-1 rounded-[4px] bg-[#5865F2] hover:bg-[#4752c4] border border-[#5865F2]/40 text-white text-[11.5px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-95"
+                                className="h-7 px-2.5 rounded-[4px] bg-[#5865F2] hover:bg-[#4752c4] border border-[#5865F2]/40 text-white text-[11px] font-bold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-95 shrink-0"
                                 title="View discussion, comments, and trade analytics for this listing"
                               >
                                 <GiChatBubble className="w-3.5 h-3.5 shrink-0 text-white" />
-                                <span>Discussion</span>
+                                <span className="leading-none relative -top-[0.5px]">Discussion</span>
                               </button>
 
                               {/* Owner-only Per-Ad Visibility, Repost & Delete */}
@@ -2364,7 +2364,7 @@ export function ProfileChannel() {
                                     onClick={() =>
                                       handleToggleSingleAdPrivacy(ad.id)
                                     }
-                                    className={`px-2.5 py-1 rounded-[4px] border text-[11.5px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-95 ${
+                                    className={`h-7 px-2.5 rounded-[4px] border text-[11px] font-bold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-95 shrink-0 ${
                                       isPrivateAd
                                         ? "bg-[#d97706] hover:bg-[#b45309] text-white border-[#f59e0b]/40"
                                         : "bg-[#23a559] hover:bg-[#1f934f] text-white border-[#23a559]/40"
@@ -2380,7 +2380,7 @@ export function ProfileChannel() {
                                     ) : (
                                       <GiWorld className="w-3.5 h-3.5 text-white shrink-0" />
                                     )}
-                                    <span>
+                                    <span className="leading-none relative -top-[0.5px]">
                                       {isPrivateAd ? "Private" : "Public"}
                                     </span>
                                   </button>
@@ -2390,11 +2390,11 @@ export function ProfileChannel() {
                                       type="button"
                                       disabled={repostingAdId === ad.id}
                                       onClick={() => handleRepostAd(ad)}
-                                      className="px-2.5 py-1 rounded-[4px] bg-[#5865F2] hover:bg-[#4752c4] border border-[#5865F2]/40 text-white font-bold text-[11.5px] flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 shadow-xs active:scale-95"
+                                      className="h-7 px-2.5 rounded-[4px] bg-[#5865F2] hover:bg-[#4752c4] border border-[#5865F2]/40 text-white font-bold text-[11px] inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 shadow-xs active:scale-95 shrink-0"
                                       title="Repost this trade to the live Trading Board for 24 hours"
                                     >
                                       <GiCycle className="w-3.5 h-3.5 shrink-0" />
-                                      <span>
+                                      <span className="leading-none relative -top-[0.5px]">
                                         {repostingAdId === ad.id
                                           ? "Reposting…"
                                           : "Repost"}
@@ -2403,13 +2403,13 @@ export function ProfileChannel() {
                                   )}
 
                                   {confirmDeleteAdId === ad.id ? (
-                                    <div className="inline-flex items-center gap-1 bg-[#ef4444] border border-[#ef4444]/40 rounded-[4px] px-2 py-0.5 shadow-xs text-white">
+                                    <div className="h-7 inline-flex items-center gap-1 bg-[#ef4444] border border-[#ef4444]/40 rounded-[4px] px-2 shadow-xs text-white shrink-0">
                                       <button
                                         type="button"
                                         onClick={() =>
                                           handleDeleteAdFromHistory(ad.id)
                                         }
-                                        className="text-[11px] font-bold text-white hover:underline px-1 cursor-pointer"
+                                        className="text-[11px] font-bold text-white hover:underline px-1 cursor-pointer leading-none relative -top-[0.5px]"
                                       >
                                         Confirm Delete
                                       </button>
@@ -2419,7 +2419,7 @@ export function ProfileChannel() {
                                         onClick={() =>
                                           setConfirmDeleteAdId(null)
                                         }
-                                        className="text-[11px] font-bold text-white/90 hover:underline px-1 cursor-pointer"
+                                        className="text-[11px] font-bold text-white/90 hover:underline px-1 cursor-pointer leading-none relative -top-[0.5px]"
                                       >
                                         Cancel
                                       </button>
@@ -2430,7 +2430,7 @@ export function ProfileChannel() {
                                       onClick={() =>
                                         setConfirmDeleteAdId(ad.id)
                                       }
-                                      className="p-1.5 rounded-[4px] bg-[#ef4444] hover:bg-[#dc2626] border border-[#ef4444]/40 text-white transition-colors cursor-pointer shadow-xs active:scale-95"
+                                      className="w-7 h-7 inline-flex items-center justify-center rounded-[4px] bg-[#ef4444] hover:bg-[#dc2626] border border-[#ef4444]/40 text-white transition-colors cursor-pointer shadow-xs active:scale-95 shrink-0"
                                       title="Delete ad permanently"
                                       aria-label="Delete ad"
                                     >
@@ -2752,7 +2752,9 @@ export function ProfileChannel() {
                                     }}
                                   >
                                     <StatusIcon status={master.status} />
-                                    {cfg.label}
+                                    <span className="leading-none relative -top-[0.5px]">
+                                      {cfg.label}
+                                    </span>
                                   </span>
                                 )}
                               </div>

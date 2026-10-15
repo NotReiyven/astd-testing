@@ -120,7 +120,7 @@ export function StaticStatusBadge({ status }: { status: string }) {
       }}
     >
       <StatusIcon status={status} />
-      {cfg.label}
+      <span className="leading-none relative -top-[0.5px]">{cfg.label}</span>
     </span>
   );
 }

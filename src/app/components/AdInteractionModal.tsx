@@ -234,7 +234,9 @@ const ItemTile = memo(
                     }}
                   >
                     <StatusIcon status={master.status} />
-                    {statusCfg.label}
+                    <span className="leading-none relative -top-[0.5px]">
+                      {statusCfg.label}
+                    </span>
                   </span>
                 )}
               </div>

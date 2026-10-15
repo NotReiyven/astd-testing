@@ -420,7 +420,7 @@ export function InventoryChannel() {
       )}
 
       {/* Master Tabs */}
-      <div className="flex items-center justify-between px-6 pt-3 pb-3 bg-card border-b border-border shrink-0 z-20">
+      <div className="flex items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3 bg-card border-b border-border shrink-0 z-20">
         <div className="flex bg-input rounded-[4px] p-1 border border-border shadow-inner">
           <button
             type="button"
@@ -428,13 +428,15 @@ export function InventoryChannel() {
               triggerHaptic("light");
               handleTabSwitch("owned");
             }}
-            className={`px-4 py-1.5 rounded-[3px] text-sm font-medium transition-[transform,background-color,color,box-shadow] duration-150 focus-visible:outline-none cursor-pointer active:scale-95 ${
+            className={`px-3 sm:px-4 py-1.5 rounded-[3px] text-xs sm:text-sm font-medium transition-[transform,background-color,color,box-shadow] duration-150 focus-visible:outline-none cursor-pointer active:scale-95 ${
               vaultView === "owned"
                 ? "bg-foreground text-background shadow-sm font-bold"
                 : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
             }`}
           >
-            {isReadOnly ? "Vault" : "My Vault"}
+            <span className="leading-none relative -top-[0.5px]">
+              {isReadOnly ? "Vault" : "My Vault"}
+            </span>
           </button>
           <button
             type="button"
@@ -442,30 +444,34 @@ export function InventoryChannel() {
               triggerHaptic("light");
               handleTabSwitch("wishlist");
             }}
-            className={`px-4 py-1.5 rounded-[3px] text-sm font-medium transition-[transform,background-color,color,box-shadow] duration-150 focus-visible:outline-none cursor-pointer active:scale-95 ${
+            className={`px-3 sm:px-4 py-1.5 rounded-[3px] text-xs sm:text-sm font-medium transition-[transform,background-color,color,box-shadow] duration-150 focus-visible:outline-none cursor-pointer active:scale-95 ${
               vaultView === "wishlist"
                 ? "bg-foreground text-background shadow-sm font-bold"
                 : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
             }`}
           >
-            Wishlist
+            <span className="leading-none relative -top-[0.5px]">
+              Wishlist
+            </span>
           </button>
         </div>
 
-        <div className="flex items-center gap-2 pb-2">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => {
               triggerHaptic("light");
               setIsControlsCollapsed(!isControlsCollapsed);
             }}
-            className="md:hidden flex items-center gap-1 px-3 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-[13px] font-medium text-muted-foreground cursor-pointer"
+            className="md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-[12px] font-bold cursor-pointer active:scale-95 shadow-xs"
           >
-            <IconSliders className="w-3.5 h-3.5" />
-            <span>{isControlsCollapsed ? "Filters" : "Collapse"}</span>
+            <IconSliders className="w-3.5 h-3.5 shrink-0" />
+            <span className="leading-none relative -top-[0.5px]">
+              {isControlsCollapsed ? "Filters" : "Collapse"}
+            </span>
             {isControlsCollapsed ? (
-              <IconChevronDown className="w-3.5 h-3.5" />
+              <IconChevronDown className="w-3.5 h-3.5 shrink-0" />
             ) : (
-              <IconChevronUp className="w-3.5 h-3.5" />
+              <IconChevronUp className="w-3.5 h-3.5 shrink-0" />
             )}
           </button>
         </div>
@@ -478,14 +484,14 @@ export function InventoryChannel() {
         }`}
       >
         <div
-          className={`flex flex-col lg:flex-row lg:items-center justify-between px-3 md:px-5 py-3 gap-3 transition-[max-height,opacity,padding] duration-300 ${
+          className={`flex flex-col lg:flex-row lg:items-center justify-between px-3 md:px-5 py-3 gap-2.5 sm:gap-3 transition-[max-height,opacity,padding] duration-300 min-w-0 ${
             isControlsCollapsed
               ? "max-h-0 opacity-0 overflow-hidden py-0 pointer-events-none md:max-h-none md:opacity-100 md:overflow-visible md:py-3 md:pointer-events-auto"
               : "max-h-none opacity-100 overflow-visible"
           }`}
         >
           {/* Filter Toggles Row */}
-          <div className="flex bg-input rounded-[4px] p-1 border border-border w-full lg:w-auto overflow-x-auto hide-scrollbar shrink-0 shadow-inner h-[var(--ui-height-input)] items-center">
+          <div className="flex bg-input rounded-[4px] p-1 border border-border w-full lg:w-auto overflow-x-auto hide-scrollbar shrink-0 shadow-inner h-[var(--ui-height-input)] items-center min-w-0 overscroll-x-contain touch-pan-x">
             <button
               type="button"
               onClick={() => {
@@ -498,7 +504,7 @@ export function InventoryChannel() {
                   : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
               }`}
             >
-              All
+              <span className="leading-none relative -top-[0.5px]">All</span>
             </button>
             {vaultView !== "wishlist" && (
               <button
@@ -514,13 +520,13 @@ export function InventoryChannel() {
                 }`}
               >
                 <GiPadlock
-                  className={`w-3.5 h-3.5 fill-current ${
+                  className={`w-3.5 h-3.5 fill-current shrink-0 ${
                     activeTierFilter === "Pinned"
                       ? "text-background"
                       : "text-[#FAA61A]"
                   }`}
                 />{" "}
-                Locked
+                <span className="leading-none relative -top-[0.5px]">Locked</span>
               </button>
             )}
             {FILTERS.filter((f) => f !== "All").map((f) => (
@@ -537,46 +543,16 @@ export function InventoryChannel() {
                     : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
                 }`}
               >
-                {f}
+                <span className="leading-none relative -top-[0.5px]">{f}</span>
               </button>
             ))}
           </div>
 
           {/* Action Controls */}
-          <div className="flex items-center gap-2 w-full lg:w-auto shrink-0 justify-between lg:justify-start">
-            <div className="flex items-center gap-2 shrink-0">
-              {!isReadOnly && vaultView !== "wishlist" && (
-                <button
-                  onClick={() => {
-                    triggerHaptic("light");
-                    setIsSelectMode(!isSelectMode);
-                    setSelectedUnits(new Set());
-                  }}
-                  className={`flex items-center gap-1.5 px-3 h-[32px] rounded-[4px] text-[12px] font-bold transition-all shrink-0 focus-visible:outline-none border cursor-pointer ${
-                    isSelectMode
-                      ? "bg-foreground text-background border-foreground"
-                      : "bg-muted text-muted-foreground hover:text-foreground hover:bg-card border-transparent hover:border-border"
-                  }`}
-                  title="Toggle Select Mode"
-                >
-                  <IconBulkSelect className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Bulk Select</span>
-                </button>
-              )}
-              <div className="shrink-0 w-full sm:w-auto sm:min-w-[190px] md:min-w-[225px]">
-                <CustomDropdown
-                  icon={IconArrowUpDown}
-                  value={sortMode}
-                  options={SORT_OPTIONS}
-                  onChange={setSortMode}
-                  defaultLabel="Sort By"
-                  className="sm:min-w-[190px] md:min-w-[225px]"
-                />
-              </div>
-            </div>
-
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full lg:w-auto min-w-0">
+            {/* Search Input: full width on mobile, dedicated width on sm+ */}
             <div
-              className="relative flex-1 lg:w-[280px] shrink-0 flex items-center gap-1.5"
+              className="relative w-full sm:w-[220px] lg:w-[260px] min-w-0 flex items-center gap-1.5"
               ref={omniboxRef}
             >
               <div className="relative w-full">
@@ -601,7 +577,7 @@ export function InventoryChannel() {
                       ? "Search wishlist..."
                       : "Search units..."
                   }
-                  className="w-full bg-input border border-border rounded-[4px] pl-9 pr-8 py-1 text-[13px] text-foreground outline-none placeholder-muted-foreground focus:border-foreground transition-colors h-[32px]"
+                  className="w-full bg-input border border-border rounded-[4px] pl-9 pr-8 py-1 text-[13px] text-foreground outline-none placeholder-muted-foreground focus:border-foreground transition-colors h-[34px] sm:h-[32px]"
                 />
                 {searchQuery && (
                   <button
@@ -618,10 +594,43 @@ export function InventoryChannel() {
                   </button>
                 )}
               </div>
+            </div>
+
+            {/* Action Buttons Bar: Bulk Select + Sort Dropdown + Copy + Manage */}
+            <div className="flex items-center gap-2 w-full sm:w-auto min-w-0">
+              {!isReadOnly && vaultView !== "wishlist" && (
+                <button
+                  onClick={() => {
+                    triggerHaptic("light");
+                    setIsSelectMode(!isSelectMode);
+                    setSelectedUnits(new Set());
+                  }}
+                  className={`flex items-center justify-center gap-1.5 px-2.5 sm:px-3 h-[34px] sm:h-[32px] rounded-[4px] text-[12px] font-bold transition-all shrink-0 focus-visible:outline-none border cursor-pointer shadow-xs active:scale-95 ${
+                    isSelectMode
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-muted text-muted-foreground hover:text-foreground hover:bg-card border-border"
+                  }`}
+                  title="Toggle Select Mode"
+                >
+                  <IconBulkSelect className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline leading-none relative -top-[0.5px]">Bulk Select</span>
+                </button>
+              )}
+
+              <div className="flex-1 min-w-0 sm:flex-initial sm:w-[190px] md:w-[220px]">
+                <CustomDropdown
+                  icon={IconArrowUpDown}
+                  value={sortMode}
+                  options={SORT_OPTIONS}
+                  onChange={setSortMode}
+                  defaultLabel="Sort By"
+                  className="w-full sm:w-[190px] md:w-[220px]"
+                />
+              </div>
 
               <button
                 onClick={handleCopyVault}
-                className="w-[32px] h-[32px] shrink-0 bg-muted hover:bg-card text-muted-foreground hover:text-foreground rounded-[4px] flex items-center justify-center transition-colors focus-visible:outline-none border border-transparent hover:border-border cursor-pointer"
+                className="w-[34px] h-[34px] sm:w-[32px] sm:h-[32px] shrink-0 bg-muted hover:bg-card text-muted-foreground hover:text-foreground rounded-[4px] flex items-center justify-center transition-colors focus-visible:outline-none border border-border cursor-pointer shadow-xs active:scale-95"
                 title={`Copy ${
                   vaultView === "wishlist" ? "Wishlist" : "Vault"
                 } Summary`}
@@ -633,10 +642,10 @@ export function InventoryChannel() {
                 <div className="relative shrink-0" ref={manageRef}>
                   <button
                     onClick={() => setManageOpen(!manageOpen)}
-                    className={`w-[32px] h-[32px] shrink-0 flex items-center justify-center rounded-[4px] transition-colors focus-visible:outline-none border cursor-pointer ${
+                    className={`w-[34px] h-[34px] sm:w-[32px] sm:h-[32px] shrink-0 flex items-center justify-center rounded-[4px] transition-colors focus-visible:outline-none border cursor-pointer shadow-xs active:scale-95 ${
                       manageOpen || confirmClear
                         ? "bg-card text-foreground border-border"
-                        : "bg-muted text-muted-foreground hover:text-foreground hover:bg-card border-transparent hover:border-border"
+                        : "bg-muted text-muted-foreground hover:text-foreground hover:bg-card border-border"
                     }`}
                     title="Inventory Options"
                   >
@@ -859,7 +868,7 @@ export function InventoryChannel() {
           importMenuOpen ? "opacity-30 pointer-events-none" : ""
         }`}
       >
-        <div className="p-4 md:p-8 pb-32">
+        <div className="p-3 sm:p-6 md:p-8 pb-32">
           {isVaultLoading ? (
             showVaultSkeleton ? (
               <InventoryVaultSkeleton />
@@ -946,7 +955,7 @@ export function InventoryChannel() {
                 activeTierFilter === "All" &&
                 (vaultView === "wishlist" ? (
                   <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6 mb-8">
-                    <div className="bg-card border border-border rounded-[8px] p-6 flex flex-col justify-center relative shadow-sm">
+                    <div className="bg-card border border-border rounded-[8px] p-4 sm:p-6 flex flex-col justify-center relative shadow-sm">
                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-4">
                         {isReadOnly && viewingUsername
                           ? `${viewingUsername}'s Wishlist Progress`
@@ -975,7 +984,7 @@ export function InventoryChannel() {
                         />
                       </div>
                     </div>
-                    <div className="bg-card border border-border rounded-[8px] p-6 flex flex-col shadow-sm">
+                    <div className="bg-card border border-border rounded-[8px] p-4 sm:p-6 flex flex-col shadow-sm">
                       <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
                         Most Expensive Targets
                       </span>
@@ -1014,7 +1023,7 @@ export function InventoryChannel() {
                                     />
                                   )}
                                 </div>
-                                <span className="text-[13px] font-bold text-foreground truncate leading-tight">
+                                <span className="text-[13px] font-bold text-foreground truncate leading-tight relative -top-[0.5px]">
                                   {item.master.name}
                                 </span>
                               </div>
@@ -1031,7 +1040,7 @@ export function InventoryChannel() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6 mb-8">
-                    <div className="bg-card border border-border rounded-[8px] p-6 flex flex-col justify-between relative shadow-sm">
+                    <div className="bg-card border border-border rounded-[8px] p-4 sm:p-6 flex flex-col justify-between relative shadow-sm">
                       <Sparkline />
                       <div className="relative z-10">
                         <div className="flex items-center justify-between mb-2">
@@ -1042,19 +1051,18 @@ export function InventoryChannel() {
                           </span>
                           <div className="flex items-center gap-1.5 text-[11px] font-bold font-mono">
                             {metrics.marketMomentum.net > 0 ? (
-                              <span className="text-[#23a559] flex items-center gap-1 bg-[#23a559]/10 px-2 py-0.5 rounded-[2px] border border-[#23a559]/20">
-                                <IconTrendingUp className="w-3 h-3" /> +
-                                {metrics.marketMomentum.net} Net Rising
+                              <span className="bg-[#34a853] text-white flex items-center gap-1 px-2 py-0.5 rounded-[4px] border border-white/20 shadow-xs font-mono font-bold text-[10px] uppercase select-none">
+                                <IconTrendingUp className="w-3 h-3 shrink-0" />
+                                <span className="leading-none relative -top-[0.5px]">+{metrics.marketMomentum.net} Net Rising</span>
                               </span>
                             ) : metrics.marketMomentum.net < 0 ? (
-                              <span className="text-destructive flex items-center gap-1 bg-destructive/10 px-2 py-0.5 rounded-[2px] border border-destructive/20">
-                                <IconTrendingDown className="w-3 h-3" />{" "}
-                                {Math.abs(metrics.marketMomentum.net)} Net
-                                Dropping
+                              <span className="bg-[#ff0000] text-white flex items-center gap-1 px-2 py-0.5 rounded-[4px] border border-white/20 shadow-xs font-mono font-bold text-[10px] uppercase select-none">
+                                <IconTrendingDown className="w-3 h-3 shrink-0" />
+                                <span className="leading-none relative -top-[0.5px]">{Math.abs(metrics.marketMomentum.net)} Net Dropping</span>
                               </span>
                             ) : (
-                              <span className="text-muted-foreground bg-muted px-2 py-0.5 rounded-[2px] border border-border">
-                                Market Stable
+                              <span className="bg-[#ffe599] text-[#18181b] border border-black/15 shadow-xs px-2 py-0.5 rounded-[4px] uppercase font-mono font-bold text-[10px] select-none">
+                                <span className="leading-none relative -top-[0.5px]">Market Stable</span>
                               </span>
                             )}
                           </div>
@@ -1126,7 +1134,7 @@ export function InventoryChannel() {
                       </div>
                     </div>
 
-                    <div className="bg-card border border-border rounded-[8px] p-6 flex flex-col shadow-sm">
+                    <div className="bg-card border border-border rounded-[8px] p-4 sm:p-6 flex flex-col shadow-sm">
                       <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
                         Crown Assets
                       </span>
@@ -1174,7 +1182,7 @@ export function InventoryChannel() {
                                   )}
                                 </div>
                                 <div className="flex flex-col min-w-0">
-                                  <span className="text-[13px] font-bold text-foreground truncate leading-tight">
+                                  <span className="text-[13px] font-bold text-foreground truncate leading-tight relative -top-[0.5px]">
                                     {item.master.name}
                                   </span>
                                   <span className="text-[10px] font-mono text-muted-foreground">
@@ -1523,12 +1531,14 @@ export function InventoryChannel() {
                         }}
                       >
                         <StatusIcon status={inspectTarget.master.status} />
-                        {
-                          GRID_STATUS_CFG[
-                            inspectTarget.master
-                              .status as keyof typeof GRID_STATUS_CFG
-                          ]?.label
-                        }
+                        <span className="leading-none relative -top-[0.5px]">
+                          {
+                            GRID_STATUS_CFG[
+                              inspectTarget.master
+                                .status as keyof typeof GRID_STATUS_CFG
+                            ]?.label
+                          }
+                        </span>
                       </span>
                     )}
                   </div>
