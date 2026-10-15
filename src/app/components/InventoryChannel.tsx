@@ -475,15 +475,15 @@ export function InventoryChannel() {
 
       {/* Header Controls Bar (Collapsible on Mobile) */}
       <div
-        className={`flex-shrink-0 flex flex-col bg-card border-b border-border shadow-sm z-20 relative ${
+        className={`flex-shrink-0 flex flex-col bg-card border-b border-border shadow-sm z-20 relative overflow-visible ${
           importMenuOpen ? "opacity-30 pointer-events-none" : ""
         }`}
       >
         <div
-          className={`flex flex-col lg:flex-row lg:items-center justify-between px-3 md:px-5 py-3 gap-3 transition-all duration-300 overflow-hidden ${
+          className={`flex flex-col lg:flex-row lg:items-center justify-between px-3 md:px-5 py-3 gap-3 transition-[max-height,opacity,padding] duration-300 ${
             isControlsCollapsed
-              ? "max-h-0 opacity-0 md:max-h-none md:opacity-100 py-0 md:py-3"
-              : "max-h-[300px] opacity-100"
+              ? "max-h-0 opacity-0 overflow-hidden py-0 pointer-events-none md:max-h-none md:opacity-100 md:overflow-visible md:py-3 md:pointer-events-auto"
+              : "max-h-none opacity-100 overflow-visible"
           }`}
         >
           {/* Filter Toggles Row */}
@@ -577,11 +577,11 @@ export function InventoryChannel() {
             </div>
 
             <div
-              className="relative flex-1 lg:w-[240px] shrink-0 flex items-center gap-1.5"
+              className="relative flex-1 lg:w-[280px] shrink-0 flex items-center gap-1.5"
               ref={omniboxRef}
             >
               <div className="relative w-full">
-                <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                 <input
                   ref={searchInputRef}
                   type="text"
@@ -602,8 +602,22 @@ export function InventoryChannel() {
                       ? "Search wishlist..."
                       : "Search units..."
                   }
-                  className="w-full bg-input border border-border rounded-[4px] pl-9 pr-3 py-1 text-[13px] text-foreground outline-none placeholder-muted-foreground focus:border-foreground transition-colors h-[32px]"
+                  className="w-full bg-input border border-border rounded-[4px] pl-9 pr-8 py-1 text-[13px] text-foreground outline-none placeholder-muted-foreground focus:border-foreground transition-colors h-[32px]"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setIsOmniboxOpen(false);
+                      searchInputRef.current?.focus();
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-[2px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                    aria-label="Clear search"
+                  >
+                    <IconClose className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
 
               <button
@@ -713,28 +727,57 @@ export function InventoryChannel() {
               )}
 
               {/* Omnibox Dropdown */}
-              {!isReadOnly &&
-                isOmniboxOpen &&
-                searchQuery &&
-                unownedSearchResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-10 mt-1 max-h-[300px] overflow-y-auto custom-scrollbar bg-popover border border-border rounded-[6px] shadow-2xl z-[99999] flex flex-col p-1.5 text-left">
-                    {unownedSearchResults.map((u, i) => {
+              {!isReadOnly && isOmniboxOpen && searchQuery.trim() && (
+                <div
+                  id="omnibox-dropdown"
+                  role="listbox"
+                  aria-label="Unit search results"
+                  className="absolute top-full right-0 w-[min(380px,calc(100vw-24px))] sm:w-[380px] mt-1.5 max-h-[380px] overflow-y-auto custom-scrollbar bg-popover border border-border rounded-[8px] shadow-2xl z-[100] flex flex-col p-1.5 text-left"
+                >
+                  <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/50 mb-1 flex items-center justify-between shrink-0 select-none">
+                    <span>
+                      Quick Add to {vaultView === "wishlist" ? "Wishlist" : "Vault"}
+                    </span>
+                    <span className="text-[9px] font-mono opacity-70">
+                      ↑↓ navigate · ↵ add
+                    </span>
+                  </div>
+
+                  {unownedSearchResults.length === 0 ? (
+                    <div className="px-3 py-6 text-center text-[12px] text-muted-foreground flex flex-col items-center gap-1.5 select-none">
+                      <IconSearch className="w-5 h-5 opacity-40" />
+                      <span>No units match “{searchQuery.trim()}”</span>
+                    </div>
+                  ) : (
+                    unownedSearchResults.map((u, i) => {
                       const isSelected = i === omniboxIndex;
+                      const ownedItem = displayInventory.find(
+                        (item) => item.unit_id === u.id
+                      );
+                      const ownedQty = ownedItem ? ownedItem.quantity : 0;
+                      const tier = getTier(u);
+                      const tierColor =
+                        TIER_CONFIG[tier]?.badgeColor || "#5865F2";
+                      const unitVal = getUnitConservativeValue(u);
+
                       return (
                         <button
                           key={u.id}
+                          type="button"
+                          role="option"
+                          aria-selected={isSelected}
                           onClick={() => {
                             handleQuickAdd(u);
                             setIsOmniboxOpen(false);
                           }}
                           onMouseEnter={() => setOmniboxIndex(i)}
-                          className={`flex items-center gap-2.5 w-full p-2.5 rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer ${
+                          className={`flex items-center gap-2.5 w-full p-2 rounded-[6px] transition-[background-color,color] duration-150 focus-visible:outline-none cursor-pointer text-left ${
                             isSelected
                               ? "bg-muted text-foreground"
                               : "bg-transparent hover:bg-muted text-foreground"
                           }`}
                         >
-                          <div className="w-7 h-7 rounded-[2px] bg-muted flex items-center justify-center shrink-0 border border-border overflow-hidden relative">
+                          <div className="w-8 h-8 rounded-[4px] bg-muted/70 flex items-center justify-center shrink-0 border border-border overflow-hidden relative">
                             {getProxyImage(u.id, u.imageUrl) ? (
                               <img
                                 src={getProxyImage(u.id, u.imageUrl)!}
@@ -744,28 +787,65 @@ export function InventoryChannel() {
                               />
                             ) : (
                               <span
-                                className="text-[7px] font-bold z-0"
+                                className="text-[8px] font-bold z-0"
                                 style={getAvatarStyle(u.name)}
                               >
                                 {getInitials(u.name)}
                               </span>
                             )}
                           </div>
+
                           <div className="flex flex-col min-w-0 flex-1">
-                            <span className="text-[12.5px] font-bold truncate leading-tight">
+                            <span className="text-[13px] font-bold truncate leading-tight">
                               {u.name}
                             </span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="text-[11px] font-mono text-muted-foreground font-semibold tabular-nums">
+                                {unitVal > 0 ? unitVal.toLocaleString() : "—"} Val
+                              </span>
+                              <span className="text-border text-[10px]">·</span>
+                              <span
+                                className="text-[10px] font-bold px-1.5 py-0.2 rounded-[2px]"
+                                style={{
+                                  color: tierColor,
+                                  backgroundColor: `${tierColor}18`,
+                                }}
+                              >
+                                {tier}
+                              </span>
+                            </div>
                           </div>
-                          <IconPlus
-                            className={`w-3.5 h-3.5 shrink-0 ${
-                              isSelected ? "opacity-100" : "opacity-0"
-                            }`}
-                          />
+
+                          <div className="shrink-0 flex items-center pl-1">
+                            {vaultView === "wishlist" ? (
+                              ownedQty > 0 ? (
+                                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-[4px] border border-emerald-500/20">
+                                  Saved
+                                </span>
+                              ) : (
+                                <span className="text-[11px] font-bold text-foreground bg-foreground/10 hover:bg-foreground hover:text-background px-2.5 py-1 rounded-[4px] transition-colors flex items-center gap-1 active:scale-95">
+                                  <IconPlus className="w-3 h-3" /> Wishlist
+                                </span>
+                              )
+                            ) : ownedQty > 0 ? (
+                              <span className="text-[11px] font-bold text-foreground bg-muted hover:bg-foreground hover:text-background px-2 py-1 rounded-[4px] border border-border flex items-center gap-1 active:scale-95 transition-colors">
+                                <span className="text-[10px] font-mono opacity-80 tabular-nums">
+                                  {ownedQty}x
+                                </span>
+                                <IconPlus className="w-3 h-3" />
+                              </span>
+                            ) : (
+                              <span className="text-[11px] font-bold text-background bg-foreground hover:opacity-90 px-2.5 py-1 rounded-[4px] transition-opacity flex items-center gap-1 shadow-sm active:scale-95">
+                                <IconPlus className="w-3 h-3" /> Add
+                              </span>
+                            )}
+                          </div>
                         </button>
                       );
-                    })}
-                  </div>
-                )}
+                    })
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

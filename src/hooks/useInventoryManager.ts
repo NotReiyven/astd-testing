@@ -450,13 +450,28 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     if (!q || isReadOnly) return [];
     const ownedIds = new Set(activeItems.map((i) => i.unit_id));
     return ALL_UNITS.filter((u) => {
-      if (ownedIds.has(u.id)) return false;
       return (
         u.name.toLowerCase().includes(q) ||
         (u.subtitle && u.subtitle.toLowerCase().includes(q)) ||
         (u.aliases && u.aliases.some((a) => a.toLowerCase().includes(q)))
       );
-    }).slice(0, 10);
+    })
+      .sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        const aPrefix = aName.startsWith(q);
+        const bPrefix = bName.startsWith(q);
+        if (aPrefix && !bPrefix) return -1;
+        if (!aPrefix && bPrefix) return 1;
+
+        const aOwned = ownedIds.has(a.id);
+        const bOwned = ownedIds.has(b.id);
+        if (!aOwned && bOwned) return -1;
+        if (aOwned && !bOwned) return 1;
+
+        return aName.localeCompare(bName);
+      })
+      .slice(0, 12);
   }, [searchQuery, activeItems, ALL_UNITS, isReadOnly]);
 
   const handleClearAction = useCallback(async () => {
@@ -715,36 +730,57 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
   };
 
   const handleQuickAdd = async (master: MasterUnit) => {
-    if (!profile || isReadOnly) return;
+    if (!profile) {
+      addToast(
+        "Please sign in with Discord to add units to your vault.",
+        "info"
+      );
+      return;
+    }
+    if (isReadOnly) return;
     const isWishlistView = vaultView === "wishlist";
+    const alreadyInWishlist =
+      isWishlistView && activeItems.some((i) => i.unit_id === master.id);
     try {
       if (isWishlistView) await toggleWishlist(profile.id, master.id);
       else await addOrUpdateUnit(profile.id, master.id, 1);
       if (isSandbox) setSandboxDismissed(true);
       triggerHaptic("medium");
       setSearchQuery("");
-      addToast(
-        `Added ${master.name} to ${isWishlistView ? "Wishlist" : "Vault"}.`,
-        "success",
-        {
+      if (alreadyInWishlist) {
+        addToast(`Removed ${master.name} from Wishlist.`, "info", {
           action: {
             label: "Undo",
             onClick: () => {
-              if (isWishlistView) {
-                void toggleWishlist(profile.id, master.id);
-              } else {
-                void addOrUpdateUnit(profile.id, master.id, -1);
-              }
-              addToast(
-                `Removed ${master.name} from ${
-                  isWishlistView ? "Wishlist" : "Vault"
-                }.`,
-                "info"
-              );
+              void toggleWishlist(profile.id, master.id);
+              addToast(`Restored ${master.name} to Wishlist.`, "success");
             },
           },
-        }
-      );
+        });
+      } else {
+        addToast(
+          `Added ${master.name} to ${isWishlistView ? "Wishlist" : "Vault"}.`,
+          "success",
+          {
+            action: {
+              label: "Undo",
+              onClick: () => {
+                if (isWishlistView) {
+                  void toggleWishlist(profile.id, master.id);
+                } else {
+                  void addOrUpdateUnit(profile.id, master.id, -1);
+                }
+                addToast(
+                  `Removed ${master.name} from ${
+                    isWishlistView ? "Wishlist" : "Vault"
+                  }.`,
+                  "info"
+                );
+              },
+            },
+          }
+        );
+      }
     } catch (e) {
       addToast(`Could not add ${master.name}—try again.`, "error", {
         action: {
