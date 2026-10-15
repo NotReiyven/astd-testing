@@ -92,14 +92,14 @@ export const GRID_STATUS_CFG: Record<
 > = {
   stable: {
     label: "Stable",
-    tip: "Fair and consistently decent offers. Most likely won't move unless something happens.",
+    tip: "Fair and consistantly decent offers. Units that are stable are most likely not to move unless something happens.",
     bg: "rgba(30, 33, 36, 0.95)",
     border: "rgba(230, 216, 161, 0.3)",
     color: "#e6d8a1",
   },
   unstable: {
     label: "Unstable",
-    tip: "Could rise or drop at any moment, or stabilize.",
+    tip: "If a unit is unstable, it means it could rise or drop at any moment, or stabilize.",
     bg: "rgba(30, 33, 36, 0.95)",
     border: "rgba(107, 158, 181, 0.3)",
     color: "#6b9eb5",
@@ -113,7 +113,7 @@ export const GRID_STATUS_CFG: Record<
   },
   dropping: {
     label: "Dropping",
-    tip: "If a unit is dropping, it means owners are consistently taking a loss in value.",
+    tip: "If a unit is dropping, it means owners are constantly taking underpays.",
     bg: "rgba(30, 33, 36, 0.95)",
     border: "rgba(230, 10, 24, 0.3)",
     color: "#f87171",
@@ -127,7 +127,7 @@ export const GRID_STATUS_CFG: Record<
   },
   deflated: {
     label: "Deflated",
-    tip: "If a unit is underpriced, they are deflated and are way cheaper than they should be.",
+    tip: "If a unit is underpriced, they are deflated and are way cheaper than they should be worth.",
     bg: "rgba(30, 33, 36, 0.95)",
     border: "rgba(60, 129, 243, 0.3)",
     color: "#60a5fa",
@@ -155,21 +155,28 @@ export const GRID_STATUS_CFG: Record<
   },
   hyped: {
     label: "Hyped",
-    tip: "If a unit is hyped, something big changed, skyrocketing value and demand.",
+    tip: "If a unit is hyped, then it can either be a new unit, or something big changed, skyrocketing a units value and demand.",
     bg: "rgba(30, 33, 36, 0.95)",
     border: "rgba(58, 124, 230, 0.3)",
     color: "#60a5fa",
   },
   gatekept: {
     label: "Gatekept",
-    tip: "If a unit is gatekept, owners are refusing to trade this unit waiting for a rise.",
+    tip: "If a unit is gatekept, it means owners are refusing to trade this unit for any reason, waiting for rise or huge overpay, usually.",
     bg: "rgba(30, 33, 36, 0.95)",
     border: "rgba(175, 120, 168, 0.3)",
     color: "#c084fc",
   },
+  manipulated: {
+    label: "Manipulated",
+    tip: "If a unit has this tag, it is currently being influenced/manipulated to change its value or situation.",
+    bg: "rgba(30, 33, 36, 0.95)",
+    border: "rgba(239, 68, 68, 0.35)",
+    color: "#f87171",
+  },
   "black-marketed": {
     label: "Black Market",
-    tip: "People who buy units with outside-game currency are heavily impacting it.",
+    tip: "If a unit has this tag, it has been heavily impacted by bmers (people who buy units with real money).",
     bg: "rgba(30, 33, 36, 0.95)",
     border: "rgba(154, 163, 178, 0.3)",
     color: "#9ca3af",
@@ -192,7 +199,7 @@ export const RARITY_SCALE: { min: number; max: number; label: string }[] = [
 
 export const LIQUIDITY_SCALE: Record<string, string> = {
   Low: "Hard to trade the unit (Supply > Demand)",
-  Average: "Average difficulty to trade the unit",
+  Average: "Average difficulty to trade the unit (Supply = Demand, be it High, Average or Low)",
   High: "Easy to trade the unit (Supply < Demand)",
 };
 
@@ -377,14 +384,21 @@ export const THEORY_SECONDARY_TAGS = [
     bg: "rgba(30, 33, 36, 0.95)",
     border: "rgba(175, 120, 168, 0.3)",
     color: "#c084fc",
-    def: "If a unit is gatekept, it means owners are refusing to trade this unit for any reason, waiting for a gain in value.",
+    def: "If a unit is gatekept, it means owners are refusing to trade this unit for any reason, waiting for rise or huge overpay, usually.",
+  },
+  {
+    tag: "Manipulated",
+    bg: "rgba(30, 33, 36, 0.95)",
+    border: "rgba(239, 68, 68, 0.35)",
+    color: "#f87171",
+    def: "If a unit has this tag, it is currently being influenced/manipulated to change its value or situation.",
   },
   {
     tag: "Black Market",
     bg: "rgba(30, 33, 36, 0.95)",
     border: "rgba(154, 163, 178, 0.3)",
     color: "#9ca3af",
-    def: "If a unit has this tag, it means that people who buy units with outside-game currency are heavily impacting this unit.",
+    def: "If a unit has this tag, it has been heavily impacted by bmers (people who buy units with real money).",
   },
 ];
 
@@ -423,7 +437,7 @@ export const THEORY_RARITY_SCALE = [
   { val: 16, def: "Absurdly Rare", color: "#90EE90", textColor: "#000" },
   {
     val: 17,
-    def: "Super Rare - About as Rare as Gold Muramasa (Expected around 100-150 Copies)",
+    def: "Super Rare - About as Rare as Gold Muramasa (Expected around 100 Copies)",
     color: "#32CD32",
     textColor: "#fff",
   },
@@ -446,7 +460,7 @@ export const THEORY_LIQUIDITY_SCALE = [
   },
   {
     val: "Average",
-    def: "Average difficulty to trade the unit",
+    def: "Average difficulty to trade the unit (Supply = Demand, be it High, Average or Low)",
     color: "#B5BAC1",
     bg: "#111214",
   },

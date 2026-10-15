@@ -15,7 +15,11 @@ export type BannerStyleType =
   | "aurora"
   | "grid"
   | "stripes"
-  | "dots";
+  | "dots"
+  | "obsidian"
+  | "topography"
+  | "cyber"
+  | "constellation";
 
 export type TradingStanceType =
   | "open"
@@ -89,6 +93,7 @@ export interface UserProfileData {
   // Unpacked extended profile customization & privacy fields
   accent_color?: string;
   banner_style?: BannerStyleType;
+  banner_image_url?: string;
   trading_stance?: TradingStanceType;
   ad_history_public?: boolean;
   wishlist_public?: boolean;
@@ -131,6 +136,10 @@ const VALID_STYLES: BannerStyleType[] = [
   "grid",
   "stripes",
   "dots",
+  "obsidian",
+  "topography",
+  "cyber",
+  "constellation",
 ];
 const VALID_STANCES: TradingStanceType[] = [
   "open",
@@ -150,6 +159,7 @@ export function unpackProfileRow(raw: any): UserProfileData {
 
   let accent_color = "#7289da";
   let banner_style: BannerStyleType = "gradient";
+  let banner_image_url: string | undefined = undefined;
   let trading_stance: TradingStanceType = "open";
   let ad_history_public = true;
   let wishlist_public = true;
@@ -165,6 +175,15 @@ export function unpackProfileRow(raw: any): UserProfileData {
 
       const bs = params.get("bs") as BannerStyleType | null;
       if (bs && VALID_STYLES.includes(bs)) banner_style = bs;
+
+      const burl = params.get("burl");
+      if (burl) {
+        try {
+          banner_image_url = decodeURIComponent(burl);
+        } catch {
+          banner_image_url = burl;
+        }
+      }
 
       const ts = params.get("ts") as TradingStanceType | null;
       if (ts && VALID_STANCES.includes(ts)) trading_stance = ts;
@@ -204,6 +223,7 @@ export function unpackProfileRow(raw: any): UserProfileData {
     banner_color: cleanHex,
     accent_color,
     banner_style,
+    banner_image_url,
     trading_stance,
     ad_history_public,
     wishlist_public,
@@ -227,6 +247,9 @@ export function packBannerConfig(profile: Partial<UserProfileData>): string {
   }
   if (profile.banner_style && VALID_STYLES.includes(profile.banner_style)) {
     params.set("bs", profile.banner_style);
+  }
+  if (profile.banner_image_url) {
+    params.set("burl", encodeURIComponent(profile.banner_image_url));
   }
   if (profile.trading_stance && VALID_STANCES.includes(profile.trading_stance)) {
     params.set("ts", profile.trading_stance);
@@ -265,10 +288,21 @@ export function packBannerConfig(profile: Partial<UserProfileData>): string {
 export function getBannerCssStyle(
   bannerColor = "#121214",
   accentColor = "#7289da",
-  bannerStyle: BannerStyleType = "gradient"
+  bannerStyle: BannerStyleType = "gradient",
+  bannerImageUrl?: string
 ): React.CSSProperties {
   const base = VALID_HEX.test(bannerColor) ? bannerColor : "#121214";
   const accent = VALID_HEX.test(accentColor) ? accentColor : "#7289da";
+
+  if (bannerImageUrl) {
+    return {
+      backgroundColor: base,
+      backgroundImage: `url(${bannerImageUrl})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+    };
+  }
 
   switch (bannerStyle) {
     case "solid":
@@ -321,6 +355,29 @@ export function getBannerCssStyle(
         backgroundColor: base,
         backgroundImage: `radial-gradient(rgba(255,255,255,0.14) 1.25px, transparent 1.25px), linear-gradient(135deg, ${base} 0%, ${accent}45 100%)`,
         backgroundSize: "18px 18px, 100% 100%",
+      };
+    case "obsidian":
+      return {
+        backgroundColor: base,
+        backgroundImage: `linear-gradient(30deg, rgba(255,255,255,0.03) 12%, transparent 12.5%, transparent 87%, rgba(255,255,255,0.03) 87.5%, rgba(255,255,255,0.03)), linear-gradient(150deg, rgba(255,255,255,0.03) 12%, transparent 12.5%, transparent 87%, rgba(255,255,255,0.03) 87.5%, rgba(255,255,255,0.03)), linear-gradient(60deg, rgba(255,255,255,0.04) 25%, transparent 25.5%, transparent 75%, rgba(255,255,255,0.04) 75%, rgba(255,255,255,0.04)), linear-gradient(135deg, ${base} 0%, ${accent}35 100%)`,
+        backgroundSize: "40px 70px, 40px 70px, 40px 70px, 100% 100%",
+      };
+    case "topography":
+      return {
+        backgroundColor: base,
+        backgroundImage: `repeating-radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 2px, transparent 2px, transparent 18px), repeating-radial-gradient(ellipse at 15% 85%, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 2px, transparent 2px, transparent 22px), linear-gradient(135deg, ${base} 0%, ${accent}45 100%)`,
+      };
+    case "cyber":
+      return {
+        backgroundColor: base,
+        backgroundImage: `linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px), radial-gradient(circle at 50% 50%, ${accent}50 0%, transparent 60%), linear-gradient(135deg, ${base} 0%, #050608 100%)`,
+        backgroundSize: "16px 16px, 16px 16px, 100% 100%, 100% 100%",
+      };
+    case "constellation":
+      return {
+        backgroundColor: base,
+        backgroundImage: `radial-gradient(circle at 20% 30%, rgba(255,255,255,0.7) 1px, transparent 1.5px), radial-gradient(circle at 80% 25%, rgba(255,255,255,0.8) 1.5px, transparent 2px), radial-gradient(circle at 45% 65%, rgba(255,255,255,0.6) 1px, transparent 1.5px), radial-gradient(circle at 70% 80%, rgba(255,255,255,0.75) 1.2px, transparent 1.8px), radial-gradient(circle at 10% 85%, rgba(255,255,255,0.5) 1px, transparent 1.5px), linear-gradient(135deg, ${base} 0%, ${accent}50 100%)`,
+        backgroundSize: "120px 120px, 160px 160px, 100px 100px, 140px 140px, 90px 90px, 100% 100%",
       };
     default:
       return { backgroundColor: base };
@@ -461,38 +518,53 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   },
 
   fetchProfile: async (userId, force = false) => {
-    if (!userId || !UUID_REGEX.test(userId)) {
-      return null;
-    }
-
+    if (!userId) return null;
+    const cleanId = userId.trim();
     const { cache } = get();
     const now = Date.now();
 
-    if (!force && cache[userId] && now - cache[userId].timestamp < CACHE_TTL) {
-      return cache[userId].data;
+    if (!force) {
+      if (cache[cleanId] && now - cache[cleanId].timestamp < CACHE_TTL) {
+        return cache[cleanId].data;
+      }
+      const match = Object.values(cache).find(
+        (c) =>
+          c.data.id === cleanId ||
+          c.data.discord_id === cleanId ||
+          c.data.username?.toLowerCase() === cleanId.toLowerCase()
+      );
+      if (match && now - match.timestamp < CACHE_TTL) {
+        return match.data;
+      }
     }
 
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
+    let query = supabase.from("profiles").select("*");
+    if (UUID_REGEX.test(cleanId)) {
+      query = query.eq("id", cleanId);
+    } else if (/^\d{17,21}$/.test(cleanId)) {
+      query = query.eq("discord_id", cleanId);
+    } else {
+      query = query.ilike("username", cleanId);
+    }
+
+    const { data, error } = await query.maybeSingle();
 
     if (error || !data) {
-      logger.error('ASTD-UI-001', `Failed to fetch profile for ${userId}: ${error?.message ?? 'unknown'}`);
+      logger.error('ASTD-UI-001', `Failed to fetch profile for ${cleanId}: ${error?.message ?? 'unknown'}`);
       set((state) => ({
-        notFoundCache: { ...state.notFoundCache, [userId]: now },
+        notFoundCache: { ...state.notFoundCache, [cleanId]: now },
       }));
       return null;
     }
 
     const profileData = unpackProfileRow(data);
+    const resolvedId = profileData.id;
 
     if (profileData.master_rep_override === null) {
       const { data: repLog } = await supabase
         .from("moderation_logs")
         .select("action_type")
-        .eq("target_user_id", userId)
+        .eq("target_user_id", resolvedId)
         .ilike("action_type", "MASTER REP OVERRIDE:%")
         .order("created_at", { ascending: false })
         .limit(1)
@@ -520,7 +592,11 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     set((state) => ({
       cache: {
         ...state.cache,
-        [userId]: { data: profileData, timestamp: now },
+        [resolvedId]: { data: profileData, timestamp: now },
+        ...(profileData.discord_id
+          ? { [profileData.discord_id]: { data: profileData, timestamp: now } }
+          : {}),
+        [cleanId]: { data: profileData, timestamp: now },
       },
     }));
 

@@ -19,6 +19,7 @@ import {
   GiMagnifyingGlass,
   GiCycle,
   GiChest,
+  GiChatBubble,
 } from "react-icons/gi";
 import { useProfileStore } from "../../store/useProfileStore";
 import { useInventoryStore } from "../../store/useInventoryStore";
@@ -30,10 +31,21 @@ import { getProxyImage, handleImageError } from "../../data";
 import {
   useAdminIntel,
   CORE_SYSTEM_ROLES,
+  RolePermissions,
+  RoleItem,
 } from "../../hooks/useAdminIntel";
 import { SecuritySettingsTab } from "./Admin/SecuritySettingsTab";
+import { AuditStreamTab } from "./Admin/AuditStreamTab";
+import { CommentsStreamTab } from "./Admin/CommentsStreamTab";
 
-type AdminTab = "users" | "roles" | "ads" | "master-lab" | "security";
+type AdminTab =
+  | "users"
+  | "roles"
+  | "ads"
+  | "comments"
+  | "audit"
+  | "master-lab"
+  | "security";
 
 const PRESET_COLORS = [
   "#ef4444",
@@ -120,6 +132,11 @@ export function AdminChannel({
     canUseMasterTools,
     canActOnUser,
     canToggleRole,
+    recentComments,
+    isLoadingComments,
+    fetchRecentComments,
+    deleteComment,
+    warnUser,
   } = useAdminIntel();
 
   const [activeTab, setActiveTab] = useState<AdminTab>("users");
@@ -131,6 +148,21 @@ export function AdminChannel({
   const [newRoleName, setNewRoleName] = useState("");
   const [newRoleColor, setNewRoleColor] = useState("#a855f7");
   const [newRoleRank, setNewRoleRank] = useState(10);
+  const [newRoleTier, setNewRoleTier] = useState<"admin" | "mod" | "custom">(
+    "custom"
+  );
+  const [newRolePermissions, setNewRolePermissions] = useState<RolePermissions>(
+    {
+      manage_roles: false,
+      manage_users: false,
+      manage_ads: true,
+      manage_comments: true,
+      view_audit_logs: true,
+      access_master_lab: false,
+      override_rep: false,
+    }
+  );
+  const [showPermissionsPanel, setShowPermissionsPanel] = useState(false);
   const [selectedRoleForRoster, setSelectedRoleForRoster] =
     useState<string>("mod");
   const [roleMemberSearch, setRoleMemberSearch] = useState("");
@@ -138,7 +170,61 @@ export function AdminChannel({
     name: string;
     color: string;
     rank: number;
+    permissions?: RolePermissions;
   } | null>(null);
+
+  const permissionConfig: {
+    id: keyof RolePermissions;
+    label: string;
+    desc: string;
+    allowedForCaller: boolean;
+  }[] = useMemo(
+    () => [
+      {
+        id: "manage_roles",
+        label: "Manage Roles",
+        desc: "Create & edit roles lower than own rank",
+        allowedForCaller: isMaster || isAdmin,
+      },
+      {
+        id: "manage_users",
+        label: "Manage Members",
+        desc: "Ban accounts and reset profile identities",
+        allowedForCaller: isMaster || isAdmin,
+      },
+      {
+        id: "manage_ads",
+        label: "Manage Trade Listings",
+        desc: "Remove non-compliant trade ads",
+        allowedForCaller: true,
+      },
+      {
+        id: "manage_comments",
+        label: "Moderate Comments",
+        desc: "Delete abusive comments and purge threads",
+        allowedForCaller: true,
+      },
+      {
+        id: "view_audit_logs",
+        label: "View Audit Stream",
+        desc: "Inspect system security and moderation records",
+        allowedForCaller: true,
+      },
+      {
+        id: "access_master_lab",
+        label: "Master Lab Access",
+        desc: "Direct economy and value overrides",
+        allowedForCaller: isMaster,
+      },
+      {
+        id: "override_rep",
+        label: "Reputation Override",
+        desc: "Adjust trader reputation scores manually",
+        allowedForCaller: isMaster,
+      },
+    ],
+    [isMaster, isAdmin]
+  );
 
   // Ad Moderation State
   const [adSearchQuery, setAdSearchQuery] = useState("");
@@ -371,6 +457,49 @@ export function AdminChannel({
             </button>
           )}
 
+          {canModerate && (
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic("light");
+                setActiveTab("comments");
+                fetchRecentComments();
+              }}
+              className={`h-7 px-3 rounded-[3px] text-[12px] flex items-center gap-1.5 transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 cursor-pointer shrink-0 ${
+                activeTab === "comments"
+                  ? "bg-foreground text-background shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
+              }`}
+            >
+              <GiChatBubble className="w-3.5 h-3.5" />
+              <span>Comments</span>
+              <span className="text-[10px] font-mono opacity-80">
+                {metrics.totalComments}
+              </span>
+            </button>
+          )}
+
+          {canModerate && (
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic("light");
+                setActiveTab("audit");
+              }}
+              className={`h-7 px-3 rounded-[3px] text-[12px] flex items-center gap-1.5 transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 cursor-pointer shrink-0 ${
+                activeTab === "audit"
+                  ? "bg-foreground text-background shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
+              }`}
+            >
+              <GiScrollUnfurled className="w-3.5 h-3.5" />
+              <span>Audit Log</span>
+              <span className="text-[10px] font-mono opacity-80">
+                {globalLogs.length}
+              </span>
+            </button>
+          )}
+
           {canUseMasterTools && (
             <button
               type="button"
@@ -438,10 +567,42 @@ export function AdminChannel({
         </div>
       </div>
 
-      {/* =====================================================================
-          TAB 1: SECURITY VAULT (MASTER ONLY)
-      ===================================================================== */}
       {activeTab === "security" && isMaster && <SecuritySettingsTab />}
+
+      {activeTab === "audit" && canModerate && (
+        <AuditStreamTab
+          logs={globalLogs}
+          onInspectUser={(uid) => {
+            const u = allUsers.find((x) => x.id === uid);
+            if (u) {
+              setSelectedUser(u);
+            } else {
+              fetchUsers(uid);
+            }
+            setActiveTab("users");
+          }}
+          onRefresh={loadMetrics}
+        />
+      )}
+
+      {activeTab === "comments" && canModerate && (
+        <CommentsStreamTab
+          comments={recentComments}
+          isLoading={isLoadingComments}
+          onDeleteComment={deleteComment}
+          onWarnUser={warnUser}
+          onInspectUser={(uid) => {
+            const u = allUsers.find((x) => x.id === uid);
+            if (u) {
+              setSelectedUser(u);
+            } else {
+              fetchUsers(uid);
+            }
+            setActiveTab("users");
+          }}
+          onRefresh={fetchRecentComments}
+        />
+      )}
 
       {/* =====================================================================
           TAB 2: ROLE MANAGEMENT
@@ -451,15 +612,75 @@ export function AdminChannel({
           <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
             {/* Left 5 Cols: Role List + Creator */}
             <div className="lg:col-span-5 flex flex-col gap-4">
-              {(isMaster || isAdmin) && (
+              {canManageRoles && (
                 <div className="bg-card border border-border rounded-[6px] p-4 flex flex-col gap-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[12px] text-foreground">
-                      New Role
+                    <span className="text-[12px] font-bold text-foreground">
+                      New Role Studio
                     </span>
                     <span className="text-[10px] font-mono text-muted-foreground">
-                      {isMaster ? "Rank 0–99" : "Rank ≥ 3"}
+                      {isMaster
+                        ? "Master (Rank 0–99)"
+                        : isAdmin
+                        ? "Admin (Rank 2–99)"
+                        : "Mod (Rank 3–99)"}
                     </span>
+                  </div>
+
+                  {/* Level Hierarchy Buttons */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground uppercase">
+                      <span>Hierarchy Level</span>
+                      <span>Rank #{newRoleRank}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {isMaster && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewRoleTier("admin");
+                            setNewRoleRank(1);
+                          }}
+                          className={`h-7 rounded-[3px] text-[11px] font-bold border transition-colors cursor-pointer ${
+                            newRoleTier === "admin"
+                              ? "bg-[#3b82f6] text-white border-[#2563eb]"
+                              : "bg-input/60 text-muted-foreground hover:text-foreground border-border"
+                          }`}
+                        >
+                          Admin (#1)
+                        </button>
+                      )}
+                      {(isMaster || isAdmin) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewRoleTier("mod");
+                            setNewRoleRank(2);
+                          }}
+                          className={`h-7 rounded-[3px] text-[11px] font-bold border transition-colors cursor-pointer ${
+                            newRoleTier === "mod"
+                              ? "bg-[#22c55e] text-white border-[#16a34a]"
+                              : "bg-input/60 text-muted-foreground hover:text-foreground border-border"
+                          }`}
+                        >
+                          Mod (#2)
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewRoleTier("custom");
+                          setNewRoleRank(Math.max(3, newRoleRank));
+                        }}
+                        className={`h-7 rounded-[3px] text-[11px] font-bold border transition-colors cursor-pointer ${
+                          newRoleTier === "custom"
+                            ? "bg-[#a855f7] text-white border-[#9333ea]"
+                            : "bg-input/60 text-muted-foreground hover:text-foreground border-border"
+                        }`}
+                      >
+                        Custom (#3+)
+                      </button>
+                    </div>
                   </div>
 
                   <div className="flex gap-2">
@@ -467,27 +688,28 @@ export function AdminChannel({
                       type="text"
                       value={newRoleName}
                       onChange={(e) => setNewRoleName(e.target.value)}
-                      placeholder="Role name…"
+                      placeholder="Role identifier (e.g. trusted-trader)…"
                       className="flex-1 h-8 bg-input border border-border rounded-[4px] px-2.5 text-[12px] font-mono text-foreground focus:border-primary outline-none"
                     />
                     <input
                       type="number"
-                      min={isMaster ? 0 : 3}
+                      min={isMaster ? 0 : isAdmin ? 2 : 3}
                       max={99}
                       value={newRoleRank}
                       onChange={(e) =>
                         setNewRoleRank(
                           Math.max(
-                            isMaster ? 0 : 3,
+                            isMaster ? 0 : isAdmin ? 2 : 3,
                             parseInt(e.target.value) || 10
                           )
                         )
                       }
                       className="w-16 h-8 bg-input border border-border rounded-[4px] px-2 text-[12px] font-mono text-foreground focus:border-primary outline-none"
-                      title="Rank order"
+                      title="Custom Rank Number"
                     />
                   </div>
 
+                  {/* Color Picker Row */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <input
@@ -516,14 +738,76 @@ export function AdminChannel({
                       type="button"
                       onClick={() => {
                         if (!newRoleName.trim()) return;
-                        createNewRole(newRoleName, newRoleColor, newRoleRank);
+                        createNewRole(
+                          newRoleName,
+                          newRoleColor,
+                          newRoleRank,
+                          newRolePermissions
+                        );
                         setNewRoleName("");
                       }}
                       disabled={!newRoleName.trim()}
-                      className="h-8 px-3.5 bg-primary hover:bg-primary/90 disabled:opacity-40 text-primary-foreground text-[11px] rounded-[4px] cursor-pointer shrink-0"
+                      className="h-8 px-3.5 bg-primary hover:bg-primary/90 disabled:opacity-40 text-primary-foreground text-[11px] font-bold rounded-[4px] cursor-pointer shrink-0"
                     >
-                      Create
+                      Create Role
                     </button>
+                  </div>
+
+                  {/* Discord-Style Permissions Checklist */}
+                  <div className="flex flex-col gap-1.5 pt-2 border-t border-border">
+                    <button
+                      type="button"
+                      onClick={() => setShowPermissionsPanel(!showPermissionsPanel)}
+                      className="flex items-center justify-between text-[11px] text-muted-foreground hover:text-foreground cursor-pointer font-mono py-1"
+                    >
+                      <span>
+                        PERMISSIONS ({Object.values(newRolePermissions).filter(Boolean).length} ACTIVE)
+                      </span>
+                      <span className="text-[10px] font-bold">
+                        {showPermissionsPanel ? "▲ HIDE" : "▼ CONFIGURE"}
+                      </span>
+                    </button>
+
+                    {showPermissionsPanel && (
+                      <div className="flex flex-col gap-1.5 p-2 rounded-[4px] bg-[#1e1f22] border border-border">
+                        {permissionConfig.map((p) => {
+                          const isChecked = Boolean(newRolePermissions[p.id]);
+                          const isDisabled = !p.allowedForCaller;
+
+                          return (
+                            <label
+                              key={p.id}
+                              className={`flex items-start gap-2 p-1.5 rounded-[3px] transition-colors ${
+                                isDisabled
+                                  ? "opacity-40 cursor-not-allowed"
+                                  : "cursor-pointer hover:bg-[#2b2d31]"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                disabled={isDisabled}
+                                onChange={(e) => {
+                                  setNewRolePermissions({
+                                    ...newRolePermissions,
+                                    [p.id]: e.target.checked,
+                                  });
+                                }}
+                                className="mt-0.5 rounded border-border accent-primary cursor-pointer disabled:cursor-not-allowed"
+                              />
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-[11px] font-bold text-foreground">
+                                  {p.label}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground leading-tight">
+                                  {p.desc}
+                                </span>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -542,7 +826,9 @@ export function AdminChannel({
                       u.role === r.name || u.assigned_roles?.includes(r.name)
                   ).length;
                   const canEditThisRole =
-                    isMaster || (isAdmin && !isCore && r.rank >= 3);
+                    isMaster ||
+                    (isAdmin && !isCore && r.rank >= 2) ||
+                    (isMod && !isCore && r.rank >= 3);
 
                   return (
                     <div
@@ -560,7 +846,7 @@ export function AdminChannel({
                             className="w-2.5 h-2.5 rounded-full shrink-0"
                             style={{ backgroundColor: r.color }}
                           />
-                          <span className="text-[12px] text-foreground truncate">
+                          <span className="text-[12px] text-foreground font-bold truncate">
                             {r.name}
                           </span>
                           <span className="text-[10px] font-mono text-muted-foreground">
@@ -582,6 +868,7 @@ export function AdminChannel({
                                     name: r.name,
                                     color: r.color,
                                     rank: r.rank,
+                                    permissions: r.permissions || {},
                                   });
                                 }}
                                 className="px-1.5 py-0.5 rounded bg-card border border-border text-[10px] font-mono text-muted-foreground hover:text-foreground cursor-pointer"
@@ -607,53 +894,99 @@ export function AdminChannel({
                       {editingRole?.name === r.name && (
                         <div
                           onClick={(e) => e.stopPropagation()}
-                          className="pt-2 border-t border-border flex items-center gap-2"
+                          className="pt-2 border-t border-border flex flex-col gap-2"
                         >
-                          <input
-                            type="color"
-                            value={editingRole.color}
-                            onChange={(e) =>
-                              setEditingRole({
-                                ...editingRole,
-                                color: e.target.value,
-                              })
-                            }
-                            className="w-6 h-6 rounded bg-transparent border border-border cursor-pointer"
-                          />
-                          <input
-                            type="number"
-                            min={isMaster ? 0 : 3}
-                            max={99}
-                            value={editingRole.rank}
-                            onChange={(e) =>
-                              setEditingRole({
-                                ...editingRole,
-                                rank: parseInt(e.target.value) || 10,
-                              })
-                            }
-                            className="w-16 h-6 bg-card border border-border rounded px-1.5 text-[11px] font-mono text-foreground"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              updateRoleConfig(
-                                editingRole.name,
-                                editingRole.color,
-                                editingRole.rank
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={editingRole.color}
+                              onChange={(e) =>
+                                setEditingRole({
+                                  ...editingRole,
+                                  color: e.target.value,
+                                })
+                              }
+                              className="w-6 h-6 rounded bg-transparent border border-border cursor-pointer"
+                            />
+                            <input
+                              type="number"
+                              min={isMaster ? 0 : isAdmin ? 2 : 3}
+                              max={99}
+                              value={editingRole.rank}
+                              onChange={(e) =>
+                                setEditingRole({
+                                  ...editingRole,
+                                  rank: parseInt(e.target.value) || 10,
+                                })
+                              }
+                              className="w-16 h-6 bg-card border border-border rounded px-1.5 text-[11px] font-mono text-foreground"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateRoleConfig(
+                                  editingRole.name,
+                                  editingRole.color,
+                                  editingRole.rank,
+                                  editingRole.permissions
+                                );
+                                setEditingRole(null);
+                              }}
+                              className="h-6 px-2 rounded bg-primary text-primary-foreground text-[10px] font-bold cursor-pointer"
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingRole(null)}
+                              className="h-6 px-2 rounded bg-muted text-muted-foreground text-[10px] cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+
+                          {/* Permissions Editor for Edited Role */}
+                          <div className="p-2 rounded bg-[#1e1f22] border border-border flex flex-col gap-1">
+                            <span className="text-[10px] font-mono text-muted-foreground uppercase mb-0.5">
+                              Configure Role Permissions
+                            </span>
+                            {permissionConfig.map((p) => {
+                              const isChecked = Boolean(
+                                editingRole.permissions?.[p.id]
                               );
-                              setEditingRole(null);
-                            }}
-                            className="h-6 px-2 rounded bg-primary text-primary-foreground text-[10px] cursor-pointer"
-                          >
-                            Save
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditingRole(null)}
-                            className="h-6 px-2 rounded bg-muted text-muted-foreground text-[10px] cursor-pointer"
-                          >
-                            Cancel
-                          </button>
+                              const isDisabled = !p.allowedForCaller;
+
+                              return (
+                                <label
+                                  key={p.id}
+                                  className={`flex items-center gap-2 text-[10.5px] ${
+                                    isDisabled
+                                      ? "opacity-40 cursor-not-allowed"
+                                      : "cursor-pointer"
+                                  }`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    disabled={isDisabled}
+                                    onChange={(e) => {
+                                      setEditingRole({
+                                        ...editingRole,
+                                        permissions: {
+                                          ...(editingRole.permissions || {}),
+                                          [p.id]: e.target.checked,
+                                        },
+                                      });
+                                    }}
+                                    className="rounded border-border accent-primary cursor-pointer disabled:cursor-not-allowed"
+                                  />
+                                  <span className="text-foreground font-medium">
+                                    {p.label}
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                     </div>

@@ -36,6 +36,37 @@ export interface SystemMetrics {
   totalComments: number;
 }
 
+export interface RolePermissions {
+  manage_roles?: boolean;
+  manage_users?: boolean;
+  manage_ads?: boolean;
+  manage_comments?: boolean;
+  view_audit_logs?: boolean;
+  access_master_lab?: boolean;
+  override_rep?: boolean;
+}
+
+export interface RoleItem {
+  name: string;
+  color: string;
+  rank: number;
+  permissions?: RolePermissions;
+}
+
+export interface AdminComment {
+  id: string;
+  ad_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  profiles?: {
+    username: string;
+    avatar_url?: string;
+    role?: string;
+    discord_id?: string;
+  };
+}
+
 export interface ModLog {
   id: string;
   target_user_id?: string;
@@ -43,8 +74,16 @@ export interface ModLog {
   reason: string;
   created_at: string;
   moderator_id: string;
-  profiles?: { username: string };
-  target_profile?: { username: string };
+  profiles?: {
+    username: string;
+    avatar_url?: string;
+    role?: string;
+  };
+  target_profile?: {
+    username: string;
+    avatar_url?: string;
+    role?: string;
+  };
 }
 
 export interface UserVaultItem {
@@ -88,9 +127,94 @@ export const ROLE_PRIORITY: Record<string, number> = {
   banned: 99,
 };
 
+export const DEFAULT_ROLE_PERMISSIONS: Record<string, RolePermissions> = {
+  master: {
+    manage_roles: true,
+    manage_users: true,
+    manage_ads: true,
+    manage_comments: true,
+    view_audit_logs: true,
+    access_master_lab: true,
+    override_rep: true,
+  },
+  admin: {
+    manage_roles: true,
+    manage_users: true,
+    manage_ads: true,
+    manage_comments: true,
+    view_audit_logs: true,
+    access_master_lab: false,
+    override_rep: false,
+  },
+  mod: {
+    manage_roles: true,
+    manage_users: false,
+    manage_ads: true,
+    manage_comments: true,
+    view_audit_logs: true,
+    access_master_lab: false,
+    override_rep: false,
+  },
+  user: {
+    manage_roles: false,
+    manage_users: false,
+    manage_ads: false,
+    manage_comments: false,
+    view_audit_logs: false,
+    access_master_lab: false,
+    override_rep: false,
+  },
+};
+
+export function computeUserPermissions(
+  userRole: string,
+  assignedRoles: string[] = [],
+  availableRoles: RoleItem[] = []
+): RolePermissions {
+  if (userRole === "master" || assignedRoles.includes("master")) {
+    return {
+      manage_roles: true,
+      manage_users: true,
+      manage_ads: true,
+      manage_comments: true,
+      view_audit_logs: true,
+      access_master_lab: true,
+      override_rep: true,
+    };
+  }
+
+  const result: RolePermissions = {
+    manage_roles: false,
+    manage_users: false,
+    manage_ads: false,
+    manage_comments: false,
+    view_audit_logs: false,
+    access_master_lab: false,
+    override_rep: false,
+  };
+
+  const allRoleNames = [userRole, ...assignedRoles];
+  for (const rName of allRoleNames) {
+    const lower = rName.toLowerCase();
+    const defaults = DEFAULT_ROLE_PERMISSIONS[lower];
+    if (defaults) {
+      for (const [k, v] of Object.entries(defaults)) {
+        if (v) (result as any)[k] = true;
+      }
+    }
+    const found = availableRoles.find((r) => r.name.toLowerCase() === lower);
+    if (found?.permissions) {
+      for (const [k, v] of Object.entries(found.permissions)) {
+        if (v) (result as any)[k] = true;
+      }
+    }
+  }
+  return result;
+}
+
 export function getEffectiveRoleRank(
   roleName: string,
-  availableRoles?: { name: string; rank: number }[]
+  availableRoles?: RoleItem[]
 ): number {
   const lower = (roleName || "user").toLowerCase();
   if (lower in ROLE_PRIORITY) return ROLE_PRIORITY[lower];
@@ -100,7 +224,7 @@ export function getEffectiveRoleRank(
 
 export function getUserHighestRank(
   user: Pick<UserProfile, "role" | "assigned_roles"> | null | undefined,
-  availableRoles?: { name: string; rank: number }[]
+  availableRoles?: RoleItem[]
 ): number {
   if (!user) return 99;
   const roles = new Set<string>([
@@ -167,11 +291,11 @@ export function useAdminIntel() {
     staffCount: 0,
     totalComments: 0,
   });
-  const [availableRoles, setAvailableRoles] = useState<
-    { name: string; color: string; rank: number }[]
-  >([]);
+  const [availableRoles, setAvailableRoles] = useState<RoleItem[]>([]);
   const [modLogs, setModLogs] = useState<ModLog[]>([]);
   const [globalLogs, setGlobalLogs] = useState<ModLog[]>([]);
+  const [recentComments, setRecentComments] = useState<AdminComment[]>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [platformAds, setPlatformAds] = useState<TradingAd[]>([]);
   const [isLoadingAds, setIsLoadingAds] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -323,13 +447,15 @@ export function useAdminIntel() {
       supabase.from("ad_comments").select("id", { count: "exact", head: true }),
       supabase
         .from("roles")
-        .select("name, color, rank")
+        .select("name, color, rank, permissions")
         .order("rank", { ascending: true }),
       supabase
         .from("moderation_logs")
-        .select("*, profiles!moderation_logs_moderator_id_fkey(username)")
+        .select(
+          "*, profiles!moderation_logs_moderator_id_fkey(username, avatar_url, role)"
+        )
         .order("created_at", { ascending: false })
-        .limit(40),
+        .limit(60),
     ]);
 
     setMetrics({
@@ -342,11 +468,32 @@ export function useAdminIntel() {
     });
 
     if (rolesRes.data) {
-      setAvailableRoles(rolesRes.data);
+      setAvailableRoles(rolesRes.data as RoleItem[]);
     }
 
     if (globalLogsRes.data) {
-      setGlobalLogs(globalLogsRes.data as ModLog[]);
+      const logs = globalLogsRes.data as ModLog[];
+      const targetIds = Array.from(
+        new Set(logs.map((l) => l.target_user_id).filter(Boolean))
+      ) as string[];
+
+      if (targetIds.length > 0) {
+        const { data: targetProfiles } = await supabase
+          .from("profiles")
+          .select("id, username, avatar_url, role")
+          .in("id", targetIds);
+
+        const targetMap = new Map(targetProfiles?.map((p) => [p.id, p]));
+        const enriched = logs.map((l) => ({
+          ...l,
+          target_profile: l.target_user_id
+            ? targetMap.get(l.target_user_id)
+            : undefined,
+        }));
+        setGlobalLogs(enriched);
+      } else {
+        setGlobalLogs(logs);
+      }
     }
   }, [canModerate]);
 
@@ -605,6 +752,10 @@ export function useAdminIntel() {
   ) => {
     if (!profile || !canModerate) return;
 
+    const targetUserObj =
+      users.find((u) => u.id === targetUserId) ||
+      (selectedUser?.id === targetUserId ? selectedUser : null);
+
     const optimisticLog: ModLog = {
       id: Math.random().toString(),
       target_user_id: targetUserId,
@@ -612,7 +763,18 @@ export function useAdminIntel() {
       reason: reason,
       created_at: new Date().toISOString(),
       moderator_id: profile.id,
-      profiles: { username: profile.username },
+      profiles: {
+        username: profile.username,
+        avatar_url: profile.avatar_url,
+        role: profile.role,
+      },
+      target_profile: targetUserObj
+        ? {
+            username: targetUserObj.username,
+            avatar_url: targetUserObj.avatar_url,
+            role: targetUserObj.role,
+          }
+        : undefined,
     };
 
     setModLogs((prev) => [optimisticLog, ...prev]);
@@ -699,8 +861,13 @@ export function useAdminIntel() {
     return true;
   };
 
-  const createNewRole = async (name: string, color: string, rank: number) => {
-    const clearance = await verifyLiveClearance(["master", "admin"]);
+  const createNewRole = async (
+    name: string,
+    color: string,
+    rank: number,
+    permissions: RolePermissions = {}
+  ) => {
+    const clearance = await verifyLiveClearance(["master", "admin", "mod"]);
     if (!clearance.ok) return;
 
     const cleanName = name
@@ -713,14 +880,39 @@ export function useAdminIntel() {
       return;
     }
 
-    // Admins can only create custom community roles (rank >= 3)
-    const safeRank = isMaster ? Math.max(0, rank) : Math.max(3, rank);
+    // Hierarchy rank boundary:
+    // Users of the same rank CANNOT create another role of equal or higher rank.
+    // Master (0) can create Admin (1), Mod (2), Custom (>= 3), or any rank >= 0.
+    // Admin (1) can create Mod (2) or Custom (>= 3). Cannot create rank 0 or 1.
+    // Mod (2) can only create Custom (>= 3). Cannot create rank 0, 1, or 2.
+    let minAllowedRank = 3;
+    if (isMaster) {
+      minAllowedRank = 0;
+    } else if (isAdmin) {
+      minAllowedRank = 2;
+    } else if (isMod) {
+      minAllowedRank = 3;
+    }
+
+    const safeRank = Math.max(minAllowedRank, rank);
+
+    // Permissions boundary:
+    // Staff cannot grant permissions higher than their own clearance.
+    const safePerms: RolePermissions = { ...permissions };
+    if (!isMaster) {
+      safePerms.access_master_lab = false;
+      safePerms.override_rep = false;
+    }
+    if (isMod) {
+      safePerms.manage_roles = false;
+      safePerms.manage_users = false;
+    }
 
     const { error } = await supabase.from("roles").insert({
       name: cleanName,
       color,
       rank: safeRank,
-      permissions: {},
+      permissions: safePerms,
     });
 
     if (error) {
@@ -729,6 +921,11 @@ export function useAdminIntel() {
         "error"
       );
     } else {
+      await logModAction(
+        profile?.id || "",
+        `CREATED ROLE: @${cleanName}`,
+        `Rank #${safeRank} created by ${profile?.username || "Staff"}`
+      );
       showToast(`Role '${cleanName}' created at Rank #${safeRank}.`);
       loadMetrics();
     }
@@ -737,32 +934,71 @@ export function useAdminIntel() {
   const updateRoleConfig = async (
     name: string,
     color: string,
-    rank: number
+    rank: number,
+    permissions?: RolePermissions
   ) => {
-    const clearance = await verifyLiveClearance(["master", "admin"]);
+    const clearance = await verifyLiveClearance(["master", "admin", "mod"]);
     if (!clearance.ok) return;
 
-    if (!isMaster && CORE_SYSTEM_ROLES.includes(name.toLowerCase())) {
+    if (CORE_SYSTEM_ROLES.includes(name.toLowerCase()) && !isMaster) {
       showToast("Only Master can modify core system roles.", "error");
       return;
     }
 
-    const safeRank = isMaster ? Math.max(0, rank) : Math.max(3, rank);
+    const targetRoleObj = availableRoles.find((r) => r.name === name);
+    const targetRank = targetRoleObj ? targetRoleObj.rank : 99;
+    const callerRank = isMaster ? 0 : isAdmin ? 1 : isMod ? 2 : 99;
+
+    // Hierarchy rule: Cannot edit role of equal or higher rank (except Master)
+    if (!isMaster && targetRank <= callerRank) {
+      showToast(
+        `Hierarchy Violation: Cannot modify role '${name}' of equal or higher rank.`,
+        "error"
+      );
+      return;
+    }
+
+    let minAllowedRank = 3;
+    if (isMaster) minAllowedRank = 0;
+    else if (isAdmin) minAllowedRank = 2;
+    else if (isMod) minAllowedRank = 3;
+
+    const safeRank = Math.max(minAllowedRank, rank);
+
+    const updatePayload: Record<string, any> = { color, rank: safeRank };
+    if (permissions) {
+      const safePerms: RolePermissions = { ...permissions };
+      if (!isMaster) {
+        safePerms.access_master_lab = false;
+        safePerms.override_rep = false;
+      }
+      if (isMod) {
+        safePerms.manage_roles = false;
+        safePerms.manage_users = false;
+      }
+      updatePayload.permissions = safePerms;
+    }
+
     const { error } = await supabase
       .from("roles")
-      .update({ color, rank: safeRank })
+      .update(updatePayload)
       .eq("name", name);
 
     if (error) {
       showToast("Failed to update role settings.", "error");
     } else {
+      await logModAction(
+        profile?.id || "",
+        `UPDATED ROLE: @${name}`,
+        `Rank #${safeRank} updated by ${profile?.username || "Staff"}`
+      );
       showToast(`Updated role '${name}'.`);
       loadMetrics();
     }
   };
 
   const deleteRole = async (name: string) => {
-    const clearance = await verifyLiveClearance(["master", "admin"]);
+    const clearance = await verifyLiveClearance(["master", "admin", "mod"]);
     if (!clearance.ok) return;
 
     if (CORE_SYSTEM_ROLES.includes(name.toLowerCase())) {
@@ -770,22 +1006,104 @@ export function useAdminIntel() {
       return;
     }
 
-    if (!isMaster) {
-      const targetRoleObj = availableRoles.find((r) => r.name === name);
-      if (targetRoleObj && targetRoleObj.rank < 3) {
-        showToast("Only Master can delete high-rank staff roles.", "error");
-        return;
-      }
+    const targetRoleObj = availableRoles.find((r) => r.name === name);
+    const targetRank = targetRoleObj ? targetRoleObj.rank : 99;
+    const callerRank = isMaster ? 0 : isAdmin ? 1 : isMod ? 2 : 99;
+
+    // Hierarchy rule: Cannot delete role of equal or higher rank (except Master)
+    if (!isMaster && targetRank <= callerRank) {
+      showToast(
+        `Hierarchy Violation: Cannot delete role '${name}' of equal or higher rank.`,
+        "error"
+      );
+      return;
     }
 
     const { error } = await supabase.from("roles").delete().eq("name", name);
     if (error) {
       showToast("Failed to delete role. Please try again.", "error");
     } else {
+      await logModAction(
+        profile?.id || "",
+        `DELETED ROLE: @${name}`,
+        `Deleted by ${profile?.username || "Staff"}`
+      );
       showToast(`Role '${name}' deleted.`);
       loadMetrics();
       fetchUsers(searchQuery, showBannedOnly);
     }
+  };
+
+  // ============================================================================
+  // COMMENTS MODERATION (Master, Admin, Mod)
+  // ============================================================================
+  const fetchRecentComments = useCallback(async () => {
+    if (!canModerate) return;
+    setIsLoadingComments(true);
+    const { data, error } = await supabase
+      .from("ad_comments")
+      .select(
+        `id, ad_id, user_id, content, created_at,
+         profiles!ad_comments_user_id_fkey(username, avatar_url, role, discord_id)`
+      )
+      .order("created_at", { ascending: false })
+      .limit(60);
+
+    if (!error && data) {
+      setRecentComments(data as any as AdminComment[]);
+    }
+    setIsLoadingComments(false);
+  }, [canModerate]);
+
+  const deleteComment = async (
+    commentId: string,
+    authorId: string,
+    authorUsername: string,
+    reason = "Comment rule violation / moderation removal"
+  ) => {
+    const clearance = await verifyLiveClearance(["master", "admin", "mod"]);
+    if (!clearance.ok) return false;
+
+    triggerHaptic("heavy");
+    await logModAction(
+      authorId,
+      `DELETED COMMENT: @${authorUsername || "User"}`,
+      reason
+    );
+
+    const { error } = await supabase
+      .from("ad_comments")
+      .delete()
+      .eq("id", commentId);
+
+    if (error) {
+      showToast("Failed to delete comment.", "error");
+      return false;
+    }
+
+    setRecentComments((prev) => prev.filter((c) => c.id !== commentId));
+    loadMetrics();
+    showToast("Comment removed and logged.");
+    return true;
+  };
+
+  const warnUser = async (
+    targetUserId: string,
+    targetUsername: string,
+    reason: string
+  ) => {
+    const clearance = await verifyLiveClearance(["master", "admin", "mod"]);
+    if (!clearance.ok) return false;
+
+    triggerHaptic("medium");
+    await logModAction(
+      targetUserId,
+      `WARNED USER: @${targetUsername || "User"}`,
+      reason
+    );
+
+    showToast(`Formal warning logged for @${targetUsername}.`);
+    return true;
   };
 
   // ============================================================================
@@ -1252,5 +1570,10 @@ export function useAdminIntel() {
     canUseMasterTools,
     canActOnUser,
     canToggleRole,
+    recentComments,
+    isLoadingComments,
+    fetchRecentComments,
+    deleteComment,
+    warnUser,
   };
 }

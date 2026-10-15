@@ -10,6 +10,7 @@ export type UnitStatus =
   | "highballed"
   | "hyped"
   | "gatekept"
+  | "manipulated"
   | "black-marketed";
 
 export type FilterKey =

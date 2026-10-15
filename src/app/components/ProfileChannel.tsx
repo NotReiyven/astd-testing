@@ -19,6 +19,7 @@ import {
   getJoinNumber,
   getEarlyUserRole,
 } from "../../store/useProfileStore";
+import { ProfileCustomizerModal } from "./Profile/ProfileCustomizerModal";
 import { CustomColorPicker } from "./ui/CustomColorPicker";
 import { useAuthStore, UserProfile } from "../../store/useAuthStore";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
@@ -891,16 +892,7 @@ export function ProfileChannel() {
 
   // Edit Profile Modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editBio, setEditBio] = useState("");
-  const [editBannerColor, setEditBannerColor] = useState("#121214");
-  const [editAccentColor, setEditAccentColor] = useState("#7289da");
-  const [editBannerStyle, setEditBannerStyle] =
-    useState<BannerStyleType>("gradient");
-  const [editTradingStance, setEditTradingStance] =
-    useState<TradingStanceType>("open");
-  const [editRobloxName, setEditRobloxName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [isSyncingAvatar, setIsSyncingAvatar] = useState(false);
 
   const [copiedProfileLink, setCopiedProfileLink] = useState(false);
   const [copiedDiscordId, setCopiedDiscordId] = useState(false);
@@ -934,12 +926,6 @@ export function ProfileChannel() {
       const data = await fetchProfile(targetId, true);
       if (mounted && data) {
         setProfileData(data);
-        setEditBio(data.bio || "");
-        setEditBannerColor(data.banner_color || "#121214");
-        setEditAccentColor(data.accent_color || "#7289da");
-        setEditBannerStyle(data.banner_style || "gradient");
-        setEditTradingStance(data.trading_stance || "open");
-        setEditRobloxName(data.roblox_username || "");
 
         const ownerMatch = Boolean(
           currentUser?.id && currentUser.id === targetId
@@ -997,30 +983,15 @@ export function ProfileChannel() {
       .join(" ");
 
   const openEditModal = () => {
-    if (!profileData) return;
+    if (!profileData || !isOwner) return;
     triggerHaptic("light");
-    setEditBio(profileData.bio || "");
-    setEditBannerColor(profileData.banner_color || "#121214");
-    setEditAccentColor(profileData.accent_color || "#7289da");
-    setEditBannerStyle(profileData.banner_style || "gradient");
-    setEditTradingStance(profileData.trading_stance || "open");
-    setEditRobloxName(profileData.roblox_username || "");
     setIsEditModalOpen(true);
   };
 
-  const handleSaveProfile = async () => {
+  const handleSaveProfile = async (updates: Partial<UserProfileData>) => {
     if (!isOwner || !targetId) return;
     setIsSaving(true);
     triggerHaptic("medium");
-
-    const updates: Partial<UserProfileData> = {
-      bio: editBio,
-      banner_color: editBannerColor,
-      accent_color: editAccentColor,
-      banner_style: editBannerStyle,
-      trading_stance: editTradingStance,
-      roblox_username: editRobloxName,
-    };
 
     const { error } = await saveProfileUpdates(targetId, updates);
     if (!error) {
@@ -1152,8 +1123,9 @@ export function ProfileChannel() {
 
   const handleCopyProfileLink = () => {
     triggerHaptic("light");
-    const uniqueUrl = targetId
-      ? `${window.location.origin}/profile/${targetId}`
+    const identifier = profileData?.discord_id || targetId || profileData?.username;
+    const uniqueUrl = identifier
+      ? `${window.location.origin}/profile/${identifier}`
       : window.location.href;
     navigator.clipboard.writeText(uniqueUrl);
     setCopiedProfileLink(true);
@@ -1593,7 +1565,8 @@ export function ProfileChannel() {
           style={getBannerCssStyle(
             profileData.banner_color,
             accentColor,
-            profileData.banner_style || "gradient"
+            profileData.banner_style || "gradient",
+            profileData.banner_image_url
           )}
         >
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent pointer-events-none" />
@@ -3186,300 +3159,15 @@ export function ProfileChannel() {
         </div>
       </div>
 
-      {/* ================================================================== */}
-      {/* DISCORD-STYLE PROFILE CUSTOMIZER MODAL WITH LIVE PREVIEW           */}
-      {/* ================================================================== */}
-      {isEditModalOpen && (
-        <div
-          className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="customize-profile-title"
-        >
-          <div
-            className="absolute inset-0"
-            onClick={() => setIsEditModalOpen(false)}
-          />
-
-          <div className="bg-card border border-border rounded-[10px] max-w-2xl w-full max-h-[90vh] flex flex-col relative shadow-2xl overflow-hidden z-10 animate-modal-pop">
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-border bg-popover flex items-center justify-between shrink-0">
-              <div className="flex flex-col">
-                <h3
-                  id="customize-profile-title"
-                  className="text-[16px] text-foreground font-black"
-                >
-                  Customize Trader Profile
-                </h3>
-                <span className="text-[12px] text-muted-foreground">
-                  Personalize your banner, accent trim, trading stance, and bio.
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsEditModalOpen(false)}
-                className="text-muted-foreground hover:text-foreground p-1.5 rounded-[6px] hover:bg-muted transition-[transform,background-color,color] duration-150 active:scale-90 cursor-pointer"
-                aria-label="Close customize profile modal"
-              >
-                <IconClose className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Scrollable Modal Body */}
-            <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col gap-5">
-              {/* LIVE PROFILE PREVIEW CARD */}
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[12px] text-muted-foreground">
-                  Live Profile Preview
-                </span>
-                <div
-                  className="rounded-[8px] border border-border bg-popover overflow-hidden shadow-md transition-[border-color] duration-300"
-                  style={{ borderTop: `3px solid ${editAccentColor}` }}
-                >
-                  <div
-                    className="h-[76px] w-full relative border-b border-border transition-[background-color,border-color] duration-150 ease-out"
-                    style={getBannerCssStyle(
-                      editBannerColor,
-                      editAccentColor,
-                      editBannerStyle
-                    )}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                  </div>
-                  <div className="px-4 pb-4 relative flex flex-col gap-2">
-                    <div className="flex items-end justify-between gap-3 -mt-7">
-                      <div className="flex items-end gap-3">
-                        <UserAvatar
-                          avatarUrl={profileData.avatar_url}
-                          username={profileData.username}
-                          discordId={profileData.discord_id}
-                          className="w-14 h-14 rounded-[8px] border-4 border-popover bg-muted shadow-md"
-                          alt={profileData.username}
-                        />
-                        <div className="flex flex-col pb-0.5">
-                          <span className="text-[15px] text-foreground leading-tight">
-                            {profileData.username}
-                          </span>
-                          <span className="text-[11px] text-muted-foreground">
-                            {editRobloxName
-                              ? `Roblox: ${editRobloxName}`
-                              : "Verified Trader"}
-                          </span>
-                        </div>
-                      </div>
-                      {(() => {
-                        const previewStance =
-                          TRADING_STANCES.find(
-                            (s) => s.id === editTradingStance
-                          ) || TRADING_STANCES[0];
-                        return (
-                          <span
-                            className="text-[10.5px] font-semibold px-2.5 py-0.5 rounded-[4px] border"
-                            style={{
-                              backgroundColor: previewStance.bg,
-                              color: previewStance.color,
-                              borderColor: previewStance.border,
-                            }}
-                          >
-                            {previewStance.label}
-                          </span>
-                        );
-                      })()}
-                    </div>
-                    {editBio && (
-                      <p className="text-[12px] text-foreground/90 pt-1 border-t border-border/60 line-clamp-2">
-                        {editBio}
-                      </p>
-                    )}
-                    {isOwner && (
-                      <div className="pt-2 border-t border-border/60 flex items-center justify-between">
-                        <span className="text-[11px] text-muted-foreground">
-                          Discord Avatar
-                        </span>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            setIsSyncingAvatar(true);
-                            try {
-                              const success =
-                                await useAuthStore.getState().syncDiscordAvatar();
-                              if (success) {
-                                const currentAvatar =
-                                  useAuthStore.getState().profile?.avatar_url;
-                                if (currentAvatar) {
-                                  setProfileData((prev) => ({
-                                    ...prev,
-                                    avatar_url: currentAvatar,
-                                  }));
-                                }
-                              }
-                            } finally {
-                              setIsSyncingAvatar(false);
-                            }
-                          }}
-                          disabled={isSyncingAvatar}
-                          className="text-[11.5px] font-semibold text-primary hover:underline flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                        >
-                          <IconRefresh
-                            className={`w-3 h-3 ${
-                              isSyncingAvatar ? "animate-spin" : ""
-                            }`}
-                          />
-                          <span>
-                            {isSyncingAvatar ? "Syncing…" : "Re-sync Discord Avatar"}
-                          </span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Color Studio (Embedded, Zero Native OS Dialogs) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <CustomColorPicker
-                  value={editBannerColor}
-                  onChange={setEditBannerColor}
-                  label="Banner Primary Color"
-                  presets={BANNER_SWATCHES}
-                  mode="foundation"
-                />
-
-                <CustomColorPicker
-                  value={editAccentColor}
-                  onChange={setEditAccentColor}
-                  label="Profile Accent Trim"
-                  presets={ACCENT_SWATCHES}
-                  mode="accent"
-                />
-              </div>
-
-              {/* Banner Pattern Style */}
-              <div className="flex flex-col gap-2">
-                <label className="text-[12px] text-muted-foreground">
-                  Banner Pattern Style
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                  {BANNER_STYLES.map((st) => (
-                    <button
-                      key={st.id}
-                      type="button"
-                      onClick={() => {
-                        triggerHaptic("light");
-                        setEditBannerStyle(st.id);
-                      }}
-                      className={`px-3 py-2 rounded-[6px] border text-[12px] transition-[transform,background-color,border-color,color] duration-150 active:scale-95 cursor-pointer font-medium ${
-                        editBannerStyle === st.id
-                          ? "bg-primary text-primary-foreground font-semibold shadow-xs"
-                          : "bg-popover border-border text-muted-foreground hover:text-foreground hover:bg-card"
-                      }`}
-                    >
-                      {st.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Trading Stance Selector */}
-              <div className="flex flex-col gap-2">
-                <label className="text-[12px] text-muted-foreground">
-                  Trading Stance Badge
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {TRADING_STANCES.map((st) => {
-                    const active = editTradingStance === st.id;
-                    return (
-                      <button
-                        key={st.id}
-                        type="button"
-                        onClick={() => {
-                          triggerHaptic("light");
-                          setEditTradingStance(st.id);
-                        }}
-                        className={`p-2.5 rounded-[6px] border text-left flex flex-col gap-0.5 transition-[transform,background-color,border-color] duration-150 active:scale-95 cursor-pointer ${
-                          active
-                            ? "bg-popover border-primary shadow-sm"
-                            : "bg-popover/50 border-border hover:bg-popover hover:border-muted-foreground"
-                        }`}
-                      >
-                        <span
-                          className="text-[12.5px] font-bold"
-                          style={{ color: st.color }}
-                        >
-                          {st.label}
-                        </span>
-                        <span className="text-[11px] text-muted-foreground">
-                          {st.desc}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* About Me & Roblox Username */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[12px] text-muted-foreground">
-                      About Me
-                    </label>
-                    <span className="text-[11px] font-mono text-muted-foreground">
-                      {editBio.length} / 190
-                    </span>
-                  </div>
-                  <textarea
-                    value={editBio}
-                    onChange={(e) => setEditBio(e.target.value)}
-                    maxLength={190}
-                    placeholder="Share your trading goals, time zone, or preferred offers…"
-                    className="w-full bg-popover border border-border rounded-[6px] p-3 text-[13px] text-foreground outline-none resize-none h-20 focus:border-primary transition-colors"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-[12px] text-muted-foreground flex items-center gap-1.5">
-                    <GiGamepad className="w-4 h-4 text-primary" />
-                    <span>Roblox Username</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={editRobloxName}
-                    onChange={(e) => setEditRobloxName(e.target.value)}
-                    placeholder="Your Roblox username (optional)…"
-                    className="w-full bg-popover border border-border rounded-[6px] px-3.5 py-2.5 text-[13px] text-foreground outline-none focus:border-primary transition-colors"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-border bg-popover flex items-center justify-end gap-3 shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsEditModalOpen(false)}
-                className="px-4 py-2 bg-card hover:bg-muted border border-border rounded-[6px] text-[12.5px] text-foreground transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveProfile}
-                disabled={isSaving}
-                className="px-5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-[6px] text-[12.5px] flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
-              >
-                {isSaving ? (
-                  <span>Saving…</span>
-                ) : (
-                  <>
-                    <IconCheck className="w-4 h-4" />
-                    <span>Save Profile</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Isolated Memoized Profile Customizer Modal */}
+      {profileData && isOwner && (
+        <ProfileCustomizerModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          profileData={profileData}
+          onSave={handleSaveProfile}
+          isSaving={isSaving}
+        />
       )}
     </div>
   );

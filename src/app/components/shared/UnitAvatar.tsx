@@ -31,21 +31,20 @@ export const UnitAvatar = memo(
 
     return (
       <>
+        {/* Background Fallback Initials (ALWAYS rendered with crisp solid contrast so it NEVER shows a black box) */}
+        <div
+          className={`${fallbackClassName} select-none pointer-events-none font-bold`}
+          style={getAvatarStyle(unitName)}
+        >
+          {getInitials(unitName)}
+        </div>
+
+        {/* Loading subtle pulse indicator */}
         {!imgLoaded && !imgError && proxyUrl && (
-          <div className="absolute inset-0 z-[5] bg-muted/40 animate-pulse" />
+          <div className="absolute inset-0 z-[5] bg-black/20 animate-pulse pointer-events-none" />
         )}
-        {(!proxyUrl || imgError) && (
-          <div
-            className={`${fallbackClassName} ${
-              !isOpaqueFallback
-                ? "opacity-20 select-none pointer-events-none"
-                : ""
-            }`}
-            style={getAvatarStyle(unitName)}
-          >
-            {getInitials(unitName)}
-          </div>
-        )}
+
+        {/* Real unit image */}
         {proxyUrl && !imgError && (
           <img
             src={proxyUrl}
@@ -62,7 +61,7 @@ export const UnitAvatar = memo(
                 setImgError(true);
               }
             }}
-            className={`${imageClassName} transition-opacity duration-300 ease-out ${
+            className={`${imageClassName} transition-opacity duration-200 ease-out ${
               imgLoaded ? "opacity-100" : "opacity-0"
             }`}
             style={{ objectPosition: "center 15%" }}

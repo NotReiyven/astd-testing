@@ -718,18 +718,22 @@ export function AdInteractionModal() {
             .join(", ")
         : "Offers";
 
-    const messageStr = `Hey! Saw your ad on ASTD Value List.\nYou're giving: ${giveNames}\nYou're looking for: ${getNames}\nIs this still available?`;
+    const isShowcase = activeAd.ad_type === "inventory";
+    const messageStr = isShowcase
+      ? `Hey! Saw your inventory showcase on ASTD Value List:\n• Showcase: ${giveNames}\nI'm interested in discussing an offer. Are you open to trade?`
+      : `Hey! Saw your listing on ASTD Value List:\n• Your Offer: ${giveNames}\n• You Want: ${getNames}\nI'm interested in this trade. Is it still available?`;
 
     const ok = await copyTextWithFallback(messageStr);
+    const recipientName = activeAd.profiles?.username ? `@${activeAd.profiles.username}` : "Trader";
     if (ok) {
-      addToast("Copied trade message & opening Discord…", "info");
+      addToast(`Copied trade offer for ${recipientName} & opening Discord…`, "success");
       safeOpenExternal(
         `https://discord.com/users/${activeAd.profiles.discord_id}`
       );
     } else {
       addToast(
-        "Could not copy message automatically—opening Discord profile.",
-        "warning"
+        `Opening Discord profile for ${recipientName} (ID: ${activeAd.profiles.discord_id})`,
+        "info"
       );
       safeOpenExternal(
         `https://discord.com/users/${activeAd.profiles.discord_id}`

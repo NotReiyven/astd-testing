@@ -395,19 +395,20 @@ const VanguardAdCard = memo(
 
       let messageStr = "";
       if (isInventory) {
-        messageStr = `Hey! Saw your inventory showcase on ASTD Value List.\nI'm interested in offering for some of your units. Are you around to trade?`;
+        messageStr = `Hey! Saw your inventory showcase on ASTD Value List:\n• Showcase: ${giveNames}\nI'm interested in discussing an offer. Are you open to trade?`;
       } else {
-        messageStr = `Hey! Saw your ad on ASTD Value List.\nYou're giving: ${giveNames}\nYou're looking for: ${getNames}\nIs this still available?`;
+        messageStr = `Hey! Saw your listing on ASTD Value List:\n• Your Offer: ${giveNames}\n• You Want: ${getNames}\nI'm interested in this trade. Is it still available?`;
       }
 
       const copied = await copyTextWithFallback(messageStr);
+      const recipientName = ad.profiles?.username ? `@${ad.profiles.username}` : "Trader";
       if (copied) {
-        addToast("Copied trade message & opening Discord…", "info");
+        addToast(`Copied trade offer for ${recipientName} & opening Discord…`, "success");
         safeOpenExternal(`https://discord.com/users/${ad.profiles.discord_id}`);
       } else {
         addToast(
-          "Could not copy message automatically—opening Discord profile.",
-          "warning"
+          `Opening Discord profile for ${recipientName} (ID: ${ad.profiles.discord_id})`,
+          "info"
         );
         safeOpenExternal(`https://discord.com/users/${ad.profiles.discord_id}`);
       }

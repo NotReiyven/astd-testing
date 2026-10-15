@@ -23,6 +23,7 @@ interface AuthState {
   initialize: () => void;
   updateStatus: (status: UserProfile["status"]) => Promise<void>;
   syncDiscordAvatar: () => Promise<boolean>;
+  updateAvatarUrl: (url: string) => Promise<boolean>;
 }
 
 import { del as delIdb } from "idb-keyval";
@@ -292,6 +293,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!session?.user || !profile) return false;
 
     try {
+      // 1. Force refresh session to pull down fresh Discord claims if token permits
+      try {
+        await supabase.auth.refreshSession();
+      } catch {
+        // Continue if offline or network throttle
+      }
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -325,6 +333,40 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       useToastStore
         .getState()
         .addToast("Could not sync Discord avatar. Try again.", "error");
+      return false;
+    }
+  },
+
+  updateAvatarUrl: async (newAvatarUrl: string) => {
+    const { profile } = get();
+    if (!profile) return false;
+
+    const trimmed = (newAvatarUrl || "").trim();
+    if (trimmed && !trimmed.startsWith("http://") && !trimmed.startsWith("https://") && !trimmed.startsWith("data:image/")) {
+      useToastStore.getState().addToast("Avatar URL must be a valid http(s) link or data URI.", "error");
+      return false;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: trimmed })
+        .eq("id", profile.id);
+
+      if (!error) {
+        set({ profile: { ...profile, avatar_url: trimmed } });
+        useProfileStore
+          .getState()
+          .updateLocalProfile(profile.id, { avatar_url: trimmed });
+        useToastStore
+          .getState()
+          .addToast("Avatar updated successfully!", "success");
+        return true;
+      }
+      useToastStore.getState().addToast("Failed to update avatar in database.", "error");
+      return false;
+    } catch {
+      useToastStore.getState().addToast("Error updating avatar.", "error");
       return false;
     }
   },
