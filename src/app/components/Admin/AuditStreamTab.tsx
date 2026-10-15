@@ -12,6 +12,7 @@ import {
 } from "react-icons/gi";
 import { ModLog } from "../../../hooks/useAdminIntel";
 import { UserAvatar } from "../shared/UserAvatar";
+import { DiscordRolePill } from "../shared/DiscordRolePill";
 import { triggerHaptic } from "../../../data/helpers";
 
 interface AuditStreamTabProps {
@@ -61,22 +62,42 @@ function getActionIcon(actionType: string) {
   return <GiShieldEchoes className="w-3.5 h-3.5 text-muted-foreground" />;
 }
 
-function getRoleBadgeColor(role?: string) {
-  const r = (role || "user").toLowerCase();
-  if (r === "master") return "bg-[#eab308] text-black border-[#ca8a04]";
-  if (r === "admin") return "bg-[#3b82f6] text-white border-[#2563eb]";
-  if (r === "mod") return "bg-[#22c55e] text-white border-[#16a34a]";
-  if (r === "banned") return "bg-[#ef4444] text-white border-[#dc2626]";
-  return "bg-[#2b2d31] text-[#949ba4] border-[#383a40]";
-}
-
 export function AuditStreamTab({
   logs,
   onInspectUser,
   onRefresh,
 }: AuditStreamTabProps) {
   const [activeCategory, setActiveCategory] = useState<LogCategory>("all");
+  const [selectedActor, setSelectedActor] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: logs.length };
+    CATEGORY_FILTERS.forEach((c) => {
+      if (c.id !== "all") {
+        counts[c.id] = logs.filter(
+          (log) => getActionCategory(log.action_type) === c.id
+        ).length;
+      }
+    });
+    return counts;
+  }, [logs]);
+
+  const uniqueActors = useMemo(() => {
+    const actorsMap = new Map<string, { username: string; role?: string }>();
+    logs.forEach((log) => {
+      if (log.moderator_id && log.profiles?.username) {
+        actorsMap.set(log.moderator_id, {
+          username: log.profiles.username,
+          role: log.profiles.role,
+        });
+      }
+    });
+    return Array.from(actorsMap.entries()).map(([id, info]) => ({
+      id,
+      ...info,
+    }));
+  }, [logs]);
 
   const filteredLogs = useMemo(() => {
     let result = logs;
@@ -85,6 +106,10 @@ export function AuditStreamTab({
       result = result.filter(
         (log) => getActionCategory(log.action_type) === activeCategory
       );
+    }
+
+    if (selectedActor !== "all") {
+      result = result.filter((log) => log.moderator_id === selectedActor);
     }
 
     if (searchQuery.trim()) {
@@ -104,7 +129,7 @@ export function AuditStreamTab({
     }
 
     return result;
-  }, [logs, activeCategory, searchQuery]);
+  }, [logs, activeCategory, selectedActor, searchQuery]);
 
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-5 animate-fade-in flex flex-col gap-4 max-w-6xl mx-auto w-full">
@@ -156,25 +181,69 @@ export function AuditStreamTab({
         </div>
       </div>
 
-      {/* Category Filter Pills */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-        {CATEGORY_FILTERS.map((cat) => (
-          <button
-            key={cat.id}
-            type="button"
-            onClick={() => {
-              triggerHaptic("light");
-              setActiveCategory(cat.id);
-            }}
-            className={`h-7 px-3 rounded-[4px] text-[11px] font-medium transition-colors cursor-pointer shrink-0 border ${
-              activeCategory === cat.id
-                ? "bg-foreground text-background font-bold border-foreground"
-                : "bg-card text-muted-foreground hover:text-foreground border-border hover:bg-[#2b2d31]"
-            }`}
-          >
-            {cat.label}
-          </button>
-        ))}
+      {/* Category Filter & Control Toolbar */}
+      <div className="bg-card border border-border rounded-[6px] p-2.5 flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {CATEGORY_FILTERS.map((cat) => {
+            const count = categoryCounts[cat.id] ?? 0;
+            const isActive = activeCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => {
+                  triggerHaptic("light");
+                  setActiveCategory(cat.id);
+                }}
+                className={`h-8 px-3 rounded-[4px] text-[12px] font-medium transition-all duration-150 cursor-pointer shrink-0 border flex items-center gap-2 ${
+                  isActive
+                    ? "bg-[#5865F2] text-white font-bold border-[#4752C4] shadow-sm"
+                    : "bg-[#2b2d31] text-[#dbdee1] hover:text-white border-[#383a40] hover:bg-[#35373c]"
+                }`}
+              >
+                <span>{cat.label}</span>
+                <span
+                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-semibold ${
+                    isActive
+                      ? "bg-black/30 text-white"
+                      : "bg-[#1e1f22] text-[#949ba4]"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {uniqueActors.length > 0 && (
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">
+              Filter by User:
+            </span>
+            <select
+              value={selectedActor}
+              onChange={(e) => {
+                triggerHaptic("light");
+                setSelectedActor(e.target.value);
+              }}
+              className="h-8 px-2.5 rounded-[4px] bg-[#2b2d31] text-[#dbdee1] border border-[#383a40] text-[11px] font-mono outline-none focus:border-[#5865F2] cursor-pointer"
+            >
+              <option value="all" className="bg-[#1e1f22] text-foreground">
+                All Users ({uniqueActors.length})
+              </option>
+              {uniqueActors.map((actor) => (
+                <option
+                  key={actor.id}
+                  value={actor.id}
+                  className="bg-[#1e1f22] text-foreground"
+                >
+                  @{actor.username} {actor.role ? `(${actor.role.toUpperCase()})` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Audit Log Entries List */}
@@ -183,10 +252,24 @@ export function AuditStreamTab({
           <div className="p-10 text-center flex flex-col items-center justify-center gap-2 text-muted-foreground bg-input/40 rounded-[5px] border border-border">
             <GiScrollUnfurled className="w-8 h-8 opacity-40" />
             <span className="text-[12px] font-mono">
-              {searchQuery
-                ? `No audit logs match "${searchQuery}".`
-                : "No audit logs recorded for this category."}
+              {searchQuery || selectedActor !== "all" || activeCategory !== "all"
+                ? "No audit logs match your active filter criteria."
+                : "No audit logs recorded."}
             </span>
+            {(searchQuery || selectedActor !== "all" || activeCategory !== "all") && (
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic("light");
+                  setActiveCategory("all");
+                  setSelectedActor("all");
+                  setSearchQuery("");
+                }}
+                className="mt-2 h-7 px-3 rounded-[3px] bg-[#2b2d31] hover:bg-[#35373c] border border-border text-[11px] font-mono text-[#dbdee1] cursor-pointer"
+              >
+                Clear Filters
+              </button>
+            )}
           </div>
         ) : (
           filteredLogs.map((log) => {
@@ -226,13 +309,7 @@ export function AuditStreamTab({
                         {actorUsername}
                       </span>
 
-                      <span
-                        className={`text-[9.5px] uppercase font-bold px-1.5 py-0.2 rounded border ${getRoleBadgeColor(
-                          actorRole
-                        )}`}
-                      >
-                        {actorRole}
-                      </span>
+                      <DiscordRolePill name={actorRole} size="sm" />
 
                       <span className="text-muted-foreground text-[12px]">
                         performed
@@ -267,13 +344,7 @@ export function AuditStreamTab({
                           @{targetUsername}
                         </span>
                         {targetRole && (
-                          <span
-                            className={`text-[9px] uppercase font-bold px-1 py-0.2 rounded border ${getRoleBadgeColor(
-                              targetRole
-                            )}`}
-                          >
-                            {targetRole}
-                          </span>
+                          <DiscordRolePill name={targetRole} size="sm" />
                         )}
                       </div>
                     )}
