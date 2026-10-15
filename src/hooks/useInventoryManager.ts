@@ -9,7 +9,6 @@ import {
   TIER_ORDER,
 } from "../app/components/InventoryChannel/inventoryUtils";
 import { parseSmartTradeAsync } from "../app/components/TradeAnalyzer/smartParser";
-import { useStickyState } from "./useStickyState";
 import { triggerHaptic, copyTextWithFallback } from "../data/helpers";
 import { useToastStore } from "../store/useToastStore";
 
@@ -50,10 +49,6 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
   const wishlistItems = isReadOnly ? viewedWishlist : myWishlist;
 
   const [vaultView, setVaultView] = useState<"owned" | "wishlist">("owned");
-  const [sandboxDismissed, setSandboxDismissed] = useStickyState(
-    false,
-    "astd_sandbox_dismissed_v1"
-  );
 
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedUnits, setSelectedUnits] = useState<Set<string>>(new Set());
@@ -355,32 +350,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     };
   }, [activeItems, unitMap]);
 
-  const isSandbox =
-    !isReadOnly &&
-    vaultView !== "wishlist" &&
-    metrics.uniqueCount === 0 &&
-    !sandboxDismissed;
-
-  const sandboxMockItems = useMemo(() => {
-    if (!isSandbox) return [];
-    return [
-      { unit_id: "bunny-girl", quantity: 1, is_pinned: false },
-      { unit_id: "the-ripper", quantity: 3, is_pinned: false },
-      { unit_id: "death", quantity: 1, is_pinned: true },
-    ]
-      .map((item) => ({
-        ...item,
-        id: `sandbox-${item.unit_id}`,
-        user_id: "sandbox",
-        created_at: new Date().toISOString(),
-        master: unitMap.get(item.unit_id)!,
-      }))
-      .filter((i) => i.master) as (InventoryItem & { master: MasterUnit })[];
-  }, [isSandbox, unitMap]);
-
-  const displayInventory = isSandbox
-    ? sandboxMockItems
-    : metrics.resolvedInventory;
+  const displayInventory = metrics.resolvedInventory;
 
   const top3Units = useMemo(() => {
     return [...displayInventory]
@@ -744,7 +714,6 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     try {
       if (isWishlistView) await toggleWishlist(profile.id, master.id);
       else await addOrUpdateUnit(profile.id, master.id, 1);
-      if (isSandbox) setSandboxDismissed(true);
       triggerHaptic("medium");
       setSearchQuery("");
       if (alreadyInWishlist) {
@@ -813,8 +782,6 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
       }
     }
 
-    if (isSandbox && successCount > 0) setSandboxDismissed(true);
-
     setIsImporting(false);
     setImportText("");
     if (successCount > 0) {
@@ -830,8 +797,6 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
 
   return {
     vaultView,
-    isSandbox,
-    sandboxMockItems,
     displayInventory,
     top3Units,
     searchQuery,

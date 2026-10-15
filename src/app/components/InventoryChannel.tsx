@@ -199,8 +199,6 @@ export function InventoryChannel() {
 
   const {
     vaultView,
-    isSandbox,
-    sandboxMockItems,
     displayInventory,
     top3Units,
     searchQuery,
@@ -902,7 +900,7 @@ export function InventoryChannel() {
                       : undefined
                   }
                 />
-              ) : !isSandbox && metrics.uniqueCount === 0 ? (
+              ) : metrics.uniqueCount === 0 ? (
                 <EmptyState
                   icon={<GiChest className="w-6 h-6" />}
                   title={
@@ -943,24 +941,6 @@ export function InventoryChannel() {
             </div>
           ) : (
             <>
-              {/* Sandbox Banner */}
-              {!isReadOnly && isSandbox && (
-                <div className="bg-card border-l-4 border-l-primary border border-border rounded-[6px] p-4 flex items-center justify-between mb-6 shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <IconInfo className="w-5 h-5 text-primary shrink-0" />
-                    <div className="flex flex-col">
-                      <span className="text-[13px] font-bold text-foreground">
-                        Sandbox Mode Active
-                      </span>
-                      <span className="text-[12px] text-muted-foreground">
-                        Try adjusting quantities or moving these dummy units to
-                        the Calculator. Adding any real unit clears the sandbox.
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Portfolio Dashboard */}
               {!searchQuery &&
                 activeTierFilter === "All" &&
@@ -1061,11 +1041,7 @@ export function InventoryChannel() {
                               : "Vault Net Worth"}
                           </span>
                           <div className="flex items-center gap-1.5 text-[11px] font-bold font-mono">
-                            {isSandbox ? (
-                              <span className="text-muted-foreground bg-muted px-2 py-0.5 rounded-[2px] border border-border">
-                                Sandbox Value
-                              </span>
-                            ) : metrics.marketMomentum.net > 0 ? (
+                            {metrics.marketMomentum.net > 0 ? (
                               <span className="text-[#23a559] flex items-center gap-1 bg-[#23a559]/10 px-2 py-0.5 rounded-[2px] border border-[#23a559]/20">
                                 <IconTrendingUp className="w-3 h-3" /> +
                                 {metrics.marketMomentum.net} Net Rising
@@ -1085,16 +1061,7 @@ export function InventoryChannel() {
                         </div>
 
                         <h2 onClick={() => setBreakdownModalOpen(true)} className="text-[32px] md:text-[40px] font-black text-foreground tracking-tighter leading-none font-mono cursor-pointer hover:text-primary transition-colors" title="Click to view value breakdown">
-                          {isSandbox
-                            ? sandboxMockItems
-                                .reduce(
-                                  (acc, c) =>
-                                    acc +
-                                    (c.master.value as number) * c.quantity,
-                                  0
-                                )
-                                .toLocaleString()
-                            : metrics.estimatedValue.toLocaleString()}
+                          {metrics.estimatedValue.toLocaleString()}
                         </h2>
 
                         <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-border">
@@ -1103,9 +1070,7 @@ export function InventoryChannel() {
                               Liquid Assets
                             </span>
                             <span className="text-[14px] font-bold text-foreground font-mono mt-0.5">
-                              {isSandbox
-                                ? "0"
-                                : metrics.liquidValue.toLocaleString()}
+                              {metrics.liquidValue.toLocaleString()}
                             </span>
                           </div>
                           <div className="bg-muted p-3 rounded-[4px] border border-border flex flex-col">
@@ -1113,57 +1078,52 @@ export function InventoryChannel() {
                               UNOB Proportion
                             </span>
                             <span className="text-[14px] font-bold text-foreground font-mono mt-0.5">
-                              {isSandbox
-                                ? "0"
-                                : metrics.unobPercentage.toFixed(0)}
-                              % Unobtainable
+                              {metrics.unobPercentage.toFixed(0)}% Unobtainable
                             </span>
                           </div>
                         </div>
                       </div>
 
-                      {!isSandbox && (
-                        <div className="flex flex-col gap-2 mt-5 relative z-10">
-                          <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                            <span>Demand Distribution</span>
-                            <span>
-                              {(
-                                (metrics.liquidValue / metrics.liqTotal) *
-                                100
-                              ).toFixed(0)}
-                              % Liquid
-                            </span>
-                          </div>
-                          <div className="w-full h-2 rounded-[2px] bg-muted overflow-hidden flex border border-border">
-                            <div
-                              className="h-full bg-[#4DB6AC] transition-all duration-700 ease-out"
-                              style={{ width: `${metrics.highPct}%` }}
-                              title={`High Demand: ${metrics.highPct.toFixed(
-                                0
-                              )}%`}
-                            />
-                            <div
-                              className="h-full bg-foreground transition-all duration-700 ease-out"
-                              style={{ width: `${metrics.avgPct}%` }}
-                              title={`Average Demand: ${metrics.avgPct.toFixed(
-                                0
-                              )}%`}
-                            />
-                            <div
-                              className="h-full bg-destructive transition-all duration-700 ease-out"
-                              style={{ width: `${metrics.lowPct}%` }}
-                              title={`Low Demand: ${metrics.lowPct.toFixed(
-                                0
-                              )}%`}
-                            />
-                          </div>
-                          <div className="flex justify-between items-center text-[9px] font-bold text-muted-foreground">
-                            <span>High: {metrics.highPct.toFixed(0)}%</span>
-                            <span>Avg: {metrics.avgPct.toFixed(0)}%</span>
-                            <span>Low: {metrics.lowPct.toFixed(0)}%</span>
-                          </div>
+                      <div className="flex flex-col gap-2 mt-5 relative z-10">
+                        <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                          <span>Demand Distribution</span>
+                          <span>
+                            {(
+                              (metrics.liquidValue / metrics.liqTotal) *
+                              100
+                            ).toFixed(0)}
+                            % Liquid
+                          </span>
                         </div>
-                      )}
+                        <div className="w-full h-2 rounded-[2px] bg-muted overflow-hidden flex border border-border">
+                          <div
+                            className="h-full bg-[#4DB6AC] transition-all duration-700 ease-out"
+                            style={{ width: `${metrics.highPct}%` }}
+                            title={`High Demand: ${metrics.highPct.toFixed(
+                              0
+                            )}%`}
+                          />
+                          <div
+                            className="h-full bg-foreground transition-all duration-700 ease-out"
+                            style={{ width: `${metrics.avgPct}%` }}
+                            title={`Average Demand: ${metrics.avgPct.toFixed(
+                              0
+                            )}%`}
+                          />
+                          <div
+                            className="h-full bg-destructive transition-all duration-700 ease-out"
+                            style={{ width: `${metrics.lowPct}%` }}
+                            title={`Low Demand: ${metrics.lowPct.toFixed(
+                              0
+                            )}%`}
+                          />
+                        </div>
+                        <div className="flex justify-between items-center text-[9px] font-bold text-muted-foreground">
+                          <span>High: {metrics.highPct.toFixed(0)}%</span>
+                          <span>Avg: {metrics.avgPct.toFixed(0)}%</span>
+                          <span>Low: {metrics.lowPct.toFixed(0)}%</span>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="bg-card border border-border rounded-[8px] p-6 flex flex-col shadow-sm">
@@ -1218,11 +1178,7 @@ export function InventoryChannel() {
                                     {item.master.name}
                                   </span>
                                   <span className="text-[10px] font-mono text-muted-foreground">
-                                    {isSandbox
-                                      ? "Sandbox Item"
-                                      : `${share.toFixed(
-                                          1
-                                        )}% of total net worth`}
+                                    {`${share.toFixed(1)}% of total net worth`}
                                   </span>
                                 </div>
                               </div>
@@ -1295,7 +1251,7 @@ export function InventoryChannel() {
                             {tierItems.reduce((s, i) => s + i.quantity, 0)} Units
                           </span>
 
-                          {!isSandbox && vaultView !== "wishlist" && (
+                          {vaultView !== "wishlist" && (
                             <div className="hidden md:flex items-center gap-2 ml-4">
                               <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
                                 {uniqueCollected} / {totalInTier} Collected
@@ -1355,7 +1311,6 @@ export function InventoryChannel() {
                                   stagedGiveQty={stagedGive}
                                   stagedGetQty={stagedGet}
                                   onQtyChange={handleQtyChange}
-                                  isSandbox={isSandbox}
                                   isReadOnly={isReadOnly}
                                   isWishlist={vaultView === "wishlist"}
                                   onQuickTransfer={handleQuickTransfer}

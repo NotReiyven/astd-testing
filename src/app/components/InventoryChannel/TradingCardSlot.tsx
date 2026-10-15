@@ -70,7 +70,6 @@ interface TradingCardSlotProps {
   stagedGiveQty: number;
   stagedGetQty: number;
   onQtyChange: (unitId: string, delta: number) => void;
-  isSandbox?: boolean;
   isReadOnly?: boolean;
   isWishlist?: boolean;
   onQuickTransfer?: (unitId: string) => void;
@@ -104,7 +103,6 @@ export const TradingCardSlot = memo(
     stagedGiveQty,
     stagedGetQty,
     onQtyChange,
-    isSandbox,
     isReadOnly,
     isWishlist,
     onQuickTransfer,
@@ -150,7 +148,6 @@ export const TradingCardSlot = memo(
       if (
         item.is_pinned ||
         isSelectMode ||
-        isSandbox ||
         isReadOnly ||
         isWishlist
       ) {
@@ -190,7 +187,6 @@ export const TradingCardSlot = memo(
         draggable={
           !item.is_pinned &&
           !isSelectMode &&
-          !isSandbox &&
           !isReadOnly &&
           !isWishlist
         }
@@ -204,7 +200,7 @@ export const TradingCardSlot = memo(
         }`}
         style={{ "--hover-glow": tierColor } as React.CSSProperties}
       >
-        {!isSelectMode && !isSandbox && !isReadOnly && !isWishlist && (
+        {!isSelectMode && !isReadOnly && !isWishlist && (
           <div
             className="absolute top-0 bottom-[35%] left-0 w-8 bg-card border-r border-border flex flex-col justify-center items-center py-2 gap-2 -translate-x-full group-hover:translate-x-0 transition-transform duration-200 z-50 rounded-br-[8px]"
             onClick={(e) => e.stopPropagation()}
@@ -284,7 +280,7 @@ export const TradingCardSlot = memo(
           <div className="absolute inset-0 pointer-events-none z-20 shadow-[inset_0_0_24px_rgba(0,0,0,0.4)]" />
           <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-card via-card/50 to-transparent pointer-events-none z-20" />
 
-          {isInTrade && !isSelectMode && !isSandbox && (
+          {isInTrade && !isSelectMode && (
             <div className="absolute inset-0 bg-background/75 z-[25] flex flex-col items-center justify-center pointer-events-none">
               <div className="bg-[#23a559] text-white rounded-full p-2 shadow-lg mb-1 border border-white/10">
                 <IconCheck className="w-5 h-5" strokeWidth={4} />
