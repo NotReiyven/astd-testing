@@ -43,6 +43,7 @@ export interface ParsedUnit {
   tier: string;
   subCategory: string;
   subCategoryRange: string;
+  obtainability?: "OBT" | "UNOB";
 }
 
 const COLOR_TARGETS = [
@@ -318,14 +319,17 @@ export function parseSpreadsheet(data: SpreadsheetData) {
         const rVal = Math.round((bg.red || 0) * 255);
         const gVal = Math.round((bg.green || 0) * 255);
         const bVal = Math.round((bg.blue || 0) * 255);
+        const lum = 0.2126 * rVal + 0.7152 * gVal + 0.0722 * bVal;
+        const textColor = lum > 140 ? "#09090b" : "#ffffff";
+        const borderColor = lum > 140 ? "rgba(0, 0, 0, 0.15)" : "rgba(255, 255, 255, 0.25)";
         dynamicTagTargets.push({ tag: slug, r: rVal, g: gVal, b: bVal });
         parsedTutorialTags.push({
           tag: text,
           slug,
           def,
-          color: `rgb(${rVal}, ${gVal}, ${bVal})`,
-          bg: "rgba(30, 33, 36, 0.95)",
-          border: `rgba(${rVal}, ${gVal}, ${bVal}, 0.35)`,
+          color: textColor,
+          bg: `rgb(${rVal}, ${gVal}, ${bVal})`,
+          border: borderColor,
         });
       }
     }
@@ -552,6 +556,26 @@ export function parseSpreadsheet(data: SpreadsheetData) {
         secondaryTagsSet.add("black-marketed");
       }
 
+      let parsedObtainability: "OBT" | "UNOB" = "UNOB";
+      if (
+        noticeLower.includes("[unobtainable]") ||
+        noticeLower.includes("(unobtainable)") ||
+        noticeLower.includes("unobtainable")
+      ) {
+        parsedObtainability = "UNOB";
+      } else if (
+        noticeLower.includes("[obtainable]") ||
+        noticeLower.includes("(obtainable)") ||
+        noticeLower.includes("obtainable")
+      ) {
+        parsedObtainability = "OBT";
+      } else if (tierKey === "Oddities") {
+        const catLower = currentSubCategory.toLowerCase();
+        if (catLower.includes("gamepass") || catLower.includes("capsule")) {
+          parsedObtainability = "OBT";
+        }
+      }
+
       parsedUnits.push({
         id: unitId,
         name, subtitle, value: numericValue, valueMin, valueDisplay,
@@ -560,7 +584,8 @@ export function parseSpreadsheet(data: SpreadsheetData) {
         notice: rawNotice,
         status: unitStatus, 
         secondaryTags: Array.from(secondaryTagsSet),
-        tier: tierKey, subCategory: currentSubCategory, subCategoryRange: currentSubCategoryRange
+        tier: tierKey, subCategory: currentSubCategory, subCategoryRange: currentSubCategoryRange,
+        obtainability: parsedObtainability,
       });
     }
   }

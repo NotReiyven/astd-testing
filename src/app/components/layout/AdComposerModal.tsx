@@ -46,27 +46,27 @@ const FORMAT_OPTIONS = [
     label: "Specific Trade",
     sub: "Give & Get",
     icon: GiTrade,
-    activeBorder: "border-primary bg-primary/10 text-foreground",
-    iconColor: "text-primary",
-    dotColor: "bg-primary",
+    activeBorder: "bg-[#5865F2] border-[#5865F2] text-white shadow-xs",
+    iconColor: "text-white",
+    dotColor: "bg-white",
   },
   {
     id: "lf_offers" as const,
     label: "Taking Offers",
     sub: "Open Request",
     icon: GiMegaphone,
-    activeBorder: "border-[#FAA61A] bg-[#FAA61A]/10 text-foreground",
-    iconColor: "text-[#FAA61A]",
-    dotColor: "bg-[#FAA61A]",
+    activeBorder: "bg-[#d97706] border-[#d97706] text-white shadow-xs",
+    iconColor: "text-white",
+    dotColor: "bg-white",
   },
   {
     id: "inventory" as const,
     label: "Vault Showcase",
     sub: "Top 10 Units",
     icon: GiChest,
-    activeBorder: "border-[#23a559] bg-[#23a559]/10 text-foreground",
-    iconColor: "text-[#23a559]",
-    dotColor: "bg-[#23a559]",
+    activeBorder: "bg-[#23a559] border-[#23a559] text-white shadow-xs",
+    iconColor: "text-white",
+    dotColor: "bg-white",
   },
 ];
 
@@ -621,7 +621,7 @@ export function AdComposerModal() {
                         className={`flex flex-col items-start p-3 rounded-[8px] border text-left transition-all cursor-pointer focus-visible:outline-none ${
                           isSelected
                             ? fmt.activeBorder
-                            : "bg-popover/40 hover:bg-muted/50 border-border text-muted-foreground hover:text-foreground"
+                            : "bg-[#2b2d31] hover:bg-[#35373c] border-[#3f4147] text-white/80 hover:text-white shadow-xs"
                         }`}
                       >
                         <div className="flex items-center justify-between w-full mb-2.5">
@@ -629,21 +629,21 @@ export function AdComposerModal() {
                             className={`w-5 h-5 ${
                               isSelected
                                 ? fmt.iconColor
-                                : "text-muted-foreground"
+                                : "text-white/70"
                             }`}
                           />
                           <span
                             className={`w-2 h-2 rounded-full transition-all ${
                               isSelected
                                 ? fmt.dotColor
-                                : "border border-border bg-transparent"
+                                : "border border-white/30 bg-transparent"
                             }`}
                           />
                         </div>
-                        <span className="text-[12.5px] font-bold text-foreground leading-tight">
+                        <span className={`text-[12.5px] font-bold leading-tight ${isSelected ? "text-white" : "text-white"}`}>
                           {fmt.label}
                         </span>
-                        <span className="text-[10.5px] text-muted-foreground font-medium mt-0.5">
+                        <span className={`text-[10.5px] font-medium mt-0.5 ${isSelected ? "text-white/90" : "text-white/60"}`}>
                           {fmt.sub}
                         </span>
                       </button>
@@ -746,10 +746,10 @@ export function AdComposerModal() {
                           triggerHaptic("light");
                           setNote(isActive ? "" : preset);
                         }}
-                        className={`px-2.5 py-1 text-[11px] font-semibold rounded-[5px] border transition-colors cursor-pointer ${
+                        className={`px-2.5 py-1 text-[11px] font-semibold rounded-[5px] border transition-colors cursor-pointer shadow-xs ${
                           isActive
-                            ? "bg-primary/15 border-primary text-primary"
-                            : "border-border bg-popover/50 hover:bg-muted text-muted-foreground hover:text-foreground"
+                            ? "bg-[#5865F2] border-[#5865F2] text-white"
+                            : "border-[#3f4147] bg-[#2b2d31] hover:bg-[#35373c] text-white/90 hover:text-white"
                         }`}
                       >
                         {preset}
@@ -799,7 +799,7 @@ export function AdComposerModal() {
                   Expires In
                 </span>
 
-                <div className="grid grid-cols-4 gap-1.5 bg-popover p-1 rounded-[6px] border border-border w-[220px]">
+                <div className="grid grid-cols-4 gap-1.5 bg-[#1e1f22] p-1 rounded-[6px] border border-[#35373c] w-[220px]">
                   {TTL_OPTIONS.map((option) => (
                     <button
                       key={option.hours}
@@ -808,10 +808,10 @@ export function AdComposerModal() {
                         triggerHaptic("light");
                         setTtl(option.hours);
                       }}
-                      className={`py-1 rounded-[4px] text-[11px] font-bold font-mono transition-colors cursor-pointer tabular-nums ${
+                      className={`py-1 rounded-[4px] text-[11px] font-bold font-mono transition-colors cursor-pointer tabular-nums shadow-xs ${
                         ttl === option.hours
-                          ? "bg-card text-foreground shadow-sm border border-border"
-                          : "text-muted-foreground hover:text-foreground"
+                          ? "bg-[#5865F2] text-white border border-[#5865F2]"
+                          : "text-muted-foreground hover:text-white"
                       }`}
                     >
                       {option.label}
@@ -827,7 +827,7 @@ export function AdComposerModal() {
                 type="button"
                 onClick={handleClose}
                 disabled={isPublishing}
-                className="px-4 h-9 text-[12px] font-bold text-muted-foreground hover:text-foreground hover:bg-muted rounded-[6px] focus-visible:outline-none transition-colors cursor-pointer disabled:opacity-50"
+                className="px-4 h-9 text-[12px] font-bold text-white/80 hover:text-white bg-[#2b2d31] hover:bg-[#35373c] border border-[#3f4147] rounded-[6px] focus-visible:outline-none transition-colors cursor-pointer disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -840,7 +840,7 @@ export function AdComposerModal() {
                 disabled={
                   isPublishing || (!isStaff && (isOnCooldown || isAtMaxActiveAds))
                 }
-                className="px-4 h-9 bg-primary text-primary-foreground text-[12px] font-bold rounded-[6px] hover:bg-primary/90 transition-all flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 h-9 bg-[#5865F2] hover:bg-[#4752c4] text-white text-[12px] font-bold rounded-[6px] transition-all flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isOnCooldown
                   ? `Cooldown (${formattedCooldown})`

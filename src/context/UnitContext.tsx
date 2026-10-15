@@ -162,7 +162,7 @@ export const UnitProvider = ({ children }: { children: React.ReactNode }) => {
           subtitle: apiUnit.subtitle || meta.subtitle || "",
           notice: apiUnit.notice || meta.notice || "",
           aliases: meta.aliases || apiUnit.aliases || [],
-          obtainability: meta.obtainability || getObtainability(apiUnit),
+          obtainability: getObtainability(apiUnit) || apiUnit.obtainability || meta.obtainability || "UNOB",
           imageUrl: getUnitAssetUrl(apiUnit.id) || undefined,
         };
       });

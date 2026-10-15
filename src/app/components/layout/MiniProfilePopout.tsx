@@ -69,33 +69,33 @@ const STANCE_LABELS: Record<
 > = {
   open: {
     label: "Open to Offers",
-    color: "#4ade80",
-    bg: "#122317",
-    border: "#23a559",
+    color: "#ffffff",
+    bg: "#23a559",
+    border: "rgba(255, 255, 255, 0.2)",
   },
   upgrading: {
     label: "Upgrading Only",
-    color: "#fbbf24",
-    bg: "#281b0a",
-    border: "#f59e0b",
+    color: "#ffffff",
+    bg: "#d97706",
+    border: "rgba(255, 255, 255, 0.2)",
   },
   downgrading: {
     label: "Downgrading",
-    color: "#7dd3fc",
-    bg: "#0c1d2e",
-    border: "#38bdf8",
+    color: "#ffffff",
+    bg: "#0284c7",
+    border: "rgba(255, 255, 255, 0.2)",
   },
   wishlist: {
     label: "Hunting Wishlist",
-    color: "#d8b4fe",
-    bg: "#211133",
-    border: "#c084fc",
+    color: "#ffffff",
+    bg: "#8b5cf6",
+    border: "rgba(255, 255, 255, 0.2)",
   },
   afk: {
     label: "AFK / Break",
-    color: "#94a3b8",
-    bg: "#1c1f24",
-    border: "#64748b",
+    color: "#ffffff",
+    bg: "#475569",
+    border: "rgba(255, 255, 255, 0.2)",
   },
 };
 
@@ -383,7 +383,7 @@ export function MiniProfilePopout() {
                 </div>
               </div>
 
-              <div className="flex justify-end pt-2 gap-1.5 min-h-[34px] items-center flex-wrap">
+              <div className="flex justify-end pt-2 pl-[76px] gap-1.5 min-h-[34px] items-center flex-wrap">
                 {typeof profile.join_number === "number" && (
                   <span
                     className="inline-flex items-center text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-[4px] bg-[#475569] text-white border border-white/20 shrink-0 select-none shadow-xs"

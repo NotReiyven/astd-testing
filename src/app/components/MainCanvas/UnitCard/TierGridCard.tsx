@@ -502,7 +502,7 @@ function TierGridCardImpl({
                     UNOB
                   </span>
                 ) : (
-                  <span className="text-[10px] font-bold font-mono tracking-wider uppercase text-white bg-[#475569] px-1.5 py-0.5 rounded-[4px] border border-white/20 leading-none shadow-xs">
+                  <span className="text-[10px] font-bold font-mono tracking-wider uppercase text-white bg-[#23a559] px-1.5 py-0.5 rounded-[4px] border border-[#23a559]/40 leading-none shadow-xs">
                     OBN
                   </span>
                 )}

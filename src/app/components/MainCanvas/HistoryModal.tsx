@@ -263,9 +263,9 @@ function SnapshotDiffList({
             <span
               className="text-[11px] font-bold font-mono uppercase tracking-wider px-2 py-0.5 rounded-[4px] border shadow-xs"
               style={{
-                backgroundColor: prevCfg?.bg || "#52525b",
-                color: prevCfg?.color || "#ffffff",
-                borderColor: prevCfg?.border || "rgba(255, 255, 255, 0.2)",
+                backgroundColor: prevCfg?.bg || "#ffe599",
+                color: prevCfg?.color || "#18181b",
+                borderColor: prevCfg?.border || "rgba(0, 0, 0, 0.15)",
               }}
             >
               {prevCfg?.label || prev.status || "Stable"}
@@ -274,9 +274,9 @@ function SnapshotDiffList({
             <span
               className="text-[11px] font-bold font-mono uppercase tracking-wider px-2 py-0.5 rounded-[4px] border shadow-xs"
               style={{
-                backgroundColor: currCfg?.bg || "#52525b",
-                color: currCfg?.color || "#ffffff",
-                borderColor: currCfg?.border || "rgba(255, 255, 255, 0.2)",
+                backgroundColor: currCfg?.bg || "#ffe599",
+                color: currCfg?.color || "#18181b",
+                borderColor: currCfg?.border || "rgba(0, 0, 0, 0.15)",
               }}
             >
               {currCfg?.label || curr.status || "Stable"}

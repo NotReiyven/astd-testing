@@ -1599,7 +1599,7 @@ export function ProfileChannel() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pb-5 relative z-20">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 -mt-10 md:-mt-12">
             {/* Avatar + Name + Badges */}
-            <div className="flex flex-col sm:flex-row sm:items-end gap-4 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4 min-w-0 flex-1">
               <div className="relative shrink-0 self-start">
                 <UserAvatar
                   avatarUrl={profileData.avatar_url}
@@ -1617,8 +1617,9 @@ export function ProfileChannel() {
                 />
               </div>
 
-              <div className="flex flex-col gap-1.5 min-w-0 pb-0.5">
-                <div className="flex items-center gap-2.5 flex-wrap">
+              <div className="flex flex-col gap-2 min-w-0 flex-1 pb-0.5">
+                {/* Row 1: Username & Sequence Rank */}
+                <div className="flex items-center gap-2.5 flex-wrap min-w-0">
                   <h1 className="text-[22px] sm:text-[26px] text-foreground leading-tight truncate">
                     {profileData.username}
                   </h1>
@@ -1632,6 +1633,10 @@ export function ProfileChannel() {
                       User #{joinNumber}
                     </span>
                   )}
+                </div>
+
+                {/* Row 2: Badges Tray (Wraps gracefully for users with many badges) */}
+                <div className="flex items-center gap-1.5 flex-wrap min-w-0">
 
                   {/* Early Community Role Badge (Founder, OG, Veteran) */}
                   {(() => {

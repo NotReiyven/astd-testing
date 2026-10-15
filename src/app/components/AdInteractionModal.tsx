@@ -13,7 +13,6 @@ import {
   Copy,
   Check,
   ArrowRightLeft,
-  Search,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -21,6 +20,7 @@ import {
   GiShieldEchoes,
   GiHourglass,
   GiPadlock,
+  GiMegaphone,
 } from "react-icons/gi";
 import {
   useAdInteractionStore,
@@ -1237,9 +1237,9 @@ export function AdInteractionModal() {
                       <span className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
                         Requesting
                       </span>
-                      <div className="bg-card border border-dashed border-border rounded-[4px] p-5 flex flex-col items-center justify-center text-center gap-2">
-                        <Search className="w-7 h-7 text-muted-foreground" />
-                        <span className="text-[12px] font-black text-foreground uppercase tracking-wider">
+                      <div className="bg-[#d97706] border border-[#f59e0b]/40 rounded-[6px] p-5 flex flex-col items-center justify-center text-center gap-2 shadow-xs text-white">
+                        <GiMegaphone className="w-6 h-6 text-white" />
+                        <span className="text-[12px] font-black uppercase tracking-wider text-white">
                           Open to offers
                         </span>
                       </div>

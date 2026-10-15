@@ -146,10 +146,10 @@ const FixedSlotGrid = ({
             return (
               <div
                 key="offer-tile"
-                className={`${slotBase} bg-popover border border-border flex flex-col items-center justify-center gap-1 shadow-inner`}
+                className={`${slotBase} bg-[#d97706] border border-[#f59e0b]/40 flex flex-col items-center justify-center gap-1 shadow-xs rounded-[4px] text-white`}
               >
-                <Search className="w-5 h-5 text-muted-foreground opacity-80" />
-                <span className="text-xs font-medium text-muted-foreground">
+                <GiMegaphone className="w-5 h-5 text-white" />
+                <span className="text-[11px] font-bold text-white tracking-wide uppercase">
                   Offers
                 </span>
               </div>

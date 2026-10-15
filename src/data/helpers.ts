@@ -92,17 +92,29 @@ export function handleImageError(
 
 export function getObtainability(unit?: MasterUnit): "OBT" | "UNOB" {
   if (!unit) return "UNOB";
-  
-  // Directly respect DB overrides
-  if (unit.obtainability) return unit.obtainability;
 
   const n = (unit.notice || "").toLowerCase();
+
+  // Explicit notice in sheet is always source of truth
+  if (
+    n.includes("[unobtainable]") ||
+    n.includes("(unobtainable)") ||
+    n.includes("unobtainable")
+  ) {
+    return "UNOB";
+  }
+  if (
+    n.includes("[obtainable]") ||
+    n.includes("(obtainable)") ||
+    n.includes("obtainable")
+  ) {
+    return "OBT";
+  }
+
+  // Directly respect metadata overrides
+  if (unit.obtainability) return unit.obtainability;
+
   const cat = (unit.subCategory || "").toLowerCase();
-
-  // Strict structural matching based on notice/tier/category, avoiding loose string matches
-  if (n.includes("[unobtainable]") || n.includes("(unobtainable)")) return "UNOB";
-  if (n.includes("[obtainable]") || n.includes("(obtainable)")) return "OBT";
-
   if (unit.tier === "Oddities" || cat.includes("gamepass")) return "OBT";
   if (n.includes("capsule") || n.includes("egg") || n.includes("firework")) return "OBT";
   if (getTier(unit) === "C" && n.includes("banner")) return "OBT";
