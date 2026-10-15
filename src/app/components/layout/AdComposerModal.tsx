@@ -19,6 +19,7 @@ import { logger } from "../../../lib/logger";
 import { getProxyImage, handleImageError } from "../../../data";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 import { AsyncButton } from "../ui/AsyncButton";
+import { useAdCooldown } from "../../../hooks/useAdCooldown";
 
 const MAX_NOTE_LENGTH = 500;
 
@@ -82,6 +83,14 @@ export function AdComposerModal() {
   const inventoryItems = useInventoryStore((s) => s.items);
   const addToast = useToastStore((s) => s.addToast);
   const { units: ALL_UNITS } = useUnits();
+  const {
+    isStaff,
+    activeAdsCount,
+    isAtMaxActiveAds,
+    isOnCooldown,
+    canPostAd,
+    formattedCooldown,
+  } = useAdCooldown();
 
   const [adType, setAdType] = useState<"standard" | "lf_offers" | "inventory">(
     "standard"
@@ -216,6 +225,17 @@ export function AdComposerModal() {
         },
       });
       return;
+    }
+
+    if (!isStaff) {
+      if (isOnCooldown) {
+        setError(`Posting cooldown active. You can publish another listing in ${formattedCooldown}.`);
+        return;
+      }
+      if (isAtMaxActiveAds) {
+        setError("Maximum active listings reached: Regular users can have at most 3 active listings at a time.");
+        return;
+      }
     }
 
     let nextItemsError = "";
@@ -522,6 +542,59 @@ export function AdComposerModal() {
                 </div>
               )}
 
+              {/* Cooldown or Active Listing Status Banners */}
+              {isOnCooldown && (
+                <div
+                  role="alert"
+                  className="bg-[#281b0a] border border-[#b45309] px-3.5 py-2.5 rounded-[6px] text-[#fbbf24] text-[12px] font-medium flex items-center justify-between gap-2.5"
+                >
+                  <div className="flex items-center gap-2">
+                    <GiHourglass
+                      className="w-4 h-4 text-[#fbbf24] animate-spin"
+                      style={{ animationDuration: "8s" }}
+                    />
+                    <span>Posting cooldown active:</span>
+                  </div>
+                  <span className="font-mono font-bold px-2 py-0.5 rounded bg-black/40 text-foreground tabular-nums">
+                    {formattedCooldown}
+                  </span>
+                </div>
+              )}
+
+              {isAtMaxActiveAds && !isOnCooldown && (
+                <div
+                  role="alert"
+                  className="bg-[#241215] border border-[#ef4444] px-3.5 py-2.5 rounded-[6px] text-[#f87171] text-[12px] font-medium flex items-center justify-between gap-2.5"
+                >
+                  <span>
+                    Listing limit reached (3/3 active). Delete an existing ad to post.
+                  </span>
+                  <span className="font-mono font-bold px-2 py-0.5 rounded bg-black/40 text-[#f87171]">
+                    3/3
+                  </span>
+                </div>
+              )}
+
+              {isStaff ? (
+                <div className="flex items-center justify-between px-3 py-1.5 rounded-[4px] bg-primary/10 border border-primary/25 text-primary text-[11px] font-medium">
+                  <span>🛡️ Staff Bypass Enabled</span>
+                  <span>Unlimited listings · Zero cooldown</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between px-3 py-1.5 rounded-[4px] bg-muted/40 border border-border text-muted-foreground text-[11px]">
+                  <span>
+                    Active Listings:{" "}
+                    <strong className="text-foreground font-mono">
+                      {activeAdsCount}/3
+                    </strong>
+                  </span>
+                  <span>
+                    Cooldown:{" "}
+                    <strong className="text-foreground">15 min</strong>
+                  </span>
+                </div>
+              )}
+
               {/* 3-Column Format Selector */}
               <div className="flex flex-col gap-2">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -760,10 +833,16 @@ export function AdComposerModal() {
                 onClick={handlePublish}
                 isLoading={isPublishing}
                 loadingAnnouncement="Publishing…"
-                disabled={isPublishing}
-                className="px-4 h-9 bg-primary text-primary-foreground text-[12px] font-bold rounded-[6px] hover:bg-primary/90 transition-all flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+                disabled={
+                  isPublishing || (!isStaff && (isOnCooldown || isAtMaxActiveAds))
+                }
+                className="px-4 h-9 bg-primary text-primary-foreground text-[12px] font-bold rounded-[6px] hover:bg-primary/90 transition-all flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Publish Listing
+                {isOnCooldown
+                  ? `Cooldown (${formattedCooldown})`
+                  : isAtMaxActiveAds && !isStaff
+                  ? "Limit Reached (3/3)"
+                  : "Publish Listing"}
               </AsyncButton>
             </div>
           </motion.div>

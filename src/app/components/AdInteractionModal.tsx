@@ -23,7 +23,10 @@ import {
   useAdInteractionStore,
   AdComment,
 } from "../../store/useAdInteractionStore";
-import { useTradingAdsStore } from "../../store/useTradingAdsStore";
+import {
+  useTradingAdsStore,
+  TradingAd,
+} from "../../store/useTradingAdsStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useTradeStore } from "../../store/useTradeStore";
 import { useProfileStore } from "../../store/useProfileStore";
@@ -352,7 +355,36 @@ export function AdInteractionModal() {
   const openPopout = useProfileStore((s) => s.openPopout);
   const openHistoryModal = useHistoryModalStore((s) => s.openModal);
 
-  const activeAd = ads.find((a) => a.id === activeAdId);
+  const userAdHistory = useTradingAdsStore((s) => s.userAdHistory);
+  const fetchAdById = useTradingAdsStore((s) => s.fetchAdById);
+  const [fetchedAd, setFetchedAd] = useState<TradingAd | null>(null);
+
+  useEffect(() => {
+    if (!activeAdId) {
+      setFetchedAd(null);
+      return;
+    }
+    const inMemory =
+      ads.find((a) => a.id === activeAdId) ||
+      userAdHistory.find((a) => a.id === activeAdId);
+    if (!inMemory) {
+      void fetchAdById(activeAdId).then((ad) => {
+        if (ad) setFetchedAd(ad);
+      });
+    } else {
+      setFetchedAd(null);
+    }
+  }, [activeAdId, ads, userAdHistory, fetchAdById]);
+
+  const activeAd =
+    ads.find((a) => a.id === activeAdId) ||
+    userAdHistory.find((a) => a.id === activeAdId) ||
+    fetchedAd;
+
+  const isExpired = activeAd
+    ? new Date(activeAd.expires_at).getTime() <= Date.now()
+    : false;
+
   const showDiscussionSkeleton = useShowDelay(isLoading);
 
   const [newComment, setNewComment] = useState("");
@@ -457,6 +489,14 @@ export function AdInteractionModal() {
           onClick: loginWithDiscord,
         },
       });
+      return;
+    }
+
+    if (isExpired) {
+      addToast(
+        "This trade listing has expired and is archived in read-only mode.",
+        "warning"
+      );
       return;
     }
 
@@ -867,20 +907,22 @@ export function AdInteractionModal() {
                   </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    triggerHaptic("light");
-                    setRepTo({
-                      id: comment.id,
-                      username: comment.profiles.username,
-                    });
-                    textareaRef.current?.focus();
-                  }}
-                  className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-[transform,color] duration-150 active:scale-95 focus-visible:outline-none cursor-pointer"
-                >
-                  <Reply className="w-3 h-3 text-primary" /> Reply
-                </button>
+                {!isExpired && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic("light");
+                      setRepTo({
+                        id: comment.id,
+                        username: comment.profiles.username,
+                      });
+                      textareaRef.current?.focus();
+                    }}
+                    className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-[transform,color] duration-150 active:scale-95 focus-visible:outline-none cursor-pointer"
+                  >
+                    <Reply className="w-3 h-3 text-primary" /> Reply
+                  </button>
+                )}
               </div>
 
               <div className="flex items-center gap-3">
@@ -1023,6 +1065,21 @@ export function AdInteractionModal() {
             </button>
           </div>
         </div>
+
+        {isExpired && (
+          <div className="flex items-center justify-between px-4 py-2 bg-[#1e1f22] border-b border-[#3f4147] text-[#cbd5e1] text-[12px] shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#f59e0b] shrink-0" />
+              <span>
+                <strong className="text-foreground">Archived Listing:</strong>{" "}
+                This trade listing has expired. Discussion and comments are preserved in read-only mode.
+              </span>
+            </div>
+            <span className="font-mono text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-black/40 border border-[#3f4147] text-[#fbbf24]">
+              Archived
+            </span>
+          </div>
+        )}
 
         {/* Mobile View Toggle */}
         <div className="flex md:hidden bg-input p-1 border-b border-border shrink-0 shadow-inner">
@@ -1433,7 +1490,19 @@ export function AdInteractionModal() {
                 </div>
               )}
 
-              {profile ? (
+              {isExpired ? (
+                <div className="w-full bg-card/60 text-muted-foreground text-[12.5px] font-medium py-3 px-4 rounded-[6px] border border-border flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-2">
+                    <span className="text-[#fbbf24]">🔒</span>
+                    <span>
+                      This trade listing has expired. Discussion is archived in read-only mode.
+                    </span>
+                  </span>
+                  <span className="text-[11px] font-mono text-muted-foreground uppercase px-2 py-0.5 rounded bg-black/40 border border-border">
+                    Read-Only
+                  </span>
+                </div>
+              ) : profile ? (
                 <form
                   onSubmit={(e) => void handlePost(e)}
                   className="flex flex-col gap-1.5"

@@ -5,6 +5,7 @@ import DOMPurify from "dompurify";
 import { get as getIdb, set as setIdb } from "idb-keyval";
 import { useToastStore } from "./useToastStore";
 import { useProfileStore } from "./useProfileStore";
+import { useAuthStore } from "./useAuthStore";
 
 export interface TradingAd {
   id: string;
@@ -44,6 +45,7 @@ interface TradingAdsState {
   deleteAd: (id: string) => Promise<boolean>;
   repostAd: (ad: TradingAd) => Promise<boolean>;
   createAd: (adData: any) => Promise<{ error: any | null }>;
+  fetchAdById: (id: string) => Promise<TradingAd | null>;
 }
 
 const containsPhishingOrLink = (text: string) => {
@@ -236,6 +238,91 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
     } = await supabase.auth.getSession();
     payload.user_id = session?.user?.id || adData.user_id || adData.userId;
 
+    if (!payload.user_id) {
+      useToastStore
+        .getState()
+        .addToast("Sign in with Discord to publish a trade listing.", "warning");
+      return { error: new Error("Authentication required.") };
+    }
+
+    // Role check for staff bypass
+    const callerProfile = useAuthStore.getState().profile;
+    const isStaff = Boolean(
+      callerProfile?.role &&
+        ["mod", "admin", "master"].includes(callerProfile.role.toLowerCase())
+    );
+
+    // Regular users: Enforce max 3 active ads and 15-minute cooldown
+    if (!isStaff) {
+      const nowIso = new Date().toISOString();
+      const { count: activeCount } = await supabase
+        .from("trading_ads")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", payload.user_id)
+        .gt("expires_at", nowIso);
+
+      if (typeof activeCount === "number" && activeCount >= 3) {
+        useToastStore
+          .getState()
+          .addToast(
+            "Listing limit reached: Regular users can have at most 3 active listings simultaneously.",
+            "warning"
+          );
+        return {
+          error: new Error(
+            "Listing limit reached. Regular users can have at most 3 active listings at a time."
+          ),
+        };
+      }
+
+      const COOLDOWN_MS = 15 * 60 * 1000;
+      let lastTime = 0;
+      try {
+        const localTime = Number(
+          localStorage.getItem(`astd_last_ad_posted_${payload.user_id}`) || 0
+        );
+        if (!isNaN(localTime) && localTime > lastTime) {
+          lastTime = localTime;
+        }
+      } catch {}
+
+      const { data: recentAds } = await supabase
+        .from("trading_ads")
+        .select("created_at")
+        .eq("user_id", payload.user_id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (recentAds && recentAds.length > 0) {
+        const dbTime = new Date(recentAds[0].created_at).getTime();
+        if (dbTime > lastTime) {
+          lastTime = dbTime;
+        }
+      }
+
+      if (lastTime > 0) {
+        const timeDiff = Date.now() - lastTime;
+        if (timeDiff < COOLDOWN_MS) {
+          const remainingMs = COOLDOWN_MS - timeDiff;
+          const totalSecs = Math.ceil(remainingMs / 1000);
+          const mins = Math.floor(totalSecs / 60);
+          const secs = totalSecs % 60;
+          const timerStr = `${mins}m ${secs}s`;
+          useToastStore
+            .getState()
+            .addToast(
+              `Listing cooldown active. Please wait ${timerStr} before posting another ad.`,
+              "warning"
+            );
+          return {
+            error: new Error(
+              `Listing cooldown active. Wait ${timerStr} before posting.`
+            ),
+          };
+        }
+      }
+    }
+
     const validTypes = ["standard", "lf_offers", "inventory"];
     const requestedType = adData.ad_type || adData.adType || "standard";
     payload.ad_type = validTypes.includes(requestedType)
@@ -289,7 +376,39 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
       console.error("🚨 Error posting ad:", error.message);
       return { error };
     }
+
+    try {
+      localStorage.setItem(
+        `astd_last_ad_posted_${payload.user_id}`,
+        Date.now().toString()
+      );
+    } catch {}
+
     return { error: null };
+  },
+
+  fetchAdById: async (id: string) => {
+    if (!id) return null;
+    const inAds = get().ads.find((a) => a.id === id);
+    if (inAds) return inAds;
+    const inHistory = get().userAdHistory.find((a) => a.id === id);
+    if (inHistory) return inHistory;
+
+    const { data, error } = await supabase
+      .from("trading_ads")
+      .select(
+        `
+        *,
+        profiles!trading_ads_user_id_fkey(username, avatar_url, role, discord_id, status)
+      `
+      )
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error || !data) {
+      return null;
+    }
+    return data as TradingAd;
   },
 
   deleteAd: async (id: string) => {

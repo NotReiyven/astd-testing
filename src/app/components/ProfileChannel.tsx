@@ -23,6 +23,7 @@ import { ProfileCustomizerModal } from "./Profile/ProfileCustomizerModal";
 import { CustomColorPicker } from "./ui/CustomColorPicker";
 import { useAuthStore, UserProfile } from "../../store/useAuthStore";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
+import { useAdInteractionStore } from "../../store/useAdInteractionStore";
 import { useInventoryStore } from "../../store/useInventoryStore";
 import {
   useTradeStore,
@@ -906,6 +907,7 @@ export function ProfileChannel() {
     deleteAd,
     repostAd,
   } = useTradingAdsStore();
+  const openAdContext = useAdInteractionStore((s) => s.openAdContext);
   const {
     fetchWishlist,
     viewedWishlist,
@@ -2316,6 +2318,20 @@ export function ProfileChannel() {
                               >
                                 <IconSwap className="w-3.5 h-3.5" />
                                 <span>Calculator</span>
+                              </button>
+
+                              {/* View Comments / Discussion */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  triggerHaptic("light");
+                                  void openAdContext(ad.id, currentUser?.id);
+                                }}
+                                className="px-2.5 py-1 rounded-[5px] bg-popover hover:bg-muted border border-border text-muted-foreground hover:text-foreground text-[11.5px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                                title="View discussion, comments, and trade analytics for this listing"
+                              >
+                                <GiChatBubble className="w-3.5 h-3.5 text-primary" />
+                                <span>Discussion</span>
                               </button>
 
                               {/* Owner-only Per-Ad Visibility, Repost & Delete */}

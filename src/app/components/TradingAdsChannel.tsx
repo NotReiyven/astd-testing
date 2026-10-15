@@ -16,7 +16,6 @@ import { triggerHaptic, copyTextWithFallback } from "../../data/helpers";
 import { CustomDropdown } from "./MainCanvas/CustomDropdown";
 import { useAdInteractionStore } from "../../store/useAdInteractionStore";
 import { useNotificationStore } from "../../store/useNotificationStore";
-import { AdInteractionModal } from "./AdInteractionModal";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
 import { ResponsiveToolbar } from "./shared/ResponsiveToolbar";
 import { useToastStore } from "../../store/useToastStore";
@@ -26,6 +25,7 @@ import { AsyncButton } from "./ui/AsyncButton";
 import { STATUS_COLORS, useEffectiveStatus } from "../../hooks/usePresence";
 import { UserAvatar } from "./shared/UserAvatar";
 import { DiscordRolePill } from "./shared/DiscordRolePill";
+import { useAdCooldown } from "../../hooks/useAdCooldown";
 
 const SORT_OPTIONS = {
   newest: "Recently Posted",
@@ -39,6 +39,7 @@ const TYPE_FILTER_LABELS: Record<string, string> = {
   standard: "Trades",
   lf_offers: "LF Offers",
   inventory: "Showcases",
+  my_ads: "My Ads",
 };
 
 function getTimeAgo(dateStr: string) {
@@ -755,6 +756,13 @@ export function TradingAdsChannel() {
   const addToast = useToastStore((s) => s.addToast);
   const { units: ALL_UNITS } = useUnits();
   const openHistoryModal = useHistoryModalStore((state) => state.openModal);
+  const {
+    isStaff,
+    activeAdsCount,
+    isAtMaxActiveAds,
+    isOnCooldown,
+    formattedCooldown,
+  } = useAdCooldown();
 
   const [searchFilter, setSearchFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -835,6 +843,8 @@ export function TradingAdsChannel() {
         matchesType = ad.ad_type === "standard" && !isTakingOffers;
       if (typeFilter === "lf_offers") matchesType = isTakingOffers;
       if (typeFilter === "inventory") matchesType = ad.ad_type === "inventory";
+      if (typeFilter === "my_ads")
+        matchesType = Boolean(profile?.id && ad.user_id === profile.id);
 
       return matchSearch && matchesType;
     });
@@ -1023,6 +1033,7 @@ export function TradingAdsChannel() {
           { id: "standard", label: "Trades" },
           { id: "lf_offers", label: "LF Offers" },
           { id: "inventory", label: "Showcases" },
+          ...(profile ? [{ id: "my_ads", label: "My Ads" }] : []),
         ].map((t) => (
           <button
             key={t.id}
@@ -1057,16 +1068,62 @@ export function TradingAdsChannel() {
   );
 
   const ActionNodes = (
-    <>
+    <div className="flex items-center gap-2 w-full sm:w-auto">
       {profile ? (
-        <button
-          type="button"
-          onClick={handleCreateAdClick}
-          className="flex items-center justify-center gap-1.5 px-4 w-full sm:w-auto h-[var(--ui-height-btn)] rounded-[4px] bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-all focus-visible:outline-none shrink-0 shadow-sm cursor-pointer active:scale-95 border border-primary"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Create Ad</span>
-        </button>
+        <>
+          {/* Active ads counter badge */}
+          {isStaff ? (
+            <div
+              title="Staff Role: Bypass active listings limit and post cooldowns"
+              className="hidden sm:flex items-center gap-1.5 px-2.5 h-[var(--ui-height-btn)] rounded-[4px] bg-primary/10 border border-primary/30 text-primary text-xs font-semibold shrink-0"
+            >
+              <span>🛡️ Staff Bypass</span>
+            </div>
+          ) : (
+            <div
+              title="Your active trade listings (Max 3)"
+              className={`hidden sm:flex items-center gap-1.5 px-2.5 h-[var(--ui-height-btn)] rounded-[4px] border text-xs font-semibold shrink-0 ${
+                isAtMaxActiveAds
+                  ? "bg-[#241215] border-[#ef4444] text-[#f87171]"
+                  : "bg-muted border border-border text-muted-foreground"
+              }`}
+            >
+              <span>Ads:</span>
+              <strong className="text-foreground font-mono tabular-nums">
+                {activeAdsCount}/3
+              </strong>
+            </div>
+          )}
+
+          {/* Cooldown timer pill */}
+          {isOnCooldown && (
+            <div
+              title="Trade listing cooldown remaining"
+              className="flex items-center gap-1.5 px-2.5 h-[var(--ui-height-btn)] rounded-[4px] bg-[#281b0a] border border-[#b45309] text-[#fbbf24] text-xs font-mono font-bold shrink-0 tabular-nums shadow-xs"
+            >
+              <GiHourglass
+                className="w-3.5 h-3.5 text-[#fbbf24] animate-spin"
+                style={{ animationDuration: "8s" }}
+              />
+              <span>{formattedCooldown}</span>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={handleCreateAdClick}
+            className={`flex items-center justify-center gap-1.5 px-4 w-full sm:w-auto h-[var(--ui-height-btn)] rounded-[4px] text-sm font-semibold transition-all focus-visible:outline-none shrink-0 shadow-sm cursor-pointer active:scale-95 border ${
+              isOnCooldown
+                ? "bg-muted text-muted-foreground border-border hover:bg-card hover:text-foreground"
+                : "bg-primary hover:bg-primary/90 text-primary-foreground border-primary"
+            }`}
+          >
+            <Plus className="w-4 h-4" />
+            <span>
+              {isOnCooldown ? `Create Ad (${formattedCooldown})` : "Create Ad"}
+            </span>
+          </button>
+        </>
       ) : (
         <button
           type="button"
@@ -1080,7 +1137,7 @@ export function TradingAdsChannel() {
           <span>Login</span>
         </button>
       )}
-    </>
+    </div>
   );
 
   return (
@@ -1230,8 +1287,6 @@ export function TradingAdsChannel() {
           </div>
         </div>
       )}
-
-      <AdInteractionModal />
     </div>
   );
 }

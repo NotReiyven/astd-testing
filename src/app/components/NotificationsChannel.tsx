@@ -108,7 +108,8 @@ export function NotificationsChannel() {
       (notification.type === "comment" ||
         notification.type === "reply" ||
         notification.type === "upvote" ||
-        notification.type === "warning")
+        notification.type === "warning" ||
+        notification.type === "system")
     ) {
       const { useAdInteractionStore } = await import(
         "../../store/useAdInteractionStore"
@@ -116,9 +117,12 @@ export function NotificationsChannel() {
       void useAdInteractionStore
         .getState()
         .openAdContext(notification.ad_id, profile?.id);
-      window.document.dispatchEvent(
-        new CustomEvent("navigate", { detail: "trading-ads" })
-      );
+    } else if (
+      notification.type === "system" &&
+      notification.message?.toLowerCase().includes("cooldown")
+    ) {
+      const { useTradeStore } = await import("../../store/useTradeStore");
+      useTradeStore.getState().setComposerOpen(true);
     }
   };
 

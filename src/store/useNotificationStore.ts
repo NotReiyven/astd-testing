@@ -419,7 +419,10 @@ export const useNotificationStore = create<NotificationState>(
 
               if (payload?.eventType === "INSERT" && payload?.new) {
                 const newNotif = payload.new;
-                if (newNotif.actor_id && newNotif.actor_id !== userId) {
+                if (
+                  (newNotif.actor_id && newNotif.actor_id !== userId) ||
+                  newNotif.type === "system"
+                ) {
                   let actorName = "Someone";
                   if (newNotif.actor_id) {
                     const { data: actorProfile } = await supabase
