@@ -202,9 +202,9 @@ export function NotificationsChannel() {
             {notifications.map((notification, index) => (
               <div
                 key={notification.id}
-                className={`group relative flex flex-col md:flex-row items-start md:items-center gap-4 p-4 rounded-lg border transition-colors ${
+                className={`group relative flex flex-col md:flex-row items-start md:items-center gap-4 p-4 rounded-lg border transition-[border-color,background-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md animate-fade-in ${
                   !notification.is_read
-                    ? "border-primary/50 bg-primary/5"
+                    ? "border-primary/50 bg-primary/5 shadow-sm"
                     : "border-border bg-card"
                 }`}
               >
@@ -300,7 +300,8 @@ export function NotificationsChannel() {
                         void markAsRead(notification.id);
                       }}
                       aria-label="Mark notification as read"
-                      className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-[6px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+                      data-tooltip="Mark as read"
+                      className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-[6px] transition-[transform,background-color,color] duration-150 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
                     >
                       <Check className="w-4 h-4" />
                     </button>
@@ -312,7 +313,8 @@ export function NotificationsChannel() {
                       handleDeleteNotification(notification, index)
                     }
                     aria-label="Delete notification"
-                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[6px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+                    data-tooltip="Delete notification"
+                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[6px] transition-[transform,background-color,color] duration-150 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

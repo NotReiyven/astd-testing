@@ -552,11 +552,11 @@ function TierGridCardImpl({
         createPortal(
           <div className="fixed inset-0 z-[1000000] flex flex-col justify-end md:justify-center md:items-center">
             <div
-              className="absolute inset-0 bg-black/90"
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-150"
               onClick={() => setMenuOpen(false)}
             />
 
-            <div className="relative w-full md:max-w-sm bg-popover rounded-t-[12px] md:rounded-[6px] p-5 shadow-2xl border-t md:border border-border animate-slide-up md:animate-fade-in">
+            <div className="relative w-full md:max-w-sm bg-popover rounded-t-[12px] md:rounded-[6px] p-5 shadow-2xl border-t md:border border-border animate-slide-up md:animate-modal-pop">
               <div className="md:hidden absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-border rounded-full" />
 
               <div className="flex items-center justify-between mb-5 mt-2 md:mt-0">
@@ -582,7 +582,8 @@ function TierGridCardImpl({
                 <button
                   onClick={() => setMenuOpen(false)}
                   aria-label="Close menu"
-                  className="w-11 h-11 md:w-8 md:h-8 rounded-[4px] border border-transparent hover:border-border hover:bg-muted flex items-center justify-center text-muted-foreground shrink-0 focus-visible:outline-none"
+                  data-tooltip="Close"
+                  className="w-11 h-11 md:w-8 md:h-8 rounded-[4px] border border-transparent hover:border-border hover:bg-muted flex items-center justify-center text-muted-foreground shrink-0 focus-visible:outline-none transition-[transform,background-color] duration-150 active:scale-90"
                 >
                   <X className="w-6 h-6 md:w-4 md:h-4" />
                 </button>
@@ -591,7 +592,7 @@ function TierGridCardImpl({
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => handleAdd("give")}
-                  className="w-full flex items-center justify-center gap-2 bg-[#FAA61A] hover:bg-[#d98b14] transition-colors text-white text-[13px] font-bold h-[44px] rounded-[4px] focus-visible:outline-none"
+                  className="w-full flex items-center justify-center gap-2 bg-[#FAA61A] hover:bg-[#d98b14] active:scale-95 transition-[transform,background-color] duration-150 text-white text-[13px] font-bold h-[44px] rounded-[4px] focus-visible:outline-none shadow-sm"
                 >
                   <GiPayMoney className="w-4 h-4" />
                   Add to 'You Give'
@@ -599,7 +600,7 @@ function TierGridCardImpl({
 
                 <button
                   onClick={() => handleAdd("get")}
-                  className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/80 transition-colors text-primary-foreground text-[13px] font-bold h-[44px] rounded-[4px] focus-visible:outline-none"
+                  className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/80 active:scale-95 transition-[transform,background-color] duration-150 text-primary-foreground text-[13px] font-bold h-[44px] rounded-[4px] focus-visible:outline-none shadow-sm"
                 >
                   <GiReceiveMoney className="w-4 h-4" />
                   Add to 'You Get'
@@ -608,7 +609,7 @@ function TierGridCardImpl({
                 <button
                   onClick={handleSaveToInventory}
                   disabled={isSaving}
-                  className="w-full flex items-center justify-center gap-2 bg-[#23a559] hover:bg-[#1f914e] disabled:opacity-50 transition-colors text-white text-[13px] font-bold h-[44px] rounded-[4px] focus-visible:outline-none"
+                  className="w-full flex items-center justify-center gap-2 bg-[#23a559] hover:bg-[#1f914e] active:scale-95 disabled:opacity-50 transition-[transform,background-color] duration-150 text-white text-[13px] font-bold h-[44px] rounded-[4px] focus-visible:outline-none shadow-sm"
                 >
                   {isSaving ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -623,7 +624,7 @@ function TierGridCardImpl({
                     setMenuOpen(false);
                     openModal(unit.id);
                   }}
-                  className="w-full flex items-center justify-center gap-2 bg-card hover:bg-muted transition-colors text-foreground border border-border text-[13px] font-bold h-[44px] rounded-[4px] mt-0.5 focus-visible:outline-none"
+                  className="w-full flex items-center justify-center gap-2 bg-card hover:bg-muted active:scale-95 transition-[transform,background-color] duration-150 text-foreground border border-border text-[13px] font-bold h-[44px] rounded-[4px] mt-0.5 focus-visible:outline-none shadow-sm"
                 >
                   <GiHourglass className="w-4 h-4" />
                   View Market History

@@ -69,7 +69,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
     masterData?.valueDisplay === "O/C";
 
   const pinButtonClass = (compact: boolean) =>
-    `flex items-center justify-center transition-all duration-150 flex-shrink-0 active:scale-90 rounded-[4px] focus-visible:outline-none cursor-pointer ${
+    `flex items-center justify-center transition-[transform,background-color,border-color,color] duration-150 flex-shrink-0 active:scale-90 rounded-[4px] focus-visible:outline-none cursor-pointer ${
       compact
         ? "w-7 h-7"
         : "w-8 h-8"
@@ -81,7 +81,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
       <div className="flex items-center flex-shrink-0 gap-1">
         <button
           onClick={handlePin}
-          title={isPinned ? "Unpin unit" : "Pin unit (prevents clearing)"}
+          data-tooltip={isPinned ? "Unpin unit" : "Pin unit (prevents clearing)"}
           className={`${pinButtonClass(compact)} ${
             isPinned
               ? compact
@@ -106,7 +106,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
         </button>
         <button
           onClick={handleRemove}
-          title="Remove unit"
+          data-tooltip="Remove unit"
           className={`${pinButtonClass(compact)} ${
             compact
               ? "text-muted-foreground hover:text-destructive-foreground hover:bg-destructive"
@@ -130,7 +130,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
 
   return (
     <div
-      className={`flex flex-col bg-card hover:bg-muted/70 rounded-[8px] border transition-colors duration-150 group ${
+      className={`flex flex-col bg-card hover:bg-muted/70 rounded-[8px] border transition-[background-color,border-color] duration-150 animate-fade-in group ${
         qtyOpen ? "p-2.5" : "px-2.5 py-1.5"
       } ${isPinned ? "border-primary" : "border-border"}`}
     >

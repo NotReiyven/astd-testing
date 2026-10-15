@@ -429,7 +429,10 @@ export function SimulatorTab() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6 items-center mb-8">
+              <div
+                key={currentScenario}
+                className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6 items-center mb-8 animate-fade-in"
+              >
                 <div className="bg-popover border border-border rounded-[8px] p-6 flex flex-col gap-6 shadow-sm min-h-[150px]">
                   <div className="flex items-center justify-between border-b border-border pb-3">
                     <span className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -466,7 +469,7 @@ export function SimulatorTab() {
                     <button
                       type="button"
                       onClick={() => handleGuess("WIN")}
-                      className="group flex flex-col items-center justify-center gap-1.5 py-4 sm:py-5 rounded-[8px] bg-[#22c55e] text-white transition-all hover:brightness-110 active:scale-95 shadow-md focus-visible:outline-none cursor-pointer"
+                      className="group flex flex-col items-center justify-center gap-1.5 py-4 sm:py-5 rounded-[8px] bg-[#22c55e] text-white transition-[transform,filter,box-shadow] duration-150 hover:brightness-110 active:scale-90 hover:scale-[1.02] shadow-md focus-visible:outline-none cursor-pointer"
                     >
                       <span className="font-black text-[16px] uppercase tracking-wider">
                         Accept
@@ -478,7 +481,7 @@ export function SimulatorTab() {
                     <button
                       type="button"
                       onClick={() => handleGuess("LOSS")}
-                      className="group flex flex-col items-center justify-center gap-1.5 py-4 sm:py-5 rounded-[8px] bg-muted text-foreground transition-all hover:bg-muted/80 active:scale-95 shadow-md focus-visible:outline-none cursor-pointer border border-border"
+                      className="group flex flex-col items-center justify-center gap-1.5 py-4 sm:py-5 rounded-[8px] bg-muted text-foreground transition-[transform,background-color,box-shadow] duration-150 hover:bg-muted/80 active:scale-90 hover:scale-[1.02] shadow-md focus-visible:outline-none cursor-pointer border border-border"
                     >
                       <span className="font-black text-[16px] uppercase tracking-wider">
                         Decline
@@ -490,7 +493,7 @@ export function SimulatorTab() {
                     <button
                       type="button"
                       onClick={() => handleGuess("SCAM")}
-                      className="group flex flex-col items-center justify-center gap-1.5 py-4 sm:py-5 rounded-[8px] bg-[#ef4444] text-white transition-all hover:brightness-110 active:scale-95 shadow-md focus-visible:outline-none cursor-pointer"
+                      className="group flex flex-col items-center justify-center gap-1.5 py-4 sm:py-5 rounded-[8px] bg-[#ef4444] text-white transition-[transform,filter,box-shadow] duration-150 hover:brightness-110 active:scale-90 hover:scale-[1.02] shadow-md focus-visible:outline-none cursor-pointer"
                     >
                       <span className="font-black text-[16px] uppercase tracking-wider">
                         Scam
@@ -502,7 +505,11 @@ export function SimulatorTab() {
                   </div>
                 ) : (
                   <div
-                    className="flex flex-col md:flex-row items-start md:items-center gap-5 p-6 rounded-[8px] border transition-all animate-slide-up shadow-sm"
+                    className={`flex flex-col md:flex-row items-start md:items-center gap-5 p-6 rounded-[8px] border shadow-sm transition-[border-color,background-color] ${
+                      guessResult === "correct"
+                        ? "animate-celebrate ring-1 ring-[#22c55e]/30"
+                        : "animate-modal-pop ring-1 ring-destructive/30"
+                    }`}
                     style={{
                       backgroundColor:
                         guessResult === "correct"

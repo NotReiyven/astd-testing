@@ -311,17 +311,17 @@ export function AdminChannel({
       ===================================================================== */}
       <div className="bg-card border-b border-border px-3 sm:px-5 py-2 shrink-0 z-20 flex flex-wrap items-center justify-between gap-2">
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-full">
+        <div className="flex bg-input rounded-[4px] p-1 border border-border shadow-inner overflow-x-auto no-scrollbar max-w-full items-center">
           <button
             type="button"
             onClick={() => {
               triggerHaptic("light");
               setActiveTab("users");
             }}
-            className={`h-8 px-3 rounded-[5px] text-[12px] flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
+            className={`h-7 px-3 rounded-[3px] text-[12px] flex items-center gap-1.5 transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 cursor-pointer shrink-0 ${
               activeTab === "users"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground hover:bg-input"
+                ? "bg-foreground text-background shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
             }`}
           >
             <GiSwordsEmblem className="w-3.5 h-3.5" />
@@ -338,10 +338,10 @@ export function AdminChannel({
                 triggerHaptic("light");
                 setActiveTab("roles");
               }}
-              className={`h-8 px-3 rounded-[5px] text-[12px] flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
+              className={`h-7 px-3 rounded-[3px] text-[12px] flex items-center gap-1.5 transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 cursor-pointer shrink-0 ${
                 activeTab === "roles"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-input"
+                  ? "bg-foreground text-background shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
               }`}
             >
               <GiSpikedHalo className="w-3.5 h-3.5" />
@@ -356,10 +356,10 @@ export function AdminChannel({
                 triggerHaptic("light");
                 setActiveTab("ads");
               }}
-              className={`h-8 px-3 rounded-[5px] text-[12px] flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
+              className={`h-7 px-3 rounded-[3px] text-[12px] flex items-center gap-1.5 transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 cursor-pointer shrink-0 ${
                 activeTab === "ads"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-input"
+                  ? "bg-foreground text-background shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
               }`}
             >
               <GiTrade className="w-3.5 h-3.5" />
@@ -377,10 +377,10 @@ export function AdminChannel({
                 triggerHaptic("light");
                 setActiveTab("master-lab");
               }}
-              className={`h-8 px-3 rounded-[5px] text-[12px] flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
+              className={`h-7 px-3 rounded-[3px] text-[12px] flex items-center gap-1.5 transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 cursor-pointer shrink-0 ${
                 activeTab === "master-lab"
-                  ? "bg-[#eab308] text-black"
-                  : "text-[#eab308] hover:bg-[#eab308]/10"
+                  ? "bg-[#eab308] text-black font-bold shadow-sm"
+                  : "text-[#eab308] hover:bg-[#eab308]/15 border border-transparent"
               }`}
             >
               <GiSparkles className="w-3.5 h-3.5" />
@@ -395,10 +395,10 @@ export function AdminChannel({
                 triggerHaptic("light");
                 setActiveTab("security");
               }}
-              className={`h-8 px-3 rounded-[5px] text-[12px] flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
+              className={`h-7 px-3 rounded-[3px] text-[12px] flex items-center gap-1.5 transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 cursor-pointer shrink-0 ${
                 activeTab === "security"
-                  ? "bg-destructive text-white"
-                  : "text-destructive hover:bg-destructive/10"
+                  ? "bg-destructive text-white font-bold shadow-sm"
+                  : "text-destructive hover:bg-destructive/15 border border-transparent"
               }`}
             >
               <GiLockedFortress className="w-3.5 h-3.5" />

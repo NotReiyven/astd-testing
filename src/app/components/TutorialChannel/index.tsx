@@ -44,17 +44,17 @@ export function TutorialChannel({
       {/* Navigation tabs */}
       <div className="flex-shrink-0 px-4 md:px-6 py-3 border-b border-border bg-card relative z-40 shadow-sm flex flex-wrap items-center justify-between gap-2">
         <div
-          className="flex bg-popover rounded-[6px] p-1 border border-border overflow-x-auto hide-scrollbar shadow-inner"
+          className="flex bg-input rounded-[4px] p-1 border border-border overflow-x-auto hide-scrollbar shadow-inner"
           onTouchStart={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
         >
           <button
             type="button"
             onClick={() => handleTabClick("sandbox")}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[3px] text-[12px] font-bold transition-[transform,background-color,color,box-shadow] duration-150 whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${
               activeTab === "sandbox"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-foreground text-background shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
             }`}
           >
             <GiChecklist className="w-3.5 h-3.5" /> Academy Checklist
@@ -62,10 +62,10 @@ export function TutorialChannel({
           <button
             type="button"
             onClick={() => handleTabClick("simulator")}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[3px] text-[12px] font-bold transition-[transform,background-color,color,box-shadow] duration-150 whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${
               activeTab === "simulator"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-foreground text-background shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
             }`}
           >
             <GiCrossedSwords className="w-3.5 h-3.5" /> Mock Trades
@@ -73,10 +73,10 @@ export function TutorialChannel({
           <button
             type="button"
             onClick={() => handleTabClick("theory")}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[3px] text-[12px] font-bold transition-[transform,background-color,color,box-shadow] duration-150 whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${
               activeTab === "theory"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-foreground text-background shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
             }`}
           >
             <GiOpenBook className="w-3.5 h-3.5" /> Market Guide
@@ -84,10 +84,10 @@ export function TutorialChannel({
           <button
             type="button"
             onClick={() => handleTabClick("dictionary")}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[4px] text-[12px] font-bold transition-all whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-[3px] text-[12px] font-bold transition-[transform,background-color,color,box-shadow] duration-150 whitespace-nowrap active:scale-95 focus-visible:outline-none cursor-pointer ${
               activeTab === "dictionary"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-foreground text-background shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
             }`}
           >
             <GiFairyWand className="w-3.5 h-3.5" /> Custom Slang

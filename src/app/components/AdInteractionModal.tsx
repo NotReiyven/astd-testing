@@ -755,7 +755,7 @@ export function AdInteractionModal() {
 
     return (
       <div
-        className={`flex flex-col ${
+        className={`flex flex-col animate-fade-in ${
           depth > 0 ? "ml-4 sm:ml-6 mt-3 pl-3 border-l border-border" : "mt-4"
         }`}
       >
@@ -843,7 +843,7 @@ export function AdInteractionModal() {
                     aria-label="Downvote comment"
                     aria-pressed={votes.userVote === -1}
                     onClick={() => handleCommentVoteClick(comment.id, -1)}
-                    className={`focus-visible:outline-none transition-colors hover:text-destructive cursor-pointer ${
+                    className={`focus-visible:outline-none transition-[transform,color] duration-150 active:scale-90 hover:text-destructive cursor-pointer ${
                       votes.userVote === -1
                         ? "text-destructive"
                         : "text-muted-foreground"
@@ -867,7 +867,7 @@ export function AdInteractionModal() {
                     });
                     textareaRef.current?.focus();
                   }}
-                  className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
+                  className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-[transform,color] duration-150 active:scale-95 focus-visible:outline-none cursor-pointer"
                 >
                   <Reply className="w-3 h-3 text-primary" /> Reply
                 </button>
@@ -953,7 +953,7 @@ export function AdInteractionModal() {
   return (
     <div
       ref={dialogRef}
-      className="fixed inset-0 z-[100000] flex items-center justify-center p-0 md:p-[var(--page-p)] bg-black/80 animate-fade-in"
+      className="fixed inset-0 z-[100000] flex items-center justify-center p-0 md:p-[var(--page-p)] bg-black/85 backdrop-blur-sm animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-label={`Trade listing by ${activeAd.profiles?.username || "Trader"}`}
@@ -964,8 +964,8 @@ export function AdInteractionModal() {
         }
       }}
     >
-      {/* Full width container, no arbitrary margins */}
-      <div className="bg-card w-full h-[100dvh] md:h-[85vh] max-w-5xl md:rounded-[8px] shadow-2xl border-0 md:border border-border flex flex-col overflow-hidden">
+      {/* Full width container, springy pop opening animation */}
+      <div className="bg-card w-full h-[100dvh] md:h-[85vh] max-w-5xl md:rounded-[8px] shadow-2xl border-0 md:border border-border flex flex-col overflow-hidden animate-modal-pop">
         <div className="flex items-center justify-between px-[var(--panel-p)] py-3 bg-popover border-b border-border shrink-0 z-20">
           <div className="flex items-center gap-3">
             <span
@@ -983,8 +983,10 @@ export function AdInteractionModal() {
             <button
               type="button"
               onClick={() => void handleShareLink()}
-              className="px-3 py-1.5 bg-card hover:bg-muted border border-border rounded-[4px] text-[12px] font-bold text-foreground flex items-center gap-1.5 transition-colors focus-visible:outline-none cursor-pointer"
+              className="px-3 py-1.5 bg-card hover:bg-muted border border-border rounded-[4px] text-[12px] font-bold text-foreground flex items-center gap-1.5 transition-[transform,background-color] duration-150 active:scale-95 focus-visible:outline-none cursor-pointer"
               aria-label="Share listing"
+              data-tooltip="Share Listing Link"
+              data-tooltip-side="bottom"
             >
               {copiedLink ? (
                 <Check className="w-3.5 h-3.5 text-[#23a559]" />
@@ -1002,25 +1004,28 @@ export function AdInteractionModal() {
                 triggerHaptic("light");
                 closeAdContext();
               }}
-              className="text-muted-foreground hover:text-foreground focus-visible:outline-none cursor-pointer p-1.5 hover:bg-card rounded-[4px] transition-colors"
+              className="text-muted-foreground hover:text-foreground focus-visible:outline-none cursor-pointer p-1.5 hover:bg-card rounded-[4px] transition-[transform,background-color,color] duration-150 active:scale-90"
               aria-label="Close listing discussion"
+              data-tooltip="Close (Esc)"
+              data-tooltip-side="bottom"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        <div className="flex md:hidden bg-popover border-b border-border p-1 shrink-0">
+        {/* Mobile View Toggle */}
+        <div className="flex md:hidden bg-input p-1 border-b border-border shrink-0 shadow-inner">
           <button
             type="button"
             onClick={() => {
               triggerHaptic("light");
               setMobileTab("listing");
             }}
-            className={`flex-1 py-2 text-[12px] font-bold uppercase tracking-wider rounded-[4px] transition-colors ${
+            className={`flex-1 py-1.5 text-[12px] font-bold uppercase tracking-wider rounded-[3px] transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 ${
               mobileTab === "listing"
-                ? "bg-foreground text-background shadow-sm"
-                : "text-muted-foreground"
+                ? "bg-foreground text-background shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Listing
@@ -1031,14 +1036,20 @@ export function AdInteractionModal() {
               triggerHaptic("light");
               setMobileTab("comments");
             }}
-            className={`flex-1 py-2 text-[12px] font-bold uppercase tracking-wider rounded-[4px] transition-colors flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-1.5 text-[12px] font-bold uppercase tracking-wider rounded-[3px] transition-[transform,background-color,color,box-shadow] duration-150 flex items-center justify-center gap-1.5 active:scale-95 ${
               mobileTab === "comments"
-                ? "bg-foreground text-background shadow-sm"
-                : "text-muted-foreground"
+                ? "bg-foreground text-background shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Discussion{" "}
-            <span className="bg-muted px-1.5 rounded text-[10px] font-mono tabular-nums">
+            <span
+              className={`px-1.5 rounded text-[10px] font-mono tabular-nums ${
+                mobileTab === "comments"
+                  ? "bg-background/20 text-background"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
               {comments.length}
             </span>
           </button>
@@ -1272,7 +1283,8 @@ export function AdInteractionModal() {
               <button
                 type="button"
                 onClick={handleLoadIntoCalculator}
-                className="w-full sm:flex-1 h-[var(--ui-height-btn)] bg-primary hover:bg-primary/90 text-primary-foreground text-[12px] font-black uppercase tracking-wider rounded-[4px] transition-colors shadow-sm focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2 border border-primary"
+                className="w-full sm:flex-1 h-[var(--ui-height-btn)] bg-primary hover:bg-primary/90 text-primary-foreground text-[12px] font-black uppercase tracking-wider rounded-[4px] transition-[transform,background-color] duration-150 active:scale-95 shadow-sm focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2 border border-primary"
+                data-tooltip="Load trade into analyzer"
               >
                 <Calculator className="w-4 h-4" /> Load into Calculator
               </button>
@@ -1280,7 +1292,8 @@ export function AdInteractionModal() {
               <button
                 type="button"
                 onClick={() => void handleContact()}
-                className="w-full sm:w-auto px-4 h-[var(--ui-height-btn)] bg-[#5865F2] hover:bg-[#4752C4] text-white text-[12px] font-bold rounded-[4px] transition-colors shadow-sm focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-4 h-[var(--ui-height-btn)] bg-[#5865F2] hover:bg-[#4752C4] text-white text-[12px] font-bold rounded-[4px] transition-[transform,background-color] duration-150 active:scale-95 shadow-sm focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2"
+                data-tooltip="Copy trade text & open trader on Discord"
               >
                 <MessageSquare className="w-4 h-4" /> Message
               </button>
@@ -1304,13 +1317,14 @@ export function AdInteractionModal() {
                 <button
                   type="button"
                   onClick={() => handleAdVoteClick(1)}
-                  className={`focus-visible:outline-none transition-colors hover:text-[#23a559] cursor-pointer ${
+                  className={`focus-visible:outline-none transition-[transform,color] duration-150 active:scale-90 hover:text-[#23a559] cursor-pointer ${
                     adVotes.userVote === 1
                       ? "text-[#23a559]"
                       : "text-muted-foreground"
                   }`}
                   aria-label="Upvote listing"
                   aria-pressed={adVotes.userVote === 1}
+                  data-tooltip="Upvote listing"
                 >
                   <ArrowBigUp
                     className={`w-4 h-4 ${
@@ -1332,13 +1346,14 @@ export function AdInteractionModal() {
                 <button
                   type="button"
                   onClick={() => handleAdVoteClick(-1)}
-                  className={`focus-visible:outline-none transition-colors hover:text-rose-400 cursor-pointer ${
+                  className={`focus-visible:outline-none transition-[transform,color] duration-150 active:scale-90 hover:text-rose-400 cursor-pointer ${
                     adVotes.userVote === -1
                       ? "text-rose-400"
                       : "text-muted-foreground"
                   }`}
                   aria-label="Downvote listing"
                   aria-pressed={adVotes.userVote === -1}
+                  data-tooltip="Downvote listing"
                 >
                   <ArrowBigDown
                     className={`w-4 h-4 ${
@@ -1460,8 +1475,9 @@ export function AdInteractionModal() {
                       isLoading={isActionPending}
                       loadingAnnouncement="Posting…"
                       disabled={isActionPending}
-                      className="h-10 px-4 flex items-center justify-center rounded-[4px] bg-primary hover:bg-primary/85 text-primary-foreground transition-colors focus-visible:outline-none cursor-pointer shrink-0 border border-primary"
+                      className="h-10 px-4 flex items-center justify-center rounded-[4px] bg-primary hover:bg-primary/85 text-primary-foreground transition-[transform,background-color] duration-150 active:scale-95 focus-visible:outline-none cursor-pointer shrink-0 border border-primary"
                       aria-label="Post comment"
+                      data-tooltip="Post Comment"
                     >
                       <Send className="w-4 h-4" />
                     </AsyncButton>

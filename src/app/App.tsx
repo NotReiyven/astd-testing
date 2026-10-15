@@ -34,6 +34,7 @@ import { supabase } from "../lib/supabase";
 
 import { useNetworkSync } from "../hooks/useNetworkSync";
 import { GlobalToastContainer } from "./components/layout/GlobalToastContainer";
+import { GlobalTooltip } from "./components/ui/GlobalTooltip";
 import { GranularErrorBoundary } from "./components/shared/GranularErrorBoundary";
 
 const TradeAnalyzerPanel = lazy(() =>
@@ -489,6 +490,7 @@ export default function App() {
       >
         {/* Synchronous global overlays outside lazy Suspense so route transitions never freeze modals */}
         <GlobalToastContainer />
+        <GlobalTooltip />
         <WelcomeModal />
         <HistoryModal />
         <ExternalLinkModal />

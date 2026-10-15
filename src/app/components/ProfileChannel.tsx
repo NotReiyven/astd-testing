@@ -1911,7 +1911,7 @@ export function ProfileChannel() {
           <div className="flex-1 flex flex-col min-w-0 gap-5">
             {/* Clean Tab Navigation (No Overflow Scrollbar Artifacts) */}
             <div
-              className="flex flex-wrap items-center gap-2 border-b border-border pb-3"
+              className="flex bg-input rounded-[4px] p-1 border border-border shadow-inner w-full sm:w-auto overflow-x-auto hide-scrollbar shrink-0 mb-2"
               role="tablist"
               aria-label="Profile sections"
             >
@@ -1923,21 +1923,27 @@ export function ProfileChannel() {
                   triggerHaptic("light");
                   setActiveTab("board");
                 }}
-                className={`px-4 py-2 rounded-[6px] text-[13px] transition-colors flex items-center gap-2 cursor-pointer focus-visible:outline-none ${
+                className={`px-4 py-2 rounded-[3px] text-[13px] font-medium transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 flex items-center gap-2 cursor-pointer focus-visible:outline-none ${
                   activeTab === "board"
-                    ? "bg-card text-foreground border border-border shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                    ? "bg-foreground text-background shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
                 }`}
               >
                 <GiMegaphone
                   className="w-4 h-4"
                   style={{
-                    color: activeTab === "board" ? accentColor : undefined,
+                    color: activeTab === "board" ? "inherit" : accentColor,
                   }}
                 />
                 <span>Ad History</span>
                 {isAdHistoryVisibleToVisitor && (
-                  <span className="bg-popover border border-border px-2 py-0.5 rounded-[4px] text-[11px] font-mono">
+                  <span
+                    className={`px-2 py-0.5 rounded-[3px] text-[11px] font-mono ${
+                      activeTab === "board"
+                        ? "bg-background/20 text-background"
+                        : "bg-popover border border-border"
+                    }`}
+                  >
                     {userAdHistory.length}
                   </span>
                 )}
@@ -1951,21 +1957,27 @@ export function ProfileChannel() {
                   triggerHaptic("light");
                   setActiveTab("wishlist");
                 }}
-                className={`px-4 py-2 rounded-[6px] text-[13px] transition-colors flex items-center gap-2 cursor-pointer focus-visible:outline-none ${
+                className={`px-4 py-2 rounded-[3px] text-[13px] font-medium transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 flex items-center gap-2 cursor-pointer focus-visible:outline-none ${
                   activeTab === "wishlist"
-                    ? "bg-card text-foreground border border-border shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                    ? "bg-foreground text-background shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
                 }`}
               >
                 <GiSpikedHalo
                   className="w-4 h-4"
                   style={{
-                    color: activeTab === "wishlist" ? accentColor : undefined,
+                    color: activeTab === "wishlist" ? "inherit" : accentColor,
                   }}
                 />
                 <span>Target Wishlist</span>
                 {isWishlistVisibleToVisitor && (
-                  <span className="bg-popover border border-border px-2 py-0.5 rounded-[4px] text-[11px] font-mono">
+                  <span
+                    className={`px-2 py-0.5 rounded-[3px] text-[11px] font-mono ${
+                      activeTab === "wishlist"
+                        ? "bg-background/20 text-background"
+                        : "bg-popover border border-border"
+                    }`}
+                  >
                     {activeWishlistItems.length}
                   </span>
                 )}
@@ -1980,10 +1992,10 @@ export function ProfileChannel() {
                     triggerHaptic("light");
                     setActiveTab("settings");
                   }}
-                  className={`px-4 py-2 rounded-[6px] text-[13px] transition-colors flex items-center gap-2 cursor-pointer focus-visible:outline-none ${
+                  className={`px-4 py-2 rounded-[3px] text-[13px] font-medium transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 flex items-center gap-2 cursor-pointer focus-visible:outline-none ${
                     activeTab === "settings"
-                      ? "bg-card text-foreground border border-border shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                      ? "bg-foreground text-background shadow-sm font-bold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
                   }`}
                 >
                   <IconSliders className="w-4 h-4" />
@@ -3073,7 +3085,7 @@ export function ProfileChannel() {
       {/* ================================================================== */}
       {isEditModalOpen && (
         <div
-          className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-black/85 animate-fade-in"
+          className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in"
           role="dialog"
           aria-modal="true"
           aria-labelledby="customize-profile-title"
@@ -3083,13 +3095,13 @@ export function ProfileChannel() {
             onClick={() => setIsEditModalOpen(false)}
           />
 
-          <div className="bg-card border border-border rounded-[10px] max-w-2xl w-full max-h-[90vh] flex flex-col relative shadow-2xl overflow-hidden z-10 animate-slide-up">
+          <div className="bg-card border border-border rounded-[10px] max-w-2xl w-full max-h-[90vh] flex flex-col relative shadow-2xl overflow-hidden z-10 animate-modal-pop">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-border bg-popover flex items-center justify-between shrink-0">
               <div className="flex flex-col">
                 <h3
                   id="customize-profile-title"
-                  className="text-[16px] text-foreground"
+                  className="text-[16px] text-foreground font-black"
                 >
                   Customize Trader Profile
                 </h3>
@@ -3100,7 +3112,7 @@ export function ProfileChannel() {
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(false)}
-                className="text-muted-foreground hover:text-foreground p-1.5 rounded-[6px] hover:bg-muted transition-colors cursor-pointer"
+                className="text-muted-foreground hover:text-foreground p-1.5 rounded-[6px] hover:bg-muted transition-[transform,background-color,color] duration-150 active:scale-90 cursor-pointer"
                 aria-label="Close customize profile modal"
               >
                 <IconClose className="w-4 h-4" />
@@ -3115,11 +3127,11 @@ export function ProfileChannel() {
                   Live Profile Preview
                 </span>
                 <div
-                  className="rounded-[8px] border border-border bg-popover overflow-hidden shadow-md"
+                  className="rounded-[8px] border border-border bg-popover overflow-hidden shadow-md transition-[border-color] duration-300"
                   style={{ borderTop: `3px solid ${editAccentColor}` }}
                 >
                   <div
-                    className="h-[76px] w-full relative border-b border-border transition-all"
+                    className="h-[76px] w-full relative border-b border-border transition-[background-color,background-image,border-color] duration-300 ease-out"
                     style={getBannerCssStyle(
                       editBannerColor,
                       editAccentColor,
@@ -3193,18 +3205,19 @@ export function ProfileChannel() {
                           triggerHaptic("light");
                           setEditBannerColor(sw.hex);
                         }}
-                        title={sw.label}
-                        className={`w-7 h-7 rounded-[6px] border transition-transform cursor-pointer ${
+                        data-tooltip={sw.label}
+                        data-tooltip-side="top"
+                        className={`w-7 h-7 rounded-[6px] border transition-[transform,box-shadow] duration-150 active:scale-90 cursor-pointer ${
                           editBannerColor.toLowerCase() === sw.hex.toLowerCase()
-                            ? "scale-110 ring-2 ring-white border-white"
+                            ? "scale-110 ring-2 ring-white border-white shadow-md"
                             : "border-border hover:scale-105"
                         }`}
                         style={{ backgroundColor: sw.hex }}
                       />
                     ))}
                     <label
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] bg-popover border border-border cursor-pointer text-[11.5px] font-mono text-foreground"
-                      title="Custom Hex Color"
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] bg-popover border border-border cursor-pointer text-[11.5px] font-mono text-foreground active:scale-95 transition-transform"
+                      data-tooltip="Custom Hex Color"
                     >
                       <input
                         type="color"
@@ -3231,18 +3244,19 @@ export function ProfileChannel() {
                           triggerHaptic("light");
                           setEditAccentColor(sw.hex);
                         }}
-                        title={sw.label}
-                        className={`w-7 h-7 rounded-[6px] border transition-transform cursor-pointer ${
+                        data-tooltip={sw.label}
+                        data-tooltip-side="top"
+                        className={`w-7 h-7 rounded-[6px] border transition-[transform,box-shadow] duration-150 active:scale-90 cursor-pointer ${
                           editAccentColor.toLowerCase() === sw.hex.toLowerCase()
-                            ? "scale-110 ring-2 ring-white border-white"
+                            ? "scale-110 ring-2 ring-white border-white shadow-md"
                             : "border-border hover:scale-105"
                         }`}
                         style={{ backgroundColor: sw.hex }}
                       />
                     ))}
                     <label
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] bg-popover border border-border cursor-pointer text-[11.5px] font-mono text-foreground"
-                      title="Custom Accent Color"
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] bg-popover border border-border cursor-pointer text-[11.5px] font-mono text-foreground active:scale-95 transition-transform"
+                      data-tooltip="Custom Accent Color"
                     >
                       <input
                         type="color"
@@ -3270,10 +3284,10 @@ export function ProfileChannel() {
                         triggerHaptic("light");
                         setEditBannerStyle(st.id);
                       }}
-                      className={`px-3 py-2 rounded-[6px] border text-[12px] transition-colors cursor-pointer ${
+                      className={`px-3 py-2 rounded-[6px] border text-[12px] transition-[transform,background-color,border-color,color] duration-150 active:scale-95 cursor-pointer font-medium ${
                         editBannerStyle === st.id
-                          ? "bg-primary/15 border-primary text-foreground"
-                          : "bg-popover border-border text-muted-foreground hover:text-foreground"
+                          ? "bg-primary/15 border-primary text-foreground shadow-sm"
+                          : "bg-popover border-border text-muted-foreground hover:text-foreground hover:bg-card"
                       }`}
                     >
                       {st.label}
@@ -3298,14 +3312,14 @@ export function ProfileChannel() {
                           triggerHaptic("light");
                           setEditTradingStance(st.id);
                         }}
-                        className={`p-2.5 rounded-[6px] border text-left flex flex-col gap-0.5 transition-colors cursor-pointer ${
+                        className={`p-2.5 rounded-[6px] border text-left flex flex-col gap-0.5 transition-[transform,background-color,border-color] duration-150 active:scale-95 cursor-pointer ${
                           active
-                            ? "bg-popover border-primary"
-                            : "bg-popover/50 border-border hover:bg-popover"
+                            ? "bg-popover border-primary shadow-sm"
+                            : "bg-popover/50 border-border hover:bg-popover hover:border-muted-foreground"
                         }`}
                       >
                         <span
-                          className="text-[12.5px]"
+                          className="text-[12.5px] font-bold"
                           style={{ color: st.color }}
                         >
                           {st.label}

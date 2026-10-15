@@ -13,7 +13,7 @@ import { Link } from "react-router-dom";
 import { useNotificationStore } from "../../../store/useNotificationStore";
 import { useAdInteractionStore } from "../../../store/useAdInteractionStore";
 import { CommandPalette } from "./CommandPalette";
-import { getUnitAssetUrl } from "../../../data/helpers";
+import { getUnitAssetUrl, triggerHaptic } from "../../../data/helpers";
 
 import { useToastStore } from "../../../store/useToastStore";
 import {
@@ -274,18 +274,22 @@ export function TopBar({
               <button
                 type="button"
                 aria-label="Notifications"
-                onClick={() => setIsNotifMenuOpen(!isNotifMenuOpen)}
-                className="flex items-center justify-center p-1 bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground rounded-[4px] transition-colors shrink-0 cursor-pointer focus-visible:outline-none min-h-[44px] min-w-[44px] relative"
-                title="Notifications"
+                onClick={() => {
+                  triggerHaptic("light");
+                  setIsNotifMenuOpen(!isNotifMenuOpen);
+                }}
+                className="flex items-center justify-center p-1 bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground rounded-[4px] transition-[transform,background-color,color] duration-150 active:scale-95 shrink-0 cursor-pointer focus-visible:outline-none min-h-[44px] min-w-[44px] relative"
+                data-tooltip="Notifications"
+                data-tooltip-side="bottom"
               >
-                <GiRingingBell className="w-5 h-5" />
+                <GiRingingBell className={`w-5 h-5 transition-colors ${unreadCount > 0 ? "text-primary" : ""}`} />
                 {unreadCount > 0 && (
-                  <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-destructive rounded-full border-2 border-background" />
+                  <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-destructive rounded-full border-2 border-background animate-badge-pulse" />
                 )}
               </button>
 
               {isNotifMenuOpen && (
-                <div className="absolute top-full right-0 mt-2 w-[320px] bg-card border border-border rounded-[6px] shadow-xl z-[99999] flex flex-col animate-slide-up">
+                <div className="absolute top-full right-0 mt-2 w-[320px] bg-card border border-border rounded-[6px] shadow-2xl z-[99999] flex flex-col animate-slide-up">
                   <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-popover rounded-t-[6px]">
                     <span className="text-[12px] font-black uppercase tracking-widest text-foreground">
                       Notifications
@@ -317,7 +321,7 @@ export function TopBar({
                         <button
                           key={n.id}
                           onClick={() => handleNotificationClick(n)}
-                          className={`w-full text-left flex items-start gap-3 p-3 border-b border-border hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none ${
+                          className={`w-full text-left flex items-start gap-3 p-3 border-b border-border hover:bg-muted transition-[background-color,border-color,transform] duration-150 active:scale-[0.99] cursor-pointer focus-visible:outline-none ${
                             !n.is_read ? "bg-primary/5" : ""
                           }`}
                         >
@@ -404,8 +408,9 @@ export function TopBar({
                   type="button"
                   aria-label="Account settings"
                   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                  className="flex items-center justify-center p-1 bg-popover hover:bg-muted border border-border rounded-[4px] transition-colors shrink-0 cursor-pointer focus-visible:outline-none min-h-[44px] min-w-[44px]"
-                  title="Account Settings"
+                  className="flex items-center justify-center p-1 bg-popover hover:bg-muted border border-border rounded-[4px] transition-[transform,background-color] duration-150 active:scale-95 shrink-0 cursor-pointer focus-visible:outline-none min-h-[44px] min-w-[44px]"
+                  data-tooltip="Account Settings"
+                  data-tooltip-side="bottom"
                 >
                   <div className="relative">
                     <img
@@ -546,9 +551,14 @@ export function TopBar({
           <button
             type="button"
             aria-label="Open Command Palette"
-            onClick={() => setCommandPaletteOpen(true)}
-            className="flex items-center justify-center gap-2 px-3 py-2 md:px-2.5 rounded-[4px] bg-input border border-border hover:border-muted-foreground text-muted-foreground transition-colors text-[12px] font-bold focus-visible:outline-none shrink-0 cursor-pointer min-h-[44px]"
-            title="Open Command Palette"
+            onClick={() => {
+              triggerHaptic("light");
+              setCommandPaletteOpen(true);
+            }}
+            className="flex items-center justify-center gap-2 px-3 py-2 md:px-2.5 rounded-[4px] bg-input border border-border hover:border-muted-foreground text-muted-foreground hover:text-foreground transition-[transform,background-color,border-color,color] duration-150 active:scale-95 text-[12px] font-bold focus-visible:outline-none shrink-0 cursor-pointer min-h-[44px]"
+            data-tooltip="Quick Search & Actions"
+            data-tooltip-shortcut="⌘K"
+            data-tooltip-side="bottom"
           >
             <GiMagicPortal className="w-4 h-4 sm:hidden flex-shrink-0" />
             <span className="hidden sm:flex items-center gap-2 text-[12px] font-mono tracking-wider">
@@ -566,7 +576,7 @@ export function TopBar({
             type="button"
             aria-label="Search units"
             onClick={() => setMobileSearchOpen(true)}
-            className="md:hidden flex-shrink-0 w-11 h-11 flex items-center justify-center rounded-[4px] border border-border bg-input text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
+            className="md:hidden flex-shrink-0 w-11 h-11 flex items-center justify-center rounded-[4px] border border-border bg-input text-muted-foreground hover:text-foreground transition-[transform,background-color] duration-150 active:scale-95 focus-visible:outline-none cursor-pointer"
           >
             <Search className="w-4 h-4" />
           </button>
@@ -603,16 +613,18 @@ export function TopBar({
             type="button"
             aria-label="Toggle Trade Analyzer"
             onClick={handleToggleAnalyzer}
-            className={`hidden md:flex relative items-center gap-2 px-3 py-1.5 rounded-[4px] transition-colors font-bold text-[12px] focus-visible:outline-none cursor-pointer border shrink-0 ${
+            className={`hidden md:flex relative items-center gap-2 px-3 py-1.5 rounded-[4px] transition-[transform,background-color,border-color,color] duration-150 active:scale-95 font-bold text-[12px] focus-visible:outline-none cursor-pointer border shrink-0 ${
               isAnalyzerOpen
-                ? "bg-popover text-foreground border-border"
-                : "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
+                ? "bg-popover text-foreground border-border shadow-inner"
+                : "bg-primary text-primary-foreground border-primary hover:bg-primary/90 shadow-sm"
             } ${
               isMainStep3 || showCalcPulse
                 ? "animate-pulse border-primary !z-[100005]"
                 : ""
             }`}
-            title="Toggle Trade Analyzer"
+            data-tooltip="Trade Calculator & Analyzer"
+            data-tooltip-shortcut="⌘J"
+            data-tooltip-side="bottom"
           >
             <Calculator className="w-4 h-4 flex-shrink-0" />
             <span>Analyzer</span>

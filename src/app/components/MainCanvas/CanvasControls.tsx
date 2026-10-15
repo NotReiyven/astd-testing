@@ -103,7 +103,7 @@ export function CanvasControls({
             triggerHaptic("medium");
             setIsSelectMode(!isSelectMode);
           }}
-          className={`flex items-center justify-center gap-1.5 px-4 h-[var(--ui-height-btn)] rounded-[4px] text-xs font-bold uppercase tracking-wider transition-all border focus-visible:outline-none shrink-0 active:scale-95 cursor-pointer shadow-sm flex-1 md:flex-none ${
+          className={`flex items-center justify-center gap-1.5 px-4 h-[var(--ui-height-btn)] rounded-[4px] text-xs font-bold uppercase tracking-wider transition-[transform,background-color,border-color,color] duration-150 border focus-visible:outline-none shrink-0 active:scale-95 cursor-pointer shadow-sm flex-1 md:flex-none ${
             isSelectMode
               ? "bg-primary text-primary-foreground border-primary"
               : "bg-popover text-foreground/90 border-border hover:bg-muted"
@@ -119,8 +119,9 @@ export function CanvasControls({
               triggerHaptic("medium");
               handleResetFilters();
             }}
-            className="flex-shrink-0 flex items-center justify-center gap-1.5 px-4 h-[var(--ui-height-btn)] rounded-[4px] text-xs font-bold uppercase tracking-wider text-rose-400 bg-rose-400/10 hover:bg-rose-400 hover:text-white transition-all duration-200 animate-fade-in border border-rose-400/20 active:scale-95 cursor-pointer shadow-sm flex-1 md:flex-none"
-            title="Reset Filters"
+            className="flex-shrink-0 flex items-center justify-center gap-1.5 px-4 h-[var(--ui-height-btn)] rounded-[4px] text-xs font-bold uppercase tracking-wider text-rose-400 bg-rose-400/10 hover:bg-rose-400 hover:text-white transition-[transform,background-color,border-color,color] duration-150 animate-fade-in border border-rose-400/20 active:scale-95 cursor-pointer shadow-sm flex-1 md:flex-none"
+            data-tooltip="Reset all filters"
+            data-tooltip-side="bottom"
           >
             <X className="w-4 h-4" />
             <span>Reset</span>
@@ -128,27 +129,36 @@ export function CanvasControls({
         )}
       </div>
 
-      <div className="flex bg-popover rounded-[4px] p-1 border border-border shadow-sm ml-auto md:ml-0 h-[var(--ui-height-btn)]">
+      <div className="flex bg-input rounded-[4px] p-1 border border-border shadow-inner ml-auto md:ml-0 h-[var(--ui-height-btn)]">
         <button
-          onClick={() => { triggerHaptic("light"); setViewMode("grid"); }} aria-label="Grid View"
-          className={`p-1.5 rounded-[3px] transition-all duration-200 focus-visible:outline-none flex items-center justify-center h-full w-9 ${
-            viewMode === "grid" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+          onClick={() => { triggerHaptic("light"); setViewMode("grid"); }}
+          aria-label="Grid View"
+          data-tooltip="Grid View"
+          data-tooltip-side="bottom"
+          className={`p-1.5 rounded-[3px] transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 focus-visible:outline-none flex items-center justify-center h-full w-9 cursor-pointer ${
+            viewMode === "grid" ? "bg-foreground text-background shadow-sm font-bold" : "text-muted-foreground hover:text-foreground hover:bg-card"
           }`}
         >
           <LayoutGrid className="w-4 h-4" />
         </button>
         <button
-          onClick={() => { triggerHaptic("light"); setViewMode("list"); }} aria-label="List View"
-          className={`p-1.5 rounded-[3px] transition-all duration-200 focus-visible:outline-none flex items-center justify-center h-full w-9 ${
-            viewMode === "list" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+          onClick={() => { triggerHaptic("light"); setViewMode("list"); }}
+          aria-label="List View"
+          data-tooltip="List View"
+          data-tooltip-side="bottom"
+          className={`p-1.5 rounded-[3px] transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 focus-visible:outline-none flex items-center justify-center h-full w-9 cursor-pointer ${
+            viewMode === "list" ? "bg-foreground text-background shadow-sm font-bold" : "text-muted-foreground hover:text-foreground hover:bg-card"
           }`}
         >
           <List className="w-4 h-4" />
         </button>
         <button
-          onClick={() => { triggerHaptic("light"); setViewMode("compact"); }} aria-label="Compact View"
-          className={`hidden md:flex p-2 rounded-[3px] transition-all duration-200 focus-visible:outline-none items-center justify-center h-full w-10 ${
-            viewMode === "compact" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+          onClick={() => { triggerHaptic("light"); setViewMode("compact"); }}
+          aria-label="Compact View"
+          data-tooltip="Compact View"
+          data-tooltip-side="bottom"
+          className={`hidden md:flex p-2 rounded-[3px] transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 focus-visible:outline-none items-center justify-center h-full w-10 cursor-pointer ${
+            viewMode === "compact" ? "bg-foreground text-background shadow-sm font-bold" : "text-muted-foreground hover:text-foreground hover:bg-card"
           }`}
         >
           <AlignJustify className="w-4 h-4" />
@@ -159,24 +169,27 @@ export function CanvasControls({
 
   return (
     <div className="flex flex-col w-full bg-card">
-      <div className="flex bg-popover border-b border-border w-full overflow-x-auto hide-scrollbar px-[var(--panel-p)]">
-        {FILTERS.map((f) => (
-          <button
-            key={f}
-            onClick={() => {
-              triggerHaptic("light");
-              setActiveTierFilter(f);
-              if (f !== "All") window.dispatchEvent(new Event("academy-used-filter"));
-            }}
-            className={`px-4 py-2.5 text-xs font-bold tracking-wider uppercase transition-all whitespace-nowrap focus-visible:outline-none shrink-0 cursor-pointer border-b-2 ${
-              activeTierFilter === f && !deferredSearchQuery
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            }`}
-          >
-            {f}
-          </button>
-        ))}
+      <div className="flex bg-popover border-b border-border w-full overflow-x-auto hide-scrollbar px-[var(--panel-p)] py-1.5 items-center">
+        <div className="flex bg-input rounded-[4px] p-1 border border-border overflow-x-auto hide-scrollbar shrink-0 shadow-inner h-[var(--ui-height-input)] items-center">
+          {FILTERS.map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => {
+                triggerHaptic("light");
+                setActiveTierFilter(f);
+                if (f !== "All") window.dispatchEvent(new Event("academy-used-filter"));
+              }}
+              className={`px-3.5 h-full rounded-[3px] text-xs font-bold tracking-wider uppercase transition-[transform,background-color,color,box-shadow] duration-150 whitespace-nowrap focus-visible:outline-none shrink-0 cursor-pointer active:scale-95 flex items-center justify-center ${
+                activeTierFilter === f && !deferredSearchQuery
+                  ? "bg-foreground text-background shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
       </div>
       
       <ResponsiveToolbar 

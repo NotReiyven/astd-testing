@@ -422,24 +422,32 @@ export function InventoryChannel() {
       )}
 
       {/* Master Tabs */}
-      <div className="flex items-center justify-between px-6 pt-4 bg-card border-b border-border shrink-0 z-20">
-        <div className="flex items-center gap-6">
+      <div className="flex items-center justify-between px-6 pt-3 pb-3 bg-card border-b border-border shrink-0 z-20">
+        <div className="flex bg-input rounded-[4px] p-1 border border-border shadow-inner">
           <button
-            onClick={() => handleTabSwitch("owned")}
-            className={`pb-3 text-sm font-medium transition-all border-b-[2px] focus-visible:outline-none cursor-pointer ${
+            type="button"
+            onClick={() => {
+              triggerHaptic("light");
+              handleTabSwitch("owned");
+            }}
+            className={`px-4 py-1.5 rounded-[3px] text-sm font-medium transition-[transform,background-color,color,box-shadow] duration-150 focus-visible:outline-none cursor-pointer active:scale-95 ${
               vaultView === "owned"
-                ? "text-foreground border-foreground"
-                : "text-muted-foreground border-transparent hover:text-foreground"
+                ? "bg-foreground text-background shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
             }`}
           >
             {isReadOnly ? "Vault" : "My Vault"}
           </button>
           <button
-            onClick={() => handleTabSwitch("wishlist")}
-            className={`pb-3 text-sm font-medium transition-all border-b-[2px] focus-visible:outline-none cursor-pointer ${
+            type="button"
+            onClick={() => {
+              triggerHaptic("light");
+              handleTabSwitch("wishlist");
+            }}
+            className={`px-4 py-1.5 rounded-[3px] text-sm font-medium transition-[transform,background-color,color,box-shadow] duration-150 focus-visible:outline-none cursor-pointer active:scale-95 ${
               vaultView === "wishlist"
-                ? "text-foreground border-foreground"
-                : "text-muted-foreground border-transparent hover:text-foreground"
+                ? "bg-foreground text-background shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
             }`}
           >
             Wishlist
@@ -479,27 +487,32 @@ export function InventoryChannel() {
           }`}
         >
           {/* Filter Toggles Row */}
-          <div
-            className="flex flex-nowrap items-center gap-2 overflow-x-auto w-full lg:w-auto hide-scrollbar pr-4 mask-fade-edges"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-          >
+          <div className="flex bg-input rounded-[4px] p-1 border border-border w-full lg:w-auto overflow-x-auto hide-scrollbar shrink-0 shadow-inner h-[var(--ui-height-input)] items-center">
             <button
-              onClick={() => setActiveTierFilter("All")}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-[4px] text-[12px] font-bold tracking-wide transition-colors border focus-visible:outline-none cursor-pointer ${
+              type="button"
+              onClick={() => {
+                triggerHaptic("light");
+                setActiveTierFilter("All");
+              }}
+              className={`flex-shrink-0 px-3 h-full rounded-[3px] text-[12px] font-bold tracking-wide transition-[transform,background-color,color,box-shadow] duration-150 focus-visible:outline-none cursor-pointer active:scale-95 flex items-center justify-center ${
                 activeTierFilter === "All"
-                  ? "bg-foreground text-background border-foreground shadow-sm"
-                  : "bg-muted text-muted-foreground border-transparent hover:bg-card hover:border-border hover:text-foreground"
+                  ? "bg-foreground text-background shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
               }`}
             >
               All
             </button>
             {vaultView !== "wishlist" && (
               <button
-                onClick={() => setActiveTierFilter("Pinned")}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] text-[12px] font-bold tracking-wide transition-colors border focus-visible:outline-none cursor-pointer ${
+                type="button"
+                onClick={() => {
+                  triggerHaptic("light");
+                  setActiveTierFilter("Pinned");
+                }}
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3 h-full rounded-[3px] text-[12px] font-bold tracking-wide transition-[transform,background-color,color,box-shadow] duration-150 focus-visible:outline-none cursor-pointer active:scale-95 justify-center ${
                   activeTierFilter === "Pinned"
-                    ? "bg-foreground text-background border-foreground shadow-sm"
-                    : "bg-muted text-muted-foreground border-transparent hover:bg-card hover:border-border hover:text-foreground"
+                    ? "bg-foreground text-background shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
                 }`}
               >
                 <GiPadlock
@@ -515,11 +528,15 @@ export function InventoryChannel() {
             {FILTERS.filter((f) => f !== "All").map((f) => (
               <button
                 key={f}
-                onClick={() => setActiveTierFilter(f)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-[4px] text-[12px] font-bold tracking-wide transition-colors border focus-visible:outline-none cursor-pointer ${
+                type="button"
+                onClick={() => {
+                  triggerHaptic("light");
+                  setActiveTierFilter(f);
+                }}
+                className={`flex-shrink-0 px-3 h-full rounded-[3px] text-[12px] font-bold tracking-wide transition-[transform,background-color,color,box-shadow] duration-150 focus-visible:outline-none cursor-pointer active:scale-95 flex items-center justify-center ${
                   activeTierFilter === f
-                    ? "bg-foreground text-background border-foreground shadow-sm"
-                    : "bg-muted text-muted-foreground border-transparent hover:bg-card hover:border-border hover:text-foreground"
+                    ? "bg-foreground text-background shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
                 }`}
               >
                 {f}
