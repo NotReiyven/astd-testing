@@ -347,12 +347,6 @@ export function AdComposerModal() {
 
       window.dispatchEvent(new Event("academy-posted-ad"));
 
-      void useNotificationStore.getState().createNotification({
-        user_id: profile.id,
-        type: "system",
-        message: "Your trade ad was published successfully.",
-      });
-
       addToast(
         "Published your listing to the Live Trading Board.",
         "success"

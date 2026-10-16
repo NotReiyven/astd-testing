@@ -35,6 +35,7 @@ import { useNotificationStore } from "../store/useNotificationStore";
 import { supabase } from "../lib/supabase";
 
 import { useNetworkSync } from "../hooks/useNetworkSync";
+import { useValueListNotification } from "../hooks/useValueListNotification";
 import { GlobalToastContainer } from "./components/layout/GlobalToastContainer";
 import { GlobalTooltip } from "./components/ui/GlobalTooltip";
 import { GranularErrorBoundary } from "./components/shared/GranularErrorBoundary";
@@ -176,6 +177,9 @@ export default function App() {
     unsubscribe: unsubscribeFromNotifications,
   } = useNotificationStore();
 
+  // Monitor value list updates with debounce settle window
+  useValueListNotification();
+
   const {
     globalSearchQuery,
     setGlobalSearchQuery,
@@ -276,14 +280,10 @@ export default function App() {
     }
   }, [activeChannel, profile, isAuthLoading]);
 
-  // Hook up notification subscriptions based on auth state
+  // Hook up notification subscriptions for authenticated users and local cache for guests
   useEffect(() => {
-    if (profile) {
-      subscribeToNotifications(profile.id);
-    } else {
-      unsubscribeFromNotifications();
-    }
-  }, [profile, subscribeToNotifications, unsubscribeFromNotifications]);
+    subscribeToNotifications(profile ? profile.id : null);
+  }, [profile, subscribeToNotifications]);
 
   useEffect(() => {
     const handleStartGuest = () => startGuide("guest_tour", true);

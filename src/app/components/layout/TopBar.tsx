@@ -76,6 +76,7 @@ export function TopBar({
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const markAsRead = useNotificationStore((s) => s.markAsRead);
   const markAllAsRead = useNotificationStore((s) => s.markAllAsRead);
+  const deleteAllNotifications = useNotificationStore((s) => s.deleteAllNotifications);
   const openAdContext = useAdInteractionStore((s) => s.openAdContext);
   const addToast = useToastStore((s) => s.addToast);
 
@@ -183,6 +184,13 @@ export function TopBar({
     if (!notif.is_read) void markAsRead(notif.id);
     setIsNotifMenuOpen(false);
 
+    if (notif.type === "value_update" || notif.action_url === "/home") {
+      window.document.dispatchEvent(
+        new CustomEvent("navigate", { detail: "home" })
+      );
+      return;
+    }
+
     if (
       notif.ad_id &&
       (notif.type === "comment" ||
@@ -270,7 +278,7 @@ export function TopBar({
         <div className="flex items-center justify-end gap-2 md:gap-3 shrink min-w-0">
           <LiveAvatars />
 
-          {!isAuthLoading && profile && (
+          {!isAuthLoading && (
             <div className="relative" ref={notifMenuRef}>
               <button
                 type="button"
@@ -285,35 +293,48 @@ export function TopBar({
               >
                 <GiRingingBell className={`w-5 h-5 transition-colors ${unreadCount > 0 ? "text-primary" : ""}`} />
                 {unreadCount > 0 && (
-                  <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-destructive rounded-full border-2 border-background animate-badge-pulse" />
+                  <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-600 rounded-full border-2 border-background animate-badge-pulse" />
                 )}
               </button>
 
               {isNotifMenuOpen && (
-                <div className="absolute top-full right-0 mt-2 w-[320px] bg-card border border-border rounded-[6px] shadow-2xl z-[99999] flex flex-col animate-slide-up">
-                  <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-popover rounded-t-[6px]">
-                    <span className="text-[12px] font-black uppercase tracking-widest text-foreground">
+                <div className="absolute top-full right-0 mt-2 w-[340px] bg-card border border-border rounded-[8px] shadow-2xl z-[99999] flex flex-col animate-slide-up">
+                  <div className="px-3.5 py-2.5 border-b border-border flex items-center justify-between bg-popover rounded-t-[8px]">
+                    <span className="text-[12px] font-bold uppercase tracking-wider text-foreground">
                       Notifications
                     </span>
-                    {unreadCount > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void markAllAsRead(profile.id);
-                          addToast("Marked all notifications as read.", "success");
-                        }}
-                        className="text-[10px] font-bold text-primary hover:underline cursor-pointer focus-visible:outline-none"
-                      >
-                        Mark all as read
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {unreadCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void markAllAsRead(profile?.id || null);
+                            addToast("Marked all notifications as read.", "success");
+                          }}
+                          className="text-[11px] font-semibold text-primary hover:underline cursor-pointer focus-visible:outline-none"
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                      {notifications.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void deleteAllNotifications(profile?.id || null);
+                          }}
+                          className="text-[11px] font-semibold text-muted-foreground hover:text-destructive cursor-pointer focus-visible:outline-none"
+                        >
+                          Clear all
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex flex-col max-h-[350px] overflow-y-auto custom-scrollbar">
                     {notifications.length === 0 ? (
                       <div className="px-4 py-8 text-center flex flex-col items-center gap-2">
                         <GiRingingBell className="w-8 h-8 text-muted-foreground opacity-50" />
-                        <span className="text-[13px] font-medium text-muted-foreground">
+                        <span className="text-[12.5px] font-medium text-muted-foreground">
                           You have no new notifications.
                         </span>
                       </div>
@@ -322,19 +343,37 @@ export function TopBar({
                         <button
                           key={n.id}
                           onClick={() => handleNotificationClick(n)}
-                          className={`w-full text-left flex items-start gap-3 p-3 border-b border-border hover:bg-muted transition-[background-color,border-color,transform] duration-150 active:scale-[0.99] cursor-pointer focus-visible:outline-none ${
+                          className={`w-full text-left flex items-start gap-3 p-3 border-b border-border hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none ${
                             !n.is_read ? "bg-primary/5" : ""
                           }`}
                         >
-                          <UserAvatar
-                            avatarUrl={n.actor?.avatar_url}
-                            username={n.actor?.username}
-                            discordId={n.actor?.discord_id}
-                            className="w-8 h-8 rounded-full border border-border bg-muted shrink-0"
-                          />
+                          {n.type === "value_update" ? (
+                            <div className="w-8 h-8 rounded-full border border-[#23a559]/40 bg-[#23a559]/15 flex items-center justify-center shrink-0 text-[#23a559]">
+                              <GiRingingBell className="w-4 h-4" />
+                            </div>
+                          ) : (
+                            <UserAvatar
+                              avatarUrl={n.actor?.avatar_url}
+                              username={n.actor?.username}
+                              discordId={n.actor?.discord_id}
+                              className="w-8 h-8 rounded-full border border-border bg-muted shrink-0"
+                            />
+                          )}
                           <div className="flex flex-col min-w-0 flex-1">
                             <div className="text-[12.5px] text-foreground leading-snug">
-                              {n.type === "warning" ? (
+                              {n.type === "value_update" ? (
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="px-1.5 py-0.2 rounded-[3px] bg-[#23a559] text-white font-bold text-[9px] uppercase tracking-wider font-mono self-start">
+                                    Value Update
+                                  </span>
+                                  <span className="text-[12px] font-bold text-foreground">
+                                    Market values updated
+                                  </span>
+                                  <span className="text-[11px] text-muted-foreground line-clamp-2">
+                                    {n.message || "Values and tiers have been updated."}
+                                  </span>
+                                </div>
+                              ) : n.type === "warning" ? (
                                 <div className="flex flex-col gap-1 min-w-0">
                                   <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="px-1.5 py-0.2 rounded-[3px] bg-[#f97316] text-[#000000] font-black text-[9px] uppercase tracking-wider font-mono shrink-0">
@@ -351,35 +390,36 @@ export function TopBar({
                                   </span>
                                 </div>
                               ) : n.type === "system" ? (
-                                <>
-                                  <strong className="font-bold text-success">
-                                    System:
-                                  </strong>{" "}
-                                  {n.message || "A system update was recorded."}
-                                </>
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-[12px] font-bold text-foreground">
+                                    {n.title || "System Notice"}
+                                  </span>
+                                  <span className="text-[11.5px] text-muted-foreground line-clamp-2">
+                                    {n.message || "A system update was recorded."}
+                                  </span>
+                                </div>
                               ) : n.type === "upvote" ? (
-                                <>
-                                  <strong className="font-bold">
-                                    {n.actor?.username || "Someone"}
-                                  </strong>{" "}
-                                  {n.comment_id
-                                    ? "upvoted your comment."
-                                    : "upvoted your trade ad."}
-                                </>
-                              ) : (
-                                <>
-                                  <strong className="font-bold">
-                                    {n.actor?.username || "Someone"}
-                                  </strong>{" "}
-                                  {n.type === "reply"
-                                    ? "replied to your comment:"
-                                    : "commented on your trade ad:"}
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-[12px] font-bold text-foreground">
+                                    {n.actor?.username || "A trader"} upvoted your {n.comment_id ? "comment" : "trade listing"}
+                                  </span>
                                   {n.message && (
-                                    <span className="block text-[11px] text-muted-foreground italic truncate mt-0.5 max-w-[220px]">
+                                    <span className="text-[11px] text-muted-foreground truncate">
                                       "{n.message}"
                                     </span>
                                   )}
-                                </>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-[12px] font-bold text-foreground">
+                                    {n.actor?.username || "A trader"} {n.type === "reply" ? "replied to your comment" : "commented on your trade ad"}
+                                  </span>
+                                  {n.message && (
+                                    <span className="text-[11px] text-muted-foreground truncate">
+                                      "{n.message}"
+                                    </span>
+                                  )}
+                                </div>
                               )}
                             </div>
                             <span className="text-[10px] text-muted-foreground font-mono mt-1">
@@ -398,7 +438,7 @@ export function TopBar({
                     )}
                   </div>
 
-                  <div className="p-2 border-t border-border bg-popover rounded-b-[6px]">
+                  <div className="p-2 border-t border-border bg-popover rounded-b-[8px]">
                     <Link
                       to="/notifications"
                       onClick={() => setIsNotifMenuOpen(false)}

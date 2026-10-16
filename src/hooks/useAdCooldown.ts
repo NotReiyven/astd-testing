@@ -119,15 +119,15 @@ export function useAdCooldown() {
               user_id: profile.id,
               type: "system",
               message:
-                "Your trade listing cooldown has ended. You can now post a new listing to the board!",
+                "Your trade listing cooldown has ended. You can now post a new listing to the board.",
             });
 
             addToast(
-              "Your trade ad cooldown has ended! You can now post another listing.",
+              "Trading ad cooldown ended. You can now post a new listing.",
               "success",
               {
                 action: {
-                  label: "Post Ad",
+                  label: "Post Listing",
                   onClick: () => setComposerOpen(true),
                 },
               }
@@ -166,15 +166,15 @@ export function useAdCooldown() {
                 ad_id: ad.id,
                 type: "system",
                 message:
-                  "Your trade ad has expired. You can view its archived comments and history.",
+                  "Your trade listing has expired and was moved to your archive.",
               });
 
               addToast(
-                "Your trade listing has expired. Discussion and comments are now archived.",
+                "Trade listing expired and moved to archive.",
                 "info",
                 {
                   action: {
-                    label: "View History",
+                    label: "View Listing",
                     onClick: () => {
                       void openAdContext(ad.id, profile.id);
                     },

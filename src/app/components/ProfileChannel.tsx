@@ -25,6 +25,7 @@ import {
   getEarlyUserRole,
 } from "../../store/useProfileStore";
 import { ProfileCustomizerModal } from "./Profile/ProfileCustomizerModal";
+import { DeleteAccountModal } from "./Profile/DeleteAccountModal";
 import { CustomColorPicker } from "./ui/CustomColorPicker";
 import { useAuthStore, UserProfile } from "../../store/useAuthStore";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
@@ -911,6 +912,7 @@ export function ProfileChannel() {
   // Edit Profile Modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const [copiedProfileLink, setCopiedProfileLink] = useState(false);
   const [copiedDiscordId, setCopiedDiscordId] = useState(false);
@@ -1278,6 +1280,70 @@ export function ProfileChannel() {
                   </span>
                 </button>
               ))}
+            </div>
+
+            {/* Typography Font Picker */}
+            <div className="pt-3 border-t border-border/70 flex flex-col gap-2">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[13px] text-foreground">
+                  Typography Font
+                </span>
+                <span className="text-[12px] text-muted-foreground">
+                  Choose the primary font family used across the application.
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {[
+                  {
+                    id: "luckiest-guy",
+                    label: "Luckiest Guy",
+                    desc: "Classic ASTD display",
+                    previewFont: "'Luckiest Guy', cursive, sans-serif",
+                  },
+                  {
+                    id: "geist",
+                    label: "Geist",
+                    desc: "Crisp modern sans",
+                    previewFont: "'Geist', sans-serif",
+                  },
+                  {
+                    id: "inter",
+                    label: "Inter",
+                    desc: "Neutral clean interface",
+                    previewFont: "'Inter', sans-serif",
+                  },
+                  {
+                    id: "mono",
+                    label: "Geist Mono",
+                    desc: "Technical tabular mono",
+                    previewFont: "'Geist Mono', monospace",
+                  },
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic("light");
+                      setFontFamily(f.id as FontFamily);
+                    }}
+                    className={`p-3 rounded-[6px] border text-left flex flex-col gap-1 cursor-pointer transition-colors ${
+                      fontFamily === f.id
+                        ? "bg-popover border-primary ring-1 ring-primary/40 shadow-xs"
+                        : "bg-popover/40 border-border hover:bg-popover"
+                    }`}
+                  >
+                    <span
+                      style={{ fontFamily: f.previewFont }}
+                      className="text-[13px] font-bold text-foreground leading-tight truncate"
+                    >
+                      {f.label}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground truncate">
+                      {f.desc}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Global Compact Mode */}
@@ -3300,6 +3366,40 @@ export function ProfileChannel() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Danger Zone: Delete Account */}
+                  <div className="pt-4 border-t border-destructive/30 flex flex-col gap-3">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[13px] font-bold text-destructive">
+                        Danger Zone
+                      </span>
+                      <span className="text-[12px] text-muted-foreground">
+                        Irreversible actions for your account. Once deleted, your ads, inventory vault, and profile data cannot be recovered.
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 rounded-[6px] border border-destructive/40 bg-destructive/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[12.5px] font-semibold text-foreground">
+                          Delete this account
+                        </span>
+                        <span className="text-[11.5px] text-muted-foreground">
+                          Permanently delete your profile and all associated data from the platform.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          triggerHaptic("heavy");
+                          setIsDeleteModalOpen(true);
+                        }}
+                        className="px-3.5 py-2 text-[12px] font-medium text-white bg-red-600 hover:bg-red-700 active:bg-red-800 border border-red-700 rounded-[5px] cursor-pointer transition-colors shrink-0 shadow-xs flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                      >
+                        <GiTrashCan className="w-4 h-4" />
+                        <span>Delete Account</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -3315,6 +3415,17 @@ export function ProfileChannel() {
           profileData={profileData}
           onSave={handleSaveProfile}
           isSaving={isSaving}
+        />
+      )}
+
+      {/* Delete Account Confirmation Modal */}
+      {isOwner && (
+        <DeleteAccountModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          username={
+            profileData?.username || currentUser?.username || "your account"
+          }
         />
       )}
     </div>

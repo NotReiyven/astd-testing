@@ -773,7 +773,7 @@ export const useAdInteractionStore =
               actor_id: userId,
               ad_id: adId,
               type: "upvote",
-              message: "upvoted your trade listing",
+              message: null,
             });
         }
       } finally {
@@ -950,7 +950,7 @@ export const useAdInteractionStore =
                   targetComment.ad_id,
                 comment_id: commentId,
                 type: "upvote",
-                message: `upvoted your comment: "${commentSnippet}"`,
+                message: commentSnippet,
               });
           }
         }

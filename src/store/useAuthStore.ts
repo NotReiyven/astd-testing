@@ -24,6 +24,9 @@ interface AuthState {
   updateStatus: (status: UserProfile["status"]) => Promise<void>;
   syncDiscordAvatar: () => Promise<boolean>;
   updateAvatarUrl: (url: string) => Promise<boolean>;
+  deleteAccount: (
+    confirmationPhrase: string
+  ) => Promise<{ success: boolean; error?: string }>;
 }
 
 import { del as delIdb } from "idb-keyval";
@@ -368,6 +371,57 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch {
       useToastStore.getState().addToast("Error updating avatar.", "error");
       return false;
+    }
+  },
+
+  deleteAccount: async (confirmationPhrase: string) => {
+    const { session, profile } = get();
+    if (!session?.access_token || !profile) {
+      return { success: false, error: "Authentication required." };
+    }
+
+    try {
+      const res = await fetch("/api/deleteAccount", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          confirmation: confirmationPhrase,
+          targetUserId: profile.id,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        return {
+          success: false,
+          error: data.error || "Failed to delete account. Please try again.",
+        };
+      }
+
+      if (activeProfileChannel) {
+        supabase.removeChannel(activeProfileChannel);
+        activeProfileChannel = null;
+      }
+
+      clearLocalAuthCache();
+      await supabase.auth.signOut().catch(() => {});
+      useProfileStore.setState({ cache: {}, notFoundCache: {} });
+      set({ session: null, profile: null });
+
+      useToastStore
+        .getState()
+        .addToast("Your account and data have been permanently deleted.", "info");
+
+      return { success: true };
+    } catch (err: any) {
+      return {
+        success: false,
+        error: err?.message || "An unexpected network error occurred.",
+      };
     }
   },
 

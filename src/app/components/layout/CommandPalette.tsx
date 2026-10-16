@@ -10,8 +10,9 @@ import {
   Settings2,
   Package,
   Megaphone,
+  Type,
 } from "lucide-react";
-import { useLayoutStore } from "../../../store/useLayoutStore";
+import { useLayoutStore, FontFamily } from "../../../store/useLayoutStore";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useToastStore } from "../../../store/useToastStore";
 import { triggerHaptic } from "../../../data/helpers";
@@ -89,11 +90,44 @@ const COMMANDS = [
     type: "academy",
     desc: "Manage the smart parser",
   },
+  {
+    id: "font-luckiest",
+    label: "Typography: Luckiest Guy",
+    icon: Type,
+    action: "luckiest-guy",
+    type: "font",
+    desc: "Switch to classic ASTD display font",
+  },
+  {
+    id: "font-geist",
+    label: "Typography: Geist",
+    icon: Type,
+    action: "geist",
+    type: "font",
+    desc: "Switch to clean modern sans font",
+  },
+  {
+    id: "font-inter",
+    label: "Typography: Inter",
+    icon: Type,
+    action: "inter",
+    type: "font",
+    desc: "Switch to neutral interface font",
+  },
+  {
+    id: "font-mono",
+    label: "Typography: Geist Mono",
+    icon: Type,
+    action: "mono",
+    type: "font",
+    desc: "Switch to technical tabular monospace font",
+  },
 ] as const;
 
 export function CommandPalette() {
   const commandPaletteOpen = useLayoutStore((s) => s.commandPaletteOpen);
   const setCommandPaletteOpen = useLayoutStore((s) => s.setCommandPaletteOpen);
+  const setFontFamily = useLayoutStore((s) => s.setFontFamily);
   const profile = useAuthStore((s) => s.profile);
   const loginWithDiscord = useAuthStore((s) => s.loginWithDiscord);
   const addToast = useToastStore((s) => s.addToast);
@@ -165,6 +199,12 @@ export function CommandPalette() {
             new CustomEvent("set-tutorial-tab", { detail: cmd.action })
           ),
         50
+      );
+    } else if (cmd.type === "font") {
+      setFontFamily(cmd.action as FontFamily);
+      addToast(
+        `Switched typography to ${cmd.label.replace("Typography: ", "")}.`,
+        "info"
       );
     }
   };
