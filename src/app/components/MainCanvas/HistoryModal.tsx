@@ -5,7 +5,7 @@ import React, {
   useMemo,
   useCallback,
 } from "react";
-import { GiRoundStar } from "react-icons/gi";
+import { GiRoundStar, GiCheckMark } from "react-icons/gi";
 import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 import { useUnitHistory, HistorySnapshot } from "../../../hooks/useUnitHistory";
 import { useUnits } from "../../../context/UnitContext";
@@ -423,6 +423,37 @@ export function HistoryModal() {
     }
   }, [isOpen, RechartsLib]);
 
+  const currentUnit = useMemo(
+    () => (unitId ? units.find((u) => u.id === unitId) ?? null : null),
+    [unitId, units]
+  );
+
+  const [shareLinkCopied, setShareLinkCopied] = useState(false);
+
+  const handleModalClose = useCallback(() => {
+    triggerHaptic("light");
+    closeModal();
+    if (window.location.pathname.startsWith("/unit/")) {
+      window.history.pushState(null, "", "/value-list");
+    }
+  }, [closeModal]);
+
+  const handleShareUnitLink = async () => {
+    if (!currentUnit) return;
+    triggerHaptic("light");
+    const link = `${window.location.origin}/unit/${currentUnit.id}`;
+    const ok = await copyTextWithFallback(link);
+    if (ok) {
+      setShareLinkCopied(true);
+      addToast(`Copied ${currentUnit.name} link to clipboard.`, "success", {
+        dedupeKey: `copy-unit-link-${currentUnit.id}`,
+      });
+      setTimeout(() => setShareLinkCopied(false), 2000);
+    } else {
+      addToast("Could not copy link to clipboard.", "error");
+    }
+  };
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -433,8 +464,7 @@ export function HistoryModal() {
           setSelectedSnapId(null);
           return;
         }
-        triggerHaptic("light");
-        closeModal();
+        handleModalClose();
         return;
       }
 
@@ -475,12 +505,31 @@ export function HistoryModal() {
       document.body.style.overflow = "auto";
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, closeModal, selectedSnapId]);
+  }, [isOpen, handleModalClose, selectedSnapId]);
 
-  const currentUnit = useMemo(
-    () => (unitId ? units.find((u) => u.id === unitId) ?? null : null),
-    [unitId, units]
-  );
+  // Synchronize browser address bar with /unit/:unitId when modal opens
+  useEffect(() => {
+    if (!isOpen || !currentUnit) return;
+    const currentPath = window.location.pathname;
+    const targetPath = `/unit/${currentUnit.id}`;
+    if (currentPath !== targetPath) {
+      window.history.pushState(null, "", targetPath);
+    }
+  }, [isOpen, currentUnit?.id]);
+
+  // Handle browser Back/Forward navigation to smoothly close modal
+  useEffect(() => {
+    const handlePopState = () => {
+      if (
+        !window.location.pathname.startsWith("/unit/") &&
+        useHistoryModalStore.getState().isOpen
+      ) {
+        useHistoryModalStore.getState().closeModal();
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   // Build chronological snapshot list including live state if different
   const displayHistory = useMemo<HistorySnapshot[]>(() => {
@@ -1226,10 +1275,7 @@ export function HistoryModal() {
     >
       <div
         className="absolute inset-0 bg-black/85 transition-opacity"
-        onClick={() => {
-          triggerHaptic("light");
-          closeModal();
-        }}
+        onClick={handleModalClose}
       />
 
       <div className="bg-card border border-border rounded-none sm:rounded-[10px] w-full h-full sm:h-auto sm:max-w-5xl sm:max-h-[90vh] flex flex-col relative shadow-2xl overflow-hidden animate-slide-up">
@@ -1317,10 +1363,7 @@ export function HistoryModal() {
 
               <button
                 type="button"
-                onClick={() => {
-                  triggerHaptic("light");
-                  closeModal();
-                }}
+                onClick={handleModalClose}
                 aria-label="Close"
                 className="sm:hidden text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-[6px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0 cursor-pointer"
               >
@@ -1390,6 +1433,42 @@ export function HistoryModal() {
 
               <button
                 type="button"
+                onClick={() => void handleShareUnitLink()}
+                className={`px-3 py-1.5 rounded-[6px] border text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer flex items-center gap-1.5 ${
+                  shareLinkCopied
+                    ? "border-[#23a559]/40 bg-[#23a559]/10 text-[#23a559]"
+                    : "border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground"
+                }`}
+                title="Copy shareable link to this unit"
+                aria-label="Share unit link"
+              >
+                {shareLinkCopied ? (
+                  <>
+                    <GiCheckMark className="w-3.5 h-3.5 text-[#23a559]" />
+                    <span className="font-semibold text-[#23a559]">Copied Link</span>
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      className="w-3.5 h-3.5 shrink-0"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M6.5 9.5a3.5 3.5 0 0 0 4.95 0l2-2a3.5 3.5 0 0 0-4.95-4.95l-1 1" />
+                      <path d="M9.5 6.5a3.5 3.5 0 0 0-4.95 0l-2 2a3.5 3.5 0 0 0 4.95 4.95l1-1" />
+                    </svg>
+                    <span className="hidden md:inline">Share Link</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
                 onClick={handleCopySummary}
                 className="px-3 py-1.5 rounded-[6px] border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer flex items-center gap-1.5"
                 title="Copy plain-text market summary to clipboard"
@@ -1426,10 +1505,7 @@ export function HistoryModal() {
               <button
                 ref={closeBtnRef}
                 type="button"
-                onClick={() => {
-                  triggerHaptic("light");
-                  closeModal();
-                }}
+                onClick={handleModalClose}
                 aria-label="Close"
                 className="hidden sm:inline-flex text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-[6px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0 cursor-pointer"
               >

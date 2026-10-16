@@ -289,8 +289,16 @@ export function unpackProfileRow(raw: any): UserProfileData {
   const role_details = Array.from(roleDetailsMap.values()).sort((a, b) => a.rank - b.rank);
   assigned_roles = role_details.map((r) => r.name);
 
+  const rawUsername = typeof raw?.username === "string" ? raw.username.trim() : "";
+  const resolvedUsername =
+    rawUsername ||
+    (typeof raw?.join_number === "number"
+      ? `User #${raw.join_number}`
+      : `Trader #${String(raw?.id || "00000").slice(0, 5)}`);
+
   return {
     ...raw,
+    username: resolvedUsername,
     global_rep: resolvedRep,
     banner_color: cleanHex,
     accent_color,

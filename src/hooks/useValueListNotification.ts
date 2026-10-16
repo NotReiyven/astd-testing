@@ -20,16 +20,45 @@ interface PendingUpdate {
   snippet: string;
 }
 
+function computeValueListHash(
+  units: Array<{ id: string; value?: unknown; demand?: string; tier?: string; status?: string }>,
+  latestLog: string
+): string {
+  let hash = 2166136261;
+  const prime = 16777619;
+
+  const feed = (str: string) => {
+    for (let i = 0; i < str.length; i++) {
+      hash ^= str.charCodeAt(i);
+      hash = Math.imul(hash, prime);
+    }
+  };
+
+  feed(latestLog.trim());
+  feed(String(units.length));
+
+  for (let i = 0; i < units.length; i++) {
+    const u = units[i];
+    feed(u.id);
+    feed(String(u.value ?? ""));
+    feed(String(u.demand ?? ""));
+    feed(String(u.tier ?? ""));
+    feed(String(u.status ?? ""));
+  }
+
+  return (hash >>> 0).toString(16);
+}
+
 export function useValueListNotification() {
-  const { changelog, units, lastUpdated, isLoading } = useUnits();
+  const { changelog, units, isLoading } = useUnits();
   const checkTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (isLoading || units.length === 0) return;
 
-    // Build a unique signature representing the current state of the value list
+    // Build a deterministic content hash of actual unit values, tiers, demands, and changelog
     const latestLog = changelog[0] || "";
-    const signature = `${latestLog.trim()}|${units.length}|${lastUpdated}`;
+    const signature = computeValueListHash(units, latestLog);
 
     let notifiedSig: string | null = null;
     let rawPending: string | null = null;
@@ -108,10 +137,9 @@ export function useValueListNotification() {
         quietElapsed >= QUIET_WINDOW_MS || totalElapsed >= MAX_SETTLE_WINDOW_MS;
 
       if (isSettled) {
-        const notifTitle = "Value list updated";
+        const notifTitle = "Market values updated";
         const notifMessage =
-          pending.snippet ||
-          "Market values and tiers have been updated across the value list. Review the latest shifts.";
+          "Unit values, tiers, and demands were adjusted in the spreadsheet. Review the latest patch notes.";
 
         // 1. Dispatch in-app notification to the store and offline cache
         useNotificationStore.getState().addLocalNotification({
@@ -127,7 +155,7 @@ export function useValueListNotification() {
         // 2. Dispatch non-intrusive toast with haptic feedback
         triggerHaptic("medium");
         useToastStore.getState().addToast(
-          "Value list updated: Market values and tiers were adjusted.",
+          "Market values and tiers were adjusted in the latest update.",
           "info",
           {
             duration: 6000,
@@ -172,5 +200,5 @@ export function useValueListNotification() {
         checkTimerRef.current = null;
       }
     };
-  }, [changelog, units.length, lastUpdated, isLoading]);
+  }, [changelog, units, isLoading]);
 }

@@ -1690,7 +1690,10 @@ export function ProfileChannel() {
                 {/* Row 1: Username & Sequence Rank */}
                 <div className="flex items-center gap-2.5 flex-wrap min-w-0">
                   <h1 className="text-[22px] sm:text-[26px] text-foreground leading-tight truncate">
-                    {profileData.username}
+                    {profileData.username?.trim() ||
+                      (typeof joinNumber === "number"
+                        ? `User #${joinNumber}`
+                        : "Trader")}
                   </h1>
 
                   {/* Sequence Rank Badge */}

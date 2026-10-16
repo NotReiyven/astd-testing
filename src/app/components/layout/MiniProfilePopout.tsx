@@ -438,7 +438,10 @@ export function MiniProfilePopout() {
                     className="text-[16px] text-foreground leading-none truncate cursor-pointer hover:underline font-bold"
                     onClick={handleViewFullProfile}
                   >
-                    {profile.username}
+                    {profile.username?.trim() ||
+                      (typeof profile.join_number === "number"
+                        ? `User #${profile.join_number}`
+                        : "Trader")}
                   </h2>
                   <div
                     className="flex items-center gap-1 px-2 py-0.5 rounded-[4px] border text-[11px] font-bold shrink-0 text-white shadow-xs font-mono"

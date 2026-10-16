@@ -54,6 +54,48 @@
       }
     </script>
 
+    <!-- FAQPage Schema for Search Rich Snippets -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is the ASTD Value List?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "ASTD Value List is the community trading database and analytical trade calculator for All Star Tower Defense on Roblox. It tracks live unit values, demands, obtainable statuses, and market trends."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How often are ASTD unit trading values updated?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Values are updated continuously in real-time as market conditions change, validated by official value list managers and community trade data."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does the ASTD trade calculator work?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The trade calculator compares total giving value and receiving value between players, calculating exact value margins, demand scores, and providing instant trade fairness ratings (Win, Fair, or Lose)."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I check the price history of a specific ASTD unit?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Every unit has a dedicated profile and market history chart tracking historical value adjustments, status updates, rarity shifts, and liquidity."
+            }
+          }
+        ]
+      }
+    </script>
+
     <!-- Anti-Flashbang, Density & Font Script: Runs BEFORE the DOM paints to prevent layout shifts -->
     <script>
       try {
@@ -112,15 +154,17 @@
   <body>
     <!-- Fallback Semantic HTML for Crawlers (Replaced on JS load) -->
     <noscript>
-      <main>
-        <h1>ASTD Value List & Trading Calculator</h1>
-        <p>The premier database and market calculator for All Star Tower Defense.</p>
-        <ul>
-          <li>Live Market Values and Demands</li>
-          <li>Real-time Trade Analyzer and Smart Parser</li>
-          <li>Inventory and Roster Management</li>
-          <li>Official Community Tier Lists and Updates</li>
-        </ul>
+      <main style="padding: 24px; font-family: sans-serif; max-width: 800px; margin: 0 auto; color: #fff; background: #111;">
+        <h1>ASTD Value List &amp; Trading Calculator</h1>
+        <p>The premier database, analytical calculator, and inventory tracker for All Star Tower Defense on Roblox.</p>
+        <nav aria-label="Main Site Navigation">
+          <ul>
+            <li><a href="/value-list" style="color: #3b82f6;">ASTD Value List &amp; Tiers</a>: View current unit values, demand ratings, and price histories.</li>
+            <li><a href="/trading-ads" style="color: #3b82f6;">Trading Channel &amp; Ads</a>: Find trade partners and post live trade offers.</li>
+            <li><a href="/inventory" style="color: #3b82f6;">Vault &amp; Inventory Tracker</a>: Track your units, wishlist, and portfolio worth.</li>
+            <li><a href="/tutorial" style="color: #3b82f6;">Trading Guide &amp; FAQ</a>: Learn trading techniques, valuation math, and safety tips.</li>
+          </ul>
+        </nav>
       </main>
     </noscript>
     <div id="root"></div>

@@ -36,6 +36,8 @@ import { supabase } from "../lib/supabase";
 
 import { useNetworkSync } from "../hooks/useNetworkSync";
 import { useValueListNotification } from "../hooks/useValueListNotification";
+import { useUnits } from "../context/UnitContext";
+import { useHistoryModalStore } from "../store/useHistoryModalStore";
 import { GlobalToastContainer } from "./components/layout/GlobalToastContainer";
 import { GlobalTooltip } from "./components/ui/GlobalTooltip";
 import { GranularErrorBoundary } from "./components/shared/GranularErrorBoundary";
@@ -157,7 +159,14 @@ export default function App() {
   const navigate = useNavigate();
 
   const path = location.pathname.replace(/^\/+/, "");
-  const activeChannel = path === "" ? "home" : path;
+  const activeChannel =
+    path === ""
+      ? "home"
+      : path.startsWith("unit/")
+      ? "value-list"
+      : path.startsWith("users/")
+      ? "users"
+      : path;
 
   const setActiveChannel = useCallback(
     (id: string) => {
@@ -170,6 +179,30 @@ export default function App() {
   const getItems = useTradeStore((s) => s.getItems);
   const pinnedIds = useTradeStore((s) => s.pinnedIds);
   const { profile, isLoading: isAuthLoading } = useAuthStore();
+  const { units } = useUnits();
+
+  // Auto-open unit history modal when navigating directly to /unit/:unitId
+  useEffect(() => {
+    if (!location.pathname.startsWith("/unit/")) return;
+    const rawTarget = decodeURIComponent(
+      location.pathname.replace(/^\/unit\/?/, "")
+    ).trim();
+    if (!rawTarget || units.length === 0) return;
+
+    const normalizedTarget = rawTarget.toLowerCase().replace(/-/g, "_");
+    const matched = units.find(
+      (u) =>
+        u.id.toLowerCase() === rawTarget.toLowerCase() ||
+        u.id.toLowerCase() === normalizedTarget ||
+        u.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") ===
+          rawTarget.toLowerCase() ||
+        u.name.toLowerCase().replace(/[^a-z0-9]+/g, "_") === normalizedTarget
+    );
+
+    if (matched) {
+      useHistoryModalStore.getState().openModal(matched.id);
+    }
+  }, [location.pathname, units]);
 
   // Realtime Notification Listener
   const {
@@ -622,6 +655,23 @@ export default function App() {
                 />
                 <Route
                   path="/value-list"
+                  element={
+                    <GranularErrorBoundary fallbackName="Live Value List">
+                      <MainCanvas
+                        activeTierFilter={activeTierFilter}
+                        setActiveTierFilter={setActiveTierFilter}
+                        searchQuery={globalSearchQuery}
+                        setSearchQuery={setGlobalSearchQuery}
+                        scrollToSection={scrollToSection}
+                        startGuide={startGuide}
+                        guideState={guideState}
+                        isMobile={isMobile}
+                      />
+                    </GranularErrorBoundary>
+                  }
+                />
+                <Route
+                  path="/unit/:unitId"
                   element={
                     <GranularErrorBoundary fallbackName="Live Value List">
                       <MainCanvas

@@ -135,7 +135,19 @@ export async function GET(request: Request) {
     if (!data.sheets) throw new Error("No grid data found in spreadsheet");
 
     const parsed = parseSpreadsheet(data);
-    const lastUpdated = new Date().toISOString();
+    
+    // Maintain stable lastUpdated if sheet content has not changed across revalidations
+    const firstLog = (parsed.changelog && parsed.changelog[0]) ? parsed.changelog[0] : "";
+    const unitCount = (parsed.units && Array.isArray(parsed.units)) ? parsed.units.length : 0;
+    const isUnchanged =
+      memoryCache?.body &&
+      memoryCache.body.units?.length === unitCount &&
+      memoryCache.body.changelog?.[0] === firstLog;
+
+    const lastUpdated = isUnchanged && memoryCache?.body?.lastUpdated
+      ? memoryCache.body.lastUpdated
+      : new Date().toISOString();
+
     const payload = { ...parsed, lastUpdated };
 
     // Update in-memory cache for warm container reuse

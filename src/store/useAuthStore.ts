@@ -257,6 +257,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             .update({ avatar_url: metadataAvatar })
             .eq("id", userId);
         }
+
+        // Auto-heal missing or empty username from Discord session claims
+        if (!data.username || !String(data.username).trim()) {
+          const metadataUsername =
+            currentSession.user.user_metadata?.custom_claims?.global_name ||
+            currentSession.user.user_metadata?.full_name ||
+            currentSession.user.user_metadata?.user_name ||
+            currentSession.user.user_metadata?.name;
+
+          if (
+            metadataUsername &&
+            typeof metadataUsername === "string" &&
+            metadataUsername.trim()
+          ) {
+            const cleanName = metadataUsername.trim();
+            data.username = cleanName;
+            void supabase
+              .from("profiles")
+              .update({ username: cleanName })
+              .eq("id", userId);
+          }
+        }
       }
 
       set({ profile: data as UserProfile });
