@@ -120,6 +120,7 @@ export function AdminChannel({
     masterModifyVaultUnit,
     masterOverrideProfile,
     masterPurgeExpiredAds,
+    masterSyncAccounts,
     profile,
     callerRole,
     isMaster,
@@ -144,6 +145,7 @@ export function AdminChannel({
   const [inspectorSubTab, setInspectorSubTab] = useState<
     "overview" | "ads" | "vault" | "logs"
   >("overview");
+  const [isSyncingAccounts, setIsSyncingAccounts] = useState(false);
 
   // Role Management State
   const [newRoleName, setNewRoleName] = useState("");
@@ -1038,13 +1040,21 @@ export function AdminChannel({
                         <div className="flex items-center gap-2.5 min-w-0">
                           <UserAvatar
                             avatarUrl={u.avatar_url}
-                            username={u.username}
+                            username={resolveSafeUsername(u.username, {
+                              joinNumber: u.join_number,
+                              discordId: u.discord_id,
+                              userId: u.id,
+                            })}
                             discordId={u.discord_id}
                             className="w-7 h-7 rounded-full shrink-0 border border-border"
                           />
                           <div className="min-w-0">
                             <div className="text-[12px] text-foreground truncate">
-                              {u.username}
+                              {resolveSafeUsername(u.username, {
+                                joinNumber: u.join_number,
+                                discordId: u.discord_id,
+                                userId: u.id,
+                              })}
                             </div>
                             <div className="flex flex-wrap gap-1 mt-1">
                               {(u.assigned_roles || [u.role]).map((ar) => (
@@ -1292,7 +1302,12 @@ export function AdminChannel({
                 >
                   {allUsers.map((u) => (
                     <option key={u.id} value={u.id}>
-                      {u.username} ({u.role})
+                      {resolveSafeUsername(u.username, {
+                        joinNumber: u.join_number,
+                        discordId: u.discord_id,
+                        userId: u.id,
+                      })}{" "}
+                      ({u.role})
                     </option>
                   ))}
                 </select>
@@ -1619,6 +1634,113 @@ export function AdminChannel({
                     Flush Sheet Cache
                   </button>
                 </div>
+
+                {/* Discord Identity & Account Synchronization (Strictly Master Only) */}
+                <div className="bg-card border border-[#eab308]/40 rounded-[6px] p-4 flex flex-col gap-3">
+                  <div className="flex items-center justify-between border-b border-border pb-2">
+                    <span className="text-[12px] font-bold text-foreground flex items-center gap-1.5">
+                      <GiCycle className="w-3.5 h-3.5 text-[#eab308]" />
+                      Discord Identity &amp; Account Sync
+                    </span>
+                    <span className="text-[10px] font-mono text-[#eab308] px-1.5 py-0.5 rounded bg-[#eab308]/10 border border-[#eab308]/30">
+                      Master Clearance
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Synchronize profiles, avatars, and usernames directly from Discord OAuth metadata. Strips zero-width invisible filler characters and repairs accounts with missing handles.
+                  </p>
+
+                  {/* Target User Quick Sync */}
+                  {effectiveCheatTarget && (
+                    <div className="bg-input/40 border border-border rounded-[5px] p-2.5 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <UserAvatar
+                          avatarUrl={effectiveCheatTarget.avatar_url}
+                          username={resolveSafeUsername(effectiveCheatTarget.username, {
+                            joinNumber: effectiveCheatTarget.join_number,
+                            discordId: effectiveCheatTarget.discord_id,
+                            userId: effectiveCheatTarget.id,
+                          })}
+                          className="w-7 h-7 rounded-full shrink-0"
+                        />
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-[11.5px] font-mono text-foreground truncate">
+                            {resolveSafeUsername(effectiveCheatTarget.username, {
+                              joinNumber: effectiveCheatTarget.join_number,
+                              discordId: effectiveCheatTarget.discord_id,
+                              userId: effectiveCheatTarget.id,
+                            })}
+                          </span>
+                          <span className="text-[10px] font-mono text-muted-foreground truncate">
+                            Snowflake: {effectiveCheatTarget.discord_id || "None"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={isSyncingAccounts}
+                        onClick={async () => {
+                          setIsSyncingAccounts(true);
+                          await masterSyncAccounts("sync_user", effectiveCheatTarget.id);
+                          setIsSyncingAccounts(false);
+                        }}
+                        className="h-7 px-3 rounded bg-[#eab308] hover:bg-[#eab308]/90 disabled:opacity-40 text-black text-[10.5px] font-mono font-bold cursor-pointer shrink-0"
+                      >
+                        {isSyncingAccounts ? "Syncing…" : "Sync Selected"}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Platform-wide Master Actions */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                    <button
+                      type="button"
+                      disabled={isSyncingAccounts}
+                      onClick={async () => {
+                        setIsSyncingAccounts(true);
+                        await masterSyncAccounts("repair_all");
+                        setIsSyncingAccounts(false);
+                      }}
+                      className="h-8 px-2 rounded bg-input hover:bg-muted border border-border text-[10.5px] font-mono text-foreground hover:border-[#eab308] flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40"
+                      title="Scan all user accounts and fix missing or blank usernames and invalid discord IDs"
+                    >
+                      <GiCheckMark className="w-3 h-3 text-[#23a559]" />
+                      Repair All Profiles
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isSyncingAccounts}
+                      onClick={async () => {
+                        setIsSyncingAccounts(true);
+                        await masterSyncAccounts("sync_all_avatars");
+                        setIsSyncingAccounts(false);
+                      }}
+                      className="h-8 px-2 rounded bg-input hover:bg-muted border border-border text-[10.5px] font-mono text-foreground hover:border-[#eab308] flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40"
+                      title="Refresh avatar URLs for all registered accounts from Discord"
+                    >
+                      <GiSparkles className="w-3 h-3 text-[#eab308]" />
+                      Resync All Avatars
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isSyncingAccounts}
+                      onClick={async () => {
+                        setIsSyncingAccounts(true);
+                        await masterSyncAccounts("sync_all_usernames");
+                        setIsSyncingAccounts(false);
+                      }}
+                      className="h-8 px-2 rounded bg-input hover:bg-muted border border-border text-[10.5px] font-mono text-foreground hover:border-[#eab308] flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40"
+                      title="Refresh usernames for all registered accounts directly from Discord OAuth metadata"
+                    >
+                      <GiCrown className="w-3 h-3 text-[#3b82f6]" />
+                      Resync All Usernames
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1723,7 +1845,11 @@ export function AdminChannel({
                         <div className="relative shrink-0">
                           <UserAvatar
                             avatarUrl={u.avatar_url}
-                            username={u.username}
+                            username={resolveSafeUsername(u.username, {
+                              joinNumber: u.join_number,
+                              discordId: u.discord_id,
+                              userId: u.id,
+                            })}
                             discordId={u.discord_id}
                             className="w-8 h-8 rounded-full border border-border"
                           />
@@ -1748,7 +1874,11 @@ export function AdminChannel({
                                 : "text-foreground"
                             }`}
                           >
-                            {u.username}
+                            {resolveSafeUsername(u.username, {
+                              joinNumber: u.join_number,
+                              discordId: u.discord_id,
+                              userId: u.id,
+                            })}
                           </span>
                           <span className="text-[10px] font-mono text-muted-foreground truncate">
                             {u.global_rep ?? 0} Rep
@@ -1834,12 +1964,20 @@ export function AdminChannel({
                           <div className="flex items-center gap-2 min-w-0">
                             <UserAvatar
                               avatarUrl={u.avatar_url}
-                              username={u.username}
+                              username={resolveSafeUsername(u.username, {
+                                joinNumber: u.join_number,
+                                discordId: u.discord_id,
+                                userId: u.id,
+                              })}
                               discordId={u.discord_id}
                               className="w-6 h-6 rounded-full shrink-0"
                             />
                             <span className="text-[11.5px] text-foreground truncate">
-                              {u.username}
+                              {resolveSafeUsername(u.username, {
+                                joinNumber: u.join_number,
+                                discordId: u.discord_id,
+                                userId: u.id,
+                              })}
                             </span>
                           </div>
                           <DiscordRolePill
@@ -1906,7 +2044,11 @@ export function AdminChannel({
                     <div className="flex items-center gap-3 min-w-0">
                       <UserAvatar
                         avatarUrl={selectedUser.avatar_url}
-                        username={selectedUser.username}
+                        username={resolveSafeUsername(selectedUser.username, {
+                          joinNumber: selectedUser.join_number,
+                          discordId: selectedUser.discord_id,
+                          userId: selectedUser.id,
+                        })}
                         discordId={selectedUser.discord_id}
                         className="w-12 h-12 rounded-full shrink-0 border border-border"
                       />
@@ -1914,7 +2056,11 @@ export function AdminChannel({
                       <div className="flex flex-col gap-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5">
                           <h2 className="text-[16px] text-foreground truncate">
-                            {selectedUser.username}
+                            {resolveSafeUsername(selectedUser.username, {
+                              joinNumber: selectedUser.join_number,
+                              discordId: selectedUser.discord_id,
+                              userId: selectedUser.id,
+                            })}
                           </h2>
                           {(
                             selectedUser.assigned_roles || [selectedUser.role]
@@ -1975,13 +2121,38 @@ export function AdminChannel({
                     </div>
 
                     <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                      {isMaster && (
+                        <button
+                          type="button"
+                          disabled={isSyncingAccounts}
+                          onClick={async () => {
+                            setIsSyncingAccounts(true);
+                            await masterSyncAccounts("sync_user", selectedUser.id);
+                            setIsSyncingAccounts(false);
+                          }}
+                          className="h-8 px-2.5 bg-input hover:bg-muted text-foreground hover:border-[#eab308] rounded-[4px] text-[11px] font-mono border border-border flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                          title="Resync this account from Discord OAuth metadata"
+                        >
+                          <GiCycle
+                            className={`w-3.5 h-3.5 text-[#eab308] ${
+                              isSyncingAccounts ? "animate-spin" : ""
+                            }`}
+                          />
+                          Sync Discord
+                        </button>
+                      )}
+
                       <button
                         type="button"
                         onClick={() => {
                           setViewingProfile(selectedUser.id, "admin-panel");
                           setViewingUser(
                             selectedUser.id,
-                            selectedUser.username,
+                            resolveSafeUsername(selectedUser.username, {
+                              joinNumber: selectedUser.join_number,
+                              discordId: selectedUser.discord_id,
+                              userId: selectedUser.id,
+                            }),
                             "admin-panel"
                           );
                           jumpToChannel("profile");
@@ -1997,7 +2168,11 @@ export function AdminChannel({
                           setViewingProfile(selectedUser.id, "admin-panel");
                           setViewingUser(
                             selectedUser.id,
-                            selectedUser.username,
+                            resolveSafeUsername(selectedUser.username, {
+                              joinNumber: selectedUser.join_number,
+                              discordId: selectedUser.discord_id,
+                              userId: selectedUser.id,
+                            }),
                             "admin-panel"
                           );
                           jumpToChannel("inventory");
@@ -2101,7 +2276,11 @@ export function AdminChannel({
                   <div className="bg-[#FAA61A]/10 border border-[#FAA61A]/40 rounded-[6px] p-2.5 px-3.5 flex items-center gap-2 text-[#FAA61A] text-[11px] font-mono">
                     <GiPadlock className="w-4 h-4 shrink-0" />
                     <span>
-                      Read-only: {selectedUser.username} holds equal/higher rank (
+                      Read-only: {resolveSafeUsername(selectedUser.username, {
+                        joinNumber: selectedUser.join_number,
+                        discordId: selectedUser.discord_id,
+                        userId: selectedUser.id,
+                      })} holds equal/higher rank (
                       {selectedUser.role.toUpperCase()}).
                     </span>
                   </div>
@@ -2231,7 +2410,11 @@ export function AdminChannel({
                           onClick={() =>
                             setModActionData({
                               type: "warn",
-                              label: `Issue Formal Warning to @${selectedUser.username}`,
+                              label: `Issue Formal Warning to @${resolveSafeUsername(selectedUser.username, {
+                                joinNumber: selectedUser.join_number,
+                                discordId: selectedUser.discord_id,
+                                userId: selectedUser.id,
+                              })}`,
                               isDestructive: false,
                             })
                           }
@@ -2316,7 +2499,11 @@ export function AdminChannel({
                               setModActionData({
                                 type: "ban",
                                 payload: "banned",
-                                label: `Ban ${selectedUser.username}`,
+                                label: `Ban ${resolveSafeUsername(selectedUser.username, {
+                                  joinNumber: selectedUser.join_number,
+                                  discordId: selectedUser.discord_id,
+                                  userId: selectedUser.id,
+                                })}`,
                                 isDestructive: true,
                               })
                             }

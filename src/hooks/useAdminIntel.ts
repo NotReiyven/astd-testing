@@ -1527,6 +1527,56 @@ export function useAdminIntel() {
     }
   };
 
+  const masterSyncAccounts = async (
+    action: "repair_all" | "sync_user" | "sync_all_avatars" | "sync_all_usernames",
+    targetUserId?: string
+  ): Promise<{ success: boolean; message: string; data?: any }> => {
+    const clearance = await verifyLiveClearance(["master"]);
+    if (!clearance.ok) {
+      return { success: false, message: "Master clearance required." };
+    }
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        showToast("Session expired. Please sign in again.", "error");
+        return { success: false, message: "No active session." };
+      }
+
+      const res = await fetch("/api/admin/masterSync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action, targetUserId }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        const errMsg = json.error || "Master sync operation failed.";
+        showToast(errMsg, "error");
+        return { success: false, message: errMsg };
+      }
+
+      showToast(
+        json.message ||
+          `Sync complete: updated ${json.updatedCount ?? 0} accounts.`,
+        "success"
+      );
+      await fetchUsers(searchQuery, showBannedOnly);
+      if (selectedUser?.id && targetUserId === selectedUser.id) {
+        await refreshSelectedUserIntel(selectedUser);
+      }
+      return { success: true, message: json.message || "Sync successful.", data: json };
+    } catch (err: any) {
+      const msg = err?.message || "Network error during sync.";
+      showToast(msg, "error");
+      return { success: false, message: msg };
+    }
+  };
+
   return {
     users: filteredUsers,
     allUsers: users,
@@ -1572,6 +1622,7 @@ export function useAdminIntel() {
     masterModifyVaultUnit,
     masterOverrideProfile,
     masterPurgeExpiredAds,
+    masterSyncAccounts,
     profile,
     callerRole,
     isMaster,

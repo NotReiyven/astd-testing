@@ -151,8 +151,12 @@ export async function copyTextWithFallback(text: string): Promise<boolean> {
   return false;
 }
 
+const INVISIBLE_UNICODE_REGEX =
+  /[\u0000-\u001F\u007F-\u009F\u00AD\u1680\u180E\u2000-\u200F\u2028-\u202F\u205F-\u206F\u2800\u3000\u3164\uFFA0\uFEFF]/g;
+
 /**
- * Strips zero-width, non-printing, invisible, format, and control characters,
+ * Strips zero-width, non-printing, invisible, format, and control characters
+ * including Braille Pattern Blank (\u2800) and Hangul Filler (\u3164),
  * collapses redundant whitespace, and trims the result.
  * Returns null if the result contains no visible printable characters.
  */
@@ -160,7 +164,7 @@ export function sanitizeUsername(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
 
   const cleaned = raw
-    .replace(/[\u0000-\u001F\u007F-\u009F\u00AD\u2000-\u200F\u2028-\u202F\u205F-\u206F\u2800\u3000\uFEFF]/g, "")
+    .replace(INVISIBLE_UNICODE_REGEX, "")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -243,6 +247,8 @@ export function extractDiscordId(user: any): string | null {
 
 /**
  * Extracts and sanitizes the best available username from Discord OAuth metadata.
+ * Evaluates global_name first, but strictly falls back to the mandatory unique
+ * Discord username if global_name is absent, null, empty, or consists of invisible Unicode filler.
  */
 export function extractDiscordUsername(user: any): string | null {
   if (!user) return null;
@@ -251,22 +257,48 @@ export function extractDiscordUsername(user: any): string | null {
     ? user.identities.find((i: any) => i?.provider === "discord")
     : null;
 
-  const candidates: unknown[] = [
+  // 1. First, evaluate global_name (optional display name).
+  // Must be strictly non-empty after stripping invisible Unicode chars.
+  const globalNameCandidates: unknown[] = [
     user.user_metadata?.custom_claims?.global_name,
     discordIdentity?.identity_data?.custom_claims?.global_name,
-    user.user_metadata?.full_name,
-    discordIdentity?.identity_data?.full_name,
-    user.user_metadata?.user_name,
-    discordIdentity?.identity_data?.user_name,
-    user.user_metadata?.name,
-    discordIdentity?.identity_data?.name,
-    user.email ? user.email.split("@")[0] : null,
+    user.user_metadata?.global_name,
+    discordIdentity?.identity_data?.global_name,
   ];
 
-  for (const candidate of candidates) {
+  for (const candidate of globalNameCandidates) {
     const sanitized = sanitizeUsername(candidate);
     if (sanitized) return sanitized;
   }
+
+  // 2. If global_name is absent, null, empty, or invisible filler,
+  // fall back directly to the mandatory unique Discord username.
+  const usernameCandidates: unknown[] = [
+    user.user_metadata?.username,
+    discordIdentity?.identity_data?.username,
+    user.user_metadata?.user_name,
+    discordIdentity?.identity_data?.user_name,
+    user.user_metadata?.preferred_username,
+    discordIdentity?.identity_data?.preferred_username,
+    user.user_metadata?.full_name,
+    discordIdentity?.identity_data?.full_name,
+    typeof user.user_metadata?.name === "string"
+      ? user.user_metadata.name.replace(/#0$/, "")
+      : null,
+    typeof discordIdentity?.identity_data?.name === "string"
+      ? discordIdentity.identity_data.name.replace(/#0$/, "")
+      : null,
+    user.email ? user.email.split("@")[0] : null,
+  ];
+
+  for (const candidate of usernameCandidates) {
+    const sanitized = sanitizeUsername(candidate);
+    if (sanitized) return sanitized;
+  }
+
+  // 3. Failsafe snowflake fallback
+  const dId = extractDiscordId(user);
+  if (dId) return `discord_${dId.slice(-6)}`;
 
   return null;
 }
