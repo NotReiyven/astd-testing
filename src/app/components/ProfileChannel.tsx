@@ -37,7 +37,7 @@ import {
 } from "../../store/useTradeStore";
 import { useHistoryModalStore } from "../../store/useHistoryModalStore";
 import { useToastStore } from "../../store/useToastStore";
-import { getUnitAssetUrl, triggerHaptic } from "../../data/helpers";
+import { getUnitAssetUrl, triggerHaptic, resolveSafeUsername } from "../../data/helpers";
 import {
   useLayoutStore,
   ThemeMode,
@@ -1619,13 +1619,19 @@ export function ProfileChannel() {
   const isWishlistVisibleToVisitor =
     isOwner || (profileData.wishlist_public ?? true);
 
+  const safeDisplayName = resolveSafeUsername(profileData.username, {
+    joinNumber,
+    discordId: profileData.discord_id,
+    userId: profileData.id,
+  });
+
   return (
     <div className="flex-1 w-full h-full font-sans relative overflow-y-auto custom-scrollbar pb-16 z-10 bg-background">
       {/* Return Bar when inspecting another user's profile */}
       {isInspectingOtherUser && (
         <ViewingUserBar
           targetUserId={targetId!}
-          targetUsername={profileData?.username || "Trader"}
+          targetUsername={safeDisplayName}
           activeTab="profile"
           returnChannel={returnChannel}
           onSwitchTab={(tab) => {
@@ -1672,10 +1678,10 @@ export function ProfileChannel() {
               <div className="relative shrink-0 self-start">
                 <UserAvatar
                   avatarUrl={profileData.avatar_url}
-                  username={profileData.username}
+                  username={safeDisplayName}
                   discordId={profileData.discord_id}
                   className="w-[84px] h-[84px] md:w-[96px] md:h-[96px] rounded-[10px] border-4 border-card bg-muted shadow-xl"
-                  alt={profileData.username}
+                  alt={safeDisplayName}
                   priority={true}
                 />
                 {/* Presence Indicator Dot */}
@@ -1690,10 +1696,7 @@ export function ProfileChannel() {
                 {/* Row 1: Username & Sequence Rank */}
                 <div className="flex items-center gap-2.5 flex-wrap min-w-0">
                   <h1 className="text-[22px] sm:text-[26px] text-foreground leading-tight truncate">
-                    {profileData.username?.trim() ||
-                      (typeof joinNumber === "number"
-                        ? `User #${joinNumber}`
-                        : "Trader")}
+                    {safeDisplayName}
                   </h1>
 
                   {/* Sequence Rank Badge */}

@@ -18,6 +18,7 @@ import {
   getUnitAssetUrl,
   triggerHaptic,
   copyTextWithFallback,
+  resolveSafeUsername,
 } from "../../../data/helpers";
 import { safeOpenExternal } from "../../../store/useExternalLinkStore";
 import { useToastStore } from "../../../store/useToastStore";
@@ -288,10 +289,16 @@ export function MiniProfilePopout() {
       // Ignore parse error
     }
 
+    const safeDisplayName = resolveSafeUsername(profile.username, {
+      joinNumber: profile.join_number,
+      discordId: profile.discord_id,
+      userId: profile.id,
+    });
+
     setViewingProfile(profile.id, activeChannel);
     useInventoryStore
       .getState()
-      .setViewingUser(profile.id, profile.username, activeChannel);
+      .setViewingUser(profile.id, safeDisplayName, activeChannel);
     window.document.dispatchEvent(
       new CustomEvent("navigate", { detail: "profile" })
     );
@@ -301,6 +308,14 @@ export function MiniProfilePopout() {
   const stanceCfg =
     STANCE_LABELS[profile?.trading_stance || "open"] || STANCE_LABELS.open;
 
+  const safeDisplayName = profile
+    ? resolveSafeUsername(profile.username, {
+        joinNumber: profile.join_number,
+        discordId: profile.discord_id,
+        userId: profile.id,
+      })
+    : "Trader";
+
   return createPortal(
     <>
       <div className="fixed inset-0 z-[100015]" onClick={closePopout} />
@@ -308,7 +323,7 @@ export function MiniProfilePopout() {
       <div
         ref={popoutRef}
         role="dialog"
-        aria-label={profile ? `${profile.username} profile card` : "Trader profile card"}
+        aria-label={profile ? `${safeDisplayName} profile card` : "Trader profile card"}
         className="fixed z-[100020] w-[320px] bg-popover rounded-[8px] shadow-2xl border border-border flex flex-col overflow-hidden animate-fade-in"
         style={{
           left: bounds.left,
@@ -368,10 +383,10 @@ export function MiniProfilePopout() {
                 <div className="relative">
                   <UserAvatar
                     avatarUrl={profile.avatar_url}
-                    username={profile.username}
+                    username={safeDisplayName}
                     discordId={profile.discord_id}
                     className="w-16 h-16 rounded-[8px] border-4 border-popover shadow-md"
-                    alt={profile.username}
+                    alt={safeDisplayName}
                   />
                   <div
                     className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-[3px] border-popover z-10"
@@ -438,10 +453,7 @@ export function MiniProfilePopout() {
                     className="text-[16px] text-foreground leading-none truncate cursor-pointer hover:underline font-bold"
                     onClick={handleViewFullProfile}
                   >
-                    {profile.username?.trim() ||
-                      (typeof profile.join_number === "number"
-                        ? `User #${profile.join_number}`
-                        : "Trader")}
+                    {safeDisplayName}
                   </h2>
                   <div
                     className="flex items-center gap-1 px-2 py-0.5 rounded-[4px] border text-[11px] font-bold shrink-0 text-white shadow-xs font-mono"
@@ -469,7 +481,7 @@ export function MiniProfilePopout() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  {!profile.hide_discord_id && (
+                  {!profile.hide_discord_id && Boolean(profile.discord_id) && (
                     <button
                       type="button"
                       className="flex items-center gap-1.5 text-foreground bg-muted px-2.5 py-1 rounded-[4px] border border-border cursor-pointer hover:bg-card transition-colors group"

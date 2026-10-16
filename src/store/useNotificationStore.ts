@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { get as getIdb, set as setIdb, del as delIdb } from "idb-keyval";
 import { useToastStore } from "./useToastStore";
+import { resolveSafeUsername } from "../data/helpers";
 
 export interface AppNotification {
   id: string;
@@ -184,14 +185,23 @@ export const useNotificationStore = create<NotificationState>(
         return;
       }
 
-      const dbNotifications = (data ?? []).map(
-        (notification: any) => ({
+      const dbNotifications = (data ?? []).map((notification: any) => {
+        const rawActor = Array.isArray(notification.actor)
+          ? notification.actor[0] ?? null
+          : notification.actor ?? null;
+        return {
           ...notification,
-          actor: Array.isArray(notification.actor)
-            ? notification.actor[0] ?? null
-            : notification.actor ?? null,
-        })
-      ) as AppNotification[];
+          actor: rawActor
+            ? {
+                ...rawActor,
+                username: resolveSafeUsername(rawActor.username, {
+                  discordId: rawActor.discord_id,
+                  userId: notification.actor_id,
+                }),
+              }
+            : null,
+        };
+      }) as AppNotification[];
 
       // Preserve local-only notifications (e.g. value updates) that aren't in Supabase
       const localOnly = cached.filter((c) => c.id.startsWith("local-"));
@@ -556,11 +566,15 @@ export const useNotificationStore = create<NotificationState>(
                   if (newNotif.actor_id && newNotif.actor_id !== "system") {
                     const { data: actorProfile } = await supabase
                       .from("profiles")
-                      .select("username")
+                      .select("username, discord_id")
                       .eq("id", newNotif.actor_id)
                       .maybeSingle();
-                    if (actorProfile?.username) {
-                      actorName = `@${actorProfile.username}`;
+                    if (actorProfile) {
+                      const cleanActor = resolveSafeUsername(actorProfile.username, {
+                        discordId: actorProfile.discord_id,
+                        userId: newNotif.actor_id,
+                      });
+                      actorName = `@${cleanActor}`;
                     }
                   }
 

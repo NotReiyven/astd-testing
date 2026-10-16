@@ -24,7 +24,7 @@ import {
 import { useProfileStore } from "../../store/useProfileStore";
 import { useInventoryStore } from "../../store/useInventoryStore";
 import { useUnits } from "../../context/UnitContext";
-import { triggerHaptic } from "../../data/helpers";
+import { triggerHaptic, sanitizeUsername, resolveSafeUsername } from "../../data/helpers";
 import { getAvatarStyle, getInitials } from "./TradeAnalyzer/summaryUtils";
 import { UserAvatar } from "./shared/UserAvatar";
 import { getProxyImage, handleImageError } from "../../data";
@@ -1177,7 +1177,10 @@ export function AdminChannel({
                         <div className="flex items-center gap-2 min-w-0">
                           <UserAvatar
                             avatarUrl={ad.profiles?.avatar_url}
-                            username={ad.profiles?.username}
+                            username={resolveSafeUsername(ad.profiles?.username, {
+                              discordId: ad.profiles?.discord_id,
+                              userId: ad.user_id,
+                            })}
                             discordId={ad.profiles?.discord_id}
                             className="w-7 h-7 rounded-full shrink-0 border border-border"
                           />
@@ -1196,7 +1199,10 @@ export function AdminChannel({
                                 }}
                                 className="text-[12px] text-foreground hover:text-primary truncate cursor-pointer font-bold"
                               >
-                                {ad.profiles?.username || "Unknown"}
+                                {resolveSafeUsername(ad.profiles?.username, {
+                                  discordId: ad.profiles?.discord_id,
+                                  userId: ad.user_id,
+                                })}
                               </button>
                               <DiscordRolePill
                                 name={ad.profiles?.role || "user"}
@@ -1581,8 +1587,8 @@ export function AdminChannel({
                       onClick={() => {
                         if (!effectiveCheatTarget) return;
                         const patch: Record<string, string> = {};
-                        if (overrideUsername.trim())
-                          patch.username = overrideUsername.trim();
+                        const cleanUser = sanitizeUsername(overrideUsername);
+                        if (cleanUser) patch.username = cleanUser;
                         if (overrideRoblox.trim())
                           patch.roblox_username = overrideRoblox.trim();
                         if (overrideBio.trim()) patch.bio = overrideBio.trim();

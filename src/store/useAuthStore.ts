@@ -32,6 +32,13 @@ interface AuthState {
 import { del as delIdb } from "idb-keyval";
 import { useToastStore } from "./useToastStore";
 import { useProfileStore } from "./useProfileStore";
+import {
+  sanitizeUsername,
+  resolveSafeUsername,
+  extractDiscordId,
+  extractDiscordUsername,
+  extractDiscordAvatar,
+} from "../data/helpers";
 
 const STATUS_DISPLAY_LABELS: Record<UserProfile["status"], string> = {
   online: "Online",
@@ -193,18 +200,118 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   fetchProfile: async (userId: string) => {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
-    if (error) {
-      console.error("Error fetching profile:", error);
+    const currentSession = get().session;
+    const sessionUser =
+      currentSession?.user && currentSession.user.id === userId
+        ? currentSession.user
+        : null;
+
+    // Auto-heal missing profile row (e.g. trigger failure or first-time login)
+    if (!data && sessionUser) {
+      const extractedDiscordId = extractDiscordId(sessionUser) || "";
+      const extractedName = extractDiscordUsername(sessionUser);
+      const safeUsername = resolveSafeUsername(extractedName, {
+        discordId: extractedDiscordId,
+        userId,
+      });
+      const extractedAvatar = extractDiscordAvatar(sessionUser) || "";
+
+      const defaultRow = {
+        id: userId,
+        discord_id: extractedDiscordId,
+        username: safeUsername,
+        avatar_url: extractedAvatar,
+        role: "user" as const,
+        status: "online" as const,
+        global_rep: 0,
+        bio: "",
+        banner_color: "#121214",
+        roblox_username: "",
+      };
+
+      try {
+        const { data: upserted, error: upsertError } = await supabase
+          .from("profiles")
+          .upsert(defaultRow, { onConflict: "id" })
+          .select("*")
+          .maybeSingle();
+
+        if (!upsertError && upserted) {
+          data = upserted;
+          error = null;
+        } else {
+          // If RLS blocked upsert or select, use safe in-memory profile
+          data = { ...defaultRow, created_at: new Date().toISOString() };
+          error = null;
+        }
+      } catch {
+        data = { ...defaultRow, created_at: new Date().toISOString() };
+        error = null;
+      }
+    }
+
+    if (error && !data) {
+      logger.error("ASTD-UI-001", `Error fetching profile for ${userId}: ${error.message}`);
       return;
     }
 
     if (data) {
+      // 1. Auto-heal missing or invalid discord_id from current Discord session
+      if (
+        sessionUser &&
+        (!data.discord_id || !/^\d{17,21}$/.test(String(data.discord_id).trim()))
+      ) {
+        const extractedId = extractDiscordId(sessionUser);
+        if (extractedId && extractedId !== data.discord_id) {
+          data.discord_id = extractedId;
+          void supabase
+            .from("profiles")
+            .update({ discord_id: extractedId })
+            .eq("id", userId);
+        }
+      }
+
+      // 2. Auto-heal empty, invisible, or missing username
+      const sanitizedCurrentUsername = sanitizeUsername(data.username);
+      if (!sanitizedCurrentUsername) {
+        const extractedName = sessionUser ? extractDiscordUsername(sessionUser) : null;
+        const resolvedName = resolveSafeUsername(extractedName, {
+          joinNumber: data.join_number,
+          discordId: data.discord_id,
+          userId,
+        });
+        data.username = resolvedName;
+        void supabase
+          .from("profiles")
+          .update({ username: resolvedName })
+          .eq("id", userId);
+      } else {
+        data.username = sanitizedCurrentUsername;
+      }
+
+      // 3. Auto-sync fresh Discord avatar if changed on Discord
+      if (sessionUser) {
+        const freshAvatar = extractDiscordAvatar(sessionUser);
+        if (
+          freshAvatar &&
+          typeof freshAvatar === "string" &&
+          freshAvatar !== data.avatar_url
+        ) {
+          data.avatar_url = freshAvatar;
+          void supabase
+            .from("profiles")
+            .update({ avatar_url: freshAvatar })
+            .eq("id", userId);
+        }
+      }
+
+      // 4. Status migration for legacy local preferences
       let legacyLocalPreference: string | null = null;
       try {
         legacyLocalPreference = localStorage.getItem("astd_manual_status");
@@ -215,8 +322,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // Ignore storage errors
       }
 
-      // Only migrate if the DB row has legacy "offline" (or invalid) status;
-      // never overwrite a persisted "online", "dnd", or "invisible" preference.
       const isValidPreference =
         data.status === "online" ||
         data.status === "dnd" ||
@@ -238,48 +343,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       }
 
-      // Auto-sync fresh Discord avatar if user changed it on Discord
-      const currentSession = get().session;
-      if (currentSession?.user && currentSession.user.id === userId) {
-        const metadataAvatar =
-          currentSession.user.user_metadata?.avatar_url ||
-          currentSession.user.user_metadata?.picture ||
-          currentSession.user.identities?.[0]?.identity_data?.avatar_url;
-
-        if (
-          metadataAvatar &&
-          typeof metadataAvatar === "string" &&
-          metadataAvatar !== data.avatar_url
-        ) {
-          data.avatar_url = metadataAvatar;
-          void supabase
-            .from("profiles")
-            .update({ avatar_url: metadataAvatar })
-            .eq("id", userId);
-        }
-
-        // Auto-heal missing or empty username from Discord session claims
-        if (!data.username || !String(data.username).trim()) {
-          const metadataUsername =
-            currentSession.user.user_metadata?.custom_claims?.global_name ||
-            currentSession.user.user_metadata?.full_name ||
-            currentSession.user.user_metadata?.user_name ||
-            currentSession.user.user_metadata?.name;
-
-          if (
-            metadataUsername &&
-            typeof metadataUsername === "string" &&
-            metadataUsername.trim()
-          ) {
-            const cleanName = metadataUsername.trim();
-            data.username = cleanName;
-            void supabase
-              .from("profiles")
-              .update({ username: cleanName })
-              .eq("id", userId);
-          }
-        }
-      }
+      // Final guarantee: username is always safe and readable
+      data.username = resolveSafeUsername(data.username, {
+        joinNumber: data.join_number,
+        discordId: data.discord_id,
+        userId: data.id,
+      });
 
       set({ profile: data as UserProfile });
       useProfileStore.getState().seedProfile(data);
@@ -304,6 +373,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             if (updatedProfile.role === "banned") {
               get().logout();
             } else {
+              updatedProfile.username = resolveSafeUsername(updatedProfile.username, {
+                joinNumber: (updatedProfile as any).join_number,
+                discordId: updatedProfile.discord_id,
+                userId: updatedProfile.id,
+              });
               set({ profile: updatedProfile });
               useProfileStore.getState().seedProfile(payload.new);
             }

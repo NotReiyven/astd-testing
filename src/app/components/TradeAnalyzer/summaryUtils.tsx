@@ -1,10 +1,11 @@
 import { TradeCard, MasterUnit } from "../../../types";
+import { sanitizeUsername } from "../../../data/helpers";
 
 export const fmtK = (n: number) =>
   n >= 1000 ? `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k` : `${n}`;
 
 export const getAvatarStyle = (name?: string | null) => {
-  const safeName = typeof name === "string" && name.length > 0 ? name : "TR";
+  const safeName = sanitizeUsername(name) || "TR";
   let hash = 0;
   for (let i = 0; i < safeName.length; i++)
     hash = safeName.charCodeAt(i) + ((hash << 5) - hash);
@@ -16,10 +17,10 @@ export const getAvatarStyle = (name?: string | null) => {
   };
 };
 
-export const getInitials = (name?: string | null) =>
-  (typeof name === "string" && name.trim().length > 0 ? name.trim() : "TR")
-    .substring(0, 2)
-    .toUpperCase();
+export const getInitials = (name?: string | null) => {
+  const clean = sanitizeUsername(name);
+  return (clean || "TR").substring(0, 2).toUpperCase();
+};
 
 // Performance Optimization: Global Map Cache
 let cachedMap: Map<string, MasterUnit> | null = null;

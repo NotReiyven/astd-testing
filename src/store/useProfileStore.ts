@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { logger } from '../lib/logger';
 import { get as getIdb, set as setIdb } from 'idb-keyval';
 import { useToastStore } from "./useToastStore";
+import { resolveSafeUsername, sanitizeUsername } from "../data/helpers";
 import {
   formatRoleLabel,
   getStandardRoleColor,
@@ -289,12 +290,12 @@ export function unpackProfileRow(raw: any): UserProfileData {
   const role_details = Array.from(roleDetailsMap.values()).sort((a, b) => a.rank - b.rank);
   assigned_roles = role_details.map((r) => r.name);
 
-  const rawUsername = typeof raw?.username === "string" ? raw.username.trim() : "";
-  const resolvedUsername =
-    rawUsername ||
-    (typeof raw?.join_number === "number"
-      ? `User #${raw.join_number}`
-      : `Trader #${String(raw?.id || "00000").slice(0, 5)}`);
+  const resolvedUsername = resolveSafeUsername(raw?.username, {
+    joinNumber:
+      typeof raw?.join_number === "number" ? raw.join_number : null,
+    discordId: raw?.discord_id,
+    userId: raw?.id,
+  });
 
   return {
     ...raw,

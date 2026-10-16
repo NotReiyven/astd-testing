@@ -37,7 +37,7 @@ import {
   handleImageError,
   GRID_STATUS_CFG,
 } from "../../data";
-import { triggerHaptic, copyTextWithFallback } from "../../data/helpers";
+import { triggerHaptic, copyTextWithFallback, resolveSafeUsername } from "../../data/helpers";
 import { getUnitConservativeValue } from "./InventoryChannel/inventoryUtils";
 import {
   getAvatarStyle,
@@ -763,7 +763,11 @@ export function AdInteractionModal() {
       : `Hey! Saw your listing on ASTD Value List:\n• Your Offer: ${giveNames}\n• You Want: ${getNames}\nI'm interested in this trade. Is it still available?`;
 
     const ok = await copyTextWithFallback(messageStr);
-    const recipientName = activeAd.profiles?.username ? `@${activeAd.profiles.username}` : "Trader";
+    const safeAuthor = resolveSafeUsername(activeAd.profiles?.username, {
+      discordId: activeAd.profiles?.discord_id,
+      userId: activeAd.user_id,
+    });
+    const recipientName = `@${safeAuthor}`;
     if (ok) {
       addToast(`Copied trade offer for ${recipientName} & opening Discord…`, "success");
       safeOpenExternal(
@@ -796,6 +800,10 @@ export function AdInteractionModal() {
     const replies = getReplies(comment.id);
     const isCollapsed = collapsedThreads[comment.id];
     const isOp = comment.user_id === activeAd.user_id;
+    const safeCommentAuthor = resolveSafeUsername(comment.profiles?.username, {
+      discordId: comment.profiles?.discord_id,
+      userId: comment.user_id,
+    });
 
     return (
       <div
@@ -814,7 +822,7 @@ export function AdInteractionModal() {
           >
             <UserAvatar
               avatarUrl={comment.profiles.avatar_url}
-              username={comment.profiles.username}
+              username={safeCommentAuthor}
               discordId={comment.profiles.discord_id}
               className="w-8 h-8 rounded-full bg-muted border border-border"
             />
@@ -831,7 +839,7 @@ export function AdInteractionModal() {
                     openPopout(comment.user_id, rect.left, rect.bottom);
                   }}
                 >
-                  {comment.profiles.username}
+                  {safeCommentAuthor}
                 </span>
 
                 {isOp && (
@@ -909,7 +917,7 @@ export function AdInteractionModal() {
                       triggerHaptic("light");
                       setRepTo({
                         id: comment.id,
-                        username: comment.profiles.username,
+                        username: safeCommentAuthor,
                       });
                       textareaRef.current?.focus();
                     }}
@@ -997,13 +1005,18 @@ export function AdInteractionModal() {
   const valDiff = totalGiveVal - totalGetVal;
   const isCommentOverLimit = newComment.length > MAX_COMMENT_LENGTH;
 
+  const safeAdAuthor = resolveSafeUsername(activeAd.profiles?.username, {
+    discordId: activeAd.profiles?.discord_id,
+    userId: activeAd.user_id,
+  });
+
   return (
     <div
       ref={dialogRef}
       className="fixed inset-0 z-[100000] flex items-center justify-center p-0 md:p-[var(--page-p)] bg-black/85 backdrop-blur-sm animate-fade-in"
       role="dialog"
       aria-modal="true"
-      aria-label={`Trade listing by ${activeAd.profiles?.username || "Trader"}`}
+      aria-label={`Trade listing by ${safeAdAuthor}`}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           triggerHaptic("light");
@@ -1136,7 +1149,7 @@ export function AdInteractionModal() {
                   >
                     <UserAvatar
                       avatarUrl={activeAd.profiles?.avatar_url}
-                      username={activeAd.profiles?.username}
+                      username={safeAdAuthor}
                       discordId={activeAd.profiles?.discord_id}
                       className="w-11 h-11 rounded-full bg-background border border-border"
                     />
@@ -1150,7 +1163,7 @@ export function AdInteractionModal() {
                         openPopout(activeAd.user_id, rect.left, rect.bottom);
                       }}
                     >
-                      {activeAd.profiles?.username || "Trader"}
+                      {safeAdAuthor}
                     </span>
                     <span className="text-[11px] font-mono text-muted-foreground truncate">
                       {activeAd.profiles?.discord_id

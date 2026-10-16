@@ -11,7 +11,7 @@ import {
 import { AdminComment } from "../../../hooks/useAdminIntel";
 import { UserAvatar } from "../shared/UserAvatar";
 import { DiscordRolePill } from "../shared/DiscordRolePill";
-import { triggerHaptic } from "../../../data/helpers";
+import { triggerHaptic, resolveSafeUsername } from "../../../data/helpers";
 
 interface CommentsStreamTabProps {
   comments: AdminComment[];
@@ -64,7 +64,10 @@ export function CommentsStreamTab({
     setIsSubmitting(true);
     triggerHaptic("heavy");
 
-    const authorName = actingComment.comment.profiles?.username || "User";
+    const authorName = resolveSafeUsername(actingComment.comment.profiles?.username, {
+      discordId: actingComment.comment.profiles?.discord_id,
+      userId: actingComment.comment.user_id,
+    });
     if (actingComment.type === "delete") {
       await onDeleteComment(
         actingComment.comment.id,
@@ -234,7 +237,10 @@ export function CommentsStreamTab({
               day: "numeric",
             });
 
-            const authorName = comment.profiles?.username || "Trader";
+            const authorName = resolveSafeUsername(comment.profiles?.username, {
+              discordId: comment.profiles?.discord_id,
+              userId: comment.user_id,
+            });
             const authorRole = comment.profiles?.role || "user";
 
             return (

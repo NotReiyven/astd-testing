@@ -24,7 +24,7 @@ import { useHistoryModalStore } from "../../store/useHistoryModalStore";
 import { TradeCard, MasterUnit } from "../../types";
 import { getProxyImage, getUnitAssetUrl, handleImageError } from "../../data";
 import { getAvatarStyle, getInitials } from "./TradeAnalyzer/summaryUtils";
-import { triggerHaptic, copyTextWithFallback } from "../../data/helpers";
+import { triggerHaptic, copyTextWithFallback, resolveSafeUsername } from "../../data/helpers";
 import { CustomDropdown } from "./MainCanvas/CustomDropdown";
 import { useAdInteractionStore } from "../../store/useAdInteractionStore";
 import { useNotificationStore } from "../../store/useNotificationStore";
@@ -296,6 +296,10 @@ const VanguardAdCard = memo(
     const loginWithDiscord = useAuthStore((s) => s.loginWithDiscord);
     const addToast = useToastStore((s) => s.addToast);
     const effectiveStatus = useEffectiveStatus(ad.user_id, ad.profiles?.status);
+    const authorName = resolveSafeUsername(ad.profiles?.username, {
+      discordId: ad.profiles?.discord_id,
+      userId: ad.user_id,
+    });
 
     useEffect(() => {
       if (isNewAd) {
@@ -401,7 +405,7 @@ const VanguardAdCard = memo(
       triggerHaptic("medium");
       setViewingUser(
         ad.user_id,
-        ad.profiles?.username || "Trader",
+        authorName,
         "trading-ads"
       );
       useProfileStore.getState().setViewingProfile(ad.user_id, "trading-ads");
@@ -433,7 +437,7 @@ const VanguardAdCard = memo(
       }
 
       const copied = await copyTextWithFallback(messageStr);
-      const recipientName = ad.profiles?.username ? `@${ad.profiles.username}` : "Trader";
+      const recipientName = `@${authorName}`;
       if (copied) {
         addToast(`Copied trade offer for ${recipientName} & opening Discord…`, "success");
         safeOpenExternal(`https://discord.com/users/${ad.profiles.discord_id}`);
@@ -482,7 +486,7 @@ const VanguardAdCard = memo(
             >
               <UserAvatar
                 avatarUrl={ad.profiles?.avatar_url}
-                username={ad.profiles?.username}
+                username={authorName}
                 discordId={ad.profiles?.discord_id}
                 className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-muted border border-border"
               />
@@ -504,7 +508,7 @@ const VanguardAdCard = memo(
                     openPopout(ad.user_id, rect.left, rect.bottom);
                   }}
                 >
-                  {ad.profiles?.username || "Unknown"}
+                  {authorName}
                 </span>
                 {ad.profiles?.role && ad.profiles.role !== "user" && (
                   <DiscordRolePill
@@ -1324,7 +1328,10 @@ export function TradingAdsChannel() {
                 <strong className="text-foreground">
                   {adPendingDelete.user_id === profile?.id
                     ? "your listing"
-                    : `${adPendingDelete.profiles?.username || "this trader"}'s listing`}
+                    : `${resolveSafeUsername(adPendingDelete.profiles?.username, {
+                        discordId: adPendingDelete.profiles?.discord_id,
+                        userId: adPendingDelete.user_id,
+                      })}'s listing`}
                 </strong>{" "}
                 from the Live Trading Board, including its{" "}
                 <strong className="text-foreground tabular-nums">
