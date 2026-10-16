@@ -7,7 +7,6 @@ import {
   useRef,
 } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
-import { ExternalLink } from "lucide-react";
 import { FilterKey } from "../types";
 import { useStickyState, isBoolean } from "../hooks/useStickyState";
 import { useSEO } from "../hooks/useSEO";
@@ -300,18 +299,55 @@ export default function App() {
     }
   }, [location.pathname, bootStage]);
 
-  // Handle Login Modal Logic
+  // Handle Login Modal Logic with session dismissal and boot stabilization
+  const [dismissedLoginRecs, setDismissedLoginRecs] = useState<
+    Record<string, boolean>
+  >(() => {
+    try {
+      return JSON.parse(
+        sessionStorage.getItem("astd_dismissed_login_recs") || "{}"
+      );
+    } catch {
+      return {};
+    }
+  });
+
+  const handleDismissLoginRec = useCallback(
+    (channel?: string) => {
+      const target = channel || loginModalChannel;
+      setLoginModalChannel(null);
+      if (target) {
+        setDismissedLoginRecs((prev) => {
+          const updated = { ...prev, [target]: true };
+          try {
+            sessionStorage.setItem(
+              "astd_dismissed_login_recs",
+              JSON.stringify(updated)
+            );
+          } catch {}
+          return updated;
+        });
+      }
+    },
+    [loginModalChannel]
+  );
+
   useEffect(() => {
+    if (bootStage !== "complete" || isAuthLoading) return;
+
     if (
-      !isAuthLoading &&
       !profile &&
-      (activeChannel === "inventory" || activeChannel === "trading-ads")
+      (activeChannel === "inventory" || activeChannel === "trading-ads") &&
+      !dismissedLoginRecs[activeChannel]
     ) {
-      setLoginModalChannel(activeChannel);
+      const timer = setTimeout(() => {
+        setLoginModalChannel(activeChannel);
+      }, 350);
+      return () => clearTimeout(timer);
     } else {
       setLoginModalChannel(null);
     }
-  }, [activeChannel, profile, isAuthLoading]);
+  }, [activeChannel, profile, isAuthLoading, bootStage, dismissedLoginRecs]);
 
   // Hook up notification subscriptions for authenticated users and local cache for guests
   useEffect(() => {
@@ -514,7 +550,20 @@ export default function App() {
           className="px-8 py-3.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[13px] uppercase tracking-wider rounded-[4px] flex items-center justify-center gap-2 border border-border focus-visible:outline-none"
         >
           <span>Appeal in Discord</span>
-          <ExternalLink className="w-4 h-4" />
+          <svg
+            viewBox="0 0 16 16"
+            fill="none"
+            className="w-4 h-4 shrink-0"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 9v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h4" />
+            <path d="M10 2h4v4" />
+            <path d="M7 9L14 2" />
+          </svg>
         </a>
       </div>
     );
@@ -545,8 +594,8 @@ export default function App() {
         <AdComposerModal />
         <AdInteractionModal />
         <LoginRecommendationModal
-          isOpen={!!loginModalChannel}
-          onClose={() => setLoginModalChannel(null)}
+          isOpen={Boolean(loginModalChannel && bootStage === "complete" && !profile)}
+          onClose={() => handleDismissLoginRec()}
           channelName={loginModalChannel || ""}
         />
 

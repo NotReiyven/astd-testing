@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       });
     }
 
-    const firstLine = envelope.split("\n")[0];
+    const firstLine = envelope.split(/\r?\n/)[0]?.trim();
     if (!firstLine) {
       return new Response(JSON.stringify({ error: "Invalid envelope format" }), {
         status: 400,
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       });
     }
 
-    let header: { dsn?: string };
+    let header: { dsn?: string } = {};
     try {
       header = JSON.parse(firstLine);
     } catch {
@@ -33,14 +33,13 @@ export async function POST(request: Request) {
       });
     }
 
-    if (!header.dsn) {
-      return new Response(JSON.stringify({ error: "Missing DSN in envelope" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+    const defaultDsn =
+      process.env.VITE_SENTRY_DSN ||
+      process.env.SENTRY_DSN ||
+      "https://de6547fe1a8afdb5b219a62958ffc844@o4512197595955200.ingest.us.sentry.io/4512197612929024";
 
-    const dsnUrl = new URL(header.dsn);
+    const dsnStr = header.dsn || defaultDsn;
+    const dsnUrl = new URL(dsnStr);
     const projectId = dsnUrl.pathname.replace(/^\//, "");
 
     if (!ALLOWED_HOSTS.has(dsnUrl.host) || !ALLOWED_PROJECT_IDS.has(projectId)) {

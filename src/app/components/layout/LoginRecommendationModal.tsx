@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { X, LogIn } from "lucide-react";
+import { GiCharacter } from "react-icons/gi";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { triggerHaptic } from "../../../data/helpers";
 import { AsyncButton } from "../ui/AsyncButton";
@@ -106,12 +106,22 @@ export function LoginRecommendationModal({
           }}
           className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer min-w-[28px] min-h-[28px] flex items-center justify-center"
         >
-          <X className="w-4 h-4" />
+          <svg
+            viewBox="0 0 16 16"
+            fill="none"
+            className="w-4 h-4"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="M4 4L12 12M12 4L4 12" />
+          </svg>
         </button>
 
         <div className="flex items-center gap-3.5 mb-4">
           <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-            <LogIn className="w-5 h-5 text-primary" />
+            <GiCharacter className="w-5 h-5 text-primary" />
           </div>
           <div>
             <h3
@@ -147,9 +157,10 @@ export function LoginRecommendationModal({
               triggerHaptic("medium");
               await loginWithDiscord();
             }}
-            className="px-4 py-2 rounded-lg text-[12px] font-semibold shadow-sm"
+            className="px-4 py-2 rounded-lg text-[12px] font-semibold shadow-sm flex items-center gap-2"
           >
-            <LogIn className="w-4 h-4" /> Login with Discord
+            <GiCharacter className="w-4 h-4" />
+            <span>Login with Discord</span>
           </AsyncButton>
         </div>
       </div>

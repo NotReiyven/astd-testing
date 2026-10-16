@@ -448,29 +448,37 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   initialize: () => {
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error) clearLocalAuthCache();
-      
+
       const safeSession = sanitizeSession(session);
-      set({ session: safeSession, isLoading: false });
-      
       if (safeSession?.user) {
-        get().fetchProfile(safeSession.user.id);
+        set({ session: safeSession });
+        try {
+          await get().fetchProfile(safeSession.user.id);
+        } finally {
+          set({ isLoading: false });
+        }
+      } else {
+        set({ session: null, profile: null, isLoading: false });
       }
     });
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.onAuthStateChange(async (_event, session) => {
       const safeSession = sanitizeSession(session);
-      set({ session: safeSession, isLoading: false });
-      
       if (safeSession?.user) {
-        get().fetchProfile(safeSession.user.id);
+        set({ session: safeSession });
+        try {
+          await get().fetchProfile(safeSession.user.id);
+        } finally {
+          set({ isLoading: false });
+        }
       } else {
         if (activeProfileChannel) {
           supabase.removeChannel(activeProfileChannel);
           activeProfileChannel = null;
         }
-        set({ profile: null });
+        set({ session: null, profile: null, isLoading: false });
       }
     });
   },

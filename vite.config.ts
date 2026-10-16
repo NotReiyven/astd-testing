@@ -166,11 +166,11 @@ export default defineConfig(({ mode }) => {
       target: "esnext",
       minify: "esbuild",
       cssCodeSplit: true,
+      modulePreload: false,
       rollupOptions: {
         output: {
           manualChunks: {
             "react-vendor": ["react", "react-dom"],
-            "icons-vendor": ["lucide-react"],
           },
         },
       },

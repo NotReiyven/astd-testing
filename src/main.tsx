@@ -22,6 +22,7 @@ Sentry.init({
   replaysSessionSampleRate: 0.05,
   replaysOnErrorSampleRate: 1.0,
   enabled: Boolean(import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN),
+  traceLifecycle: "static",
   beforeSendTransaction(event) {
     if (!event || !event.spans) return event;
     event.spans = event.spans.filter((s) => s && typeof s.start_timestamp === "number");

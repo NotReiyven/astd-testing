@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, Copy } from "lucide-react";
 import {
   GiLockedFortress,
   GiSpikedHalo,
@@ -274,22 +273,6 @@ export function AdminChannel({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  if (!canModerate) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center h-full bg-background text-muted-foreground p-6 select-none">
-        <div className="bg-card border border-destructive/40 rounded-[8px] p-6 max-w-sm w-full flex flex-col items-center text-center gap-2.5">
-          <GiLockedFortress className="w-10 h-10 text-destructive" />
-          <h1 className="text-[16px] text-foreground tracking-wide">
-            Access Restricted
-          </h1>
-          <p className="text-[12px] font-mono text-muted-foreground">
-            Staff clearance required.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   const getRoleColor = (roleName: string) => {
     const found = availableRoles.find(
       (r) => r.name.toLowerCase() === roleName?.toLowerCase()
@@ -395,6 +378,22 @@ export function AdminChannel({
     if (setActiveChannel) setActiveChannel(ch);
     navigate(`/${ch}`);
   };
+
+  if (!canModerate) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center h-full bg-background text-muted-foreground p-6 select-none">
+        <div className="bg-card border border-destructive/40 rounded-[8px] p-6 max-w-sm w-full flex flex-col items-center text-center gap-2.5">
+          <GiLockedFortress className="w-10 h-10 text-destructive" />
+          <h1 className="text-[16px] text-foreground tracking-wide">
+            Access Restricted
+          </h1>
+          <p className="text-[12px] font-mono text-muted-foreground">
+            Staff clearance required.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background select-none overflow-hidden relative pb-[var(--mobile-nav-h)] lg:pb-0">
@@ -1938,9 +1937,21 @@ export function AdminChannel({
                               >
                                 <span>ID: {selectedUser.discord_id}</span>
                                 {copiedId === selectedUser.discord_id ? (
-                                  <Check className="w-3 h-3 text-emerald-400" />
+                                  <GiCheckMark className="w-3 h-3 text-[#23a559]" />
                                 ) : (
-                                  <Copy className="w-3 h-3 text-muted-foreground" />
+                                  <svg
+                                    viewBox="0 0 16 16"
+                                    fill="none"
+                                    className="w-3 h-3 text-muted-foreground shrink-0"
+                                    stroke="currentColor"
+                                    strokeWidth="1.6"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    aria-hidden="true"
+                                  >
+                                    <rect x="5" y="5" width="8" height="8" rx="1.5" />
+                                    <path d="M3 11V3.5C3 2.95 3.45 2.5 4 2.5H11" />
+                                  </svg>
                                 )}
                               </button>
                             )}
