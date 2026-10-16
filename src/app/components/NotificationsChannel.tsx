@@ -1,7 +1,15 @@
 import { useState, useMemo, useEffect, type KeyboardEvent } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { Check, Trash2, CheckCheck, TrendingUp, ShieldAlert, Sparkles, MessageSquare } from "lucide-react";
-import { GiRingingBell, GiCharacter } from "react-icons/gi";
+import {
+  GiRingingBell,
+  GiCharacter,
+  GiTrashCan,
+  GiCheckMark,
+  GiChecklist,
+  GiProgression,
+  GiShield,
+  GiScrollUnfurled,
+} from "react-icons/gi";
 import {
   useNotificationStore,
   type AppNotification,
@@ -207,7 +215,7 @@ export function NotificationsChannel() {
                 onClick={handleMarkAll}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-popover hover:bg-muted text-foreground border border-border rounded-[6px] text-[12px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary cursor-pointer shadow-xs"
               >
-                <CheckCheck className="w-3.5 h-3.5 text-primary" />
+                <GiChecklist className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span>Mark all read</span>
               </button>
             )}
@@ -236,7 +244,7 @@ export function NotificationsChannel() {
                   onClick={() => setConfirmClearAll(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-popover hover:bg-destructive/10 text-muted-foreground hover:text-destructive border border-border rounded-[6px] text-[12px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive cursor-pointer shadow-xs"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <GiTrashCan className="w-3.5 h-3.5 shrink-0" />
                   <span>Clear all</span>
                 </button>
               )
@@ -390,15 +398,15 @@ export function NotificationsChannel() {
                     {/* Icon / Avatar */}
                     {isValueUpdate ? (
                       <div className="w-10 h-10 rounded-full border border-[#23a559]/40 bg-[#23a559]/15 flex items-center justify-center shrink-0 text-[#23a559]">
-                        <TrendingUp className="w-5 h-5" />
+                        <GiProgression className="w-5 h-5" />
                       </div>
                     ) : isWarning ? (
                       <div className="w-10 h-10 rounded-full border border-[#f97316]/40 bg-[#f97316]/15 flex items-center justify-center shrink-0 text-[#f97316]">
-                        <ShieldAlert className="w-5 h-5" />
+                        <GiShield className="w-5 h-5" />
                       </div>
                     ) : notification.type === "system" ? (
                       <div className="w-10 h-10 rounded-full border border-border bg-muted flex items-center justify-center shrink-0 text-foreground">
-                        <Sparkles className="w-5 h-5 text-primary" />
+                        <GiScrollUnfurled className="w-5 h-5 text-primary" />
                       </div>
                     ) : (
                       <UserAvatar
@@ -496,7 +504,7 @@ export function NotificationsChannel() {
                         title="Mark as read"
                         className="p-1.5 text-muted-foreground hover:text-primary hover:bg-muted rounded-[5px] transition-colors cursor-pointer"
                       >
-                        <Check className="w-4 h-4" />
+                        <GiCheckMark className="w-3.5 h-3.5" />
                       </button>
                     )}
 
@@ -509,7 +517,7 @@ export function NotificationsChannel() {
                       title="Remove notification"
                       className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[5px] transition-colors cursor-pointer"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <GiTrashCan className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>

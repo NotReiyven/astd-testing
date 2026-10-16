@@ -10,8 +10,8 @@ import {
   Settings2,
   Package,
   Megaphone,
-  Type,
 } from "lucide-react";
+import { GiQuillInk } from "react-icons/gi";
 import { useLayoutStore, FontFamily } from "../../../store/useLayoutStore";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useToastStore } from "../../../store/useToastStore";
@@ -93,7 +93,7 @@ const COMMANDS = [
   {
     id: "font-luckiest",
     label: "Typography: Luckiest Guy",
-    icon: Type,
+    icon: GiQuillInk,
     action: "luckiest-guy",
     type: "font",
     desc: "Switch to classic ASTD display font",
@@ -101,7 +101,7 @@ const COMMANDS = [
   {
     id: "font-geist",
     label: "Typography: Geist",
-    icon: Type,
+    icon: GiQuillInk,
     action: "geist",
     type: "font",
     desc: "Switch to clean modern sans font",
@@ -109,7 +109,7 @@ const COMMANDS = [
   {
     id: "font-inter",
     label: "Typography: Inter",
-    icon: Type,
+    icon: GiQuillInk,
     action: "inter",
     type: "font",
     desc: "Switch to neutral interface font",
@@ -117,7 +117,7 @@ const COMMANDS = [
   {
     id: "font-mono",
     label: "Typography: Geist Mono",
-    icon: Type,
+    icon: GiQuillInk,
     action: "mono",
     type: "font",
     desc: "Switch to technical tabular monospace font",

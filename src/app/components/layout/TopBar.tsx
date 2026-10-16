@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { PanelLeft, Hash, Search, X, LogIn, LogOut, User, Check, Calculator } from "lucide-react";
-import { GiAbacus, GiMagicPortal, GiSparkles, GiRingingBell, GiChatBubble } from "react-icons/gi";
+import { GiAbacus, GiMagicPortal, GiSparkles, GiRingingBell, GiChatBubble, GiProgression, GiShield, GiScrollUnfurled } from "react-icons/gi";
 import { LiveAvatars } from "./LiveAvatars";
 import {
   STATUS_COLORS,
@@ -349,7 +349,15 @@ export function TopBar({
                         >
                           {n.type === "value_update" ? (
                             <div className="w-8 h-8 rounded-full border border-[#23a559]/40 bg-[#23a559]/15 flex items-center justify-center shrink-0 text-[#23a559]">
-                              <GiRingingBell className="w-4 h-4" />
+                              <GiProgression className="w-4 h-4" />
+                            </div>
+                          ) : n.type === "warning" ? (
+                            <div className="w-8 h-8 rounded-full border border-[#f97316]/40 bg-[#f97316]/15 flex items-center justify-center shrink-0 text-[#f97316]">
+                              <GiShield className="w-4 h-4" />
+                            </div>
+                          ) : n.type === "system" ? (
+                            <div className="w-8 h-8 rounded-full border border-border bg-muted flex items-center justify-center shrink-0 text-foreground">
+                              <GiScrollUnfurled className="w-4 h-4 text-primary" />
                             </div>
                           ) : (
                             <UserAvatar
