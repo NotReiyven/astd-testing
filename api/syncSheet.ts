@@ -156,6 +156,11 @@ export async function GET(request: Request) {
       expiresAt: Date.now() + MEMORY_CACHE_TTL_MS,
     };
 
+    // Keep Supabase unit_current_state updated when new sheet data arrives
+    if (!isUnchanged && parsed.units && parsed.units.length > 0) {
+      void syncUnitsToDb(parsed.units);
+    }
+
     return jsonResponse(
       200,
       payload,
@@ -166,5 +171,42 @@ export async function GET(request: Request) {
     const message = error instanceof Error ? error.message : String(error);
     await sendDiscordAlert(`Sheet sync endpoint failed: ${message}`);
     return jsonResponse(500, { error: "Failed to sync sheet data." });
+  }
+}
+
+async function syncUnitsToDb(units: any[]) {
+  const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!SUPABASE_URL || !SUPABASE_KEY || !units || units.length === 0) return;
+
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const statesToUpsert = units.map((u) => ({
+      unit_id: u.id,
+      value: typeof u.value === "number" ? u.value : null,
+      value_type:
+        typeof u.value === "number"
+          ? "number"
+          : typeof u.value === "string"
+          ? u.value
+          : "unknown",
+      value_display: u.valueDisplay || null,
+      value_min: u.valueMin || null,
+      rarity: u.rarity,
+      liquidity: u.liquidity || "Average",
+      status: u.status,
+      notice: u.notice || null,
+      tier: u.tier,
+    }));
+
+    const CHUNK_SIZE = 500;
+    for (let i = 0; i < statesToUpsert.length; i += CHUNK_SIZE) {
+      const chunk = statesToUpsert.slice(i, i + CHUNK_SIZE);
+      await supabase.from("unit_current_state").upsert(chunk);
+    }
+  } catch (err) {
+    console.error("[syncSheet] Background DB sync failed:", err);
   }
 }

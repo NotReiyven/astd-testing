@@ -5,7 +5,16 @@
       "schedule": "0 0 * * *"
     }
   ],
+  "functions": {
+    "api/unitMeta.ts": {
+      "includeFiles": "dist/index.html"
+    }
+  },
   "rewrites": [
+    {
+      "source": "/unit/:slug*",
+      "destination": "/api/unitMeta?slug=:slug*"
+    },
     {
       "source": "/(.*)",
       "destination": "/"

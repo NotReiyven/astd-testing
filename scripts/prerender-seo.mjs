@@ -109,135 +109,20 @@ function prerender() {
     process.exit(1);
   }
 
-  const baseHtml = fs.readFileSync(templatePath, "utf-8");
   const units = parseUnits(unitsFile);
-  console.log(`[SEO Prerender] Found ${units.length} units to prerender.`);
+  console.log(`[SEO Prerender] Found ${units.length} units to index.`);
 
-  let createdCount = 0;
-
-  for (const unit of units) {
-    const unitDir = path.join(distDir, "unit", unit.id);
-    if (!fs.existsSync(unitDir)) {
-      fs.mkdirSync(unitDir, { recursive: true });
+  // Clean up static dist/unit directory so Vercel does not serve stale static files
+  // instead of the dynamic /api/unitMeta handler (which serves live spreadsheet values)
+  const distUnitDir = path.join(distDir, "unit");
+  if (fs.existsSync(distUnitDir)) {
+    try {
+      fs.rmSync(distUnitDir, { recursive: true, force: true });
+      console.log(`[SEO Prerender] Cleaned up static dist/unit directory to enable live dynamic metadata.`);
+    } catch (e) {
+      console.warn(`[SEO Prerender] Could not clean dist/unit directory:`, e);
     }
-
-    const unitTitle = `${unit.name} Value, Demand & Tier History | ASTD Value List`;
-    const metaTitle = `${unit.name} Value & Trading Stats | ASTD Value List`;
-    const subtitlePart = unit.subtitle ? ` (${unit.subtitle})` : "";
-    const metaDescription = `Check live trading value, demand, obtainability, and price history for ${unit.name}${subtitlePart} in All Star Tower Defense. Live market data & trade calculator.`;
-    const unitUrl = `https://all-star-vl.vercel.app/unit/${unit.id}`;
-    const unitImage = `https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main/units/${unit.id}.webp`;
-
-    let customHtml = baseHtml;
-
-    // Replace Title
-    customHtml = customHtml.replace(
-      /<title>.*?<\/title>/,
-      `<title>${escapeHtml(unitTitle)}</title>`
-    );
-
-    // Replace Meta Title
-    customHtml = customHtml.replace(
-      /<meta\s+name="title"\s+content=".*?"\s*\/?>/,
-      `<meta name="title" content="${escapeHtml(metaTitle)}" />`
-    );
-
-    // Replace Meta Description
-    customHtml = customHtml.replace(
-      /<meta\s+name="description"\s+content=".*?"\s*\/?>/,
-      `<meta name="description" content="${escapeHtml(metaDescription)}" />`
-    );
-
-    // Replace Canonical Link
-    customHtml = customHtml.replace(
-      /<link\s+rel="canonical"\s+href=".*?"\s*\/?>/,
-      `<link rel="canonical" href="${unitUrl}" />`
-    );
-
-    // Replace OpenGraph Meta Tags
-    customHtml = customHtml.replace(
-      /<meta\s+property="og:title"\s+content=".*?"\s*\/?>/,
-      `<meta property="og:title" content="${escapeHtml(unitTitle)}" />`
-    );
-    customHtml = customHtml.replace(
-      /<meta\s+property="og:description"\s+content=".*?"\s*\/?>/,
-      `<meta property="og:description" content="${escapeHtml(metaDescription)}" />`
-    );
-    customHtml = customHtml.replace(
-      /<meta\s+property="og:url"\s+content=".*?"\s*\/?>/,
-      `<meta property="og:url" content="${unitUrl}" />`
-    );
-    customHtml = customHtml.replace(
-      /<meta\s+property="og:image"\s+content=".*?"\s*\/?>/,
-      `<meta property="og:image" content="${unitImage}" />`
-    );
-
-    // Replace Twitter Meta Tags
-    customHtml = customHtml.replace(
-      /<meta\s+property="twitter:title"\s+content=".*?"\s*\/?>/,
-      `<meta property="twitter:title" content="${escapeHtml(unitTitle)}" />`
-    );
-    customHtml = customHtml.replace(
-      /<meta\s+property="twitter:description"\s+content=".*?"\s*\/?>/,
-      `<meta property="twitter:description" content="${escapeHtml(metaDescription)}" />`
-    );
-    customHtml = customHtml.replace(
-      /<meta\s+property="twitter:url"\s+content=".*?"\s*\/?>/,
-      `<meta property="twitter:url" content="${unitUrl}" />`
-    );
-    customHtml = customHtml.replace(
-      /<meta\s+property="twitter:image"\s+content=".*?"\s*\/?>/,
-      `<meta property="twitter:image" content="${unitImage}" />`
-    );
-
-    // Inject Schema.org ItemPage & Product JSON-LD
-    const jsonLd = `
-    <!-- Unit Profile Schema.org JSON-LD -->
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "ItemPage",
-        "name": "${escapeJson(unit.name)}",
-        "url": "${unitUrl}",
-        "description": "Live trading value, demand, and tier data for ${escapeJson(unit.name)} in All Star Tower Defense",
-        "mainEntity": {
-          "@type": "Product",
-          "name": "${escapeJson(unit.name)}",
-          "category": "Virtual Game Items",
-          "image": "${unitImage}",
-          "description": "${escapeJson(unit.name)}${unit.subtitle ? ` (${escapeJson(unit.subtitle)})` : ""} market statistics, obtainability (${unit.obtainability}), status (${unit.status}) in ASTD.",
-          "offers": {
-            "@type": "Offer",
-            "price": "0",
-            "priceCurrency": "USD"
-          }
-        }
-      }
-    </script>
-`;
-    customHtml = customHtml.replace("</head>", `${jsonLd}</head>`);
-
-    // Inject rich noscript content for search spiders
-    const noscriptContent = `
-    <noscript>
-      <article style="padding: 24px; font-family: sans-serif; max-width: 700px; margin: 0 auto; color: #fff; background: #111;">
-        <h1>${escapeHtml(unit.name)} - ASTD Value &amp; Demand</h1>
-        ${unit.subtitle ? `<p><strong>Alternate / Anime Name:</strong> ${escapeHtml(unit.subtitle)}</p>` : ""}
-        <p><strong>Obtainability:</strong> ${escapeHtml(unit.obtainability)}</p>
-        <p><strong>Market Status:</strong> ${escapeHtml(unit.status)}</p>
-        ${unit.notice ? `<p><strong>Market Notice:</strong> ${escapeHtml(unit.notice)}</p>` : ""}
-        <p>View historical price graphs, trade calculator evaluations, and market analytics for ${escapeHtml(unit.name)} on ASTD Value List.</p>
-        <p><a href="/" style="color: #3b82f6;">Return to ASTD Value List Home</a></p>
-      </article>
-    </noscript>`;
-
-    customHtml = customHtml.replace(/<noscript>[\s\S]*?<\/noscript>/, noscriptContent);
-
-    fs.writeFileSync(path.join(unitDir, "index.html"), customHtml, "utf-8");
-    createdCount++;
   }
-
-  console.log(`[SEO Prerender] Generated ${createdCount} static unit HTML pages.`);
 
   // Generate updated sitemaps (both in public and dist)
   const sitemapXml = generateSitemap(units);
@@ -246,6 +131,18 @@ function prerender() {
     fs.writeFileSync(path.join(distDir, "sitemap.xml"), sitemapXml, "utf-8");
   }
   console.log(`[SEO Prerender] Generated comprehensive sitemap.xml with ${units.length + 7} URLs.`);
+
+  // Generate robots.txt
+  const robotsTxt = `User-agent: *
+Allow: /
+
+Sitemap: https://all-star-vl.vercel.app/sitemap.xml
+`;
+  fs.writeFileSync(path.join(publicDir, "robots.txt"), robotsTxt, "utf-8");
+  if (fs.existsSync(distDir)) {
+    fs.writeFileSync(path.join(distDir, "robots.txt"), robotsTxt, "utf-8");
+  }
+  console.log(`[SEO Prerender] robots.txt successfully generated.`);
 }
 
 prerender();
