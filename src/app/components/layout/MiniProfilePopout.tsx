@@ -383,7 +383,7 @@ export function MiniProfilePopout() {
                 </div>
               </div>
 
-              <div className="flex justify-end pt-2 pl-[76px] gap-1.5 min-h-[34px] items-center flex-wrap">
+              <div className="flex justify-end pt-2 pl-[84px] gap-1.5 min-h-[34px] items-center flex-wrap overflow-hidden">
                 {typeof profile.join_number === "number" && (
                   <span
                     className="inline-flex items-center text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-[4px] bg-[#475569] text-white border border-white/20 shrink-0 select-none shadow-xs"
@@ -407,7 +407,7 @@ export function MiniProfilePopout() {
                       title={`${earlyRole.label} Community Member`}
                     >
                       <span
-                        className="w-1.5 h-1.5 rounded-full"
+                        className="w-1.5 h-1.5 rounded-full shrink-0"
                         style={{ backgroundColor: earlyRole.dotColor }}
                       />
                       {earlyRole.label}
@@ -416,7 +416,7 @@ export function MiniProfilePopout() {
                 })()}
 
                 <span
-                  className="inline-flex items-center gap-1 text-[10px] font-bold font-mono uppercase tracking-wider px-2 py-0.5 rounded-[4px] border shadow-xs"
+                  className="inline-flex items-center gap-1 text-[10px] font-bold font-mono uppercase tracking-wider px-2 py-0.5 rounded-[4px] border shrink-0 shadow-xs"
                   style={{
                     backgroundColor: stanceCfg.bg,
                     color: stanceCfg.color,
@@ -424,25 +424,11 @@ export function MiniProfilePopout() {
                   }}
                 >
                   <span
-                    className="w-1.5 h-1.5 rounded-full"
+                    className="w-1.5 h-1.5 rounded-full shrink-0"
                     style={{ backgroundColor: stanceCfg.color }}
                   />
                   {stanceCfg.label}
                 </span>
-
-                {profile.role_details && profile.role_details.length > 0 ? (
-                  <DiscordRolePill
-                    name={profile.role_details[0].name}
-                    label={profile.role_details[0].label}
-                    color={profile.role_details[0].color}
-                    size="sm"
-                  />
-                ) : profile.role && profile.role !== "user" ? (
-                  <DiscordRolePill
-                    name={profile.role}
-                    size="sm"
-                  />
-                ) : null}
               </div>
 
               {/* Profile Info Box */}

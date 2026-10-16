@@ -827,7 +827,7 @@ export function AdComposerModal() {
                 type="button"
                 onClick={handleClose}
                 disabled={isPublishing}
-                className="px-4 h-9 text-[12px] font-bold text-white/80 hover:text-white bg-[#2b2d31] hover:bg-[#35373c] border border-[#3f4147] rounded-[6px] focus-visible:outline-none transition-colors cursor-pointer disabled:opacity-50"
+                className="px-4 h-9 text-[12px] font-bold text-white bg-[#475569] hover:bg-[#334155] border border-white/20 rounded-[6px] focus-visible:outline-none transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
               >
                 Cancel
               </button>

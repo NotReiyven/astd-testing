@@ -1,18 +1,15 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
-  RotateCcw,
-  Share2,
-  Check,
-  ArrowUpDown,
-  X,
-  Trash2,
-} from "lucide-react";
-import {
   GiAbacus,
   GiFairyWand,
   GiBookmark,
   GiSettingsKnobs,
   GiMegaphone,
+  GiCycle,
+  GiShare,
+  GiCheckMark,
+  GiTrashCan,
+  GiTrade,
 } from "react-icons/gi";
 import { TradeSectionPanel } from "./TradeSectionPanel";
 import { TradeNotices } from "./TradeNotices";
@@ -468,7 +465,7 @@ export function TradeAnalyzerPanel({
               className="flex-shrink-0 flex items-center gap-1.5 px-2 h-8 rounded-[4px] text-[var(--ui-text-sm)] font-bold transition-colors active:scale-95 text-destructive-foreground bg-destructive hover:bg-destructive/80 focus-visible:outline-none relative z-35 pointer-events-auto shadow-sm mr-0.5 cursor-pointer"
               title="Undo Clear"
             >
-              <RotateCcw className="w-3.5 h-3.5" />{" "}
+              <GiCycle className="w-3.5 h-3.5" />{" "}
               <span className="hidden sm:inline">Undo</span>
             </button>
           )}
@@ -549,9 +546,9 @@ export function TradeAnalyzerPanel({
             aria-label={confirmClear ? "Confirm clear trade" : "Clear trade"}
           >
             {confirmClear ? (
-              <Check className="w-4 h-4" />
+              <GiCheckMark className="w-4 h-4" />
             ) : (
-              <X className="w-4 h-4" />
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             )}
           </button>
 
@@ -567,9 +564,9 @@ export function TradeAnalyzerPanel({
             aria-label={copied ? "Copied" : "Share"}
           >
             {copied ? (
-              <Check className="w-3.5 h-3.5 text-white" />
+              <GiCheckMark className="w-3.5 h-3.5 text-white" />
             ) : (
-              <Share2 className="w-3.5 h-3.5 text-muted-foreground" />
+              <GiShare className="w-3.5 h-3.5 text-muted-foreground" />
             )}
             <span className="hidden @[40rem]/analyzer:inline">
               {copied ? "Copied!" : "Share"}
@@ -604,7 +601,7 @@ export function TradeAnalyzerPanel({
             className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-[4px] text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors focus-visible:outline-none border border-transparent hover:border-destructive relative z-35 pointer-events-auto cursor-pointer ml-0.5"
             title="Close Analyzer"
           >
-            <X className="w-4 h-4" />
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
         )}
       </div>
@@ -627,7 +624,7 @@ export function TradeAnalyzerPanel({
               title="Dismiss for this session"
               className="w-6 h-6 flex items-center justify-center rounded-[3px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
             >
-              <X className="w-3.5 h-3.5" />
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </button>
           </div>
         </div>
@@ -658,7 +655,7 @@ export function TradeAnalyzerPanel({
                 aria-label="Close Saved Loadouts"
                 className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none rounded-[3px] p-1 cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
               </button>
             </div>
 
@@ -846,7 +843,7 @@ export function TradeAnalyzerPanel({
                               className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive cursor-pointer"
                               title={`Delete “${p.name}”`}
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <GiTrashCan className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
@@ -872,7 +869,7 @@ export function TradeAnalyzerPanel({
                 onClick={() => setIsSettingsOpen(false)}
                 className="text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none rounded-[4px] p-1 cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
               </button>
             </div>
 
@@ -1086,7 +1083,7 @@ export function TradeAnalyzerPanel({
                 className="relative flex items-center justify-center w-11 h-11 md:w-8 md:h-8 rounded-full transition-colors z-10 bg-muted border border-border text-muted-foreground hover:text-foreground hover:bg-card focus-visible:outline-none cursor-pointer"
                 title="Swap Give and Get"
               >
-                <ArrowUpDown className="w-5 h-5 md:w-4 md:h-4" />
+                <GiTrade className="w-5 h-5 md:w-4 md:h-4" />
               </button>
             </div>
 
@@ -1197,7 +1194,7 @@ export function TradeAnalyzerPanel({
               className="w-10 h-10 flex flex-shrink-0 items-center justify-center bg-muted text-muted-foreground hover:bg-destructive hover:text-destructive-foreground rounded-[6px] border border-border"
               title="Clear Trade"
             >
-              {confirmClear ? <Check className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
+              {confirmClear ? <GiCheckMark className="w-4 h-4" /> : <GiTrashCan className="w-4 h-4" />}
             </button>
           </div>
         </div>

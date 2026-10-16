@@ -1,26 +1,20 @@
 import { useState, useEffect, useRef, memo, useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
-  X,
-  MessageSquare,
-  ArrowBigUp,
-  ArrowBigDown,
-  Send,
-  Trash2,
-  Reply,
-  Calculator,
-  Share2,
-  Copy,
-  Check,
-  ArrowRightLeft,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
-import {
   GiShieldEchoes,
   GiHourglass,
   GiPadlock,
   GiMegaphone,
+  GiChatBubble,
+  GiUpgrade,
+  GiFallDown,
+  GiPaperPlane,
+  GiTrashCan,
+  GiReturnArrow,
+  GiAbacus,
+  GiShare,
+  GiCheckMark,
+  GiTrade,
 } from "react-icons/gi";
 import {
   useAdInteractionStore,
@@ -234,7 +228,7 @@ const ItemTile = memo(
                     }}
                   >
                     <StatusIcon status={master.status} />
-                    <span className="leading-none relative -top-[0.5px]">
+                    <span className="leading-none">
                       {statusCfg.label}
                     </span>
                   </span>
@@ -876,10 +870,8 @@ export function AdInteractionModal() {
                         : "text-muted-foreground"
                     }`}
                   >
-                    <ArrowBigUp
-                      className={`w-3.5 h-3.5 ${
-                        votes.userVote === 1 ? "fill-current" : ""
-                      }`}
+                    <GiUpgrade
+                      className="w-3.5 h-3.5"
                     />
                   </button>
                   <span
@@ -904,10 +896,8 @@ export function AdInteractionModal() {
                         : "text-muted-foreground"
                     }`}
                   >
-                    <ArrowBigDown
-                      className={`w-3.5 h-3.5 ${
-                        votes.userVote === -1 ? "fill-current" : ""
-                      }`}
+                    <GiFallDown
+                      className="w-3.5 h-3.5"
                     />
                   </button>
                 </div>
@@ -925,7 +915,7 @@ export function AdInteractionModal() {
                     }}
                     className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-[transform,color] duration-150 active:scale-95 focus-visible:outline-none cursor-pointer"
                   >
-                    <Reply className="w-3 h-3 text-primary" /> Reply
+                    <GiReturnArrow className="w-3 h-3 text-primary" /> Reply
                   </button>
                 )}
               </div>
@@ -938,9 +928,9 @@ export function AdInteractionModal() {
                     className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer tabular-nums"
                   >
                     {isCollapsed ? (
-                      <ChevronDown className="w-3.5 h-3.5" />
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                     ) : (
-                      <ChevronUp className="w-3.5 h-3.5" />
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
                     )}
                     {isCollapsed
                       ? `Show replies (${replies.length})`
@@ -957,7 +947,7 @@ export function AdInteractionModal() {
                     }}
                     className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none cursor-pointer"
                   >
-                    <Trash2 className="w-3 h-3" /> Delete
+                    <GiTrashCan className="w-3 h-3" /> Delete
                   </button>
                 )}
               </div>
@@ -1046,9 +1036,9 @@ export function AdInteractionModal() {
               data-tooltip-side="bottom"
             >
               {copiedLink ? (
-                <Check className="w-3.5 h-3.5 text-[#23a559]" />
+                <GiCheckMark className="w-3.5 h-3.5 text-[#23a559]" />
               ) : (
-                <Share2 className="w-3.5 h-3.5 text-muted-foreground" />
+                <GiShare className="w-3.5 h-3.5 text-muted-foreground" />
               )}
               <span className="hidden sm:inline">
                 {copiedLink ? "Copied" : "Share"}
@@ -1066,7 +1056,7 @@ export function AdInteractionModal() {
               data-tooltip="Close (Esc)"
               data-tooltip-side="bottom"
             >
-              <X className="w-5 h-5" />
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </button>
           </div>
         </div>
@@ -1176,9 +1166,9 @@ export function AdInteractionModal() {
                   className="px-3 py-2 bg-card hover:bg-muted border border-border rounded-[4px] text-[12px] font-bold text-foreground flex items-center gap-1.5 transition-colors shadow-sm focus-visible:outline-none shrink-0 cursor-pointer"
                 >
                   {copiedDiscord ? (
-                    <Check className="w-3.5 h-3.5 text-[#23a559]" />
+                    <GiCheckMark className="w-3.5 h-3.5 text-[#23a559]" />
                   ) : (
-                    <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                    <svg className="w-3.5 h-3.5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                   )}
                   <span>{copiedDiscord ? "Copied" : "Discord"}</span>
                 </button>
@@ -1271,7 +1261,7 @@ export function AdInteractionModal() {
                     </div>
 
                     <div className="flex justify-center text-muted-foreground bg-card py-1 rounded-[4px] border border-border">
-                      <ArrowRightLeft className="w-3.5 h-3.5" />
+                      <GiTrade className="w-3.5 h-3.5" />
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -1363,7 +1353,7 @@ export function AdInteractionModal() {
                 className="w-full sm:flex-1 h-[var(--ui-height-btn)] bg-primary hover:bg-primary/90 text-primary-foreground text-[12px] font-black uppercase tracking-wider rounded-[4px] transition-[transform,background-color] duration-150 active:scale-95 shadow-sm focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2 border border-primary"
                 data-tooltip="Load trade into analyzer"
               >
-                <Calculator className="w-4 h-4" /> Load into Calculator
+                <GiAbacus className="w-4 h-4" /> Load into Calculator
               </button>
 
               <button
@@ -1372,7 +1362,7 @@ export function AdInteractionModal() {
                 className="w-full sm:w-auto px-4 h-[var(--ui-height-btn)] bg-[#5865F2] hover:bg-[#4752C4] text-white text-[12px] font-bold rounded-[4px] transition-[transform,background-color] duration-150 active:scale-95 shadow-sm focus-visible:outline-none cursor-pointer flex items-center justify-center gap-2"
                 data-tooltip="Copy trade text & open trader on Discord"
               >
-                <MessageSquare className="w-4 h-4" /> Message
+                <GiChatBubble className="w-4 h-4" /> Message
               </button>
             </div>
           </div>
@@ -1384,7 +1374,7 @@ export function AdInteractionModal() {
           >
             <div className="hidden md:flex items-center justify-between px-6 py-4 bg-popover border-b border-border shrink-0">
               <h2 className="text-[15px] font-black text-foreground tracking-tight uppercase flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-primary" /> Discussion{" "}
+                <GiChatBubble className="w-5 h-5 text-primary" /> Discussion{" "}
                 <span className="bg-muted text-foreground text-[11px] px-2 py-0.5 rounded-[4px] font-mono border border-border tabular-nums">
                   {comments.length}
                 </span>
@@ -1403,10 +1393,8 @@ export function AdInteractionModal() {
                   aria-pressed={adVotes.userVote === 1}
                   data-tooltip="Upvote listing"
                 >
-                  <ArrowBigUp
-                    className={`w-4 h-4 ${
-                      adVotes.userVote === 1 ? "fill-current" : ""
-                    }`}
+                  <GiUpgrade
+                    className="w-4 h-4"
                   />
                 </button>
                 <span
@@ -1432,10 +1420,8 @@ export function AdInteractionModal() {
                   aria-pressed={adVotes.userVote === -1}
                   data-tooltip="Downvote listing"
                 >
-                  <ArrowBigDown
-                    className={`w-4 h-4 ${
-                      adVotes.userVote === -1 ? "fill-current" : ""
-                    }`}
+                  <GiFallDown
+                    className="w-4 h-4"
                   />
                 </button>
               </div>
@@ -1450,7 +1436,7 @@ export function AdInteractionModal() {
                 <div className="my-auto py-8 max-w-md mx-auto w-full">
                   <EmptyState
                     compact
-                    icon={<MessageSquare className="w-5 h-5" />}
+                    icon={<GiChatBubble className="w-5 h-5" />}
                     title="No Comments Yet"
                     description="Be the first to share your thoughts or make an offer on this trade listing."
                     action={
@@ -1478,7 +1464,7 @@ export function AdInteractionModal() {
               {repTo && (
                 <div className="flex items-center justify-between bg-card px-3 py-1.5 rounded-[4px] border border-primary/40 animate-fade-in">
                   <span className="text-[12px] font-bold text-foreground flex items-center gap-1.5">
-                    <Reply className="w-3.5 h-3.5 text-primary" /> Replying to @
+                    <GiReturnArrow className="w-3.5 h-3.5 text-primary" /> Replying to @
                     {repTo.username}
                   </span>
                   <button
@@ -1490,7 +1476,7 @@ export function AdInteractionModal() {
                     }}
                     className="text-muted-foreground hover:text-destructive focus-visible:outline-none cursor-pointer"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                   </button>
                 </div>
               )}
@@ -1569,7 +1555,7 @@ export function AdInteractionModal() {
                       aria-label="Post comment"
                       data-tooltip="Post Comment"
                     >
-                      <Send className="w-4 h-4" />
+                      <GiPaperPlane className="w-4 h-4" />
                     </AsyncButton>
                   </div>
 

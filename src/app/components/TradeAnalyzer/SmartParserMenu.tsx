@@ -1,15 +1,14 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
-  Wand2,
-  X,
-  Book,
-  HelpCircle,
-  TriangleAlert,
-  Trash2,
-  Search,
-  Check,
-  Loader2,
-} from "lucide-react";
+  GiFairyWand,
+  GiBookCover,
+  GiHelp,
+  GiHazardSign,
+  GiTrashCan,
+  GiMagnifyingGlass,
+  GiCheckMark,
+  GiSpinningBlades,
+} from "react-icons/gi";
 import { TradeCard, MasterUnit } from "../../../types";
 import {
   parseSmartTradeAsync,
@@ -33,7 +32,7 @@ const MAX_SLANG_KEY_LENGTH = 24;
 function formatParserErrorWithNextStep(rawError: string): string {
   const lower = rawError.toLowerCase();
   if (lower.includes("empty")) {
-    return "Paste or type a trade offer first — for example, “2 gogeta for 1 vegito”.";
+    return "Paste or type a trade offer first: for example, “2 gogeta for 1 vegito”.";
   }
   if (lower.includes("too large") || lower.includes("too long")) {
     return `${rawError} Try fewer lines or split the trade into smaller imports.`;
@@ -416,7 +415,7 @@ export function SmartParserMenu({
 
       <div className="flex items-center justify-between">
         <span className="text-[12px] font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
-          <Wand2 className="w-4 h-4 text-primary" /> Smart Parser
+          <GiFairyWand className="w-4 h-4 text-primary" /> Smart Parser
         </span>
         <button
           type="button"
@@ -424,7 +423,7 @@ export function SmartParserMenu({
           aria-label="Close Smart Parser"
           className="p-2 -m-2 md:p-1 md:-m-1 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[3px] cursor-pointer"
         >
-          <X className="w-4 h-4 md:w-3.5 md:h-3.5" />
+          <svg className="w-4 h-4 md:w-3.5 md:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
       </div>
 
@@ -457,7 +456,7 @@ export function SmartParserMenu({
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Book className="w-3 h-3" /> Dictionary (
+          <GiBookCover className="w-3 h-3" /> Dictionary (
           {Object.keys(slangDict).length})
         </button>
       </div>
@@ -466,7 +465,7 @@ export function SmartParserMenu({
         ambiguousItems.length > 0 ? (
           <div className="flex flex-col gap-3 animate-fade-in">
             <div className="flex items-start gap-3 bg-[#FAA61A]/10 p-3 rounded-[6px] border border-[#FAA61A]/30">
-              <TriangleAlert className="w-5 h-5 text-[#FAA61A] shrink-0 mt-0.5" />
+              <GiHazardSign className="w-5 h-5 text-[#FAA61A] shrink-0 mt-0.5" />
               <div className="flex flex-col gap-1 min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <span className="text-sm font-bold text-[#FAA61A]">
@@ -628,7 +627,7 @@ export function SmartParserMenu({
                         }
                         className="p-2.5 md:p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
                       >
-                        <Trash2 className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                        <GiTrashCan className="w-4 h-4 md:w-3.5 md:h-3.5" />
                       </button>
                     </div>
                   ))}
@@ -663,7 +662,7 @@ export function SmartParserMenu({
                         }
                         className="p-2.5 md:p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[4px] transition-colors focus-visible:outline-none cursor-pointer"
                       >
-                        <Trash2 className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                        <GiTrashCan className="w-4 h-4 md:w-3.5 md:h-3.5" />
                       </button>
                     </div>
                   ))}
@@ -683,14 +682,14 @@ export function SmartParserMenu({
               disabled={stagedGive.length === 0 && stagedGet.length === 0}
               className="w-full mt-2 py-3 bg-[#23a559] hover:bg-[#1f914e] disabled:bg-popover disabled:text-muted-foreground text-white text-base md:text-sm font-bold rounded-[6px] transition-colors shadow-md flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#23a559] cursor-pointer"
             >
-              <Check className="w-4 h-4" /> Confirm & Add to Trade
+              <GiCheckMark className="w-4 h-4" /> Confirm & Add to Trade
             </button>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-2.5 bg-black/20 border border-border rounded-[6px] p-3 shadow-inner">
               <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                <HelpCircle className="w-3.5 h-3.5" /> How to format your trade
+                <GiHelp className="w-3.5 h-3.5" /> How to format your trade
               </div>
               <ul className="text-[12px] text-muted-foreground flex flex-col gap-1.5 list-disc pl-4 marker:text-primary leading-snug">
                 <li>
@@ -760,7 +759,7 @@ export function SmartParserMenu({
                 >
                   {isVisuallyParsing ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                      <GiSpinningBlades className="w-4 h-4 animate-spin shrink-0" />
                       <span>Parsing…</span>
                     </>
                   ) : (
@@ -775,7 +774,7 @@ export function SmartParserMenu({
                   role="alert"
                   className="text-[12px] text-destructive mt-1 font-medium animate-fade-in flex items-start gap-1.5 leading-snug"
                 >
-                  <TriangleAlert className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <GiHazardSign className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                   <span>{smartInputError}</span>
                 </div>
               )}
@@ -834,7 +833,7 @@ export function SmartParserMenu({
                       : "border-border"
                   }`}
                 >
-                  <Search className="w-4 h-4 text-muted-foreground mr-2 shrink-0" />
+                  <GiMagnifyingGlass className="w-4 h-4 text-muted-foreground mr-2 shrink-0" />
                   <input
                     id="slang-target-unit-input"
                     ref={slangTargetInputRef}
@@ -855,7 +854,7 @@ export function SmartParserMenu({
                     className="bg-transparent text-base md:text-sm text-foreground w-full outline-none placeholder-muted-foreground"
                   />
                   {newSlangTargetId && (
-                    <Check className="w-4 h-4 text-[#23a559] ml-2 shrink-0" />
+                    <GiCheckMark className="w-4 h-4 text-[#23a559] ml-2 shrink-0" />
                   )}
                 </div>
 
@@ -990,7 +989,7 @@ export function SmartParserMenu({
                         className="text-muted-foreground hover:text-destructive p-2 md:p-1.5 transition-colors rounded-[4px] md:rounded-[3px] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive bg-white/5 hover:bg-destructive/10 shrink-0 ml-2"
                         title={`Delete “${key}”`}
                       >
-                        <Trash2 className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                        <GiTrashCan className="w-4 h-4 md:w-3.5 md:h-3.5" />
                       </button>
                     </div>
                   );

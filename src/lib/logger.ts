@@ -48,19 +48,35 @@ const logBuffer = new RingBuffer();
  * Redact sensitive keys/values from a context object.
  * Keys that match these patterns will have their values replaced with "[REDACTED]".
  */
-function redactContext(context?: Record<string, unknown>): Record<string, unknown> | undefined {
-  if (!context) return undefined;
+function redactContext(
+  context?: Record<string, unknown>,
+  depth = 0,
+  seen = new WeakSet<object>()
+): Record<string, unknown> | undefined {
+  if (!context || typeof context !== 'object' || depth > 3) return undefined;
+  if (seen.has(context)) return { circular: '[CIRCULAR]' };
+  seen.add(context);
+
   const redacted: Record<string, unknown> = {};
   const REDACT_KEYS = /token|jwt|apikey|email|password|secret|auth|signature/i;
-  for (const [k, v] of Object.entries(context)) {
-    if (REDACT_KEYS.test(k)) {
-      redacted[k] = '[REDACTED]';
-    } else if (typeof v === 'object' && v !== null) {
-      // Recursively redact nested objects (shallow copy).
-      redacted[k] = redactContext(v as Record<string, unknown>);
-    } else {
-      redacted[k] = v;
+  try {
+    for (const [k, v] of Object.entries(context)) {
+      if (REDACT_KEYS.test(k)) {
+        redacted[k] = '[REDACTED]';
+      } else if (typeof v === 'object' && v !== null) {
+        if (v instanceof Error) {
+          redacted[k] = { name: v.name, message: v.message };
+        } else if (seen.has(v)) {
+          redacted[k] = '[CIRCULAR]';
+        } else {
+          redacted[k] = redactContext(v as Record<string, unknown>, depth + 1, seen);
+        }
+      } else {
+        redacted[k] = v;
+      }
     }
+  } catch {
+    return { error: 'Failed to serialize context' };
   }
   return redacted;
 }

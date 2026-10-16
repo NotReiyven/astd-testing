@@ -4,6 +4,7 @@ import {
   useLayoutStore,
   ThemeMode,
   BootChannel,
+  FontFamily,
 } from "../../store/useLayoutStore";
 import { triggerHaptic } from "../../data/helpers";
 import {
@@ -15,6 +16,38 @@ import {
   hasAcceptedCurrentLegalVersion,
 } from "../../data/legal";
 import { LegalDocument } from "./shared/LegalDocument";
+
+const FONT_DETAILS: {
+  id: FontFamily;
+  label: string;
+  shortDesc: string;
+  previewFont: string;
+}[] = [
+  {
+    id: "luckiest-guy",
+    label: "Luckiest Guy",
+    shortDesc: "Classic ASTD display",
+    previewFont: "'Luckiest Guy', cursive, sans-serif",
+  },
+  {
+    id: "geist",
+    label: "Geist",
+    shortDesc: "Clean modern sans",
+    previewFont: "'Geist', sans-serif",
+  },
+  {
+    id: "inter",
+    label: "Inter",
+    shortDesc: "Neutral interface",
+    previewFont: "'Inter', sans-serif",
+  },
+  {
+    id: "mono",
+    label: "Geist Mono",
+    shortDesc: "Technical tabular mono",
+    previewFont: "'Geist Mono', monospace",
+  },
+];
 
 const AQUA_AVATAR_URL =
   "https://static.wikia.nocookie.net/allstartd/images/c/c7/Water_Goddess.png";
@@ -188,6 +221,8 @@ export function WelcomeModal() {
     setGlobalCompactMode,
     bootChannel,
     setBootChannel,
+    fontFamily,
+    setFontFamily,
   } = useLayoutStore();
 
   useEffect(() => {
@@ -584,11 +619,50 @@ export function WelcomeModal() {
               </p>
             </div>
 
-            {/* 3. Compact Mode Toggle */}
+            {/* 3. Typography Font Selector */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-foreground">
+                  3. Typography Font
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  {FONT_DETAILS.find((f) => f.id === fontFamily)?.label || "Luckiest Guy"}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {FONT_DETAILS.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic("light");
+                      setFontFamily(f.id);
+                    }}
+                    className={`p-2.5 rounded-[6px] border text-left flex flex-col transition-colors cursor-pointer ${
+                      fontFamily === f.id
+                        ? "bg-popover border-primary ring-1 ring-primary/40 shadow-sm"
+                        : "bg-muted border-border hover:bg-popover"
+                    }`}
+                  >
+                    <span
+                      style={{ fontFamily: f.previewFont }}
+                      className="text-[12.5px] font-bold text-foreground leading-tight truncate"
+                    >
+                      {f.label}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                      {f.shortDesc}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 4. Compact Mode Toggle */}
             <div className="flex items-center justify-between p-3 rounded-[6px] bg-muted border border-border">
               <div className="flex flex-col pr-3">
                 <span className="text-[12px] font-bold text-foreground">
-                  3. Compact UI Mode
+                  4. Compact UI Mode
                 </span>
                 <span className="text-[11px] text-muted-foreground leading-snug mt-0.5">
                   {globalCompactMode

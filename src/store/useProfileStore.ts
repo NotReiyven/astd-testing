@@ -497,6 +497,8 @@ interface ProfileState {
 
 const CACHE_TTL = 5 * 60 * 1000;
 const NOT_FOUND_TTL = 60 * 1000;
+const inFlightBatchRequests = new Map<string, Promise<UserProfileData[]>>();
+const inFlightSingleRequests = new Map<string, Promise<UserProfileData | null>>();
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
   cache: {},
@@ -543,70 +545,83 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     );
     if (validIds.length === 0) return [];
 
-    const { cache, notFoundCache } = get();
-    const now = Date.now();
+    const cacheKey = [...validIds].sort().join(",");
+    const existing = inFlightBatchRequests.get(cacheKey);
+    if (existing) return existing;
 
-    const missingIds = validIds.filter((id) => {
-      if (cache[id] && now - cache[id].timestamp < CACHE_TTL) return false;
-      if (notFoundCache[id] && now - notFoundCache[id] < NOT_FOUND_TTL)
-        return false;
-      return true;
-    });
-
-    if (missingIds.length > 0) {
-      let data: any[] | null = null;
-      let error: any = null;
-
+    const requestPromise = (async () => {
       try {
-        const res = await supabase
-          .from("profiles")
-          .select("*, user_roles(roles(name, color, rank))")
-          .in("id", missingIds);
-        data = res.data;
-        error = res.error;
-      } catch (e) {
-        error = e;
-      }
+        const { cache, notFoundCache } = get();
+        const now = Date.now();
 
-      if (error || !data) {
-        const fallbackRes = await supabase
-          .from("profiles")
-          .select("*")
-          .in("id", missingIds);
-        data = fallbackRes.data;
-        error = fallbackRes.error;
-      }
+        const missingIds = validIds.filter((id) => {
+          if (cache[id] && now - cache[id].timestamp < CACHE_TTL) return false;
+          if (notFoundCache[id] && now - notFoundCache[id] < NOT_FOUND_TTL)
+            return false;
+          return true;
+        });
 
-      if (!error && Array.isArray(data)) {
-        const foundIds = new Set<string>();
-        const newEntries: Record<string, CacheEntry> = {};
+        if (missingIds.length > 0) {
+          let data: any[] | null = null;
+          let error: any = null;
 
-        for (const row of data) {
-          if (row?.id) {
-            const unpacked = unpackProfileRow(row);
-            foundIds.add(unpacked.id);
-            newEntries[unpacked.id] = { data: unpacked, timestamp: now };
+          try {
+            const res = await supabase
+              .from("profiles")
+              .select("*, user_roles(roles(name, color, rank))")
+              .in("id", missingIds);
+            data = res.data;
+            error = res.error;
+          } catch (e) {
+            error = e;
+          }
+
+          if (error || !data) {
+            const fallbackRes = await supabase
+              .from("profiles")
+              .select("*")
+              .in("id", missingIds);
+            data = fallbackRes.data;
+            error = fallbackRes.error;
+          }
+
+          if (!error && Array.isArray(data)) {
+            const foundIds = new Set<string>();
+            const newEntries: Record<string, CacheEntry> = {};
+
+            for (const row of data) {
+              if (row?.id) {
+                const unpacked = unpackProfileRow(row);
+                foundIds.add(unpacked.id);
+                newEntries[unpacked.id] = { data: unpacked, timestamp: now };
+              }
+            }
+
+            const newNotFound: Record<string, number> = {};
+            for (const id of missingIds) {
+              if (!foundIds.has(id)) {
+                newNotFound[id] = now;
+              }
+            }
+
+            set((state) => ({
+              cache: { ...state.cache, ...newEntries },
+              notFoundCache: { ...state.notFoundCache, ...newNotFound },
+            }));
           }
         }
 
-        const newNotFound: Record<string, number> = {};
-        for (const id of missingIds) {
-          if (!foundIds.has(id)) {
-            newNotFound[id] = now;
-          }
-        }
-
-        set((state) => ({
-          cache: { ...state.cache, ...newEntries },
-          notFoundCache: { ...state.notFoundCache, ...newNotFound },
-        }));
+        const latestCache = get().cache;
+        return validIds
+          .map((id) => latestCache[id]?.data)
+          .filter((p): p is UserProfileData => Boolean(p));
+      } finally {
+        inFlightBatchRequests.delete(cacheKey);
       }
-    }
+    })();
 
-    const latestCache = get().cache;
-    return validIds
-      .map((id) => latestCache[id]?.data)
-      .filter((p): p is UserProfileData => Boolean(p));
+    inFlightBatchRequests.set(cacheKey, requestPromise);
+    return requestPromise;
   },
 
   fetchProfile: async (userId, force = false) => {
@@ -628,90 +643,101 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       if (match && now - match.timestamp < CACHE_TTL) {
         return match.data;
       }
+      const existing = inFlightSingleRequests.get(cleanId);
+      if (existing) return existing;
     }
 
-    let query = supabase
-      .from("profiles")
-      .select("*, user_roles(roles(name, color, rank))");
-    if (UUID_REGEX.test(cleanId)) {
-      query = query.eq("id", cleanId);
-    } else if (/^\d{17,21}$/.test(cleanId)) {
-      query = query.eq("discord_id", cleanId);
-    } else {
-      query = query.ilike("username", cleanId);
-    }
+    const requestPromise = (async () => {
+      try {
+        let query = supabase
+          .from("profiles")
+          .select("*, user_roles(roles(name, color, rank))");
+        if (UUID_REGEX.test(cleanId)) {
+          query = query.eq("id", cleanId);
+        } else if (/^\d{17,21}$/.test(cleanId)) {
+          query = query.eq("discord_id", cleanId);
+        } else {
+          query = query.ilike("username", cleanId);
+        }
 
-    let { data, error } = await query.maybeSingle();
+        let { data, error } = await query.maybeSingle();
 
-    if (error || !data) {
-      // Fallback query without relational join if restricted
-      let fallbackQuery = supabase.from("profiles").select("*");
-      if (UUID_REGEX.test(cleanId)) {
-        fallbackQuery = fallbackQuery.eq("id", cleanId);
-      } else if (/^\d{17,21}$/.test(cleanId)) {
-        fallbackQuery = fallbackQuery.eq("discord_id", cleanId);
-      } else {
-        fallbackQuery = fallbackQuery.ilike("username", cleanId);
-      }
-      const fallbackRes = await fallbackQuery.maybeSingle();
-      if (!fallbackRes.error && fallbackRes.data) {
-        data = fallbackRes.data;
-        error = null;
-      }
-    }
-
-    if (error || !data) {
-      logger.error('ASTD-UI-001', `Failed to fetch profile for ${cleanId}: ${error?.message ?? 'unknown'}`);
-      set((state) => ({
-        notFoundCache: { ...state.notFoundCache, [cleanId]: now },
-      }));
-      return null;
-    }
-
-    const profileData = unpackProfileRow(data);
-    const resolvedId = profileData.id;
-
-    if (profileData.master_rep_override === null) {
-      const { data: repLog } = await supabase
-        .from("moderation_logs")
-        .select("action_type")
-        .eq("target_user_id", resolvedId)
-        .ilike("action_type", "MASTER REP OVERRIDE:%")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (repLog?.action_type) {
-        const match = repLog.action_type.match(/MASTER REP OVERRIDE:\s*([+-]?\d+)/i);
-        if (match) {
-          const parsed = parseInt(match[1], 10);
-          if (!Number.isNaN(parsed)) {
-            profileData.global_rep = parsed;
-            profileData.master_rep_override = parsed;
+        if (error || !data) {
+          // Fallback query without relational join if restricted
+          let fallbackQuery = supabase.from("profiles").select("*");
+          if (UUID_REGEX.test(cleanId)) {
+            fallbackQuery = fallbackQuery.eq("id", cleanId);
+          } else if (/^\d{17,21}$/.test(cleanId)) {
+            fallbackQuery = fallbackQuery.eq("discord_id", cleanId);
+          } else {
+            fallbackQuery = fallbackQuery.ilike("username", cleanId);
+          }
+          const fallbackRes = await fallbackQuery.maybeSingle();
+          if (!fallbackRes.error && fallbackRes.data) {
+            data = fallbackRes.data;
+            error = null;
           }
         }
+
+        if (error || !data) {
+          logger.error('ASTD-UI-001', `Failed to fetch profile for ${cleanId}: ${error?.message ?? 'unknown'}`);
+          set((state) => ({
+            notFoundCache: { ...state.notFoundCache, [cleanId]: now },
+          }));
+          return null;
+        }
+
+        const profileData = unpackProfileRow(data);
+        const resolvedId = profileData.id;
+
+        if (profileData.master_rep_override === null) {
+          const { data: repLog } = await supabase
+            .from("moderation_logs")
+            .select("action_type")
+            .eq("target_user_id", resolvedId)
+            .ilike("action_type", "MASTER REP OVERRIDE:%")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (repLog?.action_type) {
+            const match = repLog.action_type.match(/MASTER REP OVERRIDE:\s*([+-]?\d+)/i);
+            if (match) {
+              const parsed = parseInt(match[1], 10);
+              if (!Number.isNaN(parsed)) {
+                profileData.global_rep = parsed;
+                profileData.master_rep_override = parsed;
+              }
+            }
+          }
+        }
+
+        if (profileData.created_at) {
+          const jNum = await getJoinNumber(profileData.created_at);
+          if (jNum !== null) {
+            profileData.join_number = jNum;
+          }
+        }
+
+        set((state) => ({
+          cache: {
+            ...state.cache,
+            [resolvedId]: { data: profileData, timestamp: now },
+            ...(profileData.discord_id
+              ? { [profileData.discord_id]: { data: profileData, timestamp: now } }
+              : {}),
+            [cleanId]: { data: profileData, timestamp: now },
+          },
+        }));
+
+        return profileData;
+      } finally {
+        inFlightSingleRequests.delete(cleanId);
       }
-    }
+    })();
 
-    if (profileData.created_at) {
-      const jNum = await getJoinNumber(profileData.created_at);
-      if (jNum !== null) {
-        profileData.join_number = jNum;
-      }
-    }
-
-    set((state) => ({
-      cache: {
-        ...state.cache,
-        [resolvedId]: { data: profileData, timestamp: now },
-        ...(profileData.discord_id
-          ? { [profileData.discord_id]: { data: profileData, timestamp: now } }
-          : {}),
-        [cleanId]: { data: profileData, timestamp: now },
-      },
-    }));
-
-    return profileData;
+    if (!force) inFlightSingleRequests.set(cleanId, requestPromise);
+    return requestPromise;
   },
 
   updateLocalProfile: (userId, updates) => {

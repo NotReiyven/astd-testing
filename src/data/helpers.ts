@@ -111,15 +111,15 @@ export function getObtainability(unit?: MasterUnit): "OBT" | "UNOB" {
     return "OBT";
   }
 
-  // Directly respect metadata overrides
-  if (unit.obtainability) return unit.obtainability;
+  // Directly respect metadata overrides if set to OBT
+  if (unit.obtainability === "OBT") return "OBT";
 
   const cat = (unit.subCategory || "").toLowerCase();
   if (unit.tier === "Oddities" || cat.includes("gamepass")) return "OBT";
   if (n.includes("capsule") || n.includes("egg") || n.includes("firework")) return "OBT";
   if (getTier(unit) === "C" && n.includes("banner")) return "OBT";
 
-  return "UNOB";
+  return unit.obtainability || "UNOB";
 }
 
 export async function copyTextWithFallback(text: string): Promise<boolean> {

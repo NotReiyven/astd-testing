@@ -11,16 +11,27 @@ import { logger } from './lib/logger';
 
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN,
+  tunnel: "/api/monitoring",
   integrations: [
-    Sentry.browserTracingIntegration(),
+    Sentry.browserTracingIntegration({ enableInp: false }),
     Sentry.replayIntegration(),
   ],
-  // Performance Monitoring
-  tracesSampleRate: 1.0, //  Capture 100% of the transactions
+  // Performance Monitoring: sample 10% to prevent transaction alert spam
+  tracesSampleRate: 0.1,
   // Session Replay
-  replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%. You may want to change it to 100% while in development and then sample at a lower rate in production.
-  replaysOnErrorSampleRate: 1.0, 
-  enabled: import.meta.env.PROD, // Only run Sentry in production
+  replaysSessionSampleRate: 0.05,
+  replaysOnErrorSampleRate: 1.0,
+  enabled: Boolean(import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN),
+  beforeSendTransaction(event) {
+    if (!event || !event.spans) return event;
+    event.spans = event.spans.filter((s) => s && typeof s.start_timestamp === "number");
+    return event;
+  },
+});
+
+// Auto-reload on deployment chunk version mismatches (prevents text/html MIME error)
+window.addEventListener("vite:preloadError", () => {
+  window.location.reload();
 });
 
 // Safely register Service Worker for PWA offline caching

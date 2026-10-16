@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, memo, useMemo } from "react";
 import { motion, useMotionValue, useTransform, useReducedMotion } from "framer-motion";
 
-import { Search, X } from "lucide-react";
+import { GiMagnifyingGlass } from "react-icons/gi";
 import { TradeCard } from "../../../types";
 import { useUnits } from "../../../context/UnitContext";
 import { ActiveCardRow } from "./ActiveCardRow";
@@ -258,7 +258,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
               : "1px solid var(--border)",
           }}
         >
-          <Search className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+          <GiMagnifyingGlass className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
           <input
             ref={searchInputRef}
             type="text"
@@ -317,7 +317,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
               }}
               aria-label={`Clear search input for ${label}`}
             >
-              <X className="w-3.5 h-3.5" />
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </button>
           )}
         </div>

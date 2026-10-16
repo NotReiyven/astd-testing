@@ -181,6 +181,7 @@ export default function App() {
     setGlobalSearchQuery,
     bootChannel,
     globalCompactMode,
+    fontFamily,
   } = useLayoutStore();
 
   const [tutorialTab, setTutorialTab] = useState<
@@ -213,7 +214,7 @@ export default function App() {
 
   useNetworkSync();
 
-  // Map Zustand layout state to native DOM for responsive density foundations
+  // Map Zustand layout state to native DOM for responsive density and typography foundations
   useEffect(() => {
     if (globalCompactMode) {
       document.documentElement.setAttribute("data-density", "compact");
@@ -221,6 +222,10 @@ export default function App() {
       document.documentElement.removeAttribute("data-density");
     }
   }, [globalCompactMode]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-font", fontFamily || "luckiest-guy");
+  }, [fontFamily]);
 
   const {
     guideState,

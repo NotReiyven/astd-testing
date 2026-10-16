@@ -35,19 +35,19 @@ export function ViewingUserBar({
   const returnLabel = formatViewingReturnChannel(returnChannel);
 
   return (
-    <div className="w-full bg-popover/95 backdrop-blur-md border-b border-border px-3 sm:px-4 py-2 flex items-center justify-between sticky top-0 z-50 shrink-0 shadow-sm transition-colors min-h-[49px]">
+    <div className="w-full bg-popover/95 backdrop-blur-md border-b border-border px-3 sm:px-4 py-2 flex items-center justify-between sticky top-0 z-50 shrink-0 shadow-sm transition-colors min-h-[49px] overflow-x-clip">
       {/* Left: Back to Origin Channel Button */}
       <button
         type="button"
         onClick={onClose}
-        className="flex items-center gap-2 px-3 py-1.5 bg-card hover:bg-muted text-foreground border border-border rounded-[6px] text-[12px] font-semibold transition-[background-color,border-color,color,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer active:scale-95 shrink-0"
+        className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 bg-card hover:bg-muted text-foreground border border-border rounded-[6px] text-[12px] font-semibold transition-[background-color,border-color,color,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer active:scale-95 shrink-0"
         title={`Back to ${returnLabel}`}
         aria-label={`Back to ${returnLabel}`}
       >
         <svg
           viewBox="0 0 16 16"
           fill="none"
-          className="w-3.5 h-3.5 text-muted-foreground"
+          className="w-3.5 h-3.5 text-muted-foreground shrink-0"
           stroke="currentColor"
           strokeWidth="1.8"
           strokeLinecap="round"
@@ -60,12 +60,12 @@ export function ViewingUserBar({
       </button>
 
       {/* Middle: Trader Identity Context */}
-      <div className="flex items-center gap-2 min-w-0 mx-2">
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 mx-1 sm:mx-2 overflow-hidden">
         <span className="bg-[#5865F2] text-white border border-[#5865F2]/40 text-[10px] sm:text-[10.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[4px] shrink-0 font-mono shadow-xs">
           Viewing
         </span>
         <span
-          className="text-[12px] sm:text-[13px] font-bold text-foreground truncate max-w-[120px] sm:max-w-[280px] md:max-w-[400px]"
+          className="text-[12px] sm:text-[13px] font-bold text-foreground truncate max-w-[85px] xs:max-w-[140px] sm:max-w-[280px] md:max-w-[400px]"
           title={targetUsername}
         >
           {targetUsername}

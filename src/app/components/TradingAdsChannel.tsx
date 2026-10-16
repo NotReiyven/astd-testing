@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useRef, memo } from "react";
-import { Search, Plus, Trash2, Check, ArrowBigUp, ArrowBigDown } from "lucide-react";
 import {
   GiMegaphone,
   GiHourglass,
@@ -8,6 +7,11 @@ import {
   GiChest,
   GiChatBubble,
   GiShieldEchoes,
+  GiMagnifyingGlass,
+  GiTrashCan,
+  GiCheckMark,
+  GiUpgrade,
+  GiFallDown,
 } from "react-icons/gi";
 import { supabase } from "../../lib/supabase";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
@@ -222,10 +226,16 @@ const FixedSlotGrid = ({
               key={`empty-${i}`}
               className={`${slotBase} bg-muted/30 border border-dashed border-border/80 flex items-center justify-center`}
             >
-              <Plus
-                className="w-5 h-5 text-muted-foreground/50"
-                strokeWidth={2}
-              />
+              <svg
+                className="w-4 h-4 text-muted-foreground/40 shrink-0"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              >
+                <path d="M8 3v10M3 8h10" />
+              </svg>
             </div>
           );
         })}
@@ -243,6 +253,7 @@ const VanguardAdCard = memo(
     ALL_UNITS,
     onInspectUnit,
     onSendToCalculator,
+    initialVotes,
   }: {
     ad: TradingAd;
     currentUserId?: string;
@@ -251,13 +262,22 @@ const VanguardAdCard = memo(
     ALL_UNITS: MasterUnit[];
     onInspectUnit: (unitId: string) => void;
     onSendToCalculator: (give: TradeCard[], get: TradeCard[]) => void;
+    initialVotes?: { up: number; down: number; userVote: number };
   }) => {
     const [isContacting, setIsContacting] = useState(false);
-    const [votes, setVotes] = useState({ up: 0, down: 0, userVote: 0 });
+    const [votes, setVotes] = useState(
+      initialVotes || { up: 0, down: 0, userVote: 0 }
+    );
     const isVotingRef = useRef(false);
     const [isNewAd, setIsNewAd] = useState(
       () => Date.now() - new Date(ad.created_at).getTime() < 5000
     );
+
+    useEffect(() => {
+      if (initialVotes) {
+        setVotes(initialVotes);
+      }
+    }, [initialVotes]);
 
     const isOwner = currentUserId === ad.user_id;
     const canModerate =
@@ -285,6 +305,7 @@ const VanguardAdCard = memo(
     }, [isNewAd]);
 
     useEffect(() => {
+      if (initialVotes) return;
       const fetchVotes = async () => {
         const { data } = await supabase
           .from("ad_votes")
@@ -304,7 +325,7 @@ const VanguardAdCard = memo(
         }
       };
       fetchVotes();
-    }, [ad.id, currentUserId]);
+    }, [ad.id, currentUserId, initialVotes]);
 
     const handleVote = async (val: number) => {
       if (!currentUserId) {
@@ -563,7 +584,7 @@ const VanguardAdCard = memo(
 
         <div className="mt-auto pt-4 border-t border-border flex flex-col gap-3 relative z-10">
           <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-0.5 bg-muted rounded-[4px] border border-border p-0.5">
+            <div className="flex items-center gap-1 bg-muted rounded-[4px] border border-border p-0.5">
               <button
                 type="button"
                 onClick={() => void handleVote(1)}
@@ -575,14 +596,10 @@ const VanguardAdCard = memo(
                     : "text-muted-foreground hover:text-[#23a559]"
                 }`}
               >
-                <ArrowBigUp
-                  className={`w-4 h-4 ${
-                    votes.userVote === 1 ? "fill-current" : ""
-                  }`}
-                />
+                <GiUpgrade className="w-3.5 h-3.5 shrink-0" />
               </button>
               <span
-                className={`text-[var(--ui-text-sm)] font-bold min-w-[20px] text-center font-mono tabular-nums ${
+                className={`text-[var(--ui-text-sm)] font-bold min-w-[20px] text-center font-mono tabular-nums leading-none ${
                   score > 0
                     ? "text-[#23a559]"
                     : score < 0
@@ -603,16 +620,12 @@ const VanguardAdCard = memo(
                     : "text-muted-foreground hover:text-destructive"
                 }`}
               >
-                <ArrowBigDown
-                  className={`w-4 h-4 ${
-                    votes.userVote === -1 ? "fill-current" : ""
-                  }`}
-                />
+                <GiFallDown className="w-3.5 h-3.5 shrink-0" />
               </button>
             </div>
 
             <div className="flex items-center gap-1.5 text-muted-foreground bg-muted px-2 py-1 rounded-[4px] border border-border">
-              <GiHourglass className="w-3.5 h-3.5" />
+              <GiHourglass className="w-3.5 h-3.5 shrink-0" />
               <CountdownTimer expiresAt={ad.expires_at} />
             </div>
           </div>
@@ -627,11 +640,11 @@ const VanguardAdCard = memo(
             }`}
           >
             {isContacting ? (
-              <Check className="w-4 h-4" />
+              <GiCheckMark className="w-3.5 h-3.5 shrink-0" />
             ) : (
-              <GiChatBubble className="w-4 h-4" />
+              <GiChatBubble className="w-4 h-4 shrink-0" />
             )}
-            {isContacting ? "Copied! Paste in Discord" : "Contact on Discord"}
+            <span>{isContacting ? "Copied! Paste in Discord" : "Contact on Discord"}</span>
           </button>
 
           <div className="flex gap-2 w-full">
@@ -648,9 +661,9 @@ const VanguardAdCard = memo(
               className="flex-1 h-[var(--ui-height-btn)] flex items-center justify-center gap-1.5 text-[var(--ui-text-sm)] font-bold rounded-[4px] border border-border bg-muted hover:bg-card text-foreground transition-colors active:scale-95 focus-visible:outline-none cursor-pointer"
             >
               {isInventory ? (
-                <GiChest className="w-3.5 h-3.5" />
+                <GiChest className="w-3.5 h-3.5 shrink-0" />
               ) : (
-                <GiAbacus className="w-3.5 h-3.5" />
+                <GiAbacus className="w-3.5 h-3.5 shrink-0" />
               )}
               <span className="truncate">
                 {isInventory ? "Inspect Vault" : "Analyze Trade"}
@@ -665,7 +678,7 @@ const VanguardAdCard = memo(
               }}
               className="flex-1 h-[var(--ui-height-btn)] flex items-center justify-center gap-1.5 text-[var(--ui-text-sm)] font-bold rounded-[4px] border border-border bg-muted hover:bg-card text-foreground transition-colors active:scale-95 focus-visible:outline-none cursor-pointer"
             >
-              <GiChatBubble className="w-3.5 h-3.5" />
+              <GiChatBubble className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate">Thread</span>
             </button>
 
@@ -678,9 +691,9 @@ const VanguardAdCard = memo(
                 }}
                 aria-label="Delete listing"
                 title="Delete listing"
-                className="w-[var(--ui-height-btn)] h-[var(--ui-height-btn)] border border-border text-muted-foreground hover:text-destructive-foreground hover:border-destructive bg-muted hover:bg-destructive rounded-[4px] transition-colors focus-visible:outline-none flex items-center justify-center shrink-0 cursor-pointer"
+                className="w-[var(--ui-height-btn)] h-[var(--ui-height-btn)] border border-border text-muted-foreground hover:text-white hover:border-destructive bg-muted hover:bg-destructive rounded-[4px] transition-colors focus-visible:outline-none flex items-center justify-center shrink-0 cursor-pointer"
               >
-                <Trash2 className="w-4 h-4" />
+                <GiTrashCan className="w-4 h-4 shrink-0" />
               </button>
             )}
           </div>
@@ -796,11 +809,54 @@ export function TradingAdsChannel() {
 
   const showAdsSkeleton = useShowDelay(isLoading);
 
+  const [votesMap, setVotesMap] = useState<
+    Record<string, { up: number; down: number; userVote: number }>
+  >({});
+
   useEffect(() => {
     fetchAds();
     const unsubscribe = subscribeToAds();
     return () => unsubscribe();
   }, [fetchAds, subscribeToAds]);
+
+  // Batch-fetch votes for all visible ads in a single query (resolves Sentry N+1 warning)
+  useEffect(() => {
+    const adIds = ads.map((a) => a.id).filter(Boolean);
+    if (adIds.length === 0) return;
+
+    let isSubscribed = true;
+    const fetchBatchVotes = async () => {
+      const { data } = await supabase
+        .from("ad_votes")
+        .select("ad_id, user_id, vote_value")
+        .in("ad_id", adIds);
+
+      if (data && isSubscribed) {
+        const nextMap: Record<
+          string,
+          { up: number; down: number; userVote: number }
+        > = {};
+        for (const id of adIds) {
+          nextMap[id] = { up: 0, down: 0, userVote: 0 };
+        }
+        for (const v of data) {
+          if (!nextMap[v.ad_id]) {
+            nextMap[v.ad_id] = { up: 0, down: 0, userVote: 0 };
+          }
+          if (v.vote_value === 1) nextMap[v.ad_id].up++;
+          if (v.vote_value === -1) nextMap[v.ad_id].down++;
+          if (profile?.id && v.user_id === profile.id) {
+            nextMap[v.ad_id].userVote = v.vote_value;
+          }
+        }
+        setVotesMap(nextMap);
+      }
+    };
+    fetchBatchVotes();
+    return () => {
+      isSubscribed = false;
+    };
+  }, [ads, profile?.id]);
 
   useEffect(() => {
     if (!adPendingDelete) return;
@@ -1033,7 +1089,7 @@ export function TradingAdsChannel() {
 
   const SearchNode = (
     <div className="relative w-full">
-      <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+      <GiMagnifyingGlass className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
       <input
         type="text"
         value={searchFilter}
@@ -1137,7 +1193,7 @@ export function TradingAdsChannel() {
             className={`flex items-center justify-center gap-1.5 px-4 w-full sm:w-auto h-[var(--ui-height-btn)] rounded-[4px] text-sm font-semibold transition-all focus-visible:outline-none shrink-0 shadow-sm cursor-pointer active:scale-95 border ${
               isOnCooldown
                 ? "bg-muted text-muted-foreground border-border hover:bg-card hover:text-foreground"
-                : "bg-primary hover:bg-primary/90 text-primary-foreground border-primary"
+                : "bg-[#5865F2] hover:bg-[#4752c4] text-white border-[#5865F2]/40 font-bold shadow-xs"
             }`}
           >
             <GiMegaphone className="w-4 h-4" />
@@ -1199,7 +1255,7 @@ export function TradingAdsChannel() {
           ) : filteredAndSortedAds.length === 0 ? (
             <div className="py-16 max-w-lg mx-auto">
               <EmptyState
-                icon={<Search className="w-5 h-5" />}
+                icon={<GiMagnifyingGlass className="w-5 h-5" />}
                 title="No Listings Match Your Filters"
                 description={
                   activeFilterSummary
@@ -1232,6 +1288,7 @@ export function TradingAdsChannel() {
                   ALL_UNITS={ALL_UNITS}
                   onInspectUnit={(unitId) => openHistoryModal(unitId)}
                   onSendToCalculator={handleSendToCalculator}
+                  initialVotes={votesMap[ad.id]}
                 />
               ))}
             </div>
@@ -1256,7 +1313,7 @@ export function TradingAdsChannel() {
             className="relative z-10 w-full max-w-md bg-popover border border-border rounded-[8px] shadow-2xl overflow-hidden flex flex-col"
           >
             <div className="px-5 py-4 border-b border-border bg-card flex items-center gap-2.5">
-              <Trash2 className="w-4 h-4 text-destructive shrink-0" />
+              <GiTrashCan className="w-4 h-4 text-destructive shrink-0" />
               <h3 className="text-[15px] font-bold text-foreground tracking-tight">
                 Delete Trade Listing?
               </h3>

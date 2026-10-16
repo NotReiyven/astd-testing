@@ -135,28 +135,69 @@
   --ring: #5865F2;
 }
 
-@theme inline {
+:root {
+  --font-size: 14px;
   --font-sans: 'Luckiest Guy', cursive, sans-serif;
   --font-mono: 'Luckiest Guy', cursive, monospace;
+  --font-baseline-offset: -1px;
+}
 
-  /* Luckiest Guy is a single-weight (400) display font.
-     Locking all weight tokens to 400 prevents browser faux-bold smearing/halo effects. */
-  --font-weight-thin: 400;
-  --font-weight-extralight: 400;
-  --font-weight-light: 400;
+[data-font="luckiest-guy"] {
+  --font-sans: 'Luckiest Guy', cursive, sans-serif;
+  --font-mono: 'Luckiest Guy', cursive, monospace;
+  --font-baseline-offset: -1px;
+}
+
+[data-font="luckiest-guy"] *,
+[data-font="luckiest-guy"] *::before,
+[data-font="luckiest-guy"] *::after {
+  font-weight: 400 !important;
+  font-synthesis: none !important;
+  text-shadow: none !important;
+}
+
+[data-font="luckiest-guy"] body {
+  letter-spacing: 0.03em;
+}
+
+[data-font="geist"] {
+  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+  --font-baseline-offset: 0px;
+}
+
+[data-font="inter"] {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+  --font-baseline-offset: 0px;
+}
+
+[data-font="mono"] {
+  --font-sans: 'Geist Mono', monospace;
+  --font-mono: 'Geist Mono', monospace;
+  --font-baseline-offset: 0px;
+}
+
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --font-weight-thin: 100;
+  --font-weight-extralight: 200;
+  --font-weight-light: 300;
   --font-weight-normal: 400;
-  --font-weight-medium: 400;
-  --font-weight-semibold: 400;
-  --font-weight-bold: 400;
-  --font-weight-extrabold: 400;
-  --font-weight-black: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
 
-  /* Prevent negative tracking from colliding thick display glyphs */
-  --tracking-tighter: 0.02em;
-  --tracking-tight: 0.025em;
-  --tracking-normal: 0.03em;
-  --tracking-wide: 0.05em;
-  --tracking-wider: 0.06em;
+  /* Spacing and tracking */
+  --tracking-tighter: -0.02em;
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
   --tracking-widest: 0.08em;
 
   --color-background: var(--background);
@@ -225,19 +266,12 @@
 
 html, body {
   font-family: var(--font-sans);
-  font-weight: 400;
   font-synthesis: none;
-  letter-spacing: 0.03em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
-*, *::before, *::after {
-  font-weight: 400 !important;
-  font-synthesis: none !important;
-  text-shadow: none !important;
-}
 
 
 

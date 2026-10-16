@@ -157,12 +157,34 @@ export const UnitProvider = ({ children }: { children: React.ReactNode }) => {
 
       const mergedUnits = (json.units || []).map((apiUnit: MasterUnit) => {
         const meta = UNIT_METADATA[apiUnit.id] || {};
+        const rawNotice = apiUnit.notice || meta.notice || "";
+        const noticeLower = rawNotice.toLowerCase();
+
+        let resolvedObt: "OBT" | "UNOB" = "UNOB";
+        if (
+          noticeLower.includes("[unobtainable]") ||
+          noticeLower.includes("(unobtainable)") ||
+          noticeLower.includes("unobtainable")
+        ) {
+          resolvedObt = "UNOB";
+        } else if (
+          noticeLower.includes("[obtainable]") ||
+          noticeLower.includes("(obtainable)") ||
+          noticeLower.includes("obtainable")
+        ) {
+          resolvedObt = "OBT";
+        } else if (meta.obtainability) {
+          resolvedObt = meta.obtainability;
+        } else {
+          resolvedObt = getObtainability({ ...apiUnit, notice: rawNotice });
+        }
+
         return {
           ...apiUnit,
           subtitle: apiUnit.subtitle || meta.subtitle || "",
-          notice: apiUnit.notice || meta.notice || "",
+          notice: rawNotice,
           aliases: meta.aliases || apiUnit.aliases || [],
-          obtainability: getObtainability(apiUnit) || apiUnit.obtainability || meta.obtainability || "UNOB",
+          obtainability: resolvedObt,
           imageUrl: getUnitAssetUrl(apiUnit.id) || undefined,
         };
       });

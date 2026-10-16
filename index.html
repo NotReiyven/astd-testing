@@ -54,20 +54,23 @@
       }
     </script>
 
-    <!-- Anti-Flashbang & Density Script: Runs BEFORE the DOM paints to prevent layout shifts -->
+    <!-- Anti-Flashbang, Density & Font Script: Runs BEFORE the DOM paints to prevent layout shifts -->
     <script>
       try {
         let theme = 'dark'; // Default
         let density = 'default';
+        let font = 'luckiest-guy';
         const stored = localStorage.getItem('astd_layout_storage');
         if (stored) {
           const parsed = JSON.parse(stored);
           if (parsed && parsed.state) {
             if (parsed.state.theme) theme = parsed.state.theme;
             if (parsed.state.globalCompactMode) density = 'compact';
+            if (parsed.state.fontFamily) font = parsed.state.fontFamily;
           }
         }
         document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.setAttribute('data-font', font);
         if (density === 'compact') {
           document.documentElement.setAttribute('data-density', density);
         }
@@ -101,10 +104,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <!-- ASTD Typography: Luckiest Guy + Fallback Technical Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <!-- ASTD Typography: Luckiest Guy + Geist + Inter + Geist Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=Luckiest+Guy&display=swap" rel="stylesheet" />
 
-    <style>html, body { height: 100%; margin: 0; background-color: var(--background, #000000); font-family: 'Luckiest Guy', cursive, sans-serif; } #root { height: 100%; }</style>
+    <style>html, body { height: 100%; margin: 0; background-color: var(--background, #000000); font-family: var(--font-sans, 'Luckiest Guy', cursive, sans-serif); } #root { height: 100%; }</style>
   </head>
   <body>
     <!-- Fallback Semantic HTML for Crawlers (Replaced on JS load) -->

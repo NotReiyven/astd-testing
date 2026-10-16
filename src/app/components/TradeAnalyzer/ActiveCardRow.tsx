@@ -172,7 +172,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
               >
                 <StatusIcon status={masterData?.status} />
                 <span
-                  className="text-[8px] font-bold leading-none uppercase tracking-wide relative -top-[0.5px]"
+                  className="text-[8px] font-bold leading-none uppercase tracking-wide"
                   style={{ color: dropCfg.color }}
                 >
                   <JargonWrap title={dropCfg.label} tip={dropCfg.tip}>

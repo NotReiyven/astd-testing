@@ -41,6 +41,7 @@ import {
   useLayoutStore,
   ThemeMode,
   BootChannel,
+  FontFamily,
 } from "../../store/useLayoutStore";
 import { useUnits } from "../../context/UnitContext";
 import { getUnitConservativeValue } from "./InventoryChannel/inventoryUtils";
@@ -854,6 +855,8 @@ export function ProfileChannel() {
     setGlobalCompactMode,
     bootChannel,
     setBootChannel,
+    fontFamily,
+    setFontFamily,
   } = useLayoutStore();
 
   const {
@@ -2339,7 +2342,7 @@ export function ProfileChannel() {
                                 title="Load these units into the Trade Analyzer"
                               >
                                 <GiAbacus className="w-3.5 h-3.5 shrink-0" />
-                                <span className="leading-none relative -top-[0.5px]">Calculator</span>
+                                <span className="leading-none">Calculator</span>
                               </button>
 
                               {/* View Comments / Discussion */}
@@ -2353,7 +2356,7 @@ export function ProfileChannel() {
                                 title="View discussion, comments, and trade analytics for this listing"
                               >
                                 <GiChatBubble className="w-3.5 h-3.5 shrink-0 text-white" />
-                                <span className="leading-none relative -top-[0.5px]">Discussion</span>
+                                <span className="leading-none">Discussion</span>
                               </button>
 
                               {/* Owner-only Per-Ad Visibility, Repost & Delete */}
@@ -2380,7 +2383,7 @@ export function ProfileChannel() {
                                     ) : (
                                       <GiWorld className="w-3.5 h-3.5 text-white shrink-0" />
                                     )}
-                                    <span className="leading-none relative -top-[0.5px]">
+                                    <span className="leading-none">
                                       {isPrivateAd ? "Private" : "Public"}
                                     </span>
                                   </button>
@@ -2394,7 +2397,7 @@ export function ProfileChannel() {
                                       title="Repost this trade to the live Trading Board for 24 hours"
                                     >
                                       <GiCycle className="w-3.5 h-3.5 shrink-0" />
-                                      <span className="leading-none relative -top-[0.5px]">
+                                      <span className="leading-none">
                                         {repostingAdId === ad.id
                                           ? "Reposting…"
                                           : "Repost"}
@@ -2409,7 +2412,7 @@ export function ProfileChannel() {
                                         onClick={() =>
                                           handleDeleteAdFromHistory(ad.id)
                                         }
-                                        className="text-[11px] font-bold text-white hover:underline px-1 cursor-pointer leading-none relative -top-[0.5px]"
+                                        className="text-[11px] font-bold text-white hover:underline px-1 cursor-pointer leading-none"
                                       >
                                         Confirm Delete
                                       </button>
@@ -2419,7 +2422,7 @@ export function ProfileChannel() {
                                         onClick={() =>
                                           setConfirmDeleteAdId(null)
                                         }
-                                        className="text-[11px] font-bold text-white/90 hover:underline px-1 cursor-pointer leading-none relative -top-[0.5px]"
+                                        className="text-[11px] font-bold text-white/90 hover:underline px-1 cursor-pointer leading-none"
                                       >
                                         Cancel
                                       </button>
@@ -2752,7 +2755,7 @@ export function ProfileChannel() {
                                     }}
                                   >
                                     <StatusIcon status={master.status} />
-                                    <span className="leading-none relative -top-[0.5px]">
+                                    <span className="leading-none">
                                       {cfg.label}
                                     </span>
                                   </span>
@@ -3028,6 +3031,70 @@ export function ProfileChannel() {
                         </span>
                       </button>
                     ))}
+                  </div>
+
+                  {/* Typography Font Picker */}
+                  <div className="pt-3 border-t border-border/70 flex flex-col gap-2">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[13px] text-foreground">
+                        Typography Font
+                      </span>
+                      <span className="text-[12px] text-muted-foreground">
+                        Choose the primary font family used across the application.
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      {[
+                        {
+                          id: "luckiest-guy",
+                          label: "Luckiest Guy",
+                          desc: "Classic ASTD display",
+                          previewFont: "'Luckiest Guy', cursive, sans-serif",
+                        },
+                        {
+                          id: "geist",
+                          label: "Geist",
+                          desc: "Crisp modern sans",
+                          previewFont: "'Geist', sans-serif",
+                        },
+                        {
+                          id: "inter",
+                          label: "Inter",
+                          desc: "Neutral clean interface",
+                          previewFont: "'Inter', sans-serif",
+                        },
+                        {
+                          id: "mono",
+                          label: "Geist Mono",
+                          desc: "Technical tabular mono",
+                          previewFont: "'Geist Mono', monospace",
+                        },
+                      ].map((f) => (
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() => {
+                            triggerHaptic("light");
+                            setFontFamily(f.id as FontFamily);
+                          }}
+                          className={`p-3 rounded-[6px] border text-left flex flex-col gap-1 cursor-pointer transition-colors ${
+                            fontFamily === f.id
+                              ? "bg-popover border-primary ring-1 ring-primary/40 shadow-xs"
+                              : "bg-popover/40 border-border hover:bg-popover"
+                          }`}
+                        >
+                          <span
+                            style={{ fontFamily: f.previewFont }}
+                            className="text-[13px] font-bold text-foreground leading-tight truncate"
+                          >
+                            {f.label}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground truncate">
+                            {f.desc}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Global Compact Mode */}

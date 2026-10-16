@@ -434,7 +434,7 @@ export function InventoryChannel() {
                 : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
             }`}
           >
-            <span className="leading-none relative -top-[0.5px]">
+            <span className="leading-none">
               {isReadOnly ? "Vault" : "My Vault"}
             </span>
           </button>
@@ -450,7 +450,7 @@ export function InventoryChannel() {
                 : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
             }`}
           >
-            <span className="leading-none relative -top-[0.5px]">
+            <span className="leading-none">
               Wishlist
             </span>
           </button>
@@ -465,7 +465,7 @@ export function InventoryChannel() {
             className="md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-[12px] font-bold cursor-pointer active:scale-95 shadow-xs"
           >
             <IconSliders className="w-3.5 h-3.5 shrink-0" />
-            <span className="leading-none relative -top-[0.5px]">
+            <span className="leading-none">
               {isControlsCollapsed ? "Filters" : "Collapse"}
             </span>
             {isControlsCollapsed ? (
@@ -504,7 +504,7 @@ export function InventoryChannel() {
                   : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
               }`}
             >
-              <span className="leading-none relative -top-[0.5px]">All</span>
+              <span className="leading-none">All</span>
             </button>
             {vaultView !== "wishlist" && (
               <button
@@ -526,7 +526,7 @@ export function InventoryChannel() {
                       : "text-[#FAA61A]"
                   }`}
                 />{" "}
-                <span className="leading-none relative -top-[0.5px]">Locked</span>
+                <span className="leading-none">Locked</span>
               </button>
             )}
             {FILTERS.filter((f) => f !== "All").map((f) => (
@@ -543,7 +543,7 @@ export function InventoryChannel() {
                     : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
                 }`}
               >
-                <span className="leading-none relative -top-[0.5px]">{f}</span>
+                <span className="leading-none">{f}</span>
               </button>
             ))}
           </div>
@@ -613,7 +613,7 @@ export function InventoryChannel() {
                   title="Toggle Select Mode"
                 >
                   <IconBulkSelect className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline leading-none relative -top-[0.5px]">Bulk Select</span>
+                  <span className="hidden sm:inline leading-none">Bulk Select</span>
                 </button>
               )}
 
@@ -1023,7 +1023,7 @@ export function InventoryChannel() {
                                     />
                                   )}
                                 </div>
-                                <span className="text-[13px] font-bold text-foreground truncate leading-tight relative -top-[0.5px]">
+                                <span className="text-[13px] font-bold text-foreground truncate leading-tight">
                                   {item.master.name}
                                 </span>
                               </div>
@@ -1043,7 +1043,7 @@ export function InventoryChannel() {
                     <div className="bg-card border border-border rounded-[8px] p-4 sm:p-6 flex flex-col justify-between relative shadow-sm">
                       <Sparkline />
                       <div className="relative z-10">
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                           <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                             {isReadOnly && viewingUsername
                               ? `${viewingUsername}'s Vault Net Worth`
@@ -1053,16 +1053,16 @@ export function InventoryChannel() {
                             {metrics.marketMomentum.net > 0 ? (
                               <span className="bg-[#34a853] text-white flex items-center gap-1 px-2 py-0.5 rounded-[4px] border border-white/20 shadow-xs font-mono font-bold text-[10px] uppercase select-none">
                                 <IconTrendingUp className="w-3 h-3 shrink-0" />
-                                <span className="leading-none relative -top-[0.5px]">+{metrics.marketMomentum.net} Net Rising</span>
+                                <span className="leading-none">+{metrics.marketMomentum.net} Net Rising</span>
                               </span>
                             ) : metrics.marketMomentum.net < 0 ? (
                               <span className="bg-[#ff0000] text-white flex items-center gap-1 px-2 py-0.5 rounded-[4px] border border-white/20 shadow-xs font-mono font-bold text-[10px] uppercase select-none">
                                 <IconTrendingDown className="w-3 h-3 shrink-0" />
-                                <span className="leading-none relative -top-[0.5px]">{Math.abs(metrics.marketMomentum.net)} Net Dropping</span>
+                                <span className="leading-none">{Math.abs(metrics.marketMomentum.net)} Net Dropping</span>
                               </span>
                             ) : (
                               <span className="bg-[#ffe599] text-[#18181b] border border-black/15 shadow-xs px-2 py-0.5 rounded-[4px] uppercase font-mono font-bold text-[10px] select-none">
-                                <span className="leading-none relative -top-[0.5px]">Market Stable</span>
+                                <span className="leading-none">Market Stable</span>
                               </span>
                             )}
                           </div>
@@ -1085,7 +1085,7 @@ export function InventoryChannel() {
                             <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
                               UNOB Proportion
                             </span>
-                            <span className="text-[14px] font-bold text-foreground font-mono mt-0.5">
+                            <span className="text-[13px] sm:text-[14px] font-bold text-foreground font-mono mt-0.5 truncate" title={`${metrics.unobPercentage.toFixed(0)}% Unobtainable`}>
                               {metrics.unobPercentage.toFixed(0)}% Unobtainable
                             </span>
                           </div>
@@ -1182,7 +1182,7 @@ export function InventoryChannel() {
                                   )}
                                 </div>
                                 <div className="flex flex-col min-w-0">
-                                  <span className="text-[13px] font-bold text-foreground truncate leading-tight relative -top-[0.5px]">
+                                  <span className="text-[13px] font-bold text-foreground truncate leading-tight">
                                     {item.master.name}
                                   </span>
                                   <span className="text-[10px] font-mono text-muted-foreground">
@@ -1531,7 +1531,7 @@ export function InventoryChannel() {
                         }}
                       >
                         <StatusIcon status={inspectTarget.master.status} />
-                        <span className="leading-none relative -top-[0.5px]">
+                        <span className="leading-none">
                           {
                             GRID_STATUS_CFG[
                               inspectTarget.master

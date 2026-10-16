@@ -1,8 +1,7 @@
 import React, { useState, memo, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { X, Loader2, Check } from "lucide-react";
-import { GiPayMoney, GiReceiveMoney, GiHourglass, GiChest } from "react-icons/gi";
+import { GiPayMoney, GiReceiveMoney, GiHourglass, GiChest, GiCheckMark, GiSpinningBlades } from "react-icons/gi";
 import { PopupUnit, GridUnit, MasterUnit } from "../../../../types";
 import {
   getTier,
@@ -180,7 +179,7 @@ export function GridStatusBadge({ status }: { status: string }) {
       onClick={toggleTip}
     >
       <div
-        className="inline-flex items-center px-2 py-0.5 rounded-[4px] gap-1 shadow-xs font-mono font-bold tracking-wider uppercase text-[10.5px] select-none"
+        className="inline-flex items-center px-2 py-0.5 rounded-[4px] gap-1.5 shadow-xs font-mono font-bold tracking-wider uppercase text-[10.5px] select-none"
         style={{
           background: c.bg,
           border: `1px solid ${c.border}`,
@@ -188,7 +187,7 @@ export function GridStatusBadge({ status }: { status: string }) {
         }}
       >
         <StatusIcon status={status} />
-        <span className="leading-none relative -top-[0.5px]">
+        <span className="leading-none">
           {c.label}
         </span>
       </div>
@@ -471,7 +470,7 @@ function TierGridCardImpl({
 
             {isSelected && (
               <div className="absolute top-2 right-2 z-50 bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center shadow-md">
-                <Check className="w-4 h-4 stroke-[3]" />
+                <GiCheckMark className="w-3.5 h-3.5" />
               </div>
             )}
           </div>
@@ -497,15 +496,14 @@ function TierGridCardImpl({
               </p>
 
               <div className="flex items-center mt-1.5 h-[18px]">
-                {obtainability === "UNOB" ? (
-                  <span className="text-[10px] font-bold font-mono tracking-wider uppercase text-white bg-[#ef4444] px-1.5 py-0.5 rounded-[4px] border border-[#ef4444]/40 leading-none shadow-xs">
-                    UNOB
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-bold font-mono tracking-wider uppercase text-white bg-[#23a559] px-1.5 py-0.5 rounded-[4px] border border-[#23a559]/40 leading-none shadow-xs">
-                    OBN
-                  </span>
-                )}
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-muted border border-border text-foreground font-mono text-[10px] font-bold uppercase tracking-wider leading-none shadow-xs select-none">
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      obtainability === "UNOB" ? "bg-[#ef4444]" : "bg-[#23a559]"
+                    }`}
+                  />
+                  <span>{obtainability}</span>
+                </span>
               </div>
             </div>
 
@@ -539,7 +537,7 @@ function TierGridCardImpl({
           {isInTrade && !isSelectMode && (
             <div className="absolute inset-0 bg-background/80 z-[60] flex flex-col items-center justify-center pointer-events-none rounded-[8px]">
               <div className="bg-[#23a559] text-white rounded-full p-2 shadow-lg mb-1 border border-white/10">
-                <Check className="w-5 h-5 stroke-[4]" />
+                <GiCheckMark className="w-4 h-4" />
               </div>
               <span className="text-xs font-semibold text-white">In Trade</span>
             </div>
@@ -585,7 +583,16 @@ function TierGridCardImpl({
                   data-tooltip="Close"
                   className="w-11 h-11 md:w-8 md:h-8 rounded-[4px] border border-transparent hover:border-border hover:bg-muted flex items-center justify-center text-muted-foreground shrink-0 focus-visible:outline-none transition-[transform,background-color] duration-150 active:scale-90"
                 >
-                  <X className="w-6 h-6 md:w-4 md:h-4" />
+                  <svg
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    className="w-4 h-4"
+                  >
+                    <path d="M3.5 3.5l9 9M12.5 3.5l-9 9" />
+                  </svg>
                 </button>
               </div>
 
@@ -612,7 +619,7 @@ function TierGridCardImpl({
                   className="w-full flex items-center justify-center gap-2 bg-[#23a559] hover:bg-[#1f914e] active:scale-95 disabled:opacity-50 transition-[transform,background-color] duration-150 text-white text-[13px] font-bold h-[44px] rounded-[4px] focus-visible:outline-none shadow-sm"
                 >
                   {isSaving ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <GiSpinningBlades className="w-4 h-4 animate-spin" />
                   ) : (
                     <GiChest className="w-4 h-4" />
                   )}

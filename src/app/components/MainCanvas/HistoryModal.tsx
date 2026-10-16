@@ -268,7 +268,7 @@ function SnapshotDiffList({
                 borderColor: prevCfg?.border || "rgba(0, 0, 0, 0.15)",
               }}
             >
-              <span className="leading-none relative -top-[0.5px]">
+              <span className="leading-none">
                 {prevCfg?.label || prev.status || "Stable"}
               </span>
             </span>
@@ -281,7 +281,7 @@ function SnapshotDiffList({
                 borderColor: currCfg?.border || "rgba(0, 0, 0, 0.15)",
               }}
             >
-              <span className="leading-none relative -top-[0.5px]">
+              <span className="leading-none">
                 {currCfg?.label || curr.status || "Stable"}
               </span>
             </span>
@@ -1285,7 +1285,7 @@ export function HistoryModal() {
                         }}
                       >
                         <StatusIcon status={currentUnit.status} />
-                        <span className="leading-none relative -top-[0.5px]">
+                        <span className="leading-none">
                           {statusCfg.label}
                         </span>
                       </span>

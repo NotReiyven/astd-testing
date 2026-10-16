@@ -2,7 +2,7 @@ import React, { memo } from "react";
 import { GiPadlock, GiChest } from "react-icons/gi";
 import { InventoryItem } from "../../../store/useInventoryStore";
 import { MasterUnit } from "../../../types";
-import { TIER_CONFIG, getTier, GRID_STATUS_CFG } from "../../../data";
+import { TIER_CONFIG, getTier, GRID_STATUS_CFG, getObtainability } from "../../../data";
 import { getUnitConservativeValue } from "./inventoryUtils";
 import { StatusIcon, JargonWrap } from "../shared/Formatters";
 import { UnitAvatar } from "../shared/UnitAvatar";
@@ -131,18 +131,7 @@ export const TradingCardSlot = memo(
         ? master.valueDisplay
         : (getUnitConservativeValue(master) || "N/A").toLocaleString();
 
-    const obtainability = (() => {
-      const note = (master.notice || "").toLowerCase();
-      if (
-        note.includes("(unobtainable)") ||
-        note.includes("[unobtainable]") ||
-        note.includes("unobtainable")
-      )
-        return "UNOB";
-      if (note.includes("(obtainable)") || note.includes("[obtainable]"))
-        return "OBN";
-      return master.obtainability || "UNOB";
-    })();
+    const obtainability = getObtainability(master);
 
     const handleDragStart = (e: React.DragEvent) => {
       if (
@@ -238,7 +227,7 @@ export const TradingCardSlot = memo(
           {dropCfg && !isSelected && (
             <div className="absolute top-2 left-2 z-50">
               <div
-                className="inline-flex items-center px-2 py-0.5 rounded-[4px] gap-1 shadow-xs font-mono font-bold tracking-wider uppercase text-[10.5px] select-none"
+                className="inline-flex items-center px-2 py-0.5 rounded-[4px] gap-1.5 shadow-xs font-mono font-bold tracking-wider uppercase text-[10.5px] select-none"
                 style={{
                   background: dropCfg.bg,
                   border: `1px solid ${dropCfg.border}`,
@@ -246,7 +235,7 @@ export const TradingCardSlot = memo(
                 }}
               >
                 <StatusIcon status={master.status} />
-                <span className="leading-none relative -top-[0.5px]">
+                <span className="leading-none">
                   {dropCfg.label}
                 </span>
               </div>
@@ -301,7 +290,7 @@ export const TradingCardSlot = memo(
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] font-bold py-2 rounded-[4px] shadow-sm flex items-center justify-center gap-1.5 transition-transform active:scale-95 cursor-pointer"
               >
                 <GiChest className="w-3.5 h-3.5 shrink-0" />
-                <span className="leading-none relative -top-[0.5px]">To Vault</span>
+                <span className="leading-none">To Vault</span>
               </button>
             </div>
           )}
@@ -318,14 +307,13 @@ export const TradingCardSlot = memo(
               {master.subtitle || "Official Unit"}
             </p>
             <div className="flex mt-2">
-              <span
-                className={`text-[9.5px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-[4px] border tracking-wider shadow-xs ${
-                  obtainability === "UNOB"
-                    ? "bg-[#ef4444] text-white border-white/20"
-                    : "bg-[#23a559] text-white border-white/20"
-                }`}
-              >
-                <span className="leading-none relative -top-[0.5px]">{obtainability}</span>
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] bg-muted border border-border text-foreground font-mono text-[9.5px] font-bold uppercase tracking-wider leading-none shadow-xs select-none">
+                <span
+                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                    obtainability === "UNOB" ? "bg-[#ef4444]" : "bg-[#23a559]"
+                  }`}
+                />
+                <span>{obtainability}</span>
               </span>
             </div>
           </div>
@@ -351,20 +339,20 @@ export const TradingCardSlot = memo(
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-3 mt-3 border-t border-border w-full font-mono">
-              <div className="flex flex-col bg-muted border border-transparent rounded-[4px] px-2.5 py-1.5 transition-colors">
-                <span className="text-[11px] font-medium text-muted-foreground mb-0.5">
+            <div className="grid grid-cols-2 gap-1.5 sm:gap-2 pt-3 mt-3 border-t border-border w-full font-mono min-w-0">
+              <div className="flex flex-col bg-muted border border-transparent rounded-[4px] px-1.5 sm:px-2.5 py-1 sm:py-1.5 transition-colors min-w-0 overflow-hidden">
+                <span className="text-[10px] sm:text-[11px] font-medium text-muted-foreground mb-0.5 truncate">
                   Rarity
                 </span>
-                <span className="text-[11px] font-black text-foreground">
+                <span className="text-[10.5px] sm:text-[11px] font-black text-foreground truncate">
                   {rarityDisplay}
                 </span>
               </div>
-              <div className="flex flex-col bg-muted border border-transparent rounded-[4px] px-2.5 py-1.5 transition-colors">
-                <span className="text-[11px] font-medium text-muted-foreground mb-0.5">
+              <div className="flex flex-col bg-muted border border-transparent rounded-[4px] px-1.5 sm:px-2.5 py-1 sm:py-1.5 transition-colors min-w-0 overflow-hidden">
+                <span className="text-[10px] sm:text-[11px] font-medium text-muted-foreground mb-0.5 truncate">
                   Liquidity
                 </span>
-                <span className="text-[11px] font-black text-foreground truncate">
+                <span className="text-[10.5px] sm:text-[11px] font-black text-foreground truncate">
                   {liqDisplay}
                 </span>
               </div>

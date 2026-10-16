@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 
 export type ThemeMode = "dark" | "light" | "discord";
 export type BootChannel = "last-used" | "home" | "value-list" | "trading-ads";
+export type FontFamily = "luckiest-guy" | "geist" | "inter" | "mono";
 
 interface LayoutState {
   globalSearchQuery: string;
@@ -10,11 +11,13 @@ interface LayoutState {
   theme: ThemeMode;
   globalCompactMode: boolean;
   bootChannel: BootChannel;
+  fontFamily: FontFamily;
   setGlobalSearchQuery: (query: string) => void;
   setCommandPaletteOpen: (isOpen: boolean) => void;
   setTheme: (theme: ThemeMode) => void;
   setGlobalCompactMode: (isCompact: boolean) => void;
   setBootChannel: (channel: BootChannel) => void;
+  setFontFamily: (font: FontFamily) => void;
 }
 
 export const useLayoutStore = create<LayoutState>()(
@@ -25,6 +28,7 @@ export const useLayoutStore = create<LayoutState>()(
       theme: "dark",
       globalCompactMode: false,
       bootChannel: "last-used",
+      fontFamily: "luckiest-guy",
 
       setGlobalSearchQuery: (query) => set({ globalSearchQuery: query }),
 
@@ -39,6 +43,11 @@ export const useLayoutStore = create<LayoutState>()(
         set({ globalCompactMode: isCompact }),
 
       setBootChannel: (channel) => set({ bootChannel: channel }),
+
+      setFontFamily: (fontFamily) => {
+        document.documentElement.setAttribute("data-font", fontFamily);
+        set({ fontFamily });
+      },
     }),
     {
       name: "astd_layout_storage",
@@ -47,6 +56,7 @@ export const useLayoutStore = create<LayoutState>()(
         theme: state.theme,
         globalCompactMode: state.globalCompactMode,
         bootChannel: state.bootChannel,
+        fontFamily: state.fontFamily,
       }),
     }
   )

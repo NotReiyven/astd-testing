@@ -470,19 +470,30 @@ const TradingStanceSelector = memo(function TradingStanceSelector({
               key={st.id}
               type="button"
               onClick={() => onStanceChange(st.id)}
-              className={`p-2.5 rounded-[6px] border text-left flex flex-col gap-0.5 transition-colors cursor-pointer ${
+              className={`p-2.5 rounded-[6px] border text-left flex flex-col gap-1.5 transition-colors cursor-pointer ${
                 active
-                  ? "bg-[#2b2d31] border-[#5865F2]"
+                  ? "bg-[#2b2d31] border-[#5865F2] ring-1 ring-[#5865F2]"
                   : "bg-[#232428] border-[#35373c] hover:bg-[#2b2d31]"
               }`}
             >
-              <span
-                className="text-[12px] font-bold"
-                style={{ color: st.color }}
-              >
-                {st.label}
-              </span>
-              <span className="text-[11px] text-[#949ba4]">
+              <div className="flex items-center justify-between w-full">
+                <span
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-[11px] font-bold font-mono uppercase tracking-wider text-white border shadow-xs"
+                  style={{
+                    backgroundColor: st.bg,
+                    borderColor: st.border,
+                  }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
+                  {st.label}
+                </span>
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    active ? "bg-[#5865F2]" : "border border-white/20 bg-transparent"
+                  }`}
+                />
+              </div>
+              <span className="text-[11px] text-[#949ba4] leading-snug">
                 {st.desc}
               </span>
             </button>

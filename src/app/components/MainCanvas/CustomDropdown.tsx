@@ -158,7 +158,7 @@ export function CustomDropdown({
             className="w-3.5 h-3.5 text-muted-foreground mr-2 shrink-0"
             aria-hidden="true"
           />
-          <span className="text-[12.5px] sm:text-[13px] font-bold text-foreground px-0.5 truncate leading-none relative -top-[0.5px]">
+          <span className="text-[12.5px] sm:text-[13px] font-bold text-foreground px-0.5 truncate leading-none">
             {value === "all" && defaultLabel ? defaultLabel : options[value]}
           </span>
         </div>

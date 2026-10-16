@@ -40,7 +40,7 @@ export function GridStatusBadge({ status }: { status: UnitStatus }) {
       onClick={toggleTip}
     >
       <div
-        className="inline-flex items-center px-2 py-0.5 rounded-[4px] gap-1 shadow-xs font-mono font-bold tracking-wider uppercase text-[10.5px] select-none"
+        className="inline-flex items-center px-2 py-0.5 rounded-[4px] gap-1.5 shadow-xs font-mono font-bold tracking-wider uppercase text-[10.5px] select-none"
         style={{
           background: c.bg,
           border: `1px solid ${c.border}`,
@@ -48,7 +48,7 @@ export function GridStatusBadge({ status }: { status: UnitStatus }) {
         }}
       >
         <StatusIcon status={status} />
-        <span className="leading-none relative -top-[0.5px]">
+        <span className="leading-none">
           {c.label}
         </span>
       </div>
