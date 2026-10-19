@@ -1,5 +1,25 @@
 import { useState, useMemo, useEffect, type KeyboardEvent } from "react";
-import { formatDistanceToNow } from "date-fns";
+
+function formatDistanceToNow(
+  dateInput: Date | number | string,
+  options?: { addSuffix?: boolean }
+): string {
+  const time = typeof dateInput === "number" ? dateInput : new Date(dateInput).getTime();
+  if (isNaN(time)) return "recently";
+  const diffSec = Math.max(0, Math.floor((Date.now() - time) / 1000));
+  if (diffSec < 45) return "just now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m${options?.addSuffix ? " ago" : ""}`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h${options?.addSuffix ? " ago" : ""}`;
+  const diffDays = Math.floor(diffHr / 24);
+  if (diffDays === 1) return options?.addSuffix ? "yesterday" : "1d";
+  if (diffDays < 30) return `${diffDays}d${options?.addSuffix ? " ago" : ""}`;
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths < 12) return `${diffMonths}mo${options?.addSuffix ? " ago" : ""}`;
+  const diffYears = Math.floor(diffDays / 365);
+  return `${diffYears}y${options?.addSuffix ? " ago" : ""}`;
+}
 import {
   GiRingingBell,
   GiCharacter,
