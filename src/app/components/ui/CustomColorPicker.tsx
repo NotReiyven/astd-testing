@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { triggerHaptic } from "../../../data/helpers";
 
 function hslToHex(h: number, s: number, l: number): string {
@@ -235,15 +235,20 @@ export function CustomColorPicker({
           {/* Interactive Hue Slider */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-              <span>Hue Spectrum</span>
+              <label htmlFor="custom-color-hue-slider" className="cursor-pointer">
+                Hue Spectrum
+              </label>
               <span className="font-mono text-[10px]">{hue}°</span>
             </div>
             <input
+              id="custom-color-hue-slider"
+              name="hue_spectrum"
               type="range"
               min="0"
               max="360"
               value={hue}
               onChange={(e) => handleHueSlider(Number(e.target.value))}
+              aria-label="Hue spectrum slider"
               className="w-full h-3 rounded-full appearance-none cursor-pointer outline-none"
               style={{
                 background:
@@ -289,11 +294,14 @@ export function CustomColorPicker({
                 style={{ backgroundColor: value }}
               />
               <input
+                id="custom-color-hex-input"
+                name="hex_color_code"
                 type="text"
                 value={hexInput}
                 onChange={(e) => handleHexChange(e.target.value)}
                 maxLength={7}
                 placeholder="#000000"
+                aria-label="Hex color code"
                 className="w-full bg-[#1e1f22] border border-[#35373c] focus:border-[#5865F2] rounded-[5px] pl-8 pr-2.5 py-1 text-[12px] font-mono text-foreground focus:outline-none"
               />
             </div>

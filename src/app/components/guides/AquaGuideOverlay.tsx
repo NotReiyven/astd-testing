@@ -381,7 +381,7 @@ export function AquaGuideOverlay({
 
       <aside
         aria-label="Aqua Companion Guide"
-        className={`fixed ${mobilePosClass} md:bottom-6 right-3 md:right-6 z-[100010] max-w-[420px] w-[calc(100vw-24px)] md:w-[420px] transition-all duration-300 ease-out animate-slide-up pointer-events-auto font-sans`}
+        className={`fixed ${mobilePosClass} md:bottom-6 right-3 md:right-6 z-[100010] max-w-[420px] w-[calc(100vw-24px)] md:w-[420px] transition-[transform,opacity] duration-300 ease-out animate-slide-up pointer-events-auto font-sans`}
       >
         {isMinimized ? (
           <div className="bg-card border border-border p-3 rounded-[8px] flex items-center justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)]">

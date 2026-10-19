@@ -32,6 +32,7 @@ import { useMobileSwipe } from "../hooks/useMobileSwipe";
 import { useAuthStore } from "../store/useAuthStore";
 import { useNotificationStore } from "../store/useNotificationStore";
 import { supabase } from "../lib/supabase";
+import { logger } from "../lib/logger";
 
 import { useNetworkSync } from "../hooks/useNetworkSync";
 import { useValueListNotification } from "../hooks/useValueListNotification";
@@ -176,7 +177,6 @@ export default function App() {
 
   const giveItems = useTradeStore((s) => s.giveItems);
   const getItems = useTradeStore((s) => s.getItems);
-  const pinnedIds = useTradeStore((s) => s.pinnedIds);
   const { profile, isLoading: isAuthLoading } = useAuthStore();
   const { units } = useUnits();
 
@@ -206,7 +206,6 @@ export default function App() {
   // Realtime Notification Listener
   const {
     subscribe: subscribeToNotifications,
-    unsubscribe: unsubscribeFromNotifications,
   } = useNotificationStore();
 
   // Monitor value list updates with debounce settle window
@@ -274,9 +273,6 @@ export default function App() {
     endGuide,
   } = useGuideSystem({
     setActiveChannel,
-    setIsRosterOpen,
-    setIsAnalyzerOpen,
-    setTutorialTab,
     bootStage,
   });
 
@@ -307,7 +303,12 @@ export default function App() {
       return JSON.parse(
         sessionStorage.getItem("astd_dismissed_login_recs") || "{}"
       );
-    } catch {
+    } catch (err) {
+      logger.warn("ASTD-UI-017", "Failed to parse dismissed login recommendations from sessionStorage", {
+        scope: "App",
+        action: "readDismissedLoginRecs",
+        error: err,
+      });
       return {};
     }
   });
@@ -324,7 +325,13 @@ export default function App() {
               "astd_dismissed_login_recs",
               JSON.stringify(updated)
             );
-          } catch {}
+          } catch (err) {
+            logger.warn("ASTD-UI-018", "Failed to persist dismissed login recommendations to sessionStorage", {
+              scope: "App",
+              action: "handleDismissLoginRec",
+              error: err,
+            });
+          }
           return updated;
         });
       }
@@ -351,8 +358,13 @@ export default function App() {
 
   // Hook up notification subscriptions for authenticated users and local cache for guests
   useEffect(() => {
-    subscribeToNotifications(profile ? profile.id : null);
-  }, [profile, subscribeToNotifications]);
+    const targetId = profile?.id ?? null;
+    subscribeToNotifications(targetId);
+
+    return () => {
+      useNotificationStore.getState().unsubscribe();
+    };
+  }, [profile?.id, subscribeToNotifications]);
 
   useEffect(() => {
     const handleStartGuest = () => startGuide("guest_tour", true);
@@ -391,11 +403,7 @@ export default function App() {
     }
   }, [profile]);
 
-  const { toast } = useGlobalEvents({
-    giveItems,
-    getItems,
-    pinnedIds,
-    completedGuides,
+  useGlobalEvents({
     setCompletedGuides,
     setActiveChannel,
     setIsRosterOpen,
@@ -617,34 +625,6 @@ export default function App() {
             />
           )}
 
-          <div className="fixed bottom-[140px] md:bottom-8 left-1/2 -translate-x-1/2 pointer-events-none transition-all flex flex-col gap-2 items-center z-[9999]">
-            <div
-              className={`transition-all duration-150 ${
-                toast
-                  ? "opacity-100 translate-y-0 scale-100"
-                  : "opacity-0 translate-y-2 scale-95"
-              }`}
-            >
-              {toast && (
-                <div className="flex items-center gap-3 px-5 py-3.5 rounded-[4px] border border-border bg-card shadow-sm">
-                  <div className="w-6 h-6 rounded-[4px] flex items-center justify-center flex-shrink-0 bg-[#23a559] text-white text-xs font-mono">
-                    ✓
-                  </div>
-                  <span className="text-foreground text-[13px] font-bold tracking-wide whitespace-nowrap">
-                    Added{" "}
-                    <strong className="font-black">{toast.unitName}</strong>
-                    {toast.count > 1 && (
-                      <span className="text-muted-foreground ml-1">
-                        ({toast.count - 1} more)
-                      </span>
-                    )}{" "}
-                    to {toast.type === "give" ? "Give" : "Get"}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
           <div
             className={`fixed md:relative top-0 bottom-0 left-0 flex-shrink-0 overflow-hidden transition-transform shadow-2xl md:shadow-none bg-card z-30 ${
               isRosterOpen
@@ -748,10 +728,38 @@ export default function App() {
                   path="/notifications"
                   element={<NotificationsChannel />}
                 />
-                <Route path="/profile" element={<ProfileChannel />} />
-                <Route path="/profile/:userId" element={<ProfileChannel />} />
-                <Route path="/users/:userId" element={<ProfileChannel />} />
-                <Route path="/users/:userId/profile" element={<ProfileChannel />} />
+                <Route
+                  path="/profile"
+                  element={
+                    <GranularErrorBoundary fallbackName="Trader Profile">
+                      <ProfileChannel />
+                    </GranularErrorBoundary>
+                  }
+                />
+                <Route
+                  path="/profile/:userId"
+                  element={
+                    <GranularErrorBoundary fallbackName="Trader Profile">
+                      <ProfileChannel />
+                    </GranularErrorBoundary>
+                  }
+                />
+                <Route
+                  path="/users/:userId"
+                  element={
+                    <GranularErrorBoundary fallbackName="Trader Profile">
+                      <ProfileChannel />
+                    </GranularErrorBoundary>
+                  }
+                />
+                <Route
+                  path="/users/:userId/profile"
+                  element={
+                    <GranularErrorBoundary fallbackName="Trader Profile">
+                      <ProfileChannel />
+                    </GranularErrorBoundary>
+                  }
+                />
                 <Route
                   path="/trading-ads"
                   element={

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   GiScrollUnfurled,
   GiShieldEchoes,
@@ -158,10 +158,13 @@ export function AuditStreamTab({
           <div className="relative flex-1 sm:w-64">
             <GiMagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <input
+              id="admin-audit-search-input"
+              name="admin_audit_search"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Filter by actor, target, or action…"
+              aria-label="Filter audit log by actor, target, or action"
               className="w-full h-8 pl-8 pr-2.5 bg-input border border-border rounded-[4px] text-[12px] font-mono text-foreground focus:border-primary outline-none"
             />
           </div>
@@ -195,7 +198,7 @@ export function AuditStreamTab({
                   triggerHaptic("light");
                   setActiveCategory(cat.id);
                 }}
-                className={`h-8 px-3 rounded-[4px] text-[12px] font-medium transition-all duration-150 cursor-pointer shrink-0 border flex items-center gap-2 ${
+                className={`h-8 px-3 rounded-[4px] text-[12px] font-medium transition-colors duration-150 cursor-pointer shrink-0 border flex items-center gap-2 ${
                   isActive
                     ? "bg-[#5865F2] text-white font-bold border-[#4752C4] shadow-sm"
                     : "bg-[#2b2d31] text-[#dbdee1] hover:text-white border-[#383a40] hover:bg-[#35373c]"

@@ -1,7 +1,5 @@
 @custom-variant dark (&:is(.dark *));
 
-@custom-variant dark (&:is(.dark *));
-
 :root, [data-theme="dark"] {
   /* Vercel-Inspired Dark Mode */
   --font-size: 14px;

@@ -1,4 +1,9 @@
+// ================================================
+// FILE: api/deleteAccount.ts
+// ================================================
+
 import { createClient } from "@supabase/supabase-js";
+import { apiLogger } from "./lib/logger.js";
 
 export const config = {
   maxDuration: 20,
@@ -12,6 +17,12 @@ function jsonResponse(status: number, body: Record<string, any>) {
       "X-Content-Type-Options": "nosniff",
     },
   });
+}
+
+interface DeleteTask {
+  name: string;
+  isCritical: boolean;
+  run: () => Promise<{ error: any }>;
 }
 
 export async function POST(request: Request) {
@@ -67,95 +78,153 @@ export async function POST(request: Request) {
       });
     }
 
-    // Explicit guard: if a targetUserId is passed in payload, verify it strictly matches the authenticated user
+    // Explicit guard: if targetUserId is explicitly passed in payload, verify it strictly matches JWT
     if (body.targetUserId && body.targetUserId !== targetUserId) {
       return jsonResponse(403, { error: "Forbidden: You cannot delete another user's account." });
     }
 
-    // 3. Cascade delete user data across all tables
-    try {
-      await adminClient.from("ad_votes").delete().eq("user_id", targetUserId);
-    } catch (err) {
-      console.warn("[deleteAccount] ad_votes delete:", err);
-    }
+    // 3. Define cascade tasks with criticality weighting
+    const tasks: DeleteTask[] = [
+      {
+        name: "trading_ads",
+        isCritical: true,
+        run: async () => adminClient.from("trading_ads").delete().eq("user_id", targetUserId),
+      },
+      {
+        name: "profiles",
+        isCritical: true,
+        run: async () => adminClient.from("profiles").delete().eq("id", targetUserId),
+      },
+      {
+        name: "ad_votes",
+        isCritical: false,
+        run: async () => adminClient.from("ad_votes").delete().eq("user_id", targetUserId),
+      },
+      {
+        name: "comment_votes",
+        isCritical: false,
+        run: async () => adminClient.from("comment_votes").delete().eq("user_id", targetUserId),
+      },
+      {
+        name: "notifications (user)",
+        isCritical: false,
+        run: async () => adminClient.from("notifications").delete().eq("user_id", targetUserId),
+      },
+      {
+        name: "notifications (actor)",
+        isCritical: false,
+        run: async () => adminClient.from("notifications").delete().eq("actor_id", targetUserId),
+      },
+      {
+        name: "ad_comments",
+        isCritical: false,
+        run: async () => adminClient.from("ad_comments").delete().eq("user_id", targetUserId),
+      },
+      {
+        name: "user_inventory",
+        isCritical: false,
+        run: async () => adminClient.from("user_inventory").delete().eq("user_id", targetUserId),
+      },
+      {
+        name: "user_wishlist",
+        isCritical: false,
+        run: async () => adminClient.from("user_wishlist").delete().eq("user_id", targetUserId),
+      },
+      {
+        name: "moderation_logs",
+        isCritical: false,
+        run: async () => adminClient.from("moderation_logs").delete().eq("target_user_id", targetUserId),
+      },
+      {
+        name: "storage_banners",
+        isCritical: false,
+        run: async () => {
+          try {
+            const { data: files, error: listErr } = await adminClient.storage.from("banners").list(targetUserId);
+            if (listErr) return { error: listErr };
+            if (Array.isArray(files) && files.length > 0) {
+              const filePaths = files.map((f) => `${targetUserId}/${f.name}`);
+              const { error: removeErr } = await adminClient.storage.from("banners").remove(filePaths);
+              return { error: removeErr };
+            }
+            return { error: null };
+          } catch (err) {
+            return { error: err };
+          }
+        },
+      },
+    ];
 
-    try {
-      await adminClient.from("comment_votes").delete().eq("user_id", targetUserId);
-    } catch (err) {
-      console.warn("[deleteAccount] comment_votes delete:", err);
-    }
+    // Execute concurrently via Promise.allSettled
+    const results = await Promise.allSettled(
+      tasks.map(async (task) => {
+        const res = await task.run();
+        if (res.error) {
+          throw res.error;
+        }
+        return task.name;
+      })
+    );
 
-    try {
-      await adminClient.from("notifications").delete().eq("user_id", targetUserId);
-      await adminClient.from("notifications").delete().eq("actor_id", targetUserId);
-    } catch (err) {
-      console.warn("[deleteAccount] notifications delete:", err);
-    }
+    let hasCriticalFailure = false;
+    const failedTables: string[] = [];
 
-    try {
-      await adminClient.from("ad_comments").delete().eq("user_id", targetUserId);
-    } catch (err) {
-      console.warn("[deleteAccount] ad_comments delete:", err);
-    }
-
-    try {
-      await adminClient.from("trading_ads").delete().eq("user_id", targetUserId);
-    } catch (err) {
-      console.warn("[deleteAccount] trading_ads delete:", err);
-    }
-
-    try {
-      await adminClient.from("user_inventory").delete().eq("user_id", targetUserId);
-    } catch (err) {
-      console.warn("[deleteAccount] user_inventory delete:", err);
-    }
-
-    try {
-      await adminClient.from("user_wishlist").delete().eq("user_id", targetUserId);
-    } catch (err) {
-      console.warn("[deleteAccount] user_wishlist delete:", err);
-    }
-
-    // Prune storage banners if any exist
-    try {
-      const { data: files } = await adminClient.storage
-        .from("banners")
-        .list(targetUserId);
-
-      if (Array.isArray(files) && files.length > 0) {
-        const filePaths = files.map((f) => `${targetUserId}/${f.name}`);
-        await adminClient.storage.from("banners").remove(filePaths);
+    results.forEach((res, index) => {
+      const task = tasks[index];
+      if (res.status === "rejected") {
+        failedTables.push(task.name);
+        apiLogger.error({
+          route: "/api/deleteAccount",
+          code: "ASTD-ACC-001",
+          message: `Failed to purge ${task.name} for user`,
+          meta: { table: task.name, isCritical: task.isCritical, targetUserId },
+          error: res.reason,
+        });
+        if (task.isCritical) {
+          hasCriticalFailure = true;
+        }
       }
-    } catch (storageErr) {
-      console.warn("[deleteAccount] storage prune:", storageErr);
-    }
+    });
 
-    try {
-      await adminClient.from("moderation_logs").delete().eq("target_user_id", targetUserId);
-    } catch (err) {
-      console.warn("[deleteAccount] moderation_logs delete:", err);
-    }
-
-    // Delete public profile
-    try {
-      await adminClient.from("profiles").delete().eq("id", targetUserId);
-    } catch (err) {
-      console.warn("[deleteAccount] profiles delete:", err);
+    // Abort if critical tables failed to delete, preventing orphaned active listings
+    if (hasCriticalFailure) {
+      apiLogger.fatal({
+        route: "/api/deleteAccount",
+        code: "ASTD-ACC-002",
+        message: `Critical table purge failed for ${targetUserId}. Aborting auth user deletion.`,
+        meta: { targetUserId, failedTables },
+      });
+      return jsonResponse(500, {
+        error: "Failed to purge critical user records (trading_ads / profiles). Account deletion aborted to prevent orphaned listings.",
+        failedTables,
+      });
     }
 
     // 4. Delete user credentials in auth.users
     const { error: deleteUserError } = await adminClient.auth.admin.deleteUser(targetUserId);
     if (deleteUserError) {
-      console.error("[deleteAccount] Supabase auth.admin.deleteUser error:", deleteUserError);
+      apiLogger.error({
+        route: "/api/deleteAccount",
+        code: "ASTD-ACC-003",
+        message: "Supabase auth.admin.deleteUser error",
+        meta: { targetUserId },
+        error: deleteUserError,
+      });
       return jsonResponse(500, { error: "Failed to delete user authentication record." });
     }
 
     return jsonResponse(200, {
       success: true,
       message: "Account and associated data deleted successfully.",
+      failedNonCriticalTables: failedTables.length > 0 ? failedTables : undefined,
     });
-  } catch (err: any) {
-    console.error("[deleteAccount] Unexpected failure:", err);
+  } catch (err: unknown) {
+    apiLogger.error({
+      route: "/api/deleteAccount",
+      code: "ASTD-ACC-004",
+      message: "Unexpected failure in deleteAccount",
+      error: err,
+    });
     return jsonResponse(500, {
       error: "An unexpected error occurred while deleting account.",
     });

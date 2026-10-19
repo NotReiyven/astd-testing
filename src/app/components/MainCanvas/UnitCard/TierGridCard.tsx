@@ -1,6 +1,5 @@
 import React, { useState, memo, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { motion, useReducedMotion } from "framer-motion";
 import { GiPayMoney, GiReceiveMoney, GiHourglass, GiChest, GiCheckMark, GiSpinningBlades } from "react-icons/gi";
 import { PopupUnit, GridUnit, MasterUnit } from "../../../../types";
 import {
@@ -25,6 +24,7 @@ import {
 } from "../../shared/Formatters";
 import { GridValueDisplay } from "./GridValueDisplay";
 import { useToastStore } from "../../../../store/useToastStore";
+import { logger } from "../../../../lib/logger";
 
 /* -------------------------------------------------------------------------- */
 /* Image fallback (module-level, zero React state)                            */
@@ -322,8 +322,6 @@ function TierGridCardImpl({
       s.getItems.some((c) => c.id === unit.id)
   );
 
-  const prefersReducedMotion = useReducedMotion();
-
   const handleSaveToInventory = async () => {
     if (!profile) {
       useToastStore
@@ -350,7 +348,13 @@ function TierGridCardImpl({
         .getState()
         .addToast(`Added 1× ${unit.name} to your Vault.`, "success");
       setMenuOpen(false);
-    } catch {
+    } catch (err) {
+      logger.error("ASTD-INV-011", `Failed to save ${unit.name} to vault from TierGridCard`, {
+        scope: "TierGridCard",
+        action: "handleSaveToInventory",
+        metadata: { unitId: unit.id },
+        error: err,
+      });
       useToastStore
         .getState()
         .addToast(
@@ -429,18 +433,15 @@ function TierGridCardImpl({
   return (
     <>
       <div className="h-full touch-manipulation">
-        <motion.div
-          // @ts-expect-error Framer motion types omit draggable in favor of its own drag prop, but we use native HTML5 drag
+        <div
           draggable={!isSelectMode}
           onDragStart={handleDragStart as any}
           onClick={handleCardClick}
           onContextMenu={(e) => e.preventDefault()}
-          whileTap={!prefersReducedMotion ? { scale: 0.98 } : undefined}
-          transition={{ type: "spring", stiffness: 400, damping: 25 }}
-          className={`flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10 bg-card border [contain:layout_style] transition-[transform,box-shadow,border-color] duration-300 ${
+          className={`flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10 bg-card border [contain:layout_style] transition-[transform,box-shadow,border-color] duration-200 active:scale-[0.98] ${
             isSelected
               ? "border-primary ring-2 ring-primary"
-              : "hover:-translate-y-2 hover:shadow-2xl hover:scale-[1.02] ease-out"
+              : "hover:-translate-y-1.5 hover:shadow-2xl hover:scale-[1.01] ease-out"
           }`}
           style={
             {
@@ -542,7 +543,7 @@ function TierGridCardImpl({
               <span className="text-xs font-semibold text-white">In Trade</span>
             </div>
           )}
-        </motion.div>
+        </div>
       </div>
 
       {menuOpen &&
@@ -550,7 +551,7 @@ function TierGridCardImpl({
         createPortal(
           <div className="fixed inset-0 z-[1000000] flex flex-col justify-end md:justify-center md:items-center">
             <div
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-150"
+              className="absolute inset-0 bg-black/80 transition-opacity duration-150"
               onClick={() => setMenuOpen(false)}
             />
 

@@ -1,10 +1,9 @@
-import React, { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { StaticStatusBadge } from "./TutorialUI";
 import { useUnits } from "../../../context/UnitContext";
 import { MasterUnit } from "../../../types";
 import {
   getProxyImage,
-  getUnitAssetUrl,
   handleImageError,
 } from "../../../data";
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
@@ -499,7 +498,7 @@ export function SimulatorTab() {
         {/* Progress Line */}
         <div className="h-1 w-full bg-border">
           <div
-            className="h-full bg-primary transition-all duration-1000 ease-linear"
+            className="h-full bg-primary transition-[width] duration-1000 ease-linear"
             style={{ width: `${(timeLeft / SECONDS_PER_SCENARIO) * 100}%` }}
           />
         </div>

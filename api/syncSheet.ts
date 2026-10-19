@@ -5,6 +5,13 @@
 import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
 import { parseSpreadsheet, SpreadsheetData } from "./lib/parseSheet.js";
+import { apiLogger } from "./lib/logger.js";
+
+// Top-level tunables & constants
+const RATELIMIT_REQUESTS = 15;
+const RATELIMIT_WINDOW = "1 m";
+const MEMORY_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const HTTP_CACHE_HEADER = "public, s-maxage=1800, stale-while-revalidate=86400";
 
 let ratelimit: Ratelimit | null = null;
 
@@ -15,7 +22,7 @@ if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) 
   });
   ratelimit = new Ratelimit({
     redis: redis,
-    limiter: Ratelimit.slidingWindow(15, "1 m"),
+    limiter: Ratelimit.slidingWindow(RATELIMIT_REQUESTS, RATELIMIT_WINDOW),
   });
 }
 
@@ -25,7 +32,6 @@ interface MemoryCacheEntry {
   expiresAt: number;
 }
 let memoryCache: MemoryCacheEntry | null = null;
-const MEMORY_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 async function sendDiscordAlert(message: string) {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
@@ -73,7 +79,7 @@ export async function OPTIONS() {
 export async function GET(request: Request) {
   // 1. AUTH
   // Endpoint is public for frontend fetching. Abuse is prevented by Upstash IP Rate Limiting
-  // and Vercel Edge caching (s-maxage=300).
+  // and Vercel Edge caching (s-maxage=1800). Database writes are strictly handled in api/cronHistory.ts.
 
   // ── 2. QUERY PARAM GUARD ─────────────────────────────────────────────────
   const url = new URL(request.url);
@@ -95,7 +101,7 @@ export async function GET(request: Request) {
     return jsonResponse(
       200,
       memoryCache.body,
-      { "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=86400" }
+      { "Cache-Control": HTTP_CACHE_HEADER }
     );
   }
 
@@ -156,57 +162,24 @@ export async function GET(request: Request) {
       expiresAt: Date.now() + MEMORY_CACHE_TTL_MS,
     };
 
-    // Keep Supabase unit_current_state updated when new sheet data arrives
-    if (!isUnchanged && parsed.units && parsed.units.length > 0) {
-      void syncUnitsToDb(parsed.units);
-    }
+    // Note: Database persistence for unit_current_state & unit_value_snapshots
+    // is isolated to api/cronHistory.ts to prevent unawaited background writes
+    // and connection pool exhaustion in user-facing serverless invocations.
 
     return jsonResponse(
       200,
       payload,
-      { "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=86400" }
+      { "Cache-Control": HTTP_CACHE_HEADER }
     );
   } catch (error: unknown) {
-    console.error("[syncSheet] Fetch error");
     const message = error instanceof Error ? error.message : String(error);
+    apiLogger.error({
+      route: "/api/syncSheet",
+      code: "ASTD-API-001",
+      message: "Spreadsheet sync execution failed",
+      error,
+    });
     await sendDiscordAlert(`Sheet sync endpoint failed: ${message}`);
     return jsonResponse(500, { error: "Failed to sync sheet data." });
-  }
-}
-
-async function syncUnitsToDb(units: any[]) {
-  const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!SUPABASE_URL || !SUPABASE_KEY || !units || units.length === 0) return;
-
-  try {
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    const statesToUpsert = units.map((u) => ({
-      unit_id: u.id,
-      value: typeof u.value === "number" ? u.value : null,
-      value_type:
-        typeof u.value === "number"
-          ? "number"
-          : typeof u.value === "string"
-          ? u.value
-          : "unknown",
-      value_display: u.valueDisplay || null,
-      value_min: u.valueMin || null,
-      rarity: u.rarity,
-      liquidity: u.liquidity || "Average",
-      status: u.status,
-      notice: u.notice || null,
-      tier: u.tier,
-    }));
-
-    const CHUNK_SIZE = 500;
-    for (let i = 0; i < statesToUpsert.length; i += CHUNK_SIZE) {
-      const chunk = statesToUpsert.slice(i, i + CHUNK_SIZE);
-      await supabase.from("unit_current_state").upsert(chunk);
-    }
-  } catch (err) {
-    console.error("[syncSheet] Background DB sync failed:", err);
   }
 }

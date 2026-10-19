@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { apiLogger } from "../lib/logger.js";
 
 export const config = {
   maxDuration: 30,
@@ -413,7 +414,12 @@ export async function POST(request: Request) {
         });
     }
   } catch (error: any) {
-    console.error("[masterSync] Error:", error);
+    apiLogger.error({
+      route: "/api/admin/masterSync",
+      code: "ASTD-ADM-001",
+      message: "Error during masterSync operation",
+      error,
+    });
     return jsonResponse(500, {
       error: `Internal server error during master sync: ${error?.message || String(error)}`,
     });

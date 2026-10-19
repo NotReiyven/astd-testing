@@ -542,7 +542,15 @@ export function HomeChannel({
 
             {!globalCompactMode && (
               <div className="mt-4 rounded-[8px] border border-border bg-card overflow-hidden shadow-sm">
-                <img src={creditsBottomImage} alt="ASTD Value List" draggable={false} className="w-full h-auto object-contain block opacity-90 hover:opacity-100 transition-opacity" loading="lazy" />
+                <img
+                  src={creditsBottomImage}
+                  alt="ASTD Value List"
+                  draggable={false}
+                  width={800}
+                  height={400}
+                  className="w-full h-auto aspect-[2/1] object-contain block opacity-90 hover:opacity-100 transition-opacity"
+                  loading="lazy"
+                />
               </div>
             )}
           </section>

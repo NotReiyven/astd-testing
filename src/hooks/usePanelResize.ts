@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { logger } from "../lib/logger";
 
 export function usePanelResize(
   defaultWidth: number,
@@ -12,7 +13,12 @@ export function usePanelResize(
       return saved
         ? Math.min(Math.max(parseInt(saved, 10), minWidth), maxWidth)
         : defaultWidth;
-    } catch {
+    } catch (err) {
+      logger.warn("ASTD-UI-015", "Failed to read analyzer width from localStorage", {
+        scope: "usePanelResize",
+        action: "readWidth",
+        error: err,
+      });
       return defaultWidth;
     }
   });
@@ -57,7 +63,13 @@ export function usePanelResize(
         document.body.style.userSelect = "";
         try {
           localStorage.setItem("astd_analyzer_width", panelWidth.toString());
-        } catch {}
+        } catch (err) {
+          logger.warn("ASTD-UI-016", "Failed to persist analyzer width to localStorage", {
+            scope: "usePanelResize",
+            action: "writeWidth",
+            error: err,
+          });
+        }
       }
     };
 

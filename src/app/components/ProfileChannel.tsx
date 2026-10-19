@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, memo } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import {
   GiCharacter,
@@ -6,7 +6,6 @@ import {
   GiChatBubble,
   GiChest,
   GiMegaphone,
-  GiTornado,
   GiGamepad,
   GiHourglass,
   GiAbacus,
@@ -18,7 +17,6 @@ import {
 import {
   useProfileStore,
   UserProfileData,
-  BannerStyleType,
   TradingStanceType,
   getBannerCssStyle,
   getJoinNumber,
@@ -26,7 +24,6 @@ import {
 } from "../../store/useProfileStore";
 import { ProfileCustomizerModal } from "./Profile/ProfileCustomizerModal";
 import { DeleteAccountModal } from "./Profile/DeleteAccountModal";
-import { CustomColorPicker } from "./ui/CustomColorPicker";
 import { useAuthStore, UserProfile } from "../../store/useAuthStore";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
 import { useAdInteractionStore } from "../../store/useAdInteractionStore";
@@ -37,7 +34,7 @@ import {
 } from "../../store/useTradeStore";
 import { useHistoryModalStore } from "../../store/useHistoryModalStore";
 import { useToastStore } from "../../store/useToastStore";
-import { getUnitAssetUrl, triggerHaptic, resolveSafeUsername } from "../../data/helpers";
+import { triggerHaptic, resolveSafeUsername } from "../../data/helpers";
 import {
   useLayoutStore,
   ThemeMode,
@@ -46,6 +43,8 @@ import {
 } from "../../store/useLayoutStore";
 import { useUnits } from "../../context/UnitContext";
 import { getUnitConservativeValue } from "./InventoryChannel/inventoryUtils";
+import { useShowDelay } from "../../hooks/useShowDelay";
+import { ErrorState } from "./ui/ErrorState";
 import { GRID_STATUS_CFG, TIER_CONFIG, getTier, getObtainability } from "../../data";
 import { StatusIcon } from "./shared/Formatters";
 import { TradeCard, MasterUnit } from "../../types";
@@ -54,6 +53,7 @@ import { UnitAvatar } from "./shared/UnitAvatar";
 import { UserAvatar } from "./shared/UserAvatar";
 import { DiscordRolePill } from "./shared/DiscordRolePill";
 import { ViewingUserBar } from "./shared/ViewingUserBar";
+import { AsyncButton } from "./ui/AsyncButton";
 import {
   STATUS_COLORS,
   useEffectiveStatus,
@@ -137,20 +137,6 @@ const IconShare = ({ className = "w-4 h-4" }: { className?: string }) => (
   </svg>
 );
 
-const IconTrash = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
-  <svg
-    viewBox="0 0 16 16"
-    fill="none"
-    className={className}
-    stroke="currentColor"
-    strokeWidth="1.6"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M2.5 4.5H13.5M6 4.5V3C6 2.45 6.45 2 7 2H9C9.55 2 10 2.45 10 3V4.5M4 4.5L4.7 13C4.75 13.55 5.2 14 5.75 14H10.25C10.8 14 11.25 13.55 11.3 13L12 4.5" />
-  </svg>
-);
-
 const IconLock = ({
   locked,
   className = "w-3.5 h-3.5",
@@ -216,20 +202,6 @@ const IconSliders = ({ className = "w-4 h-4" }: { className?: string }) => (
   </svg>
 );
 
-const IconArrowLeft = ({ className = "w-4 h-4" }: { className?: string }) => (
-  <svg
-    viewBox="0 0 16 16"
-    fill="none"
-    className={className}
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M12.5 8H3.5M7 4.5L3.5 8L7 11.5" />
-  </svg>
-);
-
 const IconArrowRight = ({ className = "w-4 h-4" }: { className?: string }) => (
   <svg
     viewBox="0 0 16 16"
@@ -262,39 +234,6 @@ const IconRefresh = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
 /* -------------------------------------------------------------------------- */
 /* Configuration Constants                                                    */
 /* -------------------------------------------------------------------------- */
-
-const BANNER_SWATCHES = [
-  { label: "Midnight", hex: "#121214" },
-  { label: "Discord Blurple", hex: "#5865F2" },
-  { label: "Royal Violet", hex: "#6D28D9" },
-  { label: "Crimson", hex: "#B91C1C" },
-  { label: "Emerald", hex: "#15803D" },
-  { label: "Oceanic", hex: "#0369A1" },
-  { label: "Solar Gold", hex: "#B45309" },
-  { label: "Cyber Rose", hex: "#BE185D" },
-];
-
-const ACCENT_SWATCHES = [
-  { label: "Blurple", hex: "#7289da" },
-  { label: "Amethyst", hex: "#a855f7" },
-  { label: "Emerald", hex: "#23a559" },
-  { label: "Gold", hex: "#FAA61A" },
-  { label: "Crimson", hex: "#ef4444" },
-  { label: "Cyan", hex: "#38bdf8" },
-];
-
-const BANNER_STYLES: { id: BannerStyleType; label: string }[] = [
-  { id: "gradient", label: "Smooth Gradient" },
-  { id: "grid", label: "Tactical Grid" },
-  { id: "stripes", label: "Diagonal Stripes" },
-  { id: "dots", label: "Starfield Dots" },
-  { id: "carbon", label: "Carbon Fiber" },
-  { id: "mesh", label: "Geometric Mesh" },
-  { id: "waves", label: "Digital Waves" },
-  { id: "circuit", label: "Circuit Board" },
-  { id: "aurora", label: "Aurora Glow" },
-  { id: "solid", label: "Flat Solid" },
-];
 
 const TRADING_STANCES: {
   id: TradingStanceType;
@@ -371,39 +310,6 @@ const PRESENCE_OPTIONS: {
     color: "#888888",
   },
 ];
-
-const getRoleConfig = (role: string) => {
-  switch (role) {
-    case "master":
-      return {
-        color: "#000000",
-        bg: "#eab308",
-        border: "rgba(0, 0, 0, 0.2)",
-        label: "Master",
-      };
-    case "admin":
-      return {
-        color: "#ffffff",
-        bg: "#ef4444",
-        border: "rgba(255, 255, 255, 0.2)",
-        label: "Admin",
-      };
-    case "mod":
-      return {
-        color: "#ffffff",
-        bg: "#3b82f6",
-        border: "rgba(255, 255, 255, 0.2)",
-        label: "Moderator",
-      };
-    default:
-      return {
-        color: "#ffffff",
-        bg: "#64748b",
-        border: "rgba(255, 255, 255, 0.2)",
-        label: "Member",
-      };
-  }
-};
 
 const getReputationRank = (rep: number) => {
   if (rep < 0)
@@ -888,12 +794,31 @@ export function ProfileChannel() {
   );
   const isInspectingOtherUser = Boolean(!isOwner && targetId);
 
-  const [profileData, setProfileData] = useState<UserProfileData | null>(null);
+  const [profileData, setProfileData] = useState<UserProfileData | null>(() => {
+    if (targetId && useProfileStore.getState().cache[targetId]?.data) {
+      return useProfileStore.getState().cache[targetId].data;
+    }
+    if (isOwner && currentUser) {
+      return {
+        ...currentUser,
+        global_rep: (currentUser as any).global_rep ?? 0,
+        bio: (currentUser as any).bio ?? "",
+        banner_color: (currentUser as any).banner_color ?? "#121214",
+        roblox_username: (currentUser as any).roblox_username ?? "",
+      };
+    }
+    return null;
+  });
   const effectiveStatus = useEffectiveStatus(targetId, profileData?.status, {
     includeInvisibleForSelf: isOwner,
   });
   const ownerStatusPreference = useStatusPreference();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => {
+    if (!targetId) return false;
+    if (useProfileStore.getState().cache[targetId]?.data) return false;
+    if (isOwner && currentUser) return false;
+    return true;
+  });
   const [activeTab, setActiveTab] = useState<"board" | "wishlist" | "settings">(
     "board"
   );
@@ -904,6 +829,7 @@ export function ProfileChannel() {
   const [confirmDeleteAdId, setConfirmDeleteAdId] = useState<string | null>(
     null
   );
+  const [deletingAdId, setDeletingAdId] = useState<string | null>(null);
   const [repostingAdId, setRepostingAdId] = useState<string | null>(null);
 
   // Wishlist quick-add search state (for owner)
@@ -938,11 +864,25 @@ export function ProfileChannel() {
   } = useInventoryStore();
   const { units: ALL_UNITS } = useUnits();
 
+  const showProfileSkeleton = useShowDelay(
+    Boolean(targetId ? isLoading || isAuthLoading : isAuthLoading)
+  );
+  const showHistorySkeleton = useShowDelay(isLoadingHistory);
+  const showWishlistSkeleton = useShowDelay(isInventoryLoading);
+
   useEffect(() => {
     let mounted = true;
     const loadData = async () => {
-      if (!targetId) return;
-      setIsLoading(true);
+      if (!targetId) {
+        if (mounted) {
+          setIsLoading(false);
+          setProfileData(null);
+        }
+        return;
+      }
+      if (!profileData && !useProfileStore.getState().cache[targetId]?.data) {
+        setIsLoading(true);
+      }
 
       const data = await fetchProfile(targetId, true);
       if (mounted && data) {
@@ -997,12 +937,6 @@ export function ProfileChannel() {
       new CustomEvent("navigate", { detail: target })
     );
   };
-
-  const formatChannelName = (id: string) =>
-    id
-      .split("-")
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
 
   const openEditModal = () => {
     if (!profileData || !isOwner) return;
@@ -1096,12 +1030,17 @@ export function ProfileChannel() {
   const handleDeleteAdFromHistory = async (adId: string) => {
     if (!isOwner) return;
     triggerHaptic("heavy");
-    const ok = await deleteAd(adId);
-    setConfirmDeleteAdId(null);
-    if (ok) {
-      useToastStore
-        .getState()
-        .addToast("Trade ad permanently deleted.", "success");
+    setDeletingAdId(adId);
+    try {
+      const ok = await deleteAd(adId);
+      setConfirmDeleteAdId(null);
+      if (ok) {
+        useToastStore
+          .getState()
+          .addToast("Trade ad permanently deleted.", "success");
+      }
+    } finally {
+      setDeletingAdId(null);
     }
   };
 
@@ -1553,13 +1492,45 @@ export function ProfileChannel() {
     );
   }
 
-  if (isLoading || !profileData) {
+  const isProfileLoading = Boolean(
+    targetId ? isLoading || isAuthLoading : isAuthLoading
+  );
+
+  if (isProfileLoading || showProfileSkeleton) {
     return <ProfileChannelSkeleton compact={globalCompactMode} />;
+  }
+
+  if (!profileData) {
+    return (
+      <div className="flex-1 w-full h-full font-sans overflow-y-auto custom-scrollbar p-6 md:p-10 bg-background flex flex-col items-center justify-center">
+        <ErrorState
+          title="Trader Profile Not Found"
+          description="We couldn't locate this user's profile. Check the link or return to the trading board."
+          onRetry={() => {
+            if (targetId) {
+              setIsLoading(true);
+              fetchProfile(targetId, true).then((data) => {
+                if (data) setProfileData(data);
+                setIsLoading(false);
+              });
+            }
+          }}
+          secondaryAction={{
+            label: "Back to Trading Ads",
+            onClick: () => {
+              window.document.dispatchEvent(
+                new CustomEvent("navigate", { detail: "trading-ads" })
+              );
+            },
+          }}
+          className="max-w-md w-full"
+        />
+      </div>
+    );
   }
 
   const safeRep = profileData.global_rep ?? 0;
   const repRank = getReputationRank(safeRep);
-  const roleCfg = getRoleConfig(profileData.role);
   const accentColor = profileData.accent_color || "#7289da";
   const stanceCfg =
     TRADING_STANCES.find(
@@ -1978,7 +1949,7 @@ export function ProfileChannel() {
                 </div>
                 <div className="w-full h-2 bg-popover rounded-full overflow-hidden border border-border/60">
                   <div
-                    className="h-full transition-all duration-300 rounded-full"
+                    className="h-full transition-[width] duration-300 rounded-full"
                     style={{
                       width: `${repProgressPct}%`,
                       backgroundColor: repRank.color,
@@ -2115,7 +2086,7 @@ export function ProfileChannel() {
                     {isOwner ? "Open My Inventory Vault" : "Inspect Public Vault"}
                   </span>
                 </span>
-                <IconArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
+                <IconArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-[color,transform] duration-150" />
               </button>
             </div>
           </aside>
@@ -2307,7 +2278,7 @@ export function ProfileChannel() {
                       history private.
                     </p>
                   </div>
-                ) : isLoadingHistory ? (
+                ) : showHistorySkeleton ? (
                   <AdHistorySkeletonList count={2} />
                 ) : filteredAdHistory.length === 0 ? (
                   <div className="bg-card border border-border rounded-[8px] p-12 text-center flex flex-col items-center justify-center gap-2 min-h-[280px]">
@@ -2461,40 +2432,42 @@ export function ProfileChannel() {
                                   </button>
 
                                   {!isLive && (
-                                    <button
+                                    <AsyncButton
                                       type="button"
-                                      disabled={repostingAdId === ad.id}
+                                      size="sm"
+                                      variant="default"
+                                      isLoading={repostingAdId === ad.id}
                                       onClick={() => handleRepostAd(ad)}
-                                      className="h-7 px-2.5 rounded-[4px] bg-[#5865F2] hover:bg-[#4752c4] border border-[#5865F2]/40 text-white font-bold text-[11px] inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 shadow-xs active:scale-95 shrink-0"
+                                      className="h-7 px-2.5 rounded-[4px] bg-[#5865F2] hover:bg-[#4752c4] border border-[#5865F2]/40 text-white font-bold text-[11px] inline-flex items-center justify-center gap-1.5 shadow-xs shrink-0"
                                       title="Repost this trade to the live Trading Board for 24 hours"
                                     >
                                       <GiCycle className="w-3.5 h-3.5 shrink-0" />
-                                      <span className="leading-none">
-                                        {repostingAdId === ad.id
-                                          ? "Reposting…"
-                                          : "Repost"}
-                                      </span>
-                                    </button>
+                                      <span className="leading-none">Repost</span>
+                                    </AsyncButton>
                                   )}
 
                                   {confirmDeleteAdId === ad.id ? (
-                                    <div className="h-7 inline-flex items-center gap-1 bg-[#ef4444] border border-[#ef4444]/40 rounded-[4px] px-2 shadow-xs text-white shrink-0">
-                                      <button
+                                    <div className="h-7 inline-flex items-center gap-1 bg-[#ef4444] border border-[#ef4444]/40 rounded-[4px] px-1 shadow-xs text-white shrink-0">
+                                      <AsyncButton
                                         type="button"
+                                        size="sm"
+                                        variant="destructive"
+                                        isLoading={deletingAdId === ad.id}
                                         onClick={() =>
                                           handleDeleteAdFromHistory(ad.id)
                                         }
-                                        className="text-[11px] font-bold text-white hover:underline px-1 cursor-pointer leading-none"
+                                        className="h-6 px-1.5 text-[11px] font-bold text-white leading-none border-transparent bg-transparent hover:bg-white/10"
                                       >
                                         Confirm Delete
-                                      </button>
+                                      </AsyncButton>
                                       <span className="text-white/60">·</span>
                                       <button
                                         type="button"
+                                        disabled={deletingAdId === ad.id}
                                         onClick={() =>
                                           setConfirmDeleteAdId(null)
                                         }
-                                        className="text-[11px] font-bold text-white/90 hover:underline px-1 cursor-pointer leading-none"
+                                        className="text-[11px] font-bold text-white/90 hover:underline px-1 cursor-pointer leading-none disabled:opacity-50"
                                       >
                                         Cancel
                                       </button>
@@ -2626,6 +2599,8 @@ export function ProfileChannel() {
                     <div className="pt-2 border-t border-border flex flex-col gap-2">
                       <div className="relative">
                         <input
+                          id="profile-wishlist-search"
+                          name="profile_wishlist_search"
                           type="text"
                           value={wishlistSearch}
                           onChange={(e) => setWishlistSearch(e.target.value)}
@@ -2711,7 +2686,7 @@ export function ProfileChannel() {
                       private.
                     </p>
                   </div>
-                ) : isInventoryLoading && activeWishlistItems.length === 0 ? (
+                ) : showWishlistSkeleton && activeWishlistItems.length === 0 ? (
                   <WishlistGridSkeleton count={6} />
                 ) : activeWishlistItems.length === 0 ? (
                   <div className="bg-card border border-border rounded-[8px] p-12 text-center flex flex-col items-center justify-center gap-2 min-h-[280px]">

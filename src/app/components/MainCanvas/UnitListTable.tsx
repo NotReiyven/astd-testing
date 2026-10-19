@@ -11,15 +11,14 @@ import {
   Package,
 } from "lucide-react";
 import { PopupUnit, MasterUnit } from "../../../types";
-import { GRID_STATUS_CFG } from "../../../data";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 import { triggerHaptic } from "../../../data/helpers";
-import { HighlightText, StatusIcon, JargonWrap } from "./UnitGrid";
+import { HighlightText } from "./UnitGrid";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useInventoryStore } from "../../../store/useInventoryStore";
-import { getUnitConservativeValue } from "../InventoryChannel/inventoryUtils";
 import { UnitAvatar } from "../shared/UnitAvatar";
+import { logger } from "../../../lib/logger";
 
 export const getStatColor = (label: string, value: number | string) => {
   if (label === "R") {
@@ -169,7 +168,13 @@ export const UnitListRow = memo(function UnitListRow({
         .getState()
         .addToast(`Added 1× ${unit.name} to your Vault.`, "success");
       setMenuOpen(false);
-    } catch {
+    } catch (err) {
+      logger.error("ASTD-INV-010", `Failed to add ${unit.name} to vault from UnitListTable`, {
+        scope: "UnitListTable",
+        action: "handleAddToVault",
+        metadata: { unitId: unit.id },
+        error: err,
+      });
       useToastStore
         .getState()
         .addToast(

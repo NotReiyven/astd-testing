@@ -13,13 +13,14 @@ import {
 import { TradingAd } from "../store/useTradingAdsStore";
 import { useNotificationStore } from "../store/useNotificationStore";
 import { useUnits } from "../context/UnitContext";
-import { logger } from "../lib/logger";
 import { triggerHaptic } from "../data/helpers";
 import {
   EffectiveStatus,
   getEffectiveStatus,
   usePresenceStore,
 } from "./usePresence";
+import { logger } from "../lib/logger";
+import { useToastStore } from "../store/useToastStore";
 
 export interface UserProfile
   extends AuthUserProfile,
@@ -303,15 +304,10 @@ export function useAdminIntel() {
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(false);
   const [showBannedOnly, setShowBannedOnly] = useState(false);
-  const [toast, setToast] = useState<{
-    text: string;
-    type: "success" | "error";
-  } | null>(null);
 
   const showToast = useCallback(
     (text: string, type: "success" | "error" = "success") => {
-      setToast({ text, type });
-      setTimeout(() => setToast(null), 4000);
+      useToastStore.getState().addToast(text, type);
     },
     []
   );
@@ -789,7 +785,12 @@ export function useAdminIntel() {
     });
 
     if (error) {
-      console.error("[useAdminIntel] DB Insert Error for Moderation Log:", error.message);
+      logger.error("ASTD-ADMIN-001", "DB Insert Error for Moderation Log", {
+        scope: "useAdminIntel",
+        action: "createModLog",
+        metadata: { targetUserId, actionType },
+        error,
+      });
       showToast("Audit log failed to save. Please try again.", "error");
       setModLogs((prev) => prev.filter((log) => log.id !== optimisticLog.id));
       setGlobalLogs((prev) => prev.filter((log) => log.id !== optimisticLog.id));
@@ -1114,7 +1115,12 @@ export function useAdminIntel() {
         ad_id: context?.adId || null,
       });
     } catch (err) {
-      console.error("Failed to send warning notification:", err);
+      logger.error("ASTD-ADMIN-002", "Failed to send warning notification", {
+        scope: "useAdminIntel",
+        action: "issueWarning",
+        metadata: { targetUserId },
+        error: err,
+      });
     }
 
     showToast(`Formal warning logged & sent to @${targetUsername}.`);
@@ -1571,6 +1577,12 @@ export function useAdminIntel() {
       }
       return { success: true, message: json.message || "Sync successful.", data: json };
     } catch (err: any) {
+      logger.error("ASTD-ADMIN-003", `Master sync action "${action}" failed`, {
+        scope: "useAdminIntel",
+        action: "triggerMasterSyncAction",
+        metadata: { action, targetUserId },
+        error: err,
+      });
       const msg = err?.message || "Network error during sync.";
       showToast(msg, "error");
       return { success: false, message: msg };
@@ -1596,9 +1608,7 @@ export function useAdminIntel() {
     roleFilter,
     setRoleFilter,
     isLoading,
-    toast,
     showToast,
-    setToast,
     showBannedOnly,
     setShowBannedOnly,
     handleSearch: (e: React.FormEvent) => {

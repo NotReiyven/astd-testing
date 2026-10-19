@@ -123,8 +123,8 @@ export const buildScenariosList = (ALL_UNITS: MasterUnit[]): Scenario[] => {
       title = "The Long-Term Play";
       desc = "Trading down in raw value for extreme scarcity and stability.";
     } else {
-      g1 = getByCondition((u) => true);
-      match = findPairedUnit(g1, q1, (u) => true, 0.8, 1.2);
+      g1 = getByCondition(() => true);
+      match = findPairedUnit(g1, q1, () => true, 0.8, 1.2);
       title = "The Standard Exchange";
       desc =
         "Evaluate the raw stats, tags, and liquidity to determine if this trade is a win.";

@@ -1,4 +1,3 @@
-import React from "react";
 import { Compass, ArrowLeft, Calculator } from "lucide-react";
 
 export function NotFoundChannel() {

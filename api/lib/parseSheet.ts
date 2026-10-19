@@ -1,4 +1,4 @@
-import { toUnitSlug } from "../../src/data/unitSlug.js";
+import { toUnitSlug } from "./slug.js";
 
 export interface ColorObj { red?: number; green?: number; blue?: number; }
 export interface CellData { 

@@ -1,4 +1,5 @@
 {
+  "framework": "vite",
   "crons": [
     {
       "path": "/api/cronHistory",
@@ -12,12 +13,12 @@
   },
   "rewrites": [
     {
-      "source": "/unit/:slug*",
-      "destination": "/api/unitMeta?slug=:slug*"
+      "source": "/unit/:slug",
+      "destination": "/api/unitMeta?slug=:slug"
     },
     {
-      "source": "/(.*)",
-      "destination": "/"
+      "source": "/((?!api/|@|src/|node_modules/|assets/|units/|favicon|.*\\..*).*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [
@@ -46,7 +47,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "upgrade-insecure-requests; block-all-mixed-content; default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://cdn.discordapp.com https://media.discordapp.net https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://sheets.googleapis.com https://*.sentry.io; worker-src 'self' blob:; frame-ancestors 'none';"
+          "value": "upgrade-insecure-requests; block-all-mixed-content; default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://cdn.discordapp.com https://media.discordapp.net https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://sheets.googleapis.com https://*.sentry.io; worker-src 'self' blob:; frame-ancestors 'none';"
         },
         {
           "key": "X-XSS-Protection",

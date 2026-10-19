@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { PanelLeft, Hash, Search, X, LogIn, LogOut, User, Check, Calculator } from "lucide-react";
-import { GiAbacus, GiMagicPortal, GiSparkles, GiRingingBell, GiChatBubble, GiProgression, GiShield, GiScrollUnfurled } from "react-icons/gi";
+import { GiMagicPortal, GiSparkles, GiRingingBell, GiProgression, GiShield, GiScrollUnfurled } from "react-icons/gi";
 import { LiveAvatars } from "./LiveAvatars";
 import {
   STATUS_COLORS,
@@ -13,13 +13,15 @@ import { Link } from "react-router-dom";
 import { useNotificationStore } from "../../../store/useNotificationStore";
 import { useAdInteractionStore } from "../../../store/useAdInteractionStore";
 import { CommandPalette } from "./CommandPalette";
-import { getUnitAssetUrl, triggerHaptic } from "../../../data/helpers";
+import { triggerHaptic } from "../../../data/helpers";
 import { UserAvatar } from "../shared/UserAvatar";
 import { useToastStore } from "../../../store/useToastStore";
+import { AsyncButton } from "../ui/AsyncButton";
 import {
   MOTION_TRANSITION,
   usePrefersReducedMotion,
 } from "../../../lib/motionTokens";
+import { logger } from "../../../lib/logger";
 
 interface TopBarProps {
   calcHeaderZ: string;
@@ -94,7 +96,12 @@ export function TopBar({
     () => {
       try {
         return JSON.parse(localStorage.getItem("astd_tips") || "{}");
-      } catch {
+      } catch (err) {
+        logger.warn("ASTD-UI-042", "Failed to parse dismissed tips from localStorage", {
+          scope: "TopBar",
+          action: "readDismissedTips",
+          error: err,
+        });
         return {};
       }
     }
@@ -103,7 +110,16 @@ export function TopBar({
   const dismissTip = (channel: string) => {
     const next = { ...dismissedTips, [channel]: true };
     setDismissedTips(next);
-    localStorage.setItem("astd_tips", JSON.stringify(next));
+    try {
+      localStorage.setItem("astd_tips", JSON.stringify(next));
+    } catch (err) {
+      logger.warn("ASTD-UI-043", "Failed to persist dismissed tips to localStorage", {
+        scope: "TopBar",
+        action: "dismissTip",
+        metadata: { channel },
+        error: err,
+      });
+    }
   };
 
   const getTipForChannel = (channelTitle: string) => {
@@ -170,15 +186,25 @@ export function TopBar({
         setIsNotifMenuOpen(false);
       }
     };
-    if (isProfileMenuOpen || isNotifMenuOpen) {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (isProfileMenuOpen) setIsProfileMenuOpen(false);
+        if (isNotifMenuOpen) setIsNotifMenuOpen(false);
+        if (mobileSearchOpen) setMobileSearchOpen(false);
+      }
+    };
+
+    if (isProfileMenuOpen || isNotifMenuOpen || mobileSearchOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       document.addEventListener("touchstart", handleClickOutside);
+      window.addEventListener("keydown", handleKeyDown);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isProfileMenuOpen, isNotifMenuOpen]);
+  }, [isProfileMenuOpen, isNotifMenuOpen, mobileSearchOpen]);
 
   const handleNotificationClick = (notif: any) => {
     if (!notif.is_read) void markAsRead(notif.id);
@@ -221,6 +247,8 @@ export function TopBar({
           <div className="absolute inset-0 z-[100] bg-background px-3 flex items-center gap-2 border-b border-border">
             <Search className="w-4 h-4 text-muted-foreground ml-1 shrink-0" />
             <input
+              id="topbar-mobile-search-input"
+              name="topbar_mobile_search"
               ref={mobileInputRef}
               type="text"
               value={globalSearchQuery}
@@ -255,18 +283,18 @@ export function TopBar({
           </button>
 
           <div className="flex flex-col md:flex-row md:items-center min-w-0 overflow-hidden w-full gap-2">
-            <div className="flex items-center gap-1.5 min-w-0">
+            <div className="flex items-center gap-1.5 shrink-0">
               <Hash className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
-              <span className="text-base font-bold text-foreground whitespace-nowrap truncate">
+              <span className="text-base font-bold text-foreground whitespace-nowrap">
                 {currentChannelInfo.title}
               </span>
             </div>
 
-            <div className="hidden md:flex items-center min-w-0 flex-1">
+            <div className="hidden md:flex items-center min-w-0 flex-1 overflow-hidden">
               {currentChannelInfo.subtitle && (
                 <>
-                  <span className="text-muted-foreground px-1.5">/</span>
-                  <span className="text-[13px] font-medium text-muted-foreground truncate w-full">
+                  <span className="text-muted-foreground px-1.5 shrink-0">/</span>
+                  <span className="text-[13px] font-medium text-muted-foreground truncate">
                     {currentChannelInfo.subtitle}
                   </span>
                 </>
@@ -499,8 +527,9 @@ export function TopBar({
 
                     <button
                       type="button"
-                      onClick={() => {
-                        void updateStatus("online");
+                      onClick={async () => {
+                        await updateStatus("online");
+                        useToastStore.getState().addToast("Status set to Online.", "info");
                         setIsProfileMenuOpen(false);
                       }}
                       className="flex items-center justify-between w-full px-2 py-2 rounded-[4px] hover:bg-muted transition-colors group cursor-pointer"
@@ -521,8 +550,9 @@ export function TopBar({
 
                     <button
                       type="button"
-                      onClick={() => {
-                        void updateStatus("dnd");
+                      onClick={async () => {
+                        await updateStatus("dnd");
+                        useToastStore.getState().addToast("Status set to Do Not Disturb.", "info");
                         setIsProfileMenuOpen(false);
                       }}
                       className="flex items-center justify-between w-full px-2 py-2 rounded-[4px] hover:bg-muted transition-colors group cursor-pointer"
@@ -543,8 +573,9 @@ export function TopBar({
 
                     <button
                       type="button"
-                      onClick={() => {
-                        void updateStatus("invisible");
+                      onClick={async () => {
+                        await updateStatus("invisible");
+                        useToastStore.getState().addToast("Status set to Invisible.", "info");
                         setIsProfileMenuOpen(false);
                       }}
                       className="flex items-center justify-between w-full px-2 py-2 rounded-[4px] hover:bg-muted transition-colors group cursor-pointer"
@@ -581,32 +612,35 @@ export function TopBar({
                       </span>
                     </button>
 
-                    <button
+                    <AsyncButton
                       type="button"
-                      onClick={() => {
-                        void logout();
+                      variant="ghost"
+                      onClick={async () => {
+                        await logout();
+                        useToastStore.getState().addToast("You have been signed out.", "info");
                         setIsProfileMenuOpen(false);
                       }}
-                      className="flex items-center gap-2 w-full px-2 py-2 rounded-[4px] hover:bg-destructive/10 hover:text-destructive transition-colors group cursor-pointer mt-0.5"
+                      className="flex items-center gap-2 w-full px-2 py-2 rounded-[4px] hover:bg-destructive/10 hover:text-destructive text-destructive font-semibold text-[13px] justify-start h-auto min-h-[36px] mt-0.5"
                     >
                       <LogOut className="w-4 h-4 text-destructive" />
-                      <span className="text-[13px] font-semibold text-destructive">
-                        Log Out
-                      </span>
-                    </button>
+                      <span>Log Out</span>
+                    </AsyncButton>
                   </div>
                 )}
               </div>
             ) : (
-              <button
+              <AsyncButton
                 type="button"
+                variant="default"
                 aria-label="Login with Discord"
-                onClick={() => void loginWithDiscord()}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:bg-primary/80 text-primary-foreground rounded-[4px] text-[12px] font-bold transition-colors border border-transparent shrink-0 cursor-pointer min-h-[44px]"
+                onClick={async () => {
+                  await loginWithDiscord();
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 text-primary-foreground rounded-[4px] text-[12px] font-bold border border-transparent shrink-0 min-h-[44px]"
               >
                 <LogIn className="w-4 h-4" />
                 <span className="hidden sm:inline">Login</span>
-              </button>
+              </AsyncButton>
             ))}
 
           <button
@@ -622,8 +656,8 @@ export function TopBar({
             data-tooltip-side="bottom"
           >
             <GiMagicPortal className="w-4 h-4 sm:hidden flex-shrink-0" />
-            <span className="hidden sm:flex items-center gap-2 text-[12px] font-mono tracking-wider">
-              Search…{" "}
+            <span className="hidden sm:flex items-center gap-1.5 text-[12px] font-mono tracking-wider">
+              <span className="hidden xl:inline">Search…</span>
               <span
                 translate="no"
                 className="bg-popover border border-border rounded px-1 text-[10px]"
@@ -643,14 +677,17 @@ export function TopBar({
           </button>
 
           <div
-            className="hidden md:flex items-center bg-input rounded-[4px] px-2.5 h-[28px] w-[180px] lg:w-64 shrink min-w-[80px] border border-border cursor-text focus-within:border-primary transition-colors"
+            className="hidden lg:flex items-center bg-input rounded-[4px] px-2.5 h-[28px] w-[160px] xl:w-64 shrink min-w-[80px] border border-border cursor-text focus-within:border-primary transition-colors"
             onClick={() => desktopSearchRef.current?.focus()}
           >
             <Search className="w-3.5 h-3.5 flex-shrink-0 text-muted-foreground mr-2" />
             <input
+              id="topbar-desktop-search-input"
+              name="topbar_desktop_search"
               ref={desktopSearchRef}
               type="text"
               placeholder="Filter units…"
+              aria-label="Filter units"
               value={globalSearchQuery}
               onChange={(e) => setGlobalSearchQuery(e.target.value)}
               className="bg-transparent text-[13px] text-foreground w-full h-full outline-none placeholder-muted-foreground font-medium"

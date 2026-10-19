@@ -1,6 +1,11 @@
-import React, { useEffect, useState } from "react";
+// ================================================
+// FILE: src/app/components/layout/SecurityBanner.tsx
+// ================================================
+
+import { useEffect, useState } from "react";
 import { AlertOctagon, Info } from "lucide-react";
 import { supabase } from "../../../lib/supabase";
+import { safeOpenExternal } from "../../../store/useExternalLinkStore";
 
 interface SecurityAlert {
   id: string;
@@ -24,7 +29,7 @@ export const SecurityBanner = () => {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-        
+
       if (!error && data) {
         setAlert(data as SecurityAlert);
       }
@@ -33,32 +38,52 @@ export const SecurityBanner = () => {
     fetchAlert();
 
     // Subscribe to real-time changes so we can broadcast instantly
-    const channel = supabase
-      .channel("public:global_alerts")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "global_alerts" },
-        (payload) => {
-          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
-            const newRecord = payload.new as SecurityAlert;
-            if (newRecord.is_active) {
-              setAlert(newRecord);
-            } else if (alert?.id === newRecord.id) {
-              setAlert(null); // Alert was deactivated
-            }
-          } else if (payload.eventType === "DELETE") {
-            if (alert?.id === payload.old.id) {
-              setAlert(null);
+    const channelToken = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    let channel: any = null;
+
+    try {
+      for (const ch of supabase.getChannels()) {
+        if (
+          ch.topic.startsWith("realtime:global-alerts-") ||
+          ch.topic === "realtime:public:global_alerts"
+        ) {
+          void supabase.removeChannel(ch);
+        }
+      }
+    } catch {
+      // Ignore cleanup error
+    }
+
+    try {
+      channel = supabase
+        .channel(`global-alerts-${channelToken}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "global_alerts" },
+          (payload) => {
+            if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+              const newRecord = payload.new as SecurityAlert;
+              if (newRecord.is_active) {
+                setAlert(newRecord);
+              } else {
+                setAlert((prev) => (prev?.id === newRecord.id ? null : prev));
+              }
+            } else if (payload.eventType === "DELETE") {
+              setAlert((prev) => (prev?.id === payload.old.id ? null : prev));
             }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
+    } catch {
+      // Ignore channel subscribe failure
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        void supabase.removeChannel(channel);
+      }
     };
-  }, [alert?.id]);
+  }, []);
 
   if (!alert) return null;
 
@@ -70,16 +95,17 @@ export const SecurityBanner = () => {
 
   const Icon = alert.severity === "info" ? Info : AlertOctagon;
 
-  const getSafeUrl = (url: string | undefined) => {
-    if (!url) return undefined;
+  // Strict URL protocol validation to prevent javascript: or data: XSS injection
+  const getSafeUrl = (url: string | undefined): string | null => {
+    if (!url) return null;
     try {
       const parsed = new URL(url);
       if (parsed.protocol === "http:" || parsed.protocol === "https:") {
         return parsed.href;
       }
-      return undefined;
+      return null;
     } catch {
-      return undefined;
+      return null;
     }
   };
 
@@ -93,11 +119,15 @@ export const SecurityBanner = () => {
           {alert.message}
         </p>
         {safeUrl && (
-          <a 
-            href={safeUrl} 
-            target="_blank" 
+          <a
+            href={safeUrl}
+            target="_blank"
             rel="noopener noreferrer"
-            className="text-[12px] underline font-black hover:opacity-80 transition-opacity whitespace-nowrap"
+            onClick={(e) => {
+              e.preventDefault();
+              safeOpenExternal(safeUrl);
+            }}
+            className="text-[12px] underline font-black hover:opacity-80 transition-opacity whitespace-nowrap cursor-pointer"
           >
             {alert.link_text || "Read More"}
           </a>

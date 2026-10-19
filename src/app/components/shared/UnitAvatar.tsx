@@ -18,7 +18,7 @@ export const UnitAvatar = memo(
     imageUrl,
     imageClassName = "absolute inset-0 w-full h-full object-cover z-10 bg-transparent",
     fallbackClassName = "absolute inset-0 flex items-center justify-center text-white font-black z-0",
-    isOpaqueFallback = false,
+    isOpaqueFallback: _isOpaqueFallback = false,
   }: UnitAvatarProps) => {
     const [imgLoaded, setImgLoaded] = useState(false);
     const [imgError, setImgError] = useState(false);
@@ -51,6 +51,8 @@ export const UnitAvatar = memo(
             alt={unitName}
             loading="lazy"
             decoding="async"
+            width={128}
+            height={128}
             onLoad={() => {
               setImgLoaded(true);
               setImgError(false);

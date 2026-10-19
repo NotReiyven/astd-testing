@@ -180,7 +180,7 @@ export const TradingCardSlot = memo(
           !isWishlist
         }
         onDragStart={handleDragStart}
-        className={`group relative flex flex-col h-full bg-card rounded-[8px] transition-all cursor-pointer overflow-hidden will-change-transform specular-card ${
+        className={`group relative flex flex-col h-full bg-card rounded-[8px] transition-[border-color,box-shadow,transform,opacity] duration-200 cursor-pointer overflow-hidden will-change-transform specular-card ${
           isSelected
             ? "border-primary ring-2 ring-primary scale-[0.98]"
             : isFullyStaged && !isWishlist

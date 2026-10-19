@@ -6,21 +6,8 @@ import {
   STATUS_COLORS,
 } from "../../../hooks/usePresence";
 import { useProfileStore, UserProfileData } from "../../../store/useProfileStore";
-import { getUnitAssetUrl } from "../../../data/helpers";
-import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
+import { getInitials } from "../TradeAnalyzer/summaryUtils";
 import { UserAvatar } from "../shared/UserAvatar";
-
-function resolveAvatarSrc(avatarUrl?: string | null): string | null {
-  if (!avatarUrl) return null;
-  if (
-    avatarUrl.startsWith("http://") ||
-    avatarUrl.startsWith("https://") ||
-    avatarUrl.startsWith("/")
-  ) {
-    return avatarUrl;
-  }
-  return getUnitAssetUrl(avatarUrl);
-}
 
 export function LiveAvatars() {
   const { users, guestUsers, guestCount, totalCount } = usePresence();
@@ -33,7 +20,7 @@ export function LiveAvatars() {
   // 1. Prioritize signed-in users first
   // 2. Fill remaining visible slots (up to MAX_VISIBLE) with anonymous/guest avatar bubbles
   // 3. Collapse any remaining users beyond MAX_VISIBLE into the +N pill
-  const MAX_VISIBLE = 5;
+  const MAX_VISIBLE = 4;
   const visibleLoggedIn = users.slice(0, MAX_VISIBLE);
   const remainingSlots = Math.max(0, MAX_VISIBLE - visibleLoggedIn.length);
   const visibleGuests = guestUsers.slice(0, remainingSlots);
@@ -41,13 +28,14 @@ export function LiveAvatars() {
   const extraCount = Math.max(0, totalCount - shownBubblesCount);
 
   return (
-    <div className="flex items-center">
+    <div className="flex items-center shrink min-w-0">
+      {/* Compact live presence pill for screens below xl (<1280px, tablets, narrow windows, split screen) */}
       <div
-        className="flex md:hidden items-center gap-1.5 bg-popover border border-border px-2 py-1 rounded-full shadow-inner mr-2"
+        className="flex xl:hidden items-center gap-1.5 bg-popover border border-border px-2.5 py-1 rounded-full shadow-inner shrink-0 cursor-default select-none"
         title={`${totalCount} online (${users.length} signed in, ${guestCount} anonymous)`}
       >
         <span
-          className="w-2 h-2 rounded-full bg-[#23a559] animate-pulse"
+          className="w-2 h-2 rounded-full bg-[#23a559] animate-pulse shrink-0"
           aria-hidden="true"
         />
         <span className="text-[10px] font-bold text-foreground tabular-nums">
@@ -55,12 +43,10 @@ export function LiveAvatars() {
         </span>
       </div>
 
-      <div className="hidden md:flex items-center mr-3 relative">
+      {/* Expanded avatar stack for wide desktop screens (>=1280px) */}
+      <div className="hidden xl:flex items-center relative shrink-0">
         {/* 1. Prioritized signed-in users (clickable -> MiniProfilePopout) */}
         {visibleLoggedIn.map((user: UserProfileData, i: number) => {
-          const fallbackStyle = getAvatarStyle(user.username || "Trader");
-          const resolvedSrc = resolveAvatarSrc(user.avatar_url);
-          const showImg = Boolean(resolvedSrc) && !failedAvatars[user.id];
           const statusPref = normalizeStatusPreference(user.status);
           const statusDotColor =
             statusPref === "dnd" ? STATUS_COLORS.dnd : STATUS_COLORS.online;

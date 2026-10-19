@@ -77,6 +77,8 @@ export const QuantitySelector = memo(
         </button>
 
         <input
+          name="item_quantity"
+          aria-label="Item quantity"
           type="text"
           value={val}
           onChange={(e) => setVal(e.target.value.replace(/[^0-9]/g, ""))}
@@ -100,7 +102,7 @@ export const QuantitySelector = memo(
             }
           }}
           title="Up/Down arrows to adjust. Shift for ±10"
-          className="w-12 h-10 md:w-8 md:h-6 bg-transparent hover:bg-[rgba(255,255,255,0.04)] focus:bg-[#111214] text-center text-[15px] md:text-[12.5px] font-bold text-[#F2F3F5] outline-none focus:ring-1 focus:ring-[#5865F2] rounded-[3px] transition-all cursor-text select-all"
+          className="w-12 h-10 md:w-8 md:h-6 bg-transparent hover:bg-[rgba(255,255,255,0.04)] focus:bg-[#111214] text-center text-[15px] md:text-[12.5px] font-bold text-[#F2F3F5] tabular-nums outline-none focus:ring-1 focus:ring-[#5865F2] rounded-[3px] transition-[background-color,box-shadow] duration-150 cursor-text select-all"
         />
 
         <button

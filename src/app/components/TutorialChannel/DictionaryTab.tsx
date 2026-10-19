@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { GiOpenBook } from "react-icons/gi";
 import { useUnits } from "../../../context/UnitContext";
 import {
@@ -149,14 +149,19 @@ export function DictionaryTab() {
 
         <div className="flex flex-col lg:flex-row gap-4 relative">
           <div className="flex-1 flex flex-col gap-2">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">
+            <label
+              htmlFor="custom-slang-key-input"
+              className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1 cursor-pointer"
+            >
               Your Custom Slang
-            </span>
+            </label>
             <input
+              id="custom-slang-key-input"
+              name="custom_slang_key"
               value={newSlangKey}
               onChange={(e) => setNewSlangKey(e.target.value)}
               placeholder="e.g., 'fbg', 'flaw', 'udbz'…"
-              className="w-full bg-input border border-border rounded-[4px] px-4 py-3 text-base md:text-sm text-foreground outline-none placeholder-muted-foreground focus:ring-1 focus:ring-primary transition-all shadow-inner"
+              className="w-full bg-input border border-border rounded-[4px] px-4 py-3 text-base md:text-sm text-foreground outline-none placeholder-muted-foreground focus:ring-1 focus:ring-primary transition-[border-color,box-shadow] duration-150 shadow-inner"
             />
           </div>
 
@@ -164,11 +169,14 @@ export function DictionaryTab() {
             className="flex-1 flex flex-col gap-2 relative"
             ref={dropdownRef}
           >
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">
+            <label
+              htmlFor="custom-slang-target-search"
+              className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1 cursor-pointer"
+            >
               Target Official Unit
-            </span>
+            </label>
             <div
-              className={`flex items-center bg-input rounded-[4px] px-3 py-3 transition-all border shadow-inner ${
+              className={`flex items-center bg-input rounded-[4px] px-3 py-3 transition-[border-color,box-shadow] duration-150 border shadow-inner ${
                 isDropdownOpen
                   ? "border-primary ring-1 ring-primary"
                   : "border-border"
@@ -176,6 +184,8 @@ export function DictionaryTab() {
             >
               <IconSearch className="w-4 h-4 text-muted-foreground mr-3 shrink-0" />
               <input
+                id="custom-slang-target-search"
+                name="custom_slang_target"
                 type="text"
                 value={searchQuery}
                 onChange={(e) => {

@@ -18,6 +18,7 @@ import { GRID_STATUS_CFG, TIER_CONFIG, getProxyImage, getTier, handleImageError 
 import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 import { StatusIcon } from "./UnitGrid";
 import { triggerHaptic, copyTextWithFallback } from "../../../data/helpers";
+import { AsyncButton } from "../ui/AsyncButton";
 
 type Metric = "value" | "rarity" | "liquidity";
 type RangeKey = "7D" | "30D" | "90D" | "ALL";
@@ -972,7 +973,13 @@ export function HistoryModal() {
       addToast(`Added 1× ${currentUnit.name} to your Vault.`, "success", {
         dedupeKey: `history-vault-${currentUnit.id}`,
       });
-    } catch {
+    } catch (err) {
+      logger.error("ASTD-INV-012", `Failed to add ${currentUnit.name} to vault from HistoryModal`, {
+        scope: "HistoryModal",
+        action: "handleAddToVault",
+        metadata: { unitId: currentUnit.id },
+        error: err,
+      });
       addToast(
         `Could not save ${currentUnit.name} to your Vault. Change was rolled back.`,
         "error",
@@ -1018,7 +1025,13 @@ export function HistoryModal() {
           dedupeKey: `history-wishlist-${currentUnit.id}`,
         }
       );
-    } catch {
+    } catch (err) {
+      logger.error("ASTD-INV-013", `Failed to toggle wishlist for ${currentUnit.name} from HistoryModal`, {
+        scope: "HistoryModal",
+        action: "handleToggleWishlist",
+        metadata: { unitId: currentUnit.id, wasWishlisted },
+        error: err,
+      });
       addToast(
         `Could not update Wishlist for ${currentUnit.name}. Change was rolled back.`,
         "error",
@@ -1385,28 +1398,33 @@ export function HistoryModal() {
               className="flex items-center gap-1.5 flex-wrap shrink-0"
               aria-live="polite"
             >
-              <button
+              <AsyncButton
                 type="button"
-                onClick={() => void handleAddToVault()}
-                disabled={isVaultPending}
-                className="px-2.5 py-1.5 rounded-[4px] border border-[#23a559]/40 bg-[#23a559] hover:bg-[#1f934f] disabled:opacity-50 text-white text-[11.5px] font-bold font-mono uppercase tracking-wider tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#23a559] cursor-pointer shadow-xs"
+                size="sm"
+                onClick={async () => {
+                  await handleAddToVault();
+                }}
+                isLoading={isVaultPending}
+                className="px-2.5 py-1.5 rounded-[4px] border border-[#23a559]/40 bg-[#23a559] hover:bg-[#1f934f] text-white text-[11.5px] font-bold font-mono uppercase tracking-wider tabular-nums transition-colors shadow-xs"
                 title={
                   profile
                     ? "Add 1 copy to your Vault"
                     : "Sign in with Discord to save to your Vault"
                 }
               >
-                {isVaultPending
-                  ? "Saving…"
-                  : `+Vault${vaultQty > 0 ? `\u00A0(${vaultQty})` : ""}`}
-              </button>
+                +Vault{vaultQty > 0 ? `\u00A0(${vaultQty})` : ""}
+              </AsyncButton>
 
-              <button
+              <AsyncButton
                 type="button"
-                onClick={() => void handleToggleWishlist()}
-                disabled={isWishlistPending}
+                size="sm"
+                variant={isWishlisted ? "default" : "outline"}
+                onClick={async () => {
+                  await handleToggleWishlist();
+                }}
+                isLoading={isWishlistPending}
                 aria-pressed={isWishlisted}
-                className={`px-2.5 py-1.5 rounded-[4px] border text-[11.5px] font-bold font-mono uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer shadow-xs ${
+                className={`px-2.5 py-1.5 rounded-[4px] text-[11.5px] font-bold font-mono uppercase tracking-wider transition-colors shadow-xs ${
                   isWishlisted
                     ? "border-[#8b5cf6]/40 bg-[#8b5cf6] text-white hover:bg-[#7c3aed]"
                     : "border-border bg-card hover:bg-muted text-foreground"
@@ -1419,17 +1437,9 @@ export function HistoryModal() {
                     : "Sign in with Discord to manage your Wishlist"
                 }
               >
-                <span className="flex items-center gap-1.5">
-                  <GiRoundStar className={`w-3.5 h-3.5 ${isWishlisted ? "text-amber-300" : "text-muted-foreground"}`} />
-                  <span>
-                    {isWishlistPending
-                      ? "Saving…"
-                      : isWishlisted
-                      ? "Wishlisted"
-                      : "Wishlist"}
-                  </span>
-                </span>
-              </button>
+                <GiRoundStar className={`w-3.5 h-3.5 ${isWishlisted ? "text-amber-300" : "text-muted-foreground"}`} />
+                <span>{isWishlisted ? "Wishlisted" : "Wishlist"}</span>
+              </AsyncButton>
 
               <button
                 type="button"

@@ -81,6 +81,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
       <div className="flex items-center flex-shrink-0 gap-1">
         <button
           onClick={handlePin}
+          aria-label={isPinned ? "Unpin unit" : "Pin unit"}
           data-tooltip={isPinned ? "Unpin unit" : "Pin unit (prevents clearing)"}
           className={`${pinButtonClass(compact)} ${
             isPinned
@@ -106,6 +107,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
         </button>
         <button
           onClick={handleRemove}
+          aria-label="Remove unit from trade"
           data-tooltip="Remove unit"
           className={`${pinButtonClass(compact)} ${
             compact
@@ -139,7 +141,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
         <div
           className={`relative ${
             qtyOpen ? "w-9 h-9" : "w-7 h-7"
-          } flex-shrink-0 rounded-[4px] bg-muted overflow-hidden flex items-center justify-center border transition-all duration-150 ${
+          } flex-shrink-0 rounded-[4px] bg-muted overflow-hidden flex items-center justify-center border transition-[width,height,border-color] duration-150 ${
             isPinned ? "border-primary/50" : "border-border"
           }`}
         >
@@ -242,6 +244,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
           type="button"
           onClick={toggleQty}
           title={qtyOpen ? "Collapse unit row" : "Expand unit controls"}
+          aria-label={qtyOpen ? "Collapse unit row" : "Expand unit controls"}
           aria-expanded={qtyOpen}
           className="flex items-center justify-center w-6 h-6 rounded-[4px] text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border transition-colors cursor-pointer shrink-0 active:scale-90"
         >

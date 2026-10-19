@@ -1,4 +1,4 @@
-import React, { useState, ReactNode } from "react";
+import { useState, ReactNode } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { triggerHaptic } from "../../../data/helpers";
 
@@ -39,7 +39,7 @@ export function CollapsibleSection({
         </div>
       </div>
       <div 
-        className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}
+        className={`transition-[max-height,opacity] duration-300 ease-in-out overflow-hidden ${isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}
       >
         <div className="p-[var(--card-p)] border-t border-border">
           {children}

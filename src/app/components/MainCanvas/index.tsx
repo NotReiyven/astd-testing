@@ -3,9 +3,11 @@ import {
   useState,
   useDeferredValue,
   useEffect,
+  useRef,
   memo,
   useCallback,
 } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ArrowUp } from "lucide-react";
 import { useVirtualizer, defaultRangeExtractor } from "@tanstack/react-virtual";
 import { FilterKey } from "../../../types";
@@ -14,6 +16,7 @@ import { useUnits } from "../../../context/UnitContext";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { useToastStore } from "../../../store/useToastStore";
 import { useShowDelay } from "../../../hooks/useShowDelay";
+import { logger } from "../../../lib/logger";
 
 import { TierGridCard } from "./UnitGrid";
 import { UnitListRow, ListHeaderRow } from "./UnitListTable";
@@ -50,7 +53,12 @@ export const MainCanvas = memo(function MainCanvas({
   const [showWelcome] = useState(() => {
     try {
       return localStorage.getItem("astd_welcome_dismissed") !== "true";
-    } catch {
+    } catch (err) {
+      logger.warn("ASTD-UI-040", "Failed to read welcome dismissed status from localStorage", {
+        scope: "MainCanvas",
+        action: "readWelcomeDismissed",
+        error: err,
+      });
       return true;
     }
   });
@@ -58,6 +66,66 @@ export const MainCanvas = memo(function MainCanvas({
   const [viewMode, setViewMode] = useState<"grid" | "list" | "compact">("grid");
   const [sortMode, setSortMode] = useState("value-desc");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const lastSerializedParamsRef = useRef<string | null>(null);
+
+  // 1. Synchronize state from URL search params on mount and browser navigation (Back/Forward)
+  useEffect(() => {
+    const serialized = searchParams.toString();
+    if (serialized === lastSerializedParamsRef.current) {
+      return;
+    }
+    lastSerializedParamsRef.current = serialized;
+
+    const urlTier = searchParams.get("tier");
+    const validTiers: FilterKey[] = [
+      "All",
+      "S",
+      "A",
+      "B",
+      "C",
+      "Pure",
+      "Oddities",
+      "Untiered",
+    ];
+    const targetTier: FilterKey =
+      urlTier && validTiers.includes(urlTier as FilterKey)
+        ? (urlTier as FilterKey)
+        : "S";
+    const targetSort = searchParams.get("sort") || "value-desc";
+    const targetStatus = searchParams.get("status") || "all";
+    const targetQ = searchParams.get("q") || "";
+
+    setActiveTierFilter(targetTier);
+    setSortMode(targetSort);
+    setStatusFilter(targetStatus);
+    setSearchQuery(targetQ);
+  }, [searchParams, setActiveTierFilter, setSearchQuery]);
+
+  // 2. Synchronize filter & search state changes to URL search params
+  useEffect(() => {
+    const nextParams = new URLSearchParams();
+
+    if (activeTierFilter && activeTierFilter !== "S") {
+      nextParams.set("tier", activeTierFilter);
+    }
+    if (sortMode && sortMode !== "value-desc") {
+      nextParams.set("sort", sortMode);
+    }
+    if (statusFilter && statusFilter !== "all") {
+      nextParams.set("status", statusFilter);
+    }
+    if (searchQuery.trim()) {
+      nextParams.set("q", searchQuery.trim());
+    }
+
+    const nextSerialized = nextParams.toString();
+    if (nextSerialized !== searchParams.toString()) {
+      lastSerializedParamsRef.current = nextSerialized;
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [activeTierFilter, sortMode, statusFilter, searchQuery, searchParams, setSearchParams]);
 
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedUnitIds, setSelectedUnitIds] = useState<Set<string>>(
@@ -141,11 +209,16 @@ export const MainCanvas = memo(function MainCanvas({
     triggerHaptic("light");
     setSearchQuery("");
     setStatusFilter("all");
+    setSortMode("value-desc");
     setActiveTierFilter("All");
+
+    const emptyParams = new URLSearchParams({ tier: "All" });
+    lastSerializedParamsRef.current = emptyParams.toString();
+    setSearchParams(emptyParams, { replace: true });
 
     window.setTimeout(() => {
       const searchInput = document.querySelector<HTMLInputElement>(
-        'input[aria-label="Search units"]'
+        '#topbar-desktop-search-input, #topbar-mobile-search-input, input[aria-label="Filter units"], input[aria-label="Search units"]'
       );
       if (searchInput && searchInput.offsetParent !== null) {
         searchInput.focus();
@@ -156,7 +229,7 @@ export const MainCanvas = memo(function MainCanvas({
       );
       firstControl?.focus();
     }, 20);
-  }, [setSearchQuery, setActiveTierFilter, headerRef]);
+  }, [setSearchQuery, setActiveTierFilter, setSearchParams, headerRef]);
 
   const toggleSelectUnit = useCallback((unitId: string) => {
     setSelectedUnitIds((prev) => {
@@ -242,7 +315,8 @@ export const MainCanvas = memo(function MainCanvas({
   const hasFiltersApplied =
     deferredSearchQuery !== "" ||
     statusFilter !== "all" ||
-    activeTierFilter !== "All";
+    activeTierFilter !== "All" ||
+    sortMode !== "value-desc";
 
   const activeFilterParts: string[] = [];
   if (deferredSearchQuery) {
@@ -253,6 +327,9 @@ export const MainCanvas = memo(function MainCanvas({
   }
   if (statusFilter !== "all") {
     activeFilterParts.push(`status “${statusFilter}”`);
+  }
+  if (sortMode !== "value-desc") {
+    activeFilterParts.push(`sorted`);
   }
 
   const { flattenedItems } = useCanvasVirtualization({

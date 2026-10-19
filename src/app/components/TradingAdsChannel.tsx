@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, memo } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   GiMegaphone,
   GiHourglass,
@@ -22,7 +23,7 @@ import { useProfileStore } from "../../store/useProfileStore";
 import { useUnits } from "../../context/UnitContext";
 import { useHistoryModalStore } from "../../store/useHistoryModalStore";
 import { TradeCard, MasterUnit } from "../../types";
-import { getProxyImage, getUnitAssetUrl, handleImageError } from "../../data";
+import { getProxyImage, handleImageError } from "../../data";
 import { getAvatarStyle, getInitials } from "./TradeAnalyzer/summaryUtils";
 import { triggerHaptic, copyTextWithFallback, resolveSafeUsername } from "../../data/helpers";
 import { CustomDropdown } from "./MainCanvas/CustomDropdown";
@@ -38,6 +39,7 @@ import { STATUS_COLORS, useEffectiveStatus } from "../../hooks/usePresence";
 import { UserAvatar } from "./shared/UserAvatar";
 import { DiscordRolePill } from "./shared/DiscordRolePill";
 import { useAdCooldown } from "../../hooks/useAdCooldown";
+import { logger } from "../../lib/logger";
 
 const SORT_OPTIONS = {
   newest: "Recently Posted",
@@ -311,10 +313,19 @@ const VanguardAdCard = memo(
     useEffect(() => {
       if (initialVotes) return;
       const fetchVotes = async () => {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("ad_votes")
           .select("user_id, vote_value")
           .eq("ad_id", ad.id);
+        if (error) {
+          logger.error("ASTD-ADS-004", "Failed to fetch ad votes", {
+            scope: "TradingAdsChannel",
+            action: "fetchVotes",
+            metadata: { adId: ad.id },
+            error,
+          });
+          return;
+        }
         if (data) {
           let up = 0,
             down = 0,
@@ -386,7 +397,13 @@ const VanguardAdCard = memo(
             });
           }
         }
-      } catch {
+      } catch (err: unknown) {
+        logger.error("ASTD-ADS-005", "Failed to record user vote on ad", {
+          scope: "TradingAdsChannel",
+          action: "handleVote",
+          metadata: { adId: ad.id, voteValue: val, isRemoving },
+          error: err,
+        });
         setVotes(prevVotes);
         addToast("Could not record your vote—try again.", "error", {
           action: {
@@ -801,9 +818,62 @@ export function TradingAdsChannel() {
     formattedCooldown,
   } = useAdCooldown();
 
-  const [searchFilter, setSearchFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [sortMode, setSortMode] = useState("newest");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchFilter, setSearchFilter] = useState(() => searchParams.get("q") || "");
+  const [typeFilter, setTypeFilter] = useState(() => searchParams.get("type") || "all");
+  const [sortMode, setSortMode] = useState(() => searchParams.get("sort") || "newest");
+  const isUpdatingFromUrlRef = useRef(false);
+
+  // Synchronize state from URL search params on browser navigation (Back/Forward)
+  useEffect(() => {
+    const targetQ = searchParams.get("q") || "";
+    const targetType = searchParams.get("type") || "all";
+    const targetSort = searchParams.get("sort") || "newest";
+
+    const hasDiff =
+      (searchParams.has("q") && targetQ !== searchFilter) ||
+      (searchParams.has("type") && targetType !== typeFilter) ||
+      (searchParams.has("sort") && targetSort !== sortMode);
+
+    if (hasDiff) {
+      isUpdatingFromUrlRef.current = true;
+      if (searchParams.has("q") && targetQ !== searchFilter) setSearchFilter(targetQ);
+      if (searchParams.has("type") && targetType !== typeFilter) setTypeFilter(targetType);
+      if (searchParams.has("sort") && targetSort !== sortMode) setSortMode(targetSort);
+    }
+  }, [searchParams, searchFilter, typeFilter, sortMode]);
+
+  // Synchronize state changes to URL search params
+  useEffect(() => {
+    if (isUpdatingFromUrlRef.current) {
+      isUpdatingFromUrlRef.current = false;
+      return;
+    }
+
+    const nextParams = new URLSearchParams(searchParams);
+
+    if (searchFilter.trim()) {
+      nextParams.set("q", searchFilter.trim());
+    } else {
+      nextParams.delete("q");
+    }
+
+    if (typeFilter && typeFilter !== "all") {
+      nextParams.set("type", typeFilter);
+    } else {
+      nextParams.delete("type");
+    }
+
+    if (sortMode && sortMode !== "newest") {
+      nextParams.set("sort", sortMode);
+    } else {
+      nextParams.delete("sort");
+    }
+
+    if (nextParams.toString() !== searchParams.toString()) {
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [searchFilter, typeFilter, sortMode, searchParams, setSearchParams]);
 
   const [adPendingDelete, setAdPendingDelete] = useState<TradingAd | null>(null);
   const [isDeletingAd, setIsDeletingAd] = useState(false);
@@ -1095,6 +1165,8 @@ export function TradingAdsChannel() {
     <div className="relative w-full">
       <GiMagnifyingGlass className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
       <input
+        id="trading-ads-board-search"
+        name="trading_ads_search"
         type="text"
         value={searchFilter}
         onChange={(e) => setSearchFilter(e.target.value)}
@@ -1122,7 +1194,7 @@ export function TradingAdsChannel() {
               triggerHaptic("light");
               setTypeFilter(t.id);
             }}
-            className={`flex-1 sm:flex-none px-4 rounded-[4px] text-sm font-medium transition-all focus-visible:outline-none cursor-pointer whitespace-nowrap active:scale-95 flex items-center justify-center ${
+            className={`flex-1 sm:flex-none px-4 rounded-[4px] text-sm font-medium transition-[background-color,color,border-color,transform] duration-150 focus-visible:outline-none cursor-pointer whitespace-nowrap active:scale-95 flex items-center justify-center ${
               typeFilter === t.id
                 ? "bg-foreground text-background shadow-sm"
                 : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
@@ -1194,7 +1266,7 @@ export function TradingAdsChannel() {
           <button
             type="button"
             onClick={handleCreateAdClick}
-            className={`flex items-center justify-center gap-1.5 px-4 w-full sm:w-auto h-[var(--ui-height-btn)] rounded-[4px] text-sm font-semibold transition-all focus-visible:outline-none shrink-0 shadow-sm cursor-pointer active:scale-95 border ${
+            className={`flex items-center justify-center gap-1.5 px-4 w-full sm:w-auto h-[var(--ui-height-btn)] rounded-[4px] text-sm font-semibold transition-[background-color,border-color,color,transform] duration-150 focus-visible:outline-none shrink-0 shadow-sm cursor-pointer active:scale-95 border ${
               isOnCooldown
                 ? "bg-muted text-muted-foreground border-border hover:bg-card hover:text-foreground"
                 : "bg-[#5865F2] hover:bg-[#4752c4] text-white border-[#5865F2]/40 font-bold shadow-xs"
@@ -1213,7 +1285,7 @@ export function TradingAdsChannel() {
             triggerHaptic("medium");
             loginWithDiscord();
           }}
-          className="flex items-center justify-center gap-1.5 px-4 w-full sm:w-auto h-[var(--ui-height-btn)] rounded-[4px] bg-muted border border-border text-foreground text-sm font-semibold transition-all hover:bg-card focus-visible:outline-none shrink-0 cursor-pointer active:scale-95"
+          className="flex items-center justify-center gap-1.5 px-4 w-full sm:w-auto h-[var(--ui-height-btn)] rounded-[4px] bg-muted border border-border text-foreground text-sm font-semibold transition-[background-color,border-color,color,transform] duration-150 hover:bg-card focus-visible:outline-none shrink-0 cursor-pointer active:scale-95"
         >
           <GiLockedFortress className="w-4 h-4 text-primary" />
           <span>Login</span>

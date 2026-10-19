@@ -119,11 +119,14 @@ export function ExtraNoticesChannel() {
             <div className="relative w-full">
               <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
+                id="notices-search-input"
+                name="notices_search"
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search notices..."
-                className="w-full bg-input border border-border rounded-[4px] pl-9 pr-4 py-2 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus:border-primary transition-colors shadow-inner"
+                placeholder="Search notices…"
+                aria-label="Search notices"
+                className="w-full bg-input border border-border rounded-[4px] pl-9 pr-4 py-2 text-base sm:text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus:border-primary transition-colors shadow-inner"
               />
             </div>
 
@@ -192,8 +195,8 @@ export function ExtraNoticesChannel() {
 
           {/* Notices Feed */}
           {processedNotices.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 border border-border rounded-[6px] bg-muted">
-              <div className="w-12 h-12 bg-card rounded-[4px] border border-border flex items-center justify-center mb-3">
+            <div className="flex flex-col items-center justify-center py-16 border border-border rounded-[6px] bg-card text-center px-4">
+              <div className="w-12 h-12 bg-muted rounded-[6px] border border-border flex items-center justify-center mb-3">
                 <IconInbox className="w-6 h-6 text-muted-foreground" />
               </div>
               <p className="text-foreground text-[15px] font-bold tracking-tight">
@@ -204,8 +207,20 @@ export function ExtraNoticesChannel() {
               <p className="text-muted-foreground text-[13px] mt-1 text-center max-w-sm">
                 {notices.length === 0
                   ? "Check back later for official market updates and rules."
-                  : "Try adjusting your search keywords or clear your pinned filter."}
+                  : "Try adjusting your search keywords or clear your active filters."}
               </p>
+              {notices.length > 0 && (searchQuery || activeFilter !== "all") && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setActiveFilter("all");
+                  }}
+                  className="mt-4 px-3.5 py-1.5 rounded-[5px] bg-secondary hover:bg-accent text-foreground text-[12px] font-bold border border-border transition-colors cursor-pointer"
+                >
+                  Reset Filters
+                </button>
+              )}
             </div>
           ) : (
             <div className="flex flex-col gap-5">
@@ -217,7 +232,7 @@ export function ExtraNoticesChannel() {
                 return (
                   <article
                     key={idx}
-                    className="group relative bg-card border border-border rounded-[6px] overflow-hidden transition-all duration-300 hover:border-primary/50 hover:shadow-md hover:-translate-y-[2px]"
+                    className="group relative bg-card border border-border rounded-[6px] overflow-hidden transition-[border-color,box-shadow,transform] duration-200 hover:border-primary/50 hover:shadow-md hover:-translate-y-[2px]"
                   >
                     {/* Semantic left border indicator */}
                     <div

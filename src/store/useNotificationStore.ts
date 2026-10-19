@@ -4,6 +4,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { get as getIdb, set as setIdb, del as delIdb } from "idb-keyval";
 import { useToastStore } from "./useToastStore";
 import { resolveSafeUsername } from "../data/helpers";
+import { logger } from "../lib/logger";
 
 export interface AppNotification {
   id: string;
@@ -62,7 +63,14 @@ const getCacheKey = (userId?: string | null) =>
   `astd_notifications_cache_${userId || "guest"}`;
 
 const saveToOfflineCache = (userId: string | null, list: AppNotification[]) => {
-  void setIdb(getCacheKey(userId), list).catch(() => {});
+  void setIdb(getCacheKey(userId), list).catch((err) => {
+    logger.warn("ASTD-NOTIF-014", "Failed to write notifications to offline cache", {
+      scope: "useNotificationStore",
+      action: "saveToOfflineCache",
+      metadata: { userId },
+      error: err,
+    });
+  });
 };
 
 const loadFromOfflineCache = async (
@@ -71,7 +79,13 @@ const loadFromOfflineCache = async (
   try {
     const cached = await getIdb<AppNotification[]>(getCacheKey(userId));
     return Array.isArray(cached) ? cached : [];
-  } catch {
+  } catch (err) {
+    logger.warn("ASTD-NOTIF-015", "Failed to read notifications from offline cache", {
+      scope: "useNotificationStore",
+      action: "loadFromOfflineCache",
+      metadata: { userId },
+      error: err,
+    });
     return [];
   }
 };
@@ -114,8 +128,9 @@ const cleanupChannel = () => {
   }
 
   if (activeChannel) {
-    void supabase.removeChannel(activeChannel);
+    const channelToClean = activeChannel;
     activeChannel = null;
+    void supabase.removeChannel(channelToClean);
   }
 };
 
@@ -162,12 +177,7 @@ export const useNotificationStore = create<NotificationState>(
 
       const { data, error } = await supabase
         .from("notifications")
-        .select(
-          `
-          *,
-          actor:actor_id (username, avatar_url, discord_id)
-        `
-        )
+        .select("*")
         .eq("user_id", targetUserId)
         .order("created_at", {
           ascending: false,
@@ -180,15 +190,45 @@ export const useNotificationStore = create<NotificationState>(
       }
 
       if (error) {
-        console.error("Failed to fetch notifications from database:", error);
+        logger.error("ASTD-NOTIF-001", "Failed to fetch notifications from database", {
+          scope: "useNotificationStore",
+          action: "fetchNotifications",
+          metadata: { targetUserId },
+          error,
+        });
         set({ isLoading: false });
         return;
       }
 
-      const dbNotifications = (data ?? []).map((notification: any) => {
-        const rawActor = Array.isArray(notification.actor)
-          ? notification.actor[0] ?? null
-          : notification.actor ?? null;
+      const rows = data ?? [];
+      const actorIds = Array.from(
+        new Set(
+          rows
+            .map((n: any) => n.actor_id)
+            .filter((id): id is string => Boolean(id && id !== "system" && id !== targetUserId))
+        )
+      );
+
+      const actorMap = new Map<string, { username: string; avatar_url: string; discord_id?: string }>();
+      if (actorIds.length > 0) {
+        const { data: actorProfiles } = await supabase
+          .from("profiles")
+          .select("id, username, avatar_url, discord_id")
+          .in("id", actorIds);
+
+        if (actorProfiles) {
+          for (const ap of actorProfiles) {
+            actorMap.set(ap.id, {
+              username: ap.username,
+              avatar_url: ap.avatar_url,
+              discord_id: ap.discord_id,
+            });
+          }
+        }
+      }
+
+      const dbNotifications = rows.map((notification: any) => {
+        const rawActor = notification.actor_id ? actorMap.get(notification.actor_id) : null;
         return {
           ...notification,
           actor: rawActor
@@ -296,6 +336,31 @@ export const useNotificationStore = create<NotificationState>(
         }
       }
 
+      // Permanent store-level deduplication: If a notification for the same ad / event
+      // already exists in the user's notification list, do not create a duplicate in the database.
+      const currentNotifications = get().notifications;
+      const isDuplicateInStore = currentNotifications.some((existing) => {
+        if (existing.user_id !== userId) return false;
+        if (notification.ad_id && existing.ad_id === notification.ad_id) {
+          if ((notification.type ?? "system") === "system" && existing.type === "system") {
+            return true;
+          }
+          if (existing.message === notification.message) {
+            return true;
+          }
+        }
+        return (
+          existing.type === (notification.type ?? "system") &&
+          existing.message === notification.message &&
+          (existing.ad_id ?? null) === (notification.ad_id ?? null) &&
+          (existing.comment_id ?? null) === (notification.comment_id ?? null)
+        );
+      });
+
+      if (isDuplicateInStore) {
+        return;
+      }
+
       const payload = {
         user_id: userId,
         actor_id: notification.actor_id ?? userId,
@@ -310,7 +375,12 @@ export const useNotificationStore = create<NotificationState>(
         .insert(payload);
 
       if (error) {
-        console.error("Failed to create database notification:", error);
+        logger.error("ASTD-NOTIF-002", "Failed to create database notification, falling back to local", {
+          scope: "useNotificationStore",
+          action: "createNotification",
+          metadata: { userId, type: notification.type, dedupeKey },
+          error,
+        });
         recentNotifications.delete(dedupeKey);
         // Fallback to local notification if network/db insert fails
         get().addLocalNotification(notification);
@@ -346,7 +416,12 @@ export const useNotificationStore = create<NotificationState>(
         .eq("id", id);
 
       if (error) {
-        console.error("Failed to delete notification from database:", error);
+        logger.error("ASTD-NOTIF-003", "Failed to delete notification from database", {
+          scope: "useNotificationStore",
+          action: "deleteNotification",
+          metadata: { id },
+          error,
+        });
         useToastStore
           .getState()
           .addToast("Could not delete notification. Please try again.", "error", {
@@ -375,7 +450,14 @@ export const useNotificationStore = create<NotificationState>(
         unreadCount: 0,
       });
 
-      void delIdb(getCacheKey(targetUserId)).catch(() => {});
+      void delIdb(getCacheKey(targetUserId)).catch((err) => {
+        logger.warn("ASTD-NOTIF-016", "Failed to clear notifications cache in IndexedDB", {
+          scope: "useNotificationStore",
+          action: "deleteAllNotifications",
+          metadata: { targetUserId },
+          error: err,
+        });
+      });
 
       useToastStore.getState().addToast(
         "Cleared all notifications.",
@@ -401,7 +483,12 @@ export const useNotificationStore = create<NotificationState>(
           .eq("user_id", targetUserId);
 
         if (error) {
-          console.error("Failed to delete all notifications from database:", error);
+          logger.error("ASTD-NOTIF-004", "Failed to delete all notifications from database", {
+            scope: "useNotificationStore",
+            action: "deleteAllNotifications",
+            metadata: { targetUserId },
+            error,
+          });
         }
       }
     },
@@ -442,7 +529,12 @@ export const useNotificationStore = create<NotificationState>(
         });
 
       if (error && error.code !== "23505") {
-        console.error("Failed to restore notification in database:", error);
+        logger.error("ASTD-NOTIF-005", "Failed to restore notification in database", {
+          scope: "useNotificationStore",
+          action: "restoreNotification",
+          metadata: { notificationId: notification.id },
+          error,
+        });
       }
     },
 
@@ -478,7 +570,12 @@ export const useNotificationStore = create<NotificationState>(
         .eq("id", notificationId);
 
       if (error) {
-        console.error("Failed to mark notification as read in database:", error);
+        logger.error("ASTD-NOTIF-006", "Failed to mark notification as read in database", {
+          scope: "useNotificationStore",
+          action: "markAsRead",
+          metadata: { notificationId },
+          error,
+        });
         await get().fetchNotifications(activeUserId ?? notification.user_id);
       }
     },
@@ -511,7 +608,12 @@ export const useNotificationStore = create<NotificationState>(
         .eq("is_read", false);
 
       if (error) {
-        console.error("Failed to mark all notifications as read in database:", error);
+        logger.error("ASTD-NOTIF-007", "Failed to mark all notifications as read in database", {
+          scope: "useNotificationStore",
+          action: "markAllAsRead",
+          metadata: { targetUserId },
+          error,
+        });
         await get().fetchNotifications(targetUserId);
       }
     },
@@ -537,117 +639,155 @@ export const useNotificationStore = create<NotificationState>(
       subscriptionToken += 1;
 
       const token = subscriptionToken;
-      const channelName = `notifications-${targetUserId}`;
+      const channelName = `notifications-${targetUserId}-${token}`;
 
       void get().fetchNotifications(targetUserId);
 
-      const channel = supabase
-        .channel(channelName)
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "notifications",
-            filter: `user_id=eq.${targetUserId}`,
-          },
-          async (payload: any) => {
-            if (activeUserId === targetUserId && subscriptionToken === token) {
-              void get().fetchNotifications(targetUserId);
+      // Clean up any existing channels with this topic prefix to avoid collision
+      try {
+        const existingChannels = supabase.getChannels();
+        for (const ch of existingChannels) {
+          if (ch.topic.startsWith(`realtime:notifications-${targetUserId}`)) {
+            void supabase.removeChannel(ch);
+          }
+        }
+      } catch (err) {
+        logger.warn("ASTD-NOTIF-019", "Failed to prune previous realtime channels", {
+          scope: "useNotificationStore",
+          action: "subscribe.prune",
+          error: err,
+        });
+      }
 
-              if (payload?.eventType === "INSERT" && payload?.new) {
-                const newNotif = payload.new;
-                if (
-                  (newNotif.actor_id && newNotif.actor_id !== targetUserId) ||
-                  newNotif.type === "system" ||
-                  newNotif.type === "value_update"
-                ) {
-                  let actorName = "A trader";
-                  if (newNotif.actor_id && newNotif.actor_id !== "system") {
-                    const { data: actorProfile } = await supabase
-                      .from("profiles")
-                      .select("username, discord_id")
-                      .eq("id", newNotif.actor_id)
-                      .maybeSingle();
-                    if (actorProfile) {
-                      const cleanActor = resolveSafeUsername(actorProfile.username, {
-                        discordId: actorProfile.discord_id,
-                        userId: newNotif.actor_id,
-                      });
-                      actorName = `@${cleanActor}`;
+      try {
+        const channel = supabase
+          .channel(channelName)
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "notifications",
+              filter: `user_id=eq.${targetUserId}`,
+            },
+            async (payload: any) => {
+              if (activeUserId === targetUserId && subscriptionToken === token) {
+                void get().fetchNotifications(targetUserId);
+
+                if (payload?.eventType === "INSERT" && payload?.new) {
+                  const newNotif = payload.new;
+                  if (
+                    (newNotif.actor_id && newNotif.actor_id !== targetUserId) ||
+                    newNotif.type === "system" ||
+                    newNotif.type === "value_update"
+                  ) {
+                    let actorName = "A trader";
+                    if (newNotif.actor_id && newNotif.actor_id !== "system") {
+                      const { data: actorProfile } = await supabase
+                        .from("profiles")
+                        .select("username, discord_id")
+                        .eq("id", newNotif.actor_id)
+                        .maybeSingle();
+                      if (actorProfile) {
+                        const cleanActor = resolveSafeUsername(actorProfile.username, {
+                          discordId: actorProfile.discord_id,
+                          userId: newNotif.actor_id,
+                        });
+                        actorName = `@${cleanActor}`;
+                      }
                     }
-                  }
 
-                  let toastText = "";
-                  if (newNotif.type === "reply") {
-                    toastText = `${actorName} replied to your trade discussion comment.`;
-                  } else if (newNotif.type === "comment") {
-                    toastText = `${actorName} commented on your trade listing.`;
-                  } else if (newNotif.type === "upvote") {
-                    toastText = `${actorName} upvoted your ${
-                      newNotif.comment_id ? "comment" : "trade listing"
-                    }.`;
-                  } else if (newNotif.type === "warning") {
-                    toastText = `Staff moderation notice: ${
-                      newNotif.message || "A notice was issued regarding your account."
-                    }`;
-                  } else if (newNotif.type === "value_update") {
-                    toastText = "Market values and tiers were updated.";
-                  } else {
-                    toastText = newNotif.message || "New activity on your trade listing.";
-                  }
+                    let toastText = "";
+                    if (newNotif.type === "reply") {
+                      toastText = `${actorName} replied to your trade discussion comment.`;
+                    } else if (newNotif.type === "comment") {
+                      toastText = `${actorName} commented on your trade listing.`;
+                    } else if (newNotif.type === "upvote") {
+                      toastText = `${actorName} upvoted your ${
+                        newNotif.comment_id ? "comment" : "trade listing"
+                      }.`;
+                    } else if (newNotif.type === "warning") {
+                      toastText = `Staff moderation notice: ${
+                        newNotif.message || "A notice was issued regarding your account."
+                      }`;
+                    } else if (newNotif.type === "value_update") {
+                      toastText = "Market values and tiers were updated.";
+                    } else {
+                      toastText = newNotif.message || "New activity on your trade listing.";
+                    }
 
-                  useToastStore.getState().addToast(
-                    toastText,
-                    newNotif.type === "warning" ? "error" : "info",
-                    newNotif.ad_id
-                      ? {
-                          action: {
-                            label: "View Listing",
-                            onClick: async () => {
-                              const { useAdInteractionStore } = await import(
-                                "./useAdInteractionStore"
-                              );
-                              void useAdInteractionStore
-                                .getState()
-                                .openAdContext(newNotif.ad_id, targetUserId);
-                              window.document.dispatchEvent(
-                                new CustomEvent("navigate", {
-                                  detail: "trading-ads",
-                                })
-                              );
+                    useToastStore.getState().addToast(
+                      toastText,
+                      newNotif.type === "warning" ? "error" : "info",
+                      newNotif.ad_id
+                        ? {
+                            action: {
+                              label: "View",
+                              onClick: () => {
+                                window.document.dispatchEvent(
+                                  new CustomEvent("navigate", {
+                                    detail: "notifications",
+                                  })
+                                );
+                              },
                             },
-                          },
-                        }
-                      : undefined
-                  );
+                          }
+                        : undefined
+                    );
+                  }
                 }
               }
             }
+          );
+
+        activeChannel = channel;
+
+        channel.subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            reconnectAttempt = 0;
+            return;
+          }
+
+          // Ignore status events for stale or already replaced subscriptions
+          if (
+            activeChannel !== channel ||
+            subscriptionToken !== token ||
+            activeUserId !== targetUserId
+          ) {
+            return;
+          }
+
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            logger.warn(
+              "ASTD-NOTIF-017",
+              `Realtime notification channel failed with status: ${status}`,
+              {
+                scope: "useNotificationStore",
+                action: "channel.subscribe",
+                metadata: { targetUserId, status, reconnectAttempt },
+              }
+            );
+
+            // Disconnect activeChannel reference first so any sync callbacks emitted by removeChannel
+            // are immediately ignored and cannot recurse
+            activeChannel = null;
+            void supabase.removeChannel(channel);
+
+            scheduleReconnect(targetUserId, token);
+          }
+        });
+      } catch (subErr) {
+        logger.warn(
+          "ASTD-NOTIF-018",
+          "Failed to establish realtime notification channel",
+          {
+            scope: "useNotificationStore",
+            action: "subscribe",
+            metadata: { targetUserId, token },
+            error: subErr,
           }
         );
-
-      activeChannel = channel;
-
-      channel.subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          reconnectAttempt = 0;
-          return;
-        }
-
-        if (
-          status === "CHANNEL_ERROR" ||
-          status === "TIMED_OUT" ||
-          status === "CLOSED"
-        ) {
-          if (activeChannel === channel) {
-            void supabase.removeChannel(channel);
-            activeChannel = null;
-          }
-
-          scheduleReconnect(targetUserId, token);
-        }
-      });
+      }
     },
 
     unsubscribe: () => {

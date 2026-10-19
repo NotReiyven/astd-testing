@@ -126,19 +126,6 @@ const IconTrendingDown = ({ className }: { className?: string }) => (
     <polyline points="17 18 23 18 23 12" />
   </svg>
 );
-const IconInfo = ({ className }: { className?: string }) => (
-  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <line x1="12" y1="16" x2="12" y2="12" />
-    <line x1="12" y1="8" x2="12.01" y2="8" />
-  </svg>
-);
-const IconArrowLeft = ({ className }: { className?: string }) => (
-  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <line x1="19" y1="12" x2="5" y2="12" />
-    <polyline points="12 19 5 12 12 5" />
-  </svg>
-);
 const IconPin = ({ className }: { className?: string }) => (
   <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <line x1="12" y1="17" x2="12" y2="22" />
@@ -181,7 +168,6 @@ import { Sparkline } from "./InventoryChannel/Sparkline";
 import { TradingCardSlot } from "./InventoryChannel/TradingCardSlot";
 import { ValueBreakdownModal } from "./InventoryChannel/ValueBreakdownModal";
 import { useInventoryManager } from "../../hooks/useInventoryManager";
-import { useHistoryModalStore } from "../../store/useHistoryModalStore";
 import { useTradeStore } from "../../store/useTradeStore";
 import { useInventoryStore } from "../../store/useInventoryStore";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -226,7 +212,6 @@ export function InventoryChannel() {
     profile,
     metrics,
     vaultTotalValue,
-    vaultLiquidValue,
     tierGroupedUnits,
     unownedSearchResults,
     parsedImportItems,
@@ -255,7 +240,8 @@ export function InventoryChannel() {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const omniboxRef = useRef<HTMLDivElement>(null);
-  useClickOutside(omniboxRef, null, () => setIsOmniboxOpen(false));
+  const omniboxDropdownRef = useRef<HTMLDivElement>(null);
+  useClickOutside(omniboxRef, omniboxDropdownRef, () => setIsOmniboxOpen(false));
 
   const [importMenuOpen, setImportMenuOpen] = useState(false);
   const importInputRef = useRef<HTMLTextAreaElement>(null);
@@ -558,6 +544,8 @@ export function InventoryChannel() {
               <div className="relative w-full">
                 <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                 <input
+                  id="inventory-vault-search"
+                  name="inventory_search"
                   ref={searchInputRef}
                   type="text"
                   value={searchQuery}
@@ -594,6 +582,167 @@ export function InventoryChannel() {
                   </button>
                 )}
               </div>
+
+              {/* Omnibox Dropdown */}
+              {!isReadOnly && isOmniboxOpen && searchQuery.trim() && (
+                <div
+                  id="omnibox-dropdown"
+                  ref={omniboxDropdownRef}
+                  role="listbox"
+                  aria-label="Unit search results"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  className="absolute top-full left-0 sm:left-0 sm:right-auto max-w-[calc(100vw-24px)] w-[min(380px,calc(100vw-24px))] sm:w-[380px] mt-1.5 max-h-[380px] overflow-y-auto custom-scrollbar bg-popover border border-border rounded-[8px] shadow-2xl z-[100] flex flex-col p-1.5 text-left"
+                >
+                  <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/50 mb-1 flex items-center justify-between shrink-0 select-none">
+                    <span>
+                      Quick Add to {vaultView === "wishlist" ? "Wishlist" : "Vault"}
+                    </span>
+                    <span className="text-[9px] font-mono opacity-70">
+                      ↑↓ navigate · ↵ add
+                    </span>
+                  </div>
+
+                  {unownedSearchResults.length === 0 ? (
+                    <div className="px-3 py-6 text-center text-[12px] text-muted-foreground flex flex-col items-center gap-1.5 select-none">
+                      <IconSearch className="w-5 h-5 opacity-40" />
+                      <span>No units match “{searchQuery.trim()}”</span>
+                    </div>
+                  ) : (
+                    unownedSearchResults.map((u, i) => {
+                      const isSelected = i === omniboxIndex;
+                      const ownedItem = displayInventory.find(
+                        (item) => item.unit_id === u.id
+                      );
+                      const ownedQty = ownedItem ? ownedItem.quantity : 0;
+                      const tier = getTier(u);
+                      const tierColor =
+                        TIER_CONFIG[tier]?.badgeColor || "#5865F2";
+                      const unitVal = getUnitConservativeValue(u);
+
+                      return (
+                        <div
+                          key={u.id}
+                          role="option"
+                          aria-selected={isSelected}
+                          tabIndex={0}
+                          onClick={() => {
+                            void handleQuickAdd(u, false);
+                            setIsOmniboxOpen(false);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              void handleQuickAdd(u, false);
+                              setIsOmniboxOpen(false);
+                            }
+                          }}
+                          onMouseEnter={() => setOmniboxIndex(i)}
+                          className={`flex items-center gap-2.5 w-full p-2 rounded-[6px] transition-[background-color,color] duration-150 focus-visible:outline-none cursor-pointer text-left select-none ${
+                            isSelected
+                              ? "bg-muted text-foreground"
+                              : "bg-transparent hover:bg-muted text-foreground"
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-[4px] bg-muted/70 flex items-center justify-center shrink-0 border border-border overflow-hidden relative">
+                            {getProxyImage(u.id, u.imageUrl) ? (
+                              <img
+                                src={getProxyImage(u.id, u.imageUrl)!}
+                                alt=""
+                                width={32}
+                                height={32}
+                                className="w-full h-full object-cover"
+                                onError={(e) => handleImageError(e, u.id)}
+                              />
+                            ) : (
+                              <span
+                                className="text-[8px] font-bold z-0"
+                                style={getAvatarStyle(u.name)}
+                              >
+                                {getInitials(u.name)}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="text-[13px] font-bold truncate leading-tight">
+                              {u.name}
+                            </span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="text-[11px] font-mono text-muted-foreground font-semibold tabular-nums">
+                                {unitVal > 0 ? unitVal.toLocaleString() : "—"} Val
+                              </span>
+                              <span className="text-border text-[10px]">·</span>
+                              <span
+                                className="text-[10px] font-bold px-1.5 py-0.2 rounded-[3px] border shadow-xs"
+                                style={{
+                                  backgroundColor: tierColor,
+                                  color: getContrastTextColor(tierColor),
+                                  borderColor:
+                                    getContrastTextColor(tierColor) === "#000000"
+                                      ? "rgba(0, 0, 0, 0.25)"
+                                      : "rgba(255, 255, 255, 0.2)",
+                                }}
+                              >
+                                {tier}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="shrink-0 flex items-center pl-1">
+                            {vaultView === "wishlist" ? (
+                              ownedQty > 0 ? (
+                                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-[4px] border border-emerald-500/20 select-none">
+                                  Saved
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void handleQuickAdd(u, true);
+                                  }}
+                                  aria-label={`Add ${u.name} to Wishlist`}
+                                  className="text-[11px] font-bold text-foreground bg-foreground/10 hover:bg-foreground hover:text-background px-2.5 py-1 rounded-[4px] transition-colors flex items-center gap-1 active:scale-95 cursor-pointer min-h-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                                >
+                                  <IconPlus className="w-3 h-3" /> Wishlist
+                                </button>
+                              )
+                            ) : ownedQty > 0 ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void handleQuickAdd(u, true);
+                                }}
+                                aria-label={`Add another ${u.name} (currently ${ownedQty})`}
+                                className="text-[11px] font-bold text-foreground bg-muted hover:bg-foreground hover:text-background px-2 py-1 rounded-[4px] border border-border flex items-center gap-1 active:scale-95 transition-colors cursor-pointer min-h-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                              >
+                                <span className="text-[10px] font-mono opacity-80 tabular-nums">
+                                  {ownedQty}x
+                                </span>
+                                <IconPlus className="w-3 h-3" />
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void handleQuickAdd(u, true);
+                                }}
+                                aria-label={`Add ${u.name} to Vault`}
+                                className="text-[11px] font-bold text-background bg-foreground hover:opacity-90 px-2.5 py-1 rounded-[4px] transition-opacity flex items-center gap-1 shadow-sm active:scale-95 cursor-pointer min-h-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                              >
+                                <IconPlus className="w-3 h-3" /> Add
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Action Buttons Bar: Bulk Select + Sort Dropdown + Copy + Manage */}
@@ -605,7 +754,7 @@ export function InventoryChannel() {
                     setIsSelectMode(!isSelectMode);
                     setSelectedUnits(new Set());
                   }}
-                  className={`flex items-center justify-center gap-1.5 px-2.5 sm:px-3 h-[34px] sm:h-[32px] rounded-[4px] text-[12px] font-bold transition-all shrink-0 focus-visible:outline-none border cursor-pointer shadow-xs active:scale-95 ${
+                  className={`flex items-center justify-center gap-1.5 px-2.5 sm:px-3 h-[34px] sm:h-[32px] rounded-[4px] text-[12px] font-bold transition-colors shrink-0 focus-visible:outline-none border cursor-pointer shadow-xs active:scale-95 ${
                     isSelectMode
                       ? "bg-foreground text-background border-foreground"
                       : "bg-muted text-muted-foreground hover:text-foreground hover:bg-card border-border"
@@ -733,138 +882,13 @@ export function InventoryChannel() {
                   )}
                 </div>
               )}
-
-              {/* Omnibox Dropdown */}
-              {!isReadOnly && isOmniboxOpen && searchQuery.trim() && (
-                <div
-                  id="omnibox-dropdown"
-                  role="listbox"
-                  aria-label="Unit search results"
-                  className="absolute top-full right-0 w-[min(380px,calc(100vw-24px))] sm:w-[380px] mt-1.5 max-h-[380px] overflow-y-auto custom-scrollbar bg-popover border border-border rounded-[8px] shadow-2xl z-[100] flex flex-col p-1.5 text-left"
-                >
-                  <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/50 mb-1 flex items-center justify-between shrink-0 select-none">
-                    <span>
-                      Quick Add to {vaultView === "wishlist" ? "Wishlist" : "Vault"}
-                    </span>
-                    <span className="text-[9px] font-mono opacity-70">
-                      ↑↓ navigate · ↵ add
-                    </span>
-                  </div>
-
-                  {unownedSearchResults.length === 0 ? (
-                    <div className="px-3 py-6 text-center text-[12px] text-muted-foreground flex flex-col items-center gap-1.5 select-none">
-                      <IconSearch className="w-5 h-5 opacity-40" />
-                      <span>No units match “{searchQuery.trim()}”</span>
-                    </div>
-                  ) : (
-                    unownedSearchResults.map((u, i) => {
-                      const isSelected = i === omniboxIndex;
-                      const ownedItem = displayInventory.find(
-                        (item) => item.unit_id === u.id
-                      );
-                      const ownedQty = ownedItem ? ownedItem.quantity : 0;
-                      const tier = getTier(u);
-                      const tierColor =
-                        TIER_CONFIG[tier]?.badgeColor || "#5865F2";
-                      const unitVal = getUnitConservativeValue(u);
-
-                      return (
-                        <button
-                          key={u.id}
-                          type="button"
-                          role="option"
-                          aria-selected={isSelected}
-                          onClick={() => {
-                            handleQuickAdd(u);
-                            setIsOmniboxOpen(false);
-                          }}
-                          onMouseEnter={() => setOmniboxIndex(i)}
-                          className={`flex items-center gap-2.5 w-full p-2 rounded-[6px] transition-[background-color,color] duration-150 focus-visible:outline-none cursor-pointer text-left ${
-                            isSelected
-                              ? "bg-muted text-foreground"
-                              : "bg-transparent hover:bg-muted text-foreground"
-                          }`}
-                        >
-                          <div className="w-8 h-8 rounded-[4px] bg-muted/70 flex items-center justify-center shrink-0 border border-border overflow-hidden relative">
-                            {getProxyImage(u.id, u.imageUrl) ? (
-                              <img
-                                src={getProxyImage(u.id, u.imageUrl)!}
-                                alt=""
-                                className="w-full h-full object-cover"
-                                onError={(e) => handleImageError(e, u.id)}
-                              />
-                            ) : (
-                              <span
-                                className="text-[8px] font-bold z-0"
-                                style={getAvatarStyle(u.name)}
-                              >
-                                {getInitials(u.name)}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="flex flex-col min-w-0 flex-1">
-                            <span className="text-[13px] font-bold truncate leading-tight">
-                              {u.name}
-                            </span>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="text-[11px] font-mono text-muted-foreground font-semibold tabular-nums">
-                                {unitVal > 0 ? unitVal.toLocaleString() : "—"} Val
-                              </span>
-                              <span className="text-border text-[10px]">·</span>
-                              <span
-                                className="text-[10px] font-bold px-1.5 py-0.2 rounded-[3px] border shadow-xs"
-                                style={{
-                                  backgroundColor: tierColor,
-                                  color: getContrastTextColor(tierColor),
-                                  borderColor:
-                                    getContrastTextColor(tierColor) === "#000000"
-                                      ? "rgba(0, 0, 0, 0.25)"
-                                      : "rgba(255, 255, 255, 0.2)",
-                                }}
-                              >
-                                {tier}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="shrink-0 flex items-center pl-1">
-                            {vaultView === "wishlist" ? (
-                              ownedQty > 0 ? (
-                                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-[4px] border border-emerald-500/20">
-                                  Saved
-                                </span>
-                              ) : (
-                                <span className="text-[11px] font-bold text-foreground bg-foreground/10 hover:bg-foreground hover:text-background px-2.5 py-1 rounded-[4px] transition-colors flex items-center gap-1 active:scale-95">
-                                  <IconPlus className="w-3 h-3" /> Wishlist
-                                </span>
-                              )
-                            ) : ownedQty > 0 ? (
-                              <span className="text-[11px] font-bold text-foreground bg-muted hover:bg-foreground hover:text-background px-2 py-1 rounded-[4px] border border-border flex items-center gap-1 active:scale-95 transition-colors">
-                                <span className="text-[10px] font-mono opacity-80 tabular-nums">
-                                  {ownedQty}x
-                                </span>
-                                <IconPlus className="w-3 h-3" />
-                              </span>
-                            ) : (
-                              <span className="text-[11px] font-bold text-background bg-foreground hover:opacity-90 px-2.5 py-1 rounded-[4px] transition-opacity flex items-center gap-1 shadow-sm active:scale-95">
-                                <IconPlus className="w-3 h-3" /> Add
-                              </span>
-                            )}
-                          </div>
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-              )}
             </div>
           </div>
         </div>
       </div>
 
       <div
-        className={`flex-1 overflow-y-auto custom-scrollbar relative z-0 transition-all duration-150 ${
+        className={`flex-1 overflow-y-auto custom-scrollbar relative z-0 transition-opacity duration-150 ${
           importMenuOpen ? "opacity-30 pointer-events-none" : ""
         }`}
       >
@@ -979,7 +1003,7 @@ export function InventoryChannel() {
                       </div>
                       <div className="w-full h-3 bg-muted rounded-[2px] overflow-hidden border border-border">
                         <div
-                          className="h-full bg-foreground transition-all duration-1000 ease-out"
+                          className="h-full bg-foreground transition-[width] duration-1000 ease-out"
                           style={{ width: `${goalProgress}%` }}
                         />
                       </div>
@@ -1105,21 +1129,21 @@ export function InventoryChannel() {
                         </div>
                         <div className="w-full h-2 rounded-[2px] bg-muted overflow-hidden flex border border-border">
                           <div
-                            className="h-full bg-[#4DB6AC] transition-all duration-700 ease-out"
+                            className="h-full bg-[#4DB6AC] transition-[width] duration-700 ease-out"
                             style={{ width: `${metrics.highPct}%` }}
                             title={`High Demand: ${metrics.highPct.toFixed(
                               0
                             )}%`}
                           />
                           <div
-                            className="h-full bg-foreground transition-all duration-700 ease-out"
+                            className="h-full bg-foreground transition-[width] duration-700 ease-out"
                             style={{ width: `${metrics.avgPct}%` }}
                             title={`Average Demand: ${metrics.avgPct.toFixed(
                               0
                             )}%`}
                           />
                           <div
-                            className="h-full bg-destructive transition-all duration-700 ease-out"
+                            className="h-full bg-destructive transition-[width] duration-700 ease-out"
                             style={{ width: `${metrics.lowPct}%` }}
                             title={`Low Demand: ${metrics.lowPct.toFixed(
                               0
@@ -1393,6 +1417,8 @@ export function InventoryChannel() {
 
               <textarea
                 ref={importInputRef}
+                id="inventory-mass-import-textarea"
+                name="inventory_import_text"
                 value={importText}
                 onChange={(e) => setImportText(e.target.value)}
                 onKeyDown={(e) => {
@@ -1408,7 +1434,7 @@ export function InventoryChannel() {
                 }}
                 placeholder="Paste items here…"
                 aria-label="Inventory text to import"
-                className="w-full h-[120px] bg-input border border-border rounded-[4px] p-3 text-[13px] text-foreground outline-none focus:border-foreground resize-none custom-scrollbar"
+                className="w-full h-[120px] bg-input border border-border rounded-[4px] p-3 text-base sm:text-[13px] text-foreground outline-none focus:border-foreground resize-none custom-scrollbar"
               />
 
               <div className="min-h-[60px] bg-muted rounded-[4px] p-3 border border-border flex flex-col gap-2">

@@ -1,13 +1,15 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, X } from "lucide-react";
 import { useExternalLinkStore } from "../../../store/useExternalLinkStore";
 import { triggerHaptic } from "../../../data/helpers";
+import { logger } from "../../../lib/logger";
 
 export function ExternalLinkModal() {
   const { isOpen, targetUrl, closeModal } = useExternalLinkStore();
   const [trustDomain, setTrustDomain] = useState(false);
   const cancelBtnRef = useRef<HTMLButtonElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -16,22 +18,60 @@ export function ExternalLinkModal() {
   }, [isOpen]);
 
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
+      if (e.key === "Escape") {
         triggerHaptic("light");
         closeModal();
+        return;
+      }
+
+      if (e.key === "Tab" && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (
+            document.activeElement === first ||
+            !modalRef.current.contains(document.activeElement)
+          ) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (
+            document.activeElement === last ||
+            !modalRef.current.contains(document.activeElement)
+          ) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, closeModal]);
 
-  
-
-  let domain = targetUrl;
-  try {
-    domain = new URL(targetUrl).hostname;
-  } catch (e) {}
+  const domain = useMemo(() => {
+    if (!isOpen || !targetUrl) return "";
+    try {
+      return new URL(targetUrl).hostname;
+    } catch (e) {
+      logger.warn("ASTD-EXT-001", "Invalid target URL parsed in ExternalLinkModal", {
+        scope: "ExternalLinkModal",
+        action: "parseDomain",
+        metadata: { targetUrl },
+        error: e,
+      });
+      return targetUrl;
+    }
+  }, [isOpen, targetUrl]);
 
   const handleContinue = () => {
     triggerHaptic("medium");
@@ -45,7 +85,14 @@ export function ExternalLinkModal() {
           "astd_trusted_domains",
           JSON.stringify(trustedCache)
         );
-      } catch (e) {}
+      } catch (e) {
+        logger.warn("ASTD-EXT-002", "Failed to persist trusted domain to localStorage", {
+          scope: "ExternalLinkModal",
+          action: "handleContinue",
+          metadata: { domain },
+          error: e,
+        });
+      }
     }
     window.open(targetUrl, "_blank", "noopener,noreferrer");
     closeModal();
@@ -54,9 +101,10 @@ export function ExternalLinkModal() {
 
   return (
     <AnimatePresence>
-      {(isOpen && targetUrl) && (
+      {isOpen && targetUrl && (
         <motion.div
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm select-none font-sans"
+          ref={modalRef}
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 select-none font-sans"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -66,90 +114,91 @@ export function ExternalLinkModal() {
           aria-labelledby="external-link-title"
           aria-describedby="external-link-desc"
         >
-      <motion.div
+          <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: "spring", bounce: 0, duration: 0.3 }}
             className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-2xl flex flex-col relative"
           >
-        <button
-          onClick={() => {
-            triggerHaptic("light");
-            closeModal();
-          }}
-          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
-          aria-label="Close dialog"
-        >
-          <X className="w-4 h-4" />
-        </button>
-
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-            <ExternalLink className="w-5 h-5 text-primary" aria-hidden="true" />
-          </div>
-          <div>
-            <h3
-              id="external-link-title"
-              className="text-[15px] font-bold text-foreground tracking-tight"
+            <button
+              onClick={() => {
+                triggerHaptic("light");
+                closeModal();
+              }}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+              aria-label="Close dialog"
             >
-              Leaving application
-            </h3>
-            <p className="text-[12px] text-muted-foreground font-mono">
-              {domain}
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                <ExternalLink className="w-5 h-5 text-primary" aria-hidden="true" />
+              </div>
+              <div>
+                <h3
+                  id="external-link-title"
+                  className="text-[15px] font-bold text-foreground tracking-tight"
+                >
+                  Leaving application
+                </h3>
+                <p className="text-[12px] text-muted-foreground font-mono">
+                  {domain}
+                </p>
+              </div>
+            </div>
+
+            <p
+              id="external-link-desc"
+              className="text-[13px] text-muted-foreground leading-relaxed mb-4"
+            >
+              You are being redirected to an external website. We are not
+              responsible for the content, privacy policies, or security of external
+              links.
             </p>
-          </div>
-        </div>
 
-        <p
-          id="external-link-desc"
-          className="text-[13px] text-muted-foreground leading-relaxed mb-4"
-        >
-          You are being redirected to an external website. We are not
-          responsible for the content, privacy policies, or security of external
-          links.
-        </p>
+            <div className="bg-muted/50 border border-border rounded-lg p-3 mb-5 font-mono text-[11px] text-foreground/80 break-all shadow-inner">
+              {targetUrl}
+            </div>
 
-        <div className="bg-muted/50 border border-border rounded-lg p-3 mb-5 font-mono text-[11px] text-foreground/80 break-all shadow-inner">
-          {targetUrl}
-        </div>
+            <label className="flex items-center gap-2.5 cursor-pointer group mb-6 select-none w-fit">
+              <input
+                id="trust-domain-checkbox"
+                name="trust_domain"
+                type="checkbox"
+                checked={trustDomain}
+                onChange={(e) => setTrustDomain(e.target.checked)}
+                className="w-4 h-4 rounded border-border bg-input text-primary focus:ring-primary focus:ring-offset-background cursor-pointer"
+              />
+              <span className="text-[12px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                Don't ask me again for{" "}
+                <strong className="text-foreground">{domain}</strong>
+              </span>
+            </label>
 
-        <label className="flex items-center gap-2.5 cursor-pointer group mb-6 select-none w-fit">
-          <input
-            type="checkbox"
-            checked={trustDomain}
-            onChange={(e) => setTrustDomain(e.target.checked)}
-            className="w-4 h-4 rounded border-border bg-input text-primary focus:ring-primary focus:ring-offset-background cursor-pointer"
-          />
-          <span className="text-[12px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-            Don't ask me again for{" "}
-            <strong className="text-foreground">{domain}</strong>
-          </span>
-        </label>
-
-        <div className="flex items-center justify-end gap-2.5">
-          <button
-            ref={cancelBtnRef}
-            onClick={() => {
-              triggerHaptic("light");
-              closeModal();
-              setTrustDomain(false);
-            }}
-            className="px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground text-[12px] font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleContinue}
-            className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-[12px] font-semibold transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer flex items-center gap-1.5"
-          >
-            Continue to site
-          </button>
-        </div>
+            <div className="flex items-center justify-end gap-2.5">
+              <button
+                ref={cancelBtnRef}
+                onClick={() => {
+                  triggerHaptic("light");
+                  closeModal();
+                  setTrustDomain(false);
+                }}
+                className="px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground text-[12px] font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleContinue}
+                className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-[12px] font-semibold transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer flex items-center gap-1.5"
+              >
+                Continue to site
+              </button>
+            </div>
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
   );
 }
-

@@ -4,6 +4,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { parseSpreadsheet, SpreadsheetData, ParsedUnit } from "./lib/parseSheet.js";
+import { apiLogger } from "./lib/logger.js";
 
 // Removed runtime: 'edge' - This function requires Node.js memory limits 
 // to safely process large Google Sheets JSON payloads without OOM crashes.
@@ -40,7 +41,12 @@ async function sendDiscordEmbed(embedData: { title: string; description: string;
       })
     });
   } catch (err) {
-    console.error("Failed to send Discord webhook embed:", err);
+    apiLogger.error({
+      route: "/api/cronHistory",
+      code: "ASTD-CRON-001",
+      message: "Failed to send Discord webhook embed",
+      error: err,
+    });
   }
 }
 
@@ -73,7 +79,6 @@ export async function GET(request: Request) {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-    const nowIso = new Date().toISOString();
 
     // 1. RUN CLEANUP AND SHEET FETCH CONCURRENTLY TO SLASH EXECUTION TIME
     const ranges = [
@@ -93,7 +98,14 @@ export async function GET(request: Request) {
       fetch(sheetsUrl)
     ]);
 
-    if (adPurgeResult.error) console.error("Error purging expired ads:", adPurgeResult.error);
+    if (adPurgeResult.error) {
+      apiLogger.warn({
+        route: "/api/cronHistory",
+        code: "ASTD-CRON-002",
+        message: "Error purging expired ads",
+        error: adPurgeResult.error,
+      });
+    }
 
     // If there are banned users, purge their assets
     if (!bannedUsersResult.error && bannedUsersResult.data && bannedUsersResult.data.length > 0) {
@@ -228,7 +240,12 @@ export async function GET(request: Request) {
     return new Response(JSON.stringify({ message: "OK" }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (error: unknown) {
     const errorDetails = error instanceof Error ? error.message : String(error);
-    console.error("Cron crash error:", errorDetails);
+    apiLogger.error({
+      route: "/api/cronHistory",
+      code: "ASTD-CRON-003",
+      message: "Autonomous cron sync execution failed",
+      error,
+    });
     await sendDiscordEmbed({
       title: "ASTD Value List Critical Crash",
       description: `\`\`\`${errorDetails}\`\`\``,

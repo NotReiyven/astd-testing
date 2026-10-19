@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { TradeCard } from "../types";
+import { logger } from "../lib/logger";
 
 export function useStickyState<T>(
   defaultValue: T,
@@ -13,12 +14,28 @@ export function useStickyState<T>(
         const parsed = JSON.parse(stickyValue);
         if (isValid(parsed)) return parsed;
       }
-    } catch (err) {}
+    } catch (err) {
+      logger.warn("ASTD-UI-013", `Failed to read sticky state key "${key}"`, {
+        scope: "useStickyState",
+        action: "readKey",
+        metadata: { key },
+        error: err,
+      });
+    }
     return defaultValue;
   });
 
   useEffect(() => {
-    window.localStorage.setItem(key, JSON.stringify(value));
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch (err) {
+      logger.warn("ASTD-UI-014", `Failed to persist sticky state key "${key}"`, {
+        scope: "useStickyState",
+        action: "writeKey",
+        metadata: { key },
+        error: err,
+      });
+    }
   }, [key, value]);
 
   return [value, setValue];

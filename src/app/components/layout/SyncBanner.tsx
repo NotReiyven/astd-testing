@@ -16,7 +16,7 @@ function formatCachedAge(timestamp: number | null): string | null {
 }
 
 export function SyncBanner() {
-  const { isError, isSyncing, lastUpdatedAt, refetch } = useUnitSync();
+  const { isError, isSyncing, isFetching, lastUpdatedAt, refetch } = useUnitSync();
   const addToast = useToastStore((s) => s.addToast);
   const reducedMotion = usePrefersReducedMotion();
   const [isOffline, setIsOffline] = useState(
@@ -149,6 +149,7 @@ export function SyncBanner() {
           <AsyncButton
             size="sm"
             variant="outline"
+            isLoading={isFetching}
             onClick={handleManualRetry}
             className="min-h-[24px] h-6 px-2.5 py-0.5 text-[11px]"
           >

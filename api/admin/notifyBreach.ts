@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { apiLogger } from "../lib/logger.js";
 
 /**
  * EMERGENCY DATA BREACH NOTIFICATION SCRIPT
@@ -77,7 +78,13 @@ export async function POST(request: Request) {
       });
 
       if (!res.ok) {
-        console.error(`Batch ${i} failed:`, await res.text());
+        const errorText = await res.text();
+        apiLogger.error({
+          route: "/api/admin/notifyBreach",
+          code: "ASTD-BRC-001",
+          message: "Breach email batch failed",
+          meta: { batchIndex: i, totalUsers: emails.length, responseText: errorText },
+        });
       }
     }
 
@@ -87,7 +94,12 @@ export async function POST(request: Request) {
     }), { status: 200 });
 
   } catch (error: any) {
-    console.error("Breach notification failed:", error);
+    apiLogger.error({
+      route: "/api/admin/notifyBreach",
+      code: "ASTD-BRC-002",
+      message: "Breach notification process failed",
+      error,
+    });
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 }

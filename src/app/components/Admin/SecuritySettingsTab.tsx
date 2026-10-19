@@ -72,7 +72,6 @@ export const SecuritySettingsTab = () => {
   >("locked");
   const [challengeInput, setChallengeInput] = useState("");
   const [ackChecked, setAckChecked] = useState(false);
-  const [verifiedMasterId, setVerifiedMasterId] = useState<string | null>(null);
   const [unlockExpiresAt, setUnlockExpiresAt] = useState<number | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState<number>(0);
 
@@ -159,7 +158,6 @@ export const SecuritySettingsTab = () => {
       return;
     }
 
-    setVerifiedMasterId(liveRow.id);
     setClearanceStep("challenge");
   };
 
@@ -421,6 +419,8 @@ export const SecuritySettingsTab = () => {
                   </button>
                 </div>
                 <input
+                  id="security-unlock-challenge-input"
+                  name="unlock_challenge"
                   type="text"
                   autoFocus
                   value={challengeInput}
@@ -431,6 +431,7 @@ export const SecuritySettingsTab = () => {
                     }
                   }}
                   placeholder="Enter passphrase…"
+                  aria-label="Passphrase to unlock maintenance control"
                   autoComplete="off"
                   spellCheck={false}
                   className="w-full h-8 bg-input border border-border rounded-[4px] px-2.5 text-[11px] text-foreground focus:outline-none focus:border-primary"
@@ -554,28 +555,37 @@ export const SecuritySettingsTab = () => {
           </div>
 
           <textarea
+            id="security-broadcast-message"
+            name="broadcast_message"
             value={message}
             onChange={(e) => {
               setMessage(e.target.value);
               setConfirmingCritical(false);
             }}
             placeholder="Broadcast message…"
+            aria-label="Broadcast message"
             className="w-full h-20 bg-input border border-border rounded-[4px] p-2.5 text-[12px] font-mono text-foreground focus:outline-none focus:border-primary resize-none"
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono">
             <input
+              id="security-broadcast-link-url"
+              name="broadcast_link_url"
               type="url"
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               placeholder="Link URL (optional)…"
+              aria-label="Broadcast link URL (optional)"
               className="h-8 bg-input border border-border rounded-[4px] px-2.5 text-[11px] text-foreground focus:outline-none focus:border-primary"
             />
             <input
+              id="security-broadcast-link-text"
+              name="broadcast_link_text"
               type="text"
               value={linkText}
               onChange={(e) => setLinkText(e.target.value)}
               placeholder="Link label (optional)…"
+              aria-label="Broadcast link label (optional)"
               className="h-8 bg-input border border-border rounded-[4px] px-2.5 text-[11px] text-foreground focus:outline-none focus:border-primary"
             />
           </div>

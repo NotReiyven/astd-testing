@@ -43,8 +43,20 @@ try {
         registerSW({ immediate: true });
       }
     })
-    .catch(() => {});
-} catch (e) {}
+    .catch((swErr) => {
+      logger.warn("ASTD-BOOT-001", "Service worker registration failed", {
+        scope: "main",
+        action: "registerSW",
+        error: swErr,
+      });
+    });
+} catch (e) {
+  logger.warn("ASTD-BOOT-002", "PWA module import failed", {
+    scope: "main",
+    action: "importPwaRegister",
+    error: e,
+  });
+}
 
 // Establish global caching and retry strategies for TanStack Query
 const queryClient = new QueryClient({
@@ -81,17 +93,20 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   handleReset = () => {
-    if (
-      window.confirm(
-        "This will clear all your saved trade data and reload the app. Are you sure you want to proceed?"
-      )
-    ) {
+    try {
       localStorage.removeItem("astd_trade_storage");
       localStorage.removeItem("astd_cache_version");
       localStorage.removeItem("astd_give");
       localStorage.removeItem("astd_get");
-      window.location.reload();
+      localStorage.removeItem("astd_notifications_cache_guest");
+    } catch (err) {
+      logger.warn("ASTD-UI-044", "Failed to clear corrupted local storage during reset", {
+        scope: "ErrorBoundary",
+        action: "handleReset",
+        error: err,
+      });
     }
+    window.location.reload();
   };
 
   handleSoftReload = () => {
@@ -137,7 +152,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <UnitProvider>
-          <BrowserRouter>
+          <BrowserRouter
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
             <App />
           </BrowserRouter>
         </UnitProvider>

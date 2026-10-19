@@ -5,6 +5,7 @@ import { useTradeStore } from "../store/useTradeStore";
 import { useNotificationStore } from "../store/useNotificationStore";
 import { useAdInteractionStore } from "../store/useAdInteractionStore";
 import { useToastStore } from "../store/useToastStore";
+import { logger } from "../lib/logger";
 
 export const AD_POST_COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes
 export const MAX_ACTIVE_ADS_REGULAR = 3;
@@ -71,8 +72,13 @@ export function useAdCooldown() {
           mostRecent = parsed;
         }
       }
-    } catch {
-      // ignore localStorage errors
+    } catch (err) {
+      logger.warn("ASTD-ADS-012", "Failed to read ad cooldown from localStorage", {
+        scope: "useAdCooldown",
+        action: "getMostRecentPostTime",
+        metadata: { userId: profile.id },
+        error: err,
+      });
     }
 
     // Check memory ads and user history
@@ -133,8 +139,13 @@ export function useAdCooldown() {
               }
             );
           }
-        } catch {
-          // ignore
+        } catch (err) {
+          logger.warn("ASTD-ADS-013", "Failed to access localStorage for cooldown notification flag", {
+            scope: "useAdCooldown",
+            action: "updateCooldown",
+            metadata: { notifKey },
+            error: err,
+          });
         }
       }
     };
@@ -144,6 +155,8 @@ export function useAdCooldown() {
     return () => clearInterval(interval);
   }, [profile?.id, isStaff, getMostRecentPostTime, addToast, setComposerOpen]);
 
+  const sessionStartTime = useMemo(() => Date.now(), []);
+
   // Monitor ad expiration and dispatch notification for expired ads
   useEffect(() => {
     if (!profile?.id) return;
@@ -151,48 +164,73 @@ export function useAdCooldown() {
     const checkExpiredAds = () => {
       const now = Date.now();
       const userAds = userAdHistory.filter((a) => a.user_id === profile.id);
+      const existingNotifications = useNotificationStore.getState().notifications;
 
       userAds.forEach((ad) => {
         const expiresMs = new Date(ad.expires_at).getTime();
-        // If expired in the past 7 days
-        if (expiresMs <= now && now - expiresMs < 7 * 24 * 60 * 60 * 1000) {
-          const expiredKey = `astd_expired_notif_${ad.id}`;
-          try {
-            if (!localStorage.getItem(expiredKey)) {
+        // If not expired yet, skip
+        if (expiresMs > now) return;
+
+        const expiredKey = `astd_expired_notif_${ad.id}`;
+        let hasLocalStorageFlag = false;
+        try {
+          hasLocalStorageFlag = Boolean(localStorage.getItem(expiredKey));
+        } catch {}
+
+        const hasExistingNotification = existingNotifications.some(
+          (n) =>
+            n.ad_id === ad.id &&
+            (n.type === "system" || n.message?.toLowerCase().includes("expired"))
+        );
+
+        // If already flagged in localStorage or already present in notifications database/store, record flag and skip
+        if (hasLocalStorageFlag || hasExistingNotification) {
+          if (!hasLocalStorageFlag) {
+            try {
               localStorage.setItem(expiredKey, "1");
-
-              void useNotificationStore.getState().createNotification({
-                user_id: profile.id,
-                ad_id: ad.id,
-                type: "system",
-                message:
-                  "Your trade listing has expired and was moved to your archive.",
-              });
-
-              addToast(
-                "Trade listing expired and moved to archive.",
-                "info",
-                {
-                  action: {
-                    label: "View Listing",
-                    onClick: () => {
-                      void openAdContext(ad.id, profile.id);
-                    },
-                  },
-                }
-              );
-            }
-          } catch {
-            // ignore
+            } catch {}
           }
+          return;
         }
+
+        // Ad expired in the past while user was offline or historical (> 2 minutes ago):
+        // Mark localStorage so it won't be checked again, but NEVER spam live toasts or duplicate rows on mount.
+        try {
+          localStorage.setItem(expiredKey, "1");
+        } catch {}
+
+        const expiredDuringActiveSession = expiresMs >= sessionStartTime - 120000;
+        if (!expiredDuringActiveSession) {
+          return;
+        }
+
+        void useNotificationStore.getState().createNotification({
+          user_id: profile.id,
+          ad_id: ad.id,
+          type: "system",
+          message:
+            "Your trade listing has expired and was moved to your archive.",
+        });
+
+        addToast(
+          "Trade listing expired and moved to archive.",
+          "info",
+          {
+            action: {
+              label: "View Listing",
+              onClick: () => {
+                void openAdContext(ad.id, profile.id);
+              },
+            },
+          }
+        );
       });
     };
 
     checkExpiredAds();
     const interval = setInterval(checkExpiredAds, 30000); // Check every 30s
     return () => clearInterval(interval);
-  }, [profile?.id, userAdHistory, addToast, openAdContext]);
+  }, [profile?.id, userAdHistory, addToast, openAdContext, sessionStartTime]);
 
   const isOnCooldown = !isStaff && cooldownRemainingMs > 0;
   const canPostAd = Boolean(profile) && !isOnCooldown && !isAtMaxActiveAds;

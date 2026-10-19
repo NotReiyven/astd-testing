@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   GiTrashCan,
   GiHammerDrop,
@@ -119,10 +119,13 @@ export function CommentsStreamTab({
           <div className="relative flex-1 sm:w-64">
             <GiMagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <input
+              id="admin-comments-search-input"
+              name="admin_comments_search"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search comments or author…"
+              aria-label="Search comments or author"
               className="w-full h-8 pl-8 pr-2.5 bg-input border border-border rounded-[4px] text-[12px] font-mono text-foreground focus:border-primary outline-none"
             />
           </div>
@@ -175,10 +178,15 @@ export function CommentsStreamTab({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+            <label
+              htmlFor="admin-action-reason-input"
+              className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider cursor-pointer"
+            >
               Moderation Reason (Required for Audit Trail)
             </label>
             <input
+              id="admin-action-reason-input"
+              name="action_reason"
               type="text"
               value={actionReason}
               onChange={(e) => setActionReason(e.target.value)}

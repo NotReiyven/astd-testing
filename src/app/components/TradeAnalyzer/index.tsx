@@ -33,6 +33,7 @@ import { useTradeGlobalInput } from "../../../hooks/useTradeGlobalInput";
 import { RollingNumber } from "../shared/Formatters";
 import { useBottomSheet } from "../../../hooks/useBottomSheet";
 import { InlineHint } from "../ui/InlineHint";
+import { logger } from "../../../lib/logger";
 
 const MAX_PRESET_NAME_LENGTH = 30;
 
@@ -98,7 +99,12 @@ export function TradeAnalyzerPanel({
     () => {
       try {
         return sessionStorage.getItem("astd_dismiss_analyzer_guest_hint") === "1";
-      } catch {
+      } catch (err) {
+        logger.warn("ASTD-UI-036", "Failed to read guest hint dismissal from sessionStorage", {
+          scope: "TradeAnalyzer",
+          action: "readGuestHintDismissed",
+          error: err,
+        });
         return false;
       }
     }
@@ -108,8 +114,12 @@ export function TradeAnalyzerPanel({
     setIsGuestHintDismissed(true);
     try {
       sessionStorage.setItem("astd_dismiss_analyzer_guest_hint", "1");
-    } catch {
-      // Ignore storage errors in restricted environments
+    } catch (err) {
+      logger.warn("ASTD-UI-037", "Failed to persist guest hint dismissal to sessionStorage", {
+        scope: "TradeAnalyzer",
+        action: "handleDismissGuestHint",
+        error: err,
+      });
     }
   }, []);
 
@@ -676,6 +686,7 @@ export function TradeAnalyzerPanel({
               <div className="flex gap-2">
                 <input
                   id="new-preset-name-input"
+                  name="new_preset_name"
                   ref={presetInputRef}
                   value={newPresetName}
                   onChange={(e) => {
@@ -751,6 +762,7 @@ export function TradeAnalyzerPanel({
                           <div className="flex items-center gap-1.5">
                             <input
                               id={`rename-preset-${p.id}`}
+                              name="renamed_preset_name"
                               ref={renameInputRef}
                               value={renameValue}
                               onChange={(e) => {
@@ -1013,7 +1025,7 @@ export function TradeAnalyzerPanel({
 
           <div className="flex-1 min-h-0 overflow-y-auto py-1 custom-scrollbar overscroll-y-contain pb-safe flex flex-col [&>*]:shrink-0">
             <div
-              className={`relative transition-all duration-300 ${
+              className={`relative transition-[box-shadow,background-color] duration-300 ${
                 isClearTarget
                   ? "ring-2 ring-primary rounded-[8px] bg-primary/5 shadow-lg z-[100005]"
                   : ""
@@ -1080,7 +1092,7 @@ export function TradeAnalyzerPanel({
                   triggerHaptic("light");
                   swap();
                 }}
-                className="relative flex items-center justify-center w-11 h-11 md:w-8 md:h-8 rounded-full transition-colors z-10 bg-muted border border-border text-muted-foreground hover:text-foreground hover:bg-card focus-visible:outline-none cursor-pointer"
+                className="relative flex items-center justify-center w-11 h-11 md:w-8 md:h-8 rounded-full transition-colors z-10 bg-muted border border-border text-muted-foreground hover:text-foreground hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring touch-manipulation cursor-pointer"
                 title="Swap Give and Get"
               >
                 <GiTrade className="w-5 h-5 md:w-4 md:h-4" />
@@ -1186,13 +1198,15 @@ export function TradeAnalyzerPanel({
             </div>
 
             <button 
+              type="button"
               onClick={(e) => {
                  e.stopPropagation();
                  triggerHaptic("medium");
                  handleSafeClear();
               }}
-              className="w-10 h-10 flex flex-shrink-0 items-center justify-center bg-muted text-muted-foreground hover:bg-destructive hover:text-destructive-foreground rounded-[6px] border border-border"
-              title="Clear Trade"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] flex flex-shrink-0 items-center justify-center bg-muted text-muted-foreground hover:bg-destructive hover:text-destructive-foreground rounded-[6px] border border-border touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+              title={confirmClear ? "Click again to confirm clear" : "Clear Trade"}
+              aria-label={confirmClear ? "Confirm clear trade" : "Clear Trade"}
             >
               {confirmClear ? <GiCheckMark className="w-4 h-4" /> : <GiTrashCan className="w-4 h-4" />}
             </button>
@@ -1228,7 +1242,7 @@ export function TradeAnalyzerPanel({
   return (
     <>
       <div
-        className={`hidden md:block absolute xl:relative top-0 bottom-0 right-0 flex-shrink-0 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[width,transform] z-[60] xl:z-auto ${
+        className={`hidden md:block absolute xl:relative top-0 bottom-0 right-0 flex-shrink-0 overflow-hidden transition-[width,transform,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[width,transform] z-[60] xl:z-auto ${
           isOpen
             ? "translate-x-0 pointer-events-auto shadow-[-20px_0_50px_rgba(0,0,0,0.5)] xl:shadow-none"
             : "translate-x-full pointer-events-none"

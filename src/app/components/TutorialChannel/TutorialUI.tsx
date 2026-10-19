@@ -68,7 +68,7 @@ export function MissionCard({
 }) {
   return (
     <div
-      className={`p-4 rounded-[8px] border transition-all duration-300 relative flex flex-col justify-between ${
+      className={`p-4 rounded-[8px] border transition-[background-color,border-color,box-shadow] duration-200 relative flex flex-col justify-between ${
         isDone
           ? "bg-card border-border shadow-none"
           : "bg-popover border-border hover:border-primary shadow-sm"
@@ -181,7 +181,7 @@ export function TheoryEmbed({
               </button>
 
               <div
-                className="transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden"
+                className="transition-[max-height,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden"
                 style={{
                   maxHeight: isExpanded ? "200px" : "0px",
                   opacity: isExpanded ? 1 : 0,

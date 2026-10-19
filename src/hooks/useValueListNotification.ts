@@ -3,6 +3,7 @@ import { useUnits } from "../context/UnitContext";
 import { useNotificationStore } from "../store/useNotificationStore";
 import { useToastStore } from "../store/useToastStore";
 import { triggerHaptic } from "../data/helpers";
+import { logger } from "../lib/logger";
 
 const NOTIFIED_SIG_KEY = "astd_valuelist_notified_sig";
 const PENDING_UPDATE_KEY = "astd_valuelist_pending_update";
@@ -66,8 +67,12 @@ export function useValueListNotification() {
     try {
       notifiedSig = localStorage.getItem(NOTIFIED_SIG_KEY);
       rawPending = localStorage.getItem(PENDING_UPDATE_KEY);
-    } catch {
-      // Storage unavailable
+    } catch (err) {
+      logger.warn("ASTD-NOTIF-008", "localStorage unavailable for value list notification state", {
+        scope: "useValueListNotification",
+        action: "readState",
+        error: err,
+      });
       return;
     }
 
@@ -75,8 +80,12 @@ export function useValueListNotification() {
     if (!notifiedSig) {
       try {
         localStorage.setItem(NOTIFIED_SIG_KEY, signature);
-      } catch {
-        // ignore
+      } catch (err) {
+        logger.warn("ASTD-NOTIF-009", "Failed to store initial notified signature", {
+          scope: "useValueListNotification",
+          action: "setInitialSignature",
+          error: err,
+        });
       }
       return;
     }
@@ -86,8 +95,12 @@ export function useValueListNotification() {
       if (rawPending) {
         try {
           localStorage.removeItem(PENDING_UPDATE_KEY);
-        } catch {
-          // ignore
+        } catch (err) {
+          logger.warn("ASTD-NOTIF-010", "Failed to clear pending update from storage", {
+            scope: "useValueListNotification",
+            action: "clearPending",
+            error: err,
+          });
         }
       }
       return;
@@ -100,7 +113,12 @@ export function useValueListNotification() {
     if (rawPending) {
       try {
         pending = JSON.parse(rawPending);
-      } catch {
+      } catch (err) {
+        logger.warn("ASTD-NOTIF-011", "Failed to parse pending update JSON", {
+          scope: "useValueListNotification",
+          action: "parsePending",
+          error: err,
+        });
         pending = null;
       }
     }
@@ -117,8 +135,12 @@ export function useValueListNotification() {
 
       try {
         localStorage.setItem(PENDING_UPDATE_KEY, JSON.stringify(pending));
-      } catch {
-        // ignore
+      } catch (err) {
+        logger.warn("ASTD-NOTIF-012", "Failed to save pending update to storage", {
+          scope: "useValueListNotification",
+          action: "savePending",
+          error: err,
+        });
       }
     }
 
@@ -174,8 +196,12 @@ export function useValueListNotification() {
         try {
           localStorage.setItem(NOTIFIED_SIG_KEY, pending.sig);
           localStorage.removeItem(PENDING_UPDATE_KEY);
-        } catch {
-          // ignore
+        } catch (err) {
+          logger.warn("ASTD-NOTIF-013", "Failed to update notified signature or clear pending in storage", {
+            scope: "useValueListNotification",
+            action: "settleNotification",
+            error: err,
+          });
         }
 
         if (checkTimerRef.current) {

@@ -9,19 +9,11 @@ export type GuideType = "guest_tour" | "auth_tour" | "academy_grad" | null;
 
 interface UseGuideSystemProps {
   setActiveChannel: (channel: string) => void;
-  setIsRosterOpen: (open: boolean) => void;
-  setIsAnalyzerOpen: (open: boolean) => void;
-  setTutorialTab: (
-    tab: "sandbox" | "simulator" | "theory" | "dictionary"
-  ) => void;
   bootStage: string;
 }
 
 export function useGuideSystem({
   setActiveChannel,
-  setIsRosterOpen,
-  setIsAnalyzerOpen,
-  setTutorialTab,
   bootStage,
 }: UseGuideSystemProps) {
   const { profile } = useAuthStore();

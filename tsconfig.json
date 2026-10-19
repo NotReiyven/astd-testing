@@ -19,10 +19,10 @@
 
     /* Linting */
     "strict": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "scripts/images.ts", "scripts/images.ts"],
+  "include": ["src", "scripts/images.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

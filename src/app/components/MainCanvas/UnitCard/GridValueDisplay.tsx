@@ -1,4 +1,3 @@
-import React from "react";
 import { GridUnit, MasterUnit } from "../../../../types";
 import { getTier } from "../../../../data";
 import { JargonWrap } from "../../shared/Formatters";

@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 import { logger } from '../lib/logger';
 import { get as getIdb, set as setIdb } from 'idb-keyval';
 import { useToastStore } from "./useToastStore";
-import { resolveSafeUsername, sanitizeUsername } from "../data/helpers";
+import { resolveSafeUsername } from "../data/helpers";
 import {
   formatRoleLabel,
   getStandardRoleColor,
@@ -133,8 +133,21 @@ export async function getJoinNumber(createdAt: string): Promise<number | null> {
       joinNumberCache[createdAt] = count;
       return count;
     }
-  } catch {
-    // Fail silently
+    if (error) {
+      logger.warn("ASTD-PROF-002", "Failed to query join number count", {
+        scope: "useProfileStore",
+        action: "getJoinNumber",
+        metadata: { createdAt },
+        error,
+      });
+    }
+  } catch (err) {
+    logger.warn("ASTD-PROF-003", "Exception querying join number count", {
+      scope: "useProfileStore",
+      action: "getJoinNumber",
+      metadata: { createdAt },
+      error: err,
+    });
   }
   return null;
 }
@@ -586,12 +599,26 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
           }
 
           if (error || !data) {
+            logger.warn("ASTD-PROF-004", "Relational profile query failed, trying simple select fallback", {
+              scope: "useProfileStore",
+              action: "fetchProfilesBatch",
+              metadata: { count: missingIds.length },
+              error,
+            });
             const fallbackRes = await supabase
               .from("profiles")
               .select("*")
               .in("id", missingIds);
             data = fallbackRes.data;
             error = fallbackRes.error;
+            if (error) {
+              logger.error("ASTD-PROF-005", "Fallback profile query also failed", {
+                scope: "useProfileStore",
+                action: "fetchProfilesBatch",
+                metadata: { count: missingIds.length },
+                error,
+              });
+            }
           }
 
           if (!error && Array.isArray(data)) {

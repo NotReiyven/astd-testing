@@ -5,6 +5,7 @@ import { get as getIdb, set as setIdb } from "idb-keyval";
 import { useToastStore } from "./useToastStore";
 import { useNotificationStore } from "./useNotificationStore";
 import { useTradingAdsStore } from "./useTradingAdsStore";
+import { logger } from "../lib/logger";
 
 export interface AdComment {
   id: string;
@@ -95,6 +96,7 @@ const containsPhishingOrLink = (text: string) => {
 };
 
 let activeInteractionChannel: RealtimeChannel | null = null;
+let interactionToken = 0;
 const inFlightAdVotes = new Set<string>();
 const inFlightCommentVotes = new Set<string>();
 
@@ -128,6 +130,9 @@ export const useAdInteractionStore =
       adId: string,
       currentUserId?: string
     ) => {
+      interactionToken += 1;
+      const currentToken = interactionToken;
+
       set({
         activeAdId: adId,
         isLoading: true,
@@ -141,11 +146,24 @@ export const useAdInteractionStore =
       });
 
       if (activeInteractionChannel) {
-        void supabase.removeChannel(
-          activeInteractionChannel
-        );
-
+        const prev = activeInteractionChannel;
         activeInteractionChannel = null;
+        void supabase.removeChannel(prev);
+      }
+
+      try {
+        const channels = supabase.getChannels();
+        for (const ch of channels) {
+          if (ch.topic.includes(adId)) {
+            void supabase.removeChannel(ch);
+          }
+        }
+      } catch (pruneErr) {
+        logger.warn("ASTD-ADS-019", "Failed to prune previous ad interaction channels", {
+          scope: "useAdInteractionStore",
+          action: "openAdContext.prune",
+          error: pruneErr,
+        });
       }
 
       const fetchInteractions = async () => {
@@ -171,10 +189,12 @@ export const useAdInteractionStore =
           });
 
         if (commentsError) {
-          console.error(
-            "Fetch Comments Error:",
-            commentsError.message
-          );
+          logger.error("ASTD-ADS-010", "Failed to fetch ad comments", {
+            scope: "useAdInteractionStore",
+            action: "fetchComments",
+            metadata: { adId },
+            error: commentsError,
+          });
         }
 
         const comments =
@@ -278,51 +298,74 @@ export const useAdInteractionStore =
 
       await fetchInteractions();
 
-      activeInteractionChannel =
-        supabase.channel(
-          `ad-${adId}-interactions`
-        );
+      if (currentToken !== interactionToken) {
+        return;
+      }
 
-      activeInteractionChannel
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "ad_comments",
-            filter: `ad_id=eq.${adId}`,
-          },
-          fetchInteractions
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "ad_votes",
-            filter: `ad_id=eq.${adId}`,
-          },
-          fetchInteractions
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "comment_votes",
-          },
-          fetchInteractions
-        )
-        .subscribe();
+      try {
+        const channelName = `ad-${adId}-interactions-${currentToken}`;
+        const channel = supabase.channel(channelName);
+
+        channel
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "ad_comments",
+              filter: `ad_id=eq.${adId}`,
+            },
+            fetchInteractions
+          )
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "ad_votes",
+              filter: `ad_id=eq.${adId}`,
+            },
+            fetchInteractions
+          )
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "comment_votes",
+            },
+            fetchInteractions
+          )
+          .subscribe();
+
+        activeInteractionChannel = channel;
+      } catch (channelErr) {
+        logger.warn("ASTD-ADS-020", "Failed to subscribe to ad interaction channel", {
+          scope: "useAdInteractionStore",
+          action: "openAdContext.subscribe",
+          metadata: { adId, token: currentToken },
+          error: channelErr,
+        });
+      }
     },
 
     closeAdContext: () => {
+      interactionToken += 1;
+      const currentActiveId = get().activeAdId;
       if (activeInteractionChannel) {
-        void supabase.removeChannel(
-          activeInteractionChannel
-        );
-
+        const prev = activeInteractionChannel;
         activeInteractionChannel = null;
+        void supabase.removeChannel(prev);
+      }
+
+      if (currentActiveId) {
+        try {
+          for (const ch of supabase.getChannels()) {
+            if (ch.topic.includes(currentActiveId)) {
+              void supabase.removeChannel(ch);
+            }
+          }
+        } catch {}
       }
 
       set({
@@ -573,7 +616,11 @@ export const useAdInteractionStore =
           }
         }
       } catch (notifErr) {
-        console.warn("Notification dispatch notice:", notifErr);
+        logger.warn("ASTD-ADS-011", "Notification dispatch notice on mention", {
+          scope: "useAdInteractionStore",
+          action: "postComment",
+          error: notifErr,
+        });
       }
 
       return true;

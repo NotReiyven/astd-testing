@@ -43,28 +43,15 @@ Browser (React / Zustand)
 
 ### F-01: Critical Secret Bundled into Frontend
 **Severity**: CRITICAL
-**Status**: VERIFIED
+**Status**: REMEDIATED
 - **File**: `.env`, `src/context/UnitContext.tsx`, `api/syncSheet.ts`
-- **Reference**: `const syncSecret = import.meta.env.VITE_SYNC_SECRET;`
-- **Why it matters**: `api/syncSheet.ts` uses `process.env.SYNC_SECRET` to ensure only authorized clients can trigger the Google Sheets sync (preventing API quota exhaustion). However, `.env` defines `VITE_SYNC_SECRET` identically to `SYNC_SECRET`. By prefixing it with `VITE_`, Vite automatically bundles this secret into the public JavaScript output.
-- **Exploit Scenario**: An attacker extracts the secret from the browser's DevTools and calls `/api/syncSheet` directly, bypassing intended UI restrictions and burning Google Sheets API quota or causing excessive Supabase DB load.
-- **Minimal Fix**: 
-  1. Remove `VITE_SYNC_SECRET` from `.env`.
-  2. Remove the `Authorization` header logic in `src/context/UnitContext.tsx`.
-  3. Instead of a shared secret, protect `/api/syncSheet` strictly using Upstash Rate Limiting and origin checking (or move the trigger entirely to a cron job).
+- **Resolution**: `VITE_SYNC_SECRET` eliminated completely from `.env` and client context. `/api/syncSheet` is protected by IP rate-limiting and cache headers; database writes are strictly isolated to `api/cronHistory.ts`.
 
 ### F-02: Stored Cross-Site Scripting (XSS) in Security Banner
 **Severity**: HIGH
-**Status**: VERIFIED
-- **File**: `src/app/components/layout/SecurityBanner.tsx` (Lines 82-89)
-- **Reference**: `<a href={alert.link_url} ...>`
-- **Why it matters**: The application retrieves alerts from the `global_alerts` table and binds `link_url` directly to an anchor tag's `href` attribute without sanitizing the protocol. 
-- **Exploit Scenario**: If an attacker bypasses the UI and manages to insert a record into `global_alerts` (e.g., if RLS is improperly configured) with `link_url: "javascript:alert(localStorage.getItem('sb-qgnnpogyvblspxayxuya-auth-token'))"`, clicking the link will execute arbitrary JavaScript. This leads to complete session theft, including Discord provider tokens.
-- **Minimal Fix**: Validate the URL protocol before rendering.
-  ```tsx
-  const isSafeUrl = alert.link_url?.startsWith("http://") || alert.link_url?.startsWith("https://");
-  {isSafeUrl && <a href={alert.link_url}>...</a>}
-  ```
+**Status**: REMEDIATED
+- **File**: `src/app/components/layout/SecurityBanner.tsx`
+- **Resolution**: Implemented strict protocol parsing via `new URL()` allowing only `http:` and `https:`. Routed all outbound link clicks through `safeOpenExternal` modal confirmation.
 
 ### F-03: No Application-Layer Rate Limiting on Database Mutations
 **Severity**: MEDIUM
@@ -81,13 +68,9 @@ Browser (React / Zustand)
 
 ### L-01: Discord OAuth Provider Token Leakage via LocalStorage
 **Severity**: HIGH
-**Status**: LIKELY (Depends on Supabase project configuration)
+**Status**: REMEDIATED
 - **File**: `src/lib/supabase.ts` and `src/store/useAuthStore.ts`
-- **Reference**: `persistSession: true`
-- **Context**: The auth store attempts to sanitize the session state (`delete safeSession.provider_token;`). However, the Supabase JS client automatically persists the full raw session to `localStorage` when `persistSession: true` is configured. If `provider_token` is returned by Supabase Auth, it is written to disk before Zustand sanitizes it in memory.
-- **Exploit Scenario**: An XSS vulnerability allows an attacker to dump `localStorage`, retrieving the user's Discord OAuth access token, leading to potential account takeover on Discord.
-- **Verification**: Open DevTools -> Application -> Local Storage. Check if `sb-...-auth-token` contains `provider_token`.
-- **Remediation**: Ensure Supabase Auth is NOT configured to return the provider token unless specifically required by the application. If it is required, a BFF (Backend-for-Frontend) architecture using HttpOnly cookies is necessary.
+- **Resolution**: Implemented comprehensive token scrubbing in `useAuthStore.ts` (`scrubLocalStorageProviderTokens`). Strips `provider_token` and `provider_refresh_token` from memory session state and sweeps all `sb-*-auth-token` entries in `localStorage` synchronously and on microtask ticks post-persistence.
 
 ---
 
@@ -191,13 +174,16 @@ Trading data is intentionally public. Hiding it from scrapers is impossible in a
 
 ## 12. Prioritized Remediation Roadmap
 
-| Phase | Task | Severity | Implementation Complexity |
-|-------|------|----------|---------------------------|
-| 1 | Remove `VITE_SYNC_SECRET` from `.env` and `UnitContext.tsx`. | CRITICAL | Very Low |
-| 2 | Validate URL protocols in `SecurityBanner.tsx` to prevent `javascript:` XSS. | HIGH | Very Low |
-| 3 | Verify RLS policies in the Supabase Dashboard for all admin-related tables (`roles`, `global_alerts`). | CRITICAL | Low (Requires DB access) |
-| 4 | Ensure Supabase Auth is not returning Discord provider tokens to the client (check Dashboard config). | HIGH | Low (Dashboard config) |
-| 5 | Implement Postgres Triggers on `trading_ads` and `ad_comments` to enforce rate limiting on database inserts. | MEDIUM | Medium (SQL scripting) |
+| Phase | Task | Severity | Status | Notes |
+|-------|------|----------|--------|-------|
+| 1 | Remove `VITE_SYNC_SECRET` & isolate DB sync to cron | CRITICAL | **COMPLETED** | Zero secret leakage, serverless write freeze prevented |
+| 2 | Validate URL protocols in `SecurityBanner.tsx` | HIGH | **COMPLETED** | Enforced `https:`/`http:`, routed via `safeOpenExternal` |
+| 3 | Verify RLS policies in Supabase Dashboard | CRITICAL | PENDING | Requires manual DB dashboard review |
+| 4 | Scrub Discord OAuth provider tokens | HIGH | **COMPLETED** | Sanitized in-memory and in `localStorage` `sb-*-auth-token` |
+| 5 | Implement Postgres Triggers on `trading_ads` / `ad_comments` | MEDIUM | PENDING | Recommended for DB write velocity limiting |
+| 6 | Harden API endpoints (`uploadBanner`, `monitoring`, `deleteAccount`) | HIGH | **COMPLETED** | Magic bytes, Upstash rate limits, payload guards, allSettled |
+| 7 | Tighten Vercel CSP Header | MEDIUM | **COMPLETED** | Removed `'unsafe-eval'` from `script-src` |
 
 ---
-*Audit complete. Awaiting instructions on which remediation phase to begin.*
+*Audit remediation completed for application codebase. Pending items require external Supabase SQL / Dashboard access.*
+

@@ -2,7 +2,6 @@
 // FILE: src/app/components/LegalChannel.tsx
 // ================================================
 
-import React from "react";
 import { PRIVACY_POLICY, TERMS_OF_SERVICE } from "../../data/legal";
 import { LegalDocument } from "./shared/LegalDocument";
 

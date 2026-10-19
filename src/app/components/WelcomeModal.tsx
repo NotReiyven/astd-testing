@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   useLayoutStore,
@@ -202,6 +202,7 @@ const BOOT_CHANNELS: {
 ];
 
 export function WelcomeModal() {
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [step, setStep] = useState<"legal" | "personalization" | "crossroads">(
     "legal"
@@ -273,6 +274,32 @@ export function WelcomeModal() {
       if (e.key === "Escape") {
         handleFinishOnboarding(false);
       }
+      if (e.key === "Tab" && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (
+            document.activeElement === first ||
+            !dialogRef.current.contains(document.activeElement)
+          ) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (
+            document.activeElement === last ||
+            !dialogRef.current.contains(document.activeElement)
+          ) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -287,6 +314,7 @@ export function WelcomeModal() {
 
   return (
     <div
+      ref={dialogRef}
       className="fixed inset-0 z-[100000] flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/85 select-none font-sans overflow-y-auto"
       role="dialog"
       aria-modal="true"

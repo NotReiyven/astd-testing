@@ -8,6 +8,7 @@ import {
   usePrefersReducedMotion,
 } from "../../../lib/motionTokens";
 import type { AsyncActionStatus } from "../../../hooks/useAsyncAction";
+import { logger } from "../../../lib/logger";
 
 const asyncButtonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[6px] text-sm font-bold outline-none select-none cursor-pointer touch-manipulation disabled:pointer-events-none disabled:opacity-55 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
@@ -66,6 +67,7 @@ export const AsyncButton = React.forwardRef<
       disabled,
       isLoading: externalLoading,
       status: externalStatus,
+      loadingAnnouncement,
       onClick,
       children,
       style,
@@ -123,7 +125,12 @@ export const AsyncButton = React.forwardRef<
           resetTimerRef.current = setTimeout(() => {
             setInternalStatus("idle");
           }, MOTION_DURATION_MS.statusReset);
-        } catch {
+        } catch (actionErr) {
+          logger.warn("ASTD-UI-039", "AsyncButton action execution rejected", {
+            scope: "AsyncButton",
+            action: "handleClick",
+            error: actionErr,
+          });
           setInternalStatus("error");
           resetTimerRef.current = setTimeout(() => {
             setInternalStatus("idle");
@@ -203,6 +210,11 @@ export const AsyncButton = React.forwardRef<
               strokeLinejoin="round"
             />
           </svg>
+        )}
+        {isBusy && loadingAnnouncement && (
+          <span className="sr-only" aria-live="polite">
+            {loadingAnnouncement}
+          </span>
         )}
         {children}
       </button>

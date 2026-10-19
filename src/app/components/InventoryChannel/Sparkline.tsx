@@ -1,5 +1,3 @@
-import React from "react";
-
 export const Sparkline = () => (
   <svg
     className="absolute bottom-0 left-0 w-full h-[65%] opacity-[0.15] pointer-events-none z-0"

@@ -1,11 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { triggerHaptic } from "../data/helpers";
+import { useToastStore } from "../store/useToastStore";
 
 export function useGlobalEvents({
-  giveItems,
-  getItems,
-  pinnedIds,
-  completedGuides,
   setCompletedGuides,
   setActiveChannel,
   setIsRosterOpen,
@@ -13,17 +10,6 @@ export function useGlobalEvents({
   setTutorialTab,
   setGuideState,
 }: any) {
-  const [toast, setToast] = useState<{
-    id: number;
-    unitName: string;
-    count: number;
-    type: "give" | "get";
-  } | null>(null);
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Used to prevent rapid flashing by keeping the same ID if a new toast arrives quickly
-  const lastToastIdRef = useRef<number>(Date.now());
-  const lastToastTimeRef = useRef<number>(0);
 
   // Global Window Event Listeners
   useEffect(() => {
@@ -66,35 +52,20 @@ export function useGlobalEvents({
         p.hasGiveGet ? p : { ...p, hasGiveGet: true }
       );
 
-      const now = Date.now();
-      setToast((prev) => {
-        const isSameType = prev && prev.type === customEvent.detail.type;
-        const count = isSameType ? prev.count + 1 : 1;
-        const nameToKeep = isSameType ? prev.unitName : customEvent.detail.name;
-
-        // Group toasts if within 1000ms to stop flashing
-        if (now - lastToastTimeRef.current < 1000 && isSameType) {
-          return {
-            id: lastToastIdRef.current,
-            unitName: nameToKeep,
-            count,
-            type: customEvent.detail.type,
-          };
-        } else {
-          lastToastIdRef.current = now;
-          return {
-            id: now,
-            unitName: nameToKeep,
-            count,
-            type: customEvent.detail.type,
-          };
+      const sideLabel = customEvent.detail.type === "give" ? "Give" : "Get";
+      useToastStore.getState().addToast(
+        `Added ${customEvent.detail.name} to ${sideLabel}`,
+        "success",
+        {
+          dedupeKey: `trade-add:${customEvent.detail.name}:${customEvent.detail.type}`,
+          action: {
+            label: "Open Calculator",
+            onClick: () => {
+              setIsAnalyzerOpen(true);
+            },
+          },
         }
-      });
-
-      lastToastTimeRef.current = now;
-
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-      toastTimerRef.current = setTimeout(() => setToast(null), 2500);
+      );
 
       // Guest Tour Progression
       setGuideState((prev: any) =>
@@ -162,5 +133,5 @@ export function useGlobalEvents({
     setGuideState,
   ]);
 
-  return { toast };
+  return {};
 }

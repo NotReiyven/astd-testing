@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { supabase } from "../lib/supabase";
 import { get as getIdb, set as setIdb } from "idb-keyval";
 import { useToastStore } from "./useToastStore";
+import { logger } from "../lib/logger";
 
 export interface InventoryItem {
   id: string;
@@ -126,7 +127,14 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       }
     } else {
       set({ isLoading: false });
-      if (error) console.error("[Inventory] Failed to fetch inventory");
+      if (error) {
+        logger.error("ASTD-INV-001", "Failed to fetch user inventory", {
+          scope: "useInventoryStore",
+          action: "fetchInventory",
+          metadata: { userId, isViewing },
+          error,
+        });
+      }
     }
   },
 
@@ -153,7 +161,12 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
         }
       }
     } else if (error) {
-      console.error("[Inventory] Failed to fetch wishlist");
+      logger.error("ASTD-INV-002", "Failed to fetch user wishlist", {
+        scope: "useInventoryStore",
+        action: "fetchWishlist",
+        metadata: { userId, isViewing },
+        error,
+      });
     }
   },
 

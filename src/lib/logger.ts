@@ -1,8 +1,10 @@
 /*
  * src/lib/logger.ts
- * Structured logger with an in‑memory ring buffer, token redaction, and a debug helper.
+ * Structured diagnostic logger with an in‑memory ring buffer, token redaction,
+ * color-coded development tracing, and production Sentry routing.
  */
 
+import * as Sentry from '@sentry/react';
 import type { Severity } from './errors';
 import { AppError } from './errors';
 
@@ -11,14 +13,24 @@ import { AppError } from './errors';
  */
 const BUFFER_CAPACITY = 100;
 
-/**
- * Log entry stored in the ring buffer.
- */
-interface LogEntry {
+export interface LogContext {
+  code?: string;
+  scope?: string;
+  action?: string;
+  durationMs?: number;
+  metadata?: Record<string, unknown>;
+  error?: unknown;
+  [key: string]: unknown;
+}
+
+export interface LogEntry {
   timestamp: string; // ISO string
   code: string; // e.g. ASTD-ENV-001
   severity: Severity;
   message: string;
+  scope?: string;
+  action?: string;
+  durationMs?: number;
   context?: Record<string, unknown>;
 }
 
@@ -30,14 +42,12 @@ class RingBuffer {
 
   add(entry: LogEntry) {
     if (this.buffer.length >= BUFFER_CAPACITY) {
-      // Remove oldest entry (shift).
       this.buffer.shift();
     }
     this.buffer.push(entry);
   }
 
   getAll(): LogEntry[] {
-    // Return a shallow copy to avoid external mutation.
     return [...this.buffer];
   }
 }
@@ -58,14 +68,14 @@ function redactContext(
   seen.add(context);
 
   const redacted: Record<string, unknown> = {};
-  const REDACT_KEYS = /token|jwt|apikey|email|password|secret|auth|signature/i;
+  const REDACT_KEYS = /token|jwt|apikey|email|password|secret|auth|signature|cookie/i;
   try {
     for (const [k, v] of Object.entries(context)) {
       if (REDACT_KEYS.test(k)) {
         redacted[k] = '[REDACTED]';
       } else if (typeof v === 'object' && v !== null) {
         if (v instanceof Error) {
-          redacted[k] = { name: v.name, message: v.message };
+          redacted[k] = { name: v.name, message: v.message, stack: v.stack };
         } else if (seen.has(v)) {
           redacted[k] = '[CIRCULAR]';
         } else {
@@ -83,50 +93,92 @@ function redactContext(
 
 /**
  * Core log function.
- * @param code – error or event code (e.g. ASTD-UI-001).
- * @param message – human readable message.
- * @param context – optional additional data (will be redacted).
- * @param severity – optional, defaults to "error".
  */
 export function log(
   code: string,
   message: string,
-  context?: Record<string, unknown>,
+  context?: LogContext,
   severity: Severity = 'error'
 ) {
+  const scope = context?.scope ? String(context.scope) : undefined;
+  const action = context?.action ? String(context.action) : undefined;
+  const durationMs = typeof context?.durationMs === 'number' ? context.durationMs : undefined;
+
   const entry: LogEntry = {
     timestamp: new Date().toISOString(),
     code,
     severity,
     message,
+    scope,
+    action,
+    durationMs,
     context: redactContext(context),
   };
-  // Add to buffer.
+
   logBuffer.add(entry);
 
-  // Also output to console for developers (respecting severity).
-  const consoleMethod =
-    severity === 'fatal' || severity === 'error'
-      ? console.error
-      : severity === 'warn'
-      ? console.warn
-      : console.info;
-  consoleMethod(`[ASTD][${code}] ${message}`, entry.context);
+  // Development: Rich color-coded console group
+  if (import.meta.env?.DEV) {
+    const badgeStyle =
+      severity === 'fatal' || severity === 'error'
+        ? 'background: #EF4444; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;'
+        : severity === 'warn'
+        ? 'background: #F59E0B; color: black; padding: 2px 5px; border-radius: 3px; font-weight: bold;'
+        : 'background: #3B82F6; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;';
 
-  // Optionally, could integrate with toast UI elsewhere.
+    const timingText = durationMs !== undefined ? ` (${durationMs.toFixed(1)}ms)` : '';
+    const scopeLabel = scope ? ` [${scope}${action ? `::${action}` : ''}]` : '';
+
+    console.groupCollapsed(
+      `%c${code}%c${scopeLabel} ${message}${timingText}`,
+      badgeStyle,
+      'font-weight: 500; margin-left: 6px;'
+    );
+    if (scope || action) {
+      console.log('%cScope / Action:', 'font-weight: bold; color: #64748B;', `${scope ?? '-'} :: ${action ?? '-'}`);
+    }
+    if (entry.context) {
+      console.log('%cStructured Context:', 'font-weight: bold; color: #64748B;', entry.context);
+    }
+    if (context?.error) {
+      console.error('%cError Details:', 'font-weight: bold; color: #EF4444;', context.error);
+    }
+    console.groupEnd();
+  } else {
+    // Production: Route warnings and errors to Sentry with structured tags
+    if (severity === 'error' || severity === 'fatal') {
+      Sentry.withScope((sentryScope) => {
+        sentryScope.setTag('code', code);
+        if (scope) sentryScope.setTag('scope', scope);
+        if (action) sentryScope.setTag('action', action);
+        if (entry.context) sentryScope.setContext('logger_context', entry.context);
+
+        if (context?.error instanceof Error) {
+          Sentry.captureException(context.error);
+        } else {
+          Sentry.captureMessage(`[${code}] ${message}`, severity === 'fatal' ? 'fatal' : 'error');
+        }
+      });
+    } else if (severity === 'warn') {
+      Sentry.withScope((sentryScope) => {
+        sentryScope.setTag('code', code);
+        if (scope) sentryScope.setTag('scope', scope);
+        if (action) sentryScope.setTag('action', action);
+        if (entry.context) sentryScope.setContext('logger_context', entry.context);
+        Sentry.captureMessage(`[${code}] ${message}`, 'warning');
+      });
+    }
+  }
 }
 
 /**
- * Helper that turns the buffer into a pretty‑printed JSON string.
+ * Turns the buffer into a pretty‑printed JSON string.
  */
 function formatReport(): string {
   const entries = logBuffer.getAll();
   return JSON.stringify(entries, null, 2);
 }
 
-/**
- * Expose a debug helper on the window object (dev only).
- */
 declare global {
   interface Window {
     __ASTD_DEBUG__?: {
@@ -143,7 +195,6 @@ if (typeof window !== 'undefined') {
     copyReport: () => {
       const report = formatReport();
       navigator.clipboard.writeText(report).catch(() => {
-        // Fallback – create temporary textarea.
         const el = document.createElement('textarea');
         el.value = report;
         document.body.appendChild(el);
@@ -152,15 +203,12 @@ if (typeof window !== 'undefined') {
         document.body.removeChild(el);
       });
     },
-    // Simulate throws only in development.
     simulate:
       import.meta.env?.DEV === true
         ? (code: string) => {
-            // Find a catalog entry to construct an error.
-            // For simplicity, we just throw a generic AppError.
             throw new AppError({
               code,
-              domain: code.split('-')[1] as any,
+              domain: (code.split('-')[1] as any) || 'UI',
               userMessage: `Simulated error for ${code}`,
               severity: 'error',
               retryable: false,
@@ -171,11 +219,11 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * Convenience wrappers for each severity level.
+ * Convenience structured logging interface.
  */
 export const logger = {
-  info: (code: string, msg: string, ctx?: Record<string, unknown>) => log(code, msg, ctx, 'info'),
-  warn: (code: string, msg: string, ctx?: Record<string, unknown>) => log(code, msg, ctx, 'warn'),
-  error: (code: string, msg: string, ctx?: Record<string, unknown>) => log(code, msg, ctx, 'error'),
-  fatal: (code: string, msg: string, ctx?: Record<string, unknown>) => log(code, msg, ctx, 'fatal'),
+  info: (code: string, msg: string, ctx?: LogContext) => log(code, msg, ctx, 'info'),
+  warn: (code: string, msg: string, ctx?: LogContext) => log(code, msg, ctx, 'warn'),
+  error: (code: string, msg: string, ctx?: LogContext) => log(code, msg, ctx, 'error'),
+  fatal: (code: string, msg: string, ctx?: LogContext) => log(code, msg, ctx, 'fatal'),
 };

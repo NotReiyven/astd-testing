@@ -45,7 +45,7 @@ export function ResponsiveToolbar({
 
       {/* Collapsible Content */}
       <div
-        className={`flex flex-col transition-all duration-300 overflow-hidden ${
+        className={`flex flex-col transition-[max-height,opacity] duration-300 overflow-hidden ${
           isCollapsed
             ? "max-h-0 opacity-0 md:max-h-none md:opacity-100 py-0 gap-0 md:gap-4"
             : "max-h-[800px] opacity-100 gap-4"

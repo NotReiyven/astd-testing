@@ -15,7 +15,6 @@ import {
 } from "../../../store/useProfileStore";
 import { useInventoryStore } from "../../../store/useInventoryStore";
 import {
-  getUnitAssetUrl,
   triggerHaptic,
   copyTextWithFallback,
   resolveSafeUsername,
@@ -23,46 +22,10 @@ import {
 import { safeOpenExternal } from "../../../store/useExternalLinkStore";
 import { useToastStore } from "../../../store/useToastStore";
 import { ErrorState } from "../ui/ErrorState";
-import { getAvatarStyle, getInitials } from "../TradeAnalyzer/summaryUtils";
 import { STATUS_COLORS, useEffectiveStatus } from "../../../hooks/usePresence";
 import { UserAvatar } from "../shared/UserAvatar";
 import { DiscordRolePill } from "../shared/DiscordRolePill";
-
-const ROLE_CONFIG: Record<
-  string,
-  { color: string; bg: string; border: string; label: string }
-> = {
-  master: {
-    color: "#fbbf24",
-    bg: "#2b1f0b",
-    border: "#f59e0b",
-    label: "Master",
-  },
-  admin: {
-    color: "#f87171",
-    bg: "#261417",
-    border: "#ef4444",
-    label: "Admin",
-  },
-  mod: {
-    color: "#8ea1e1",
-    bg: "#161a33",
-    border: "#5865F2",
-    label: "Moderator",
-  },
-  user: {
-    color: "#cbd5e1",
-    bg: "#1e1f22",
-    border: "#35373c",
-    label: "Trader",
-  },
-  banned: {
-    color: "#94a3b8",
-    bg: "#1e1f22",
-    border: "#475569",
-    label: "Banned",
-  },
-};
+import { logger } from "../../../lib/logger";
 
 const STANCE_LABELS: Record<
   TradingStanceType,
@@ -285,8 +248,12 @@ export function MiniProfilePopout() {
     try {
       const stored = localStorage.getItem("astd_channel");
       if (stored) activeChannel = JSON.parse(stored);
-    } catch {
-      // Ignore parse error
+    } catch (err) {
+      logger.warn("ASTD-UI-041", "Failed to parse active channel from localStorage", {
+        scope: "MiniProfilePopout",
+        action: "handleViewFullProfile",
+        error: err,
+      });
     }
 
     const safeDisplayName = resolveSafeUsername(profile.username, {

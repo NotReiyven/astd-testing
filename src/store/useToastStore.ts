@@ -33,7 +33,7 @@ interface ToastTimerEntry {
   paused: boolean;
 }
 
-const MAX_TOASTS = 4;
+const MAX_TOASTS = 3;
 const timerRegistry = new Map<string, ToastTimerEntry>();
 
 function clearToastTimer(id: string) {

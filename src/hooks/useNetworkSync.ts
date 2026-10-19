@@ -5,10 +5,11 @@ import { useToastStore } from "../store/useToastStore";
 import { copyTextWithFallback } from "../data/helpers";
 
 import { useAuthStore } from "../store/useAuthStore";
+import { logger } from "../lib/logger";
 
 const SYNC_DELAY_MS = 200;
 const MAX_BATCH_SIZE = 50;
-const MAX_ATTEMPTS = 5;
+const MAX_RETRIES = 3;
 const SYNC_TOAST_ID = "network-sync-status";
 
 export const PERMANENT_HTTP_STATUSES = new Set([400, 404, 409, 422]);
@@ -57,13 +58,13 @@ function belongsToUser(item: any, currentUserId: string): boolean {
 
 function stripSyncMeta<T>(raw: T): T {
   if (!raw || typeof raw !== "object") return raw;
-  const { _syncId: _id, _attempts: _att, ...rest } = raw as Record<string, any>;
+  const { _syncId: _id, _attempts: _att, retryCount: _rc, ...rest } = raw as Record<string, any>;
   if (rest.item && typeof rest.item === "object") {
-    const { _syncId: _iId, _attempts: _iAtt, ...cleanNestedItem } = rest.item;
+    const { _syncId: _iId, _attempts: _iAtt, retryCount: _iRc, ...cleanNestedItem } = rest.item;
     rest.item = cleanNestedItem;
   }
   if (rest.updates && typeof rest.updates === "object") {
-    const { _syncId: _uId, _attempts: _uAtt, ...cleanUpdates } = rest.updates;
+    const { _syncId: _uId, _attempts: _uAtt, retryCount: _uRc, ...cleanUpdates } = rest.updates;
     rest.updates = cleanUpdates;
   }
   return rest as T;
@@ -219,6 +220,7 @@ export async function syncAllQueues(): Promise<void> {
       change: string;
       reason: string;
       attempts: number;
+      retryCount: number;
       payload: any;
     }> = [];
 
@@ -231,20 +233,24 @@ export async function syncAllQueues(): Promise<void> {
       const rawInitial: any[] = (await get(storageKey)) || [];
       if (!Array.isArray(rawInitial) || rawInitial.length === 0) return;
 
-      // Ensure every item in storageKey has _syncId and _attempts defaulted to 0 on read
+      // Ensure every item in storageKey has _syncId and retryCount defaulted to 0 on read
       let normalizedChanged = false;
       const initialQueue = rawInitial.map((entry) => {
         if (
           entry &&
           typeof entry === "object" &&
-          (!entry._syncId || typeof entry._attempts !== "number")
+          (!entry._syncId || typeof entry.retryCount !== "number")
         ) {
           normalizedChanged = true;
           return {
             ...entry,
             _syncId: entry._syncId || generateSyncId(),
-            _attempts:
-              typeof entry._attempts === "number" ? entry._attempts : 0,
+            retryCount:
+              typeof entry.retryCount === "number"
+                ? entry.retryCount
+                : typeof entry._attempts === "number"
+                ? entry._attempts
+                : 0,
           };
         }
         return entry;
@@ -261,12 +267,13 @@ export async function syncAllQueues(): Promise<void> {
       if (actionableBatch.length === 0) return;
 
       const syncedIds = new Set<string>();
-      const droppedIds = new Set<string>();
-      const failedAttemptsMap = new Map<string, number>();
+      const permanentlyDroppedIds = new Set<string>();
+      const failedRetryCounts = new Map<string, number>();
 
       for (const item of actionableBatch) {
         const syncId: string = item._syncId;
         const cleanItem = stripSyncMeta(item);
+        const startTime = performance.now();
 
         try {
           await processor(cleanItem);
@@ -274,40 +281,64 @@ export async function syncAllQueues(): Promise<void> {
           totalSynced++;
           await sleep(SYNC_DELAY_MS);
         } catch (err) {
+          const durationMs = performance.now() - startTime;
           const { category, reason } = classifySyncError(err);
 
           if (category === "auth_expired") {
-            // Keep item in queue, do NOT increment _attempts, and ask user to sign in again
+            // Keep item in queue, do NOT increment retryCount, and ask user to sign in again
             authExpired = true;
+            logger.warn("ASTD-SYNC-002", "Session expired while syncing offline queue item", {
+              scope: "useNetworkSync",
+              action: storageKey,
+              durationMs,
+              metadata: { syncId, queue: storageKey },
+              error: err,
+            });
             break;
           }
 
-          const nextAttempts =
-            (typeof item._attempts === "number" ? item._attempts : 0) + 1;
+          const currentRetries =
+            typeof item.retryCount === "number"
+              ? item.retryCount
+              : typeof item._attempts === "number"
+              ? item._attempts
+              : 0;
+          const nextRetries = currentRetries + 1;
 
-          if (category === "permanent" || nextAttempts >= MAX_ATTEMPTS) {
-            droppedIds.add(syncId);
+          if (category === "permanent" || nextRetries > MAX_RETRIES) {
+            permanentlyDroppedIds.add(syncId);
             const label = describeQueueItem(storageKey, cleanItem);
             const why =
               category === "permanent"
-                ? `permanent error: ${reason}`
-                : `max ${MAX_ATTEMPTS}\u00A0attempts reached (${reason})`;
+                ? `permanent rejection: ${reason}`
+                : `exceeded max retries (${MAX_RETRIES}): ${reason}`;
             droppedNotices.push(`${label} — ${why}`);
             const dropRecord = {
               queue: storageKey,
               change: label,
               reason: why,
-              attempts: nextAttempts,
+              attempts: nextRetries,
+              retryCount: nextRetries,
               payload: cleanItem,
             };
             droppedPayloads.push(dropRecord);
-            console.warn(
-              "[useNetworkSync] Dropped offline queue item:",
-              dropRecord
-            );
+            logger.error("ASTD-SYNC-003", `Offline item permanently dropped from ${storageKey}`, {
+              scope: "useNetworkSync",
+              action: "drop_item",
+              durationMs,
+              metadata: dropRecord,
+              error: err,
+            });
           } else {
-            failedAttemptsMap.set(syncId, nextAttempts);
+            failedRetryCounts.set(syncId, nextRetries);
             totalFailedRetryable++;
+            logger.error("ASTD-SYNC-001", `Offline item sync failed in ${storageKey}; will retry`, {
+              scope: "useNetworkSync",
+              action: "retry_item",
+              durationMs,
+              metadata: { syncId, queue: storageKey, retryCount: nextRetries, reason },
+              error: err,
+            });
           }
         }
       }
@@ -316,16 +347,18 @@ export async function syncAllQueues(): Promise<void> {
       const latestQueue: any[] = (await get(storageKey)) || [];
       const reconciledQueue = latestQueue
         .filter((entry) => {
-          if (!belongsToUser(entry, currentUserId)) return false;
+          if (!belongsToUser(entry, currentUserId)) return true;
           const id = entry?._syncId;
           if (!id) return true;
-          if (syncedIds.has(id) || droppedIds.has(id)) return false;
+          // Purge ONLY successfully synced items or permanently dropped items; keep retryable failed items
+          if (syncedIds.has(id) || permanentlyDroppedIds.has(id)) return false;
           return true;
         })
         .map((entry) => {
           const id = entry?._syncId;
-          if (id && failedAttemptsMap.has(id)) {
-            return { ...entry, _attempts: failedAttemptsMap.get(id) };
+          if (id && failedRetryCounts.has(id)) {
+            const count = failedRetryCounts.get(id);
+            return { ...entry, retryCount: count, _attempts: count };
           }
           return entry;
         });

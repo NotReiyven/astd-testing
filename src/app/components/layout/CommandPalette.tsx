@@ -284,6 +284,8 @@ export function CommandPalette() {
             aria-hidden="true"
           />
           <input
+            id="command-palette-input"
+            name="command_query"
             ref={inputRef}
             type="text"
             value={query}

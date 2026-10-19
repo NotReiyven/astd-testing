@@ -162,7 +162,7 @@ export function TradeSummaryBox({
 
   return (
     <div
-      className={`flex-shrink-0 mx-[var(--panel-p)] mt-[var(--gap-md)] rounded-[8px] p-[var(--panel-p)] relative bg-card border transition-all duration-300 z-20 shadow-sm flex flex-col gap-2.5 ${
+      className={`flex-shrink-0 mx-[var(--panel-p)] mt-[var(--gap-md)] rounded-[8px] p-[var(--panel-p)] relative bg-card border transition-[border-color,box-shadow] duration-300 z-20 shadow-sm flex flex-col gap-2.5 ${
         isAnalyzerTarget
           ? "border-primary shadow-[0_0_20px_var(--primary)] ring-4 ring-primary/30 z-[100005]"
           : "border-border"
@@ -176,7 +176,7 @@ export function TradeSummaryBox({
           </p>
 
           <p
-            className="text-[16px] md:text-[18px] font-black text-foreground font-mono truncate"
+            className="text-[16px] md:text-[18px] font-black text-foreground font-mono tabular-nums truncate"
             title={giveTotal.toLocaleString()}
           >
             {isOcPresent && giveTotal === 0 ? (
@@ -191,7 +191,7 @@ export function TradeSummaryBox({
         <div className="flex flex-col items-center px-2 md:px-4 shrink-0">
           {isOcPresent ? (
             <>
-              <span className="text-[14px] md:text-[16px] font-black font-mono text-muted-foreground">
+              <span className="text-[14px] md:text-[16px] font-black font-mono tabular-nums text-muted-foreground">
                 N/A
               </span>
 
@@ -202,7 +202,7 @@ export function TradeSummaryBox({
           ) : giveTotal > 0 && getTotal > 0 ? (
             <>
               <span
-                className={`text-[14px] md:text-[16px] font-black font-mono flex items-center ${
+                className={`text-[14px] md:text-[16px] font-black font-mono tabular-nums flex items-center ${
                   getTotal > giveTotal
                     ? "text-[#23a559]"
                     : getTotal < giveTotal
@@ -228,7 +228,7 @@ export function TradeSummaryBox({
           </p>
 
           <p
-            className="text-[16px] md:text-[18px] font-black text-foreground font-mono truncate"
+            className="text-[16px] md:text-[18px] font-black text-foreground font-mono tabular-nums truncate"
             title={getTotal.toLocaleString()}
           >
             {isOcPresent && getTotal === 0 ? (
@@ -242,12 +242,12 @@ export function TradeSummaryBox({
 
       <div className="flex w-full h-[6px] gap-1.5 rounded-full overflow-hidden bg-popover">
         {isOcPresent ? (
-          <div className="w-full h-full bg-muted transition-all duration-500" />
+          <div className="w-full h-full bg-muted transition-[width] duration-500" />
         ) : (
           <>
             {giveTotal > 0 && (
               <div
-                className="bg-[#FAA61A] transition-all duration-500"
+                className="bg-[#FAA61A] transition-[width] duration-500"
                 style={{
                   width: `${Math.max(
                     0,
@@ -259,7 +259,7 @@ export function TradeSummaryBox({
 
             {getTotal > 0 && (
               <div
-                className="bg-primary transition-all duration-500"
+                className="bg-primary transition-[width] duration-500"
                 style={{
                   width: `${Math.max(
                     0,

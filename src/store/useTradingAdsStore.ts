@@ -6,6 +6,7 @@ import { get as getIdb, set as setIdb } from "idb-keyval";
 import { useToastStore } from "./useToastStore";
 import { useProfileStore } from "./useProfileStore";
 import { useAuthStore } from "./useAuthStore";
+import { logger } from "../lib/logger";
 
 export interface TradingAd {
   id: string;
@@ -65,6 +66,8 @@ const containsPhishingOrLink = (text: string) => {
   return aggressivePattern.test(stripped);
 };
 
+let tradingAdsChannelToken = 0;
+
 export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
   ads: [],
   userAdHistory: [],
@@ -87,7 +90,11 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("[useTradingAdsStore] Error fetching ads:", error.message);
+      logger.error("ASTD-ADS-001", "Error fetching ads from database", {
+        scope: "useTradingAdsStore",
+        action: "fetchAds",
+        error,
+      });
       set({ isLoading: false });
       return;
     }
@@ -119,7 +126,12 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
       .limit(50);
 
     if (error) {
-      console.error("[useTradingAdsStore] Error fetching user ad history:", error.message);
+      logger.error("ASTD-ADS-002", "Error fetching user ad history", {
+        scope: "useTradingAdsStore",
+        action: "fetchUserAdHistory",
+        metadata: { userId },
+        error,
+      });
       set({ userAdHistory: [], isLoadingHistory: false });
       return;
     }
@@ -136,87 +148,132 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
   },
 
   subscribeToAds: () => {
-    const adsChannel = supabase
-      .channel("public:trading_ads")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "trading_ads" },
-        (payload) => {
-          const { eventType, new: newRecord, old: oldRecord } = payload;
+    tradingAdsChannelToken += 1;
+    const currentToken = tradingAdsChannelToken;
 
-          if (eventType === "INSERT") {
-            supabase
-              .from("trading_ads")
-              .select(
-                `*, profiles!trading_ads_user_id_fkey(username, avatar_url, role, discord_id, status)`
-              )
-              .eq("id", newRecord.id)
-              .single()
-              .then(({ data, error }) => {
-                if (error) console.error("[useTradingAdsStore] Realtime Fetch Error:", error);
-                if (data) {
-                  set((state) => ({ ads: [data as TradingAd, ...state.ads] }));
-                }
-              });
-          } else if (eventType === "DELETE") {
-            set((state) => ({
-              ads: state.ads.filter((ad) => ad.id !== oldRecord.id),
-              userAdHistory: state.userAdHistory.filter(
-                (ad) => ad.id !== oldRecord.id
-              ),
-            }));
-          } else if (eventType === "UPDATE") {
+    try {
+      for (const ch of supabase.getChannels()) {
+        if (
+          ch.topic.startsWith("realtime:trading-ads-") ||
+          ch.topic.startsWith("realtime:profiles-status-") ||
+          ch.topic === "realtime:public:trading_ads" ||
+          ch.topic === "realtime:public:profiles_status"
+        ) {
+          void supabase.removeChannel(ch);
+        }
+      }
+    } catch {
+      // Ignore channel inspection errors
+    }
+
+    let adsChannel: any = null;
+    let profilesChannel: any = null;
+
+    try {
+      adsChannel = supabase
+        .channel(`trading-ads-${currentToken}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "trading_ads" },
+          (payload) => {
+            const { eventType, new: newRecord, old: oldRecord } = payload;
+
+            if (eventType === "INSERT") {
+              supabase
+                .from("trading_ads")
+                .select(
+                  `*, profiles!trading_ads_user_id_fkey(username, avatar_url, role, discord_id, status)`
+                )
+                .eq("id", newRecord.id)
+                .single()
+                .then(({ data, error }) => {
+                  if (error) {
+                    logger.error("ASTD-ADS-003", "Realtime fetch error on ad insert", {
+                      scope: "useTradingAdsStore",
+                      action: "subscribeToAds",
+                      error,
+                    });
+                  }
+                  if (data) {
+                    set((state) => ({ ads: [data as TradingAd, ...state.ads] }));
+                  }
+                });
+            } else if (eventType === "DELETE") {
+              set((state) => ({
+                ads: state.ads.filter((ad) => ad.id !== oldRecord.id),
+                userAdHistory: state.userAdHistory.filter(
+                  (ad) => ad.id !== oldRecord.id
+                ),
+              }));
+            } else if (eventType === "UPDATE") {
+              set((state) => ({
+                ads: state.ads.map((ad) =>
+                  ad.id === newRecord.id ? { ...ad, ...newRecord } : ad
+                ),
+                userAdHistory: state.userAdHistory.map((ad) =>
+                  ad.id === newRecord.id ? { ...ad, ...newRecord } : ad
+                ),
+              }));
+            }
+          }
+        )
+        .subscribe();
+    } catch (err) {
+      logger.warn("ASTD-ADS-021", "Failed to subscribe to trading ads channel", {
+        scope: "useTradingAdsStore",
+        action: "subscribeToAds.adsChannel",
+        metadata: { token: currentToken },
+        error: err,
+      });
+    }
+
+    try {
+      profilesChannel = supabase
+        .channel(`profiles-status-${currentToken}`)
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "profiles" },
+          (payload) => {
+            if (payload.new?.id) {
+              useProfileStore
+                .getState()
+                .updateLocalProfile(payload.new.id, {
+                  status: payload.new.status,
+                });
+            }
             set((state) => ({
               ads: state.ads.map((ad) =>
-                ad.id === newRecord.id ? { ...ad, ...newRecord } : ad
+                ad.user_id === payload.new.id && ad.profiles
+                  ? {
+                      ...ad,
+                      profiles: { ...ad.profiles, status: payload.new.status },
+                    }
+                  : ad
               ),
               userAdHistory: state.userAdHistory.map((ad) =>
-                ad.id === newRecord.id ? { ...ad, ...newRecord } : ad
+                ad.user_id === payload.new.id && ad.profiles
+                  ? {
+                      ...ad,
+                      profiles: { ...ad.profiles, status: payload.new.status },
+                    }
+                  : ad
               ),
             }));
           }
-        }
-      )
-      .subscribe();
-
-    const profilesChannel = supabase
-      .channel("public:profiles_status")
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "profiles" },
-        (payload) => {
-          if (payload.new?.id) {
-            useProfileStore
-              .getState()
-              .updateLocalProfile(payload.new.id, {
-                status: payload.new.status,
-              });
-          }
-          set((state) => ({
-            ads: state.ads.map((ad) =>
-              ad.user_id === payload.new.id && ad.profiles
-                ? {
-                    ...ad,
-                    profiles: { ...ad.profiles, status: payload.new.status },
-                  }
-                : ad
-            ),
-            userAdHistory: state.userAdHistory.map((ad) =>
-              ad.user_id === payload.new.id && ad.profiles
-                ? {
-                    ...ad,
-                    profiles: { ...ad.profiles, status: payload.new.status },
-                  }
-                : ad
-            ),
-          }));
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
+    } catch (err) {
+      logger.warn("ASTD-ADS-022", "Failed to subscribe to profiles status channel", {
+        scope: "useTradingAdsStore",
+        action: "subscribeToAds.profilesChannel",
+        metadata: { token: currentToken },
+        error: err,
+      });
+    }
 
     return () => {
-      supabase.removeChannel(adsChannel);
-      supabase.removeChannel(profilesChannel);
+      if (adsChannel) void supabase.removeChannel(adsChannel);
+      if (profilesChannel) void supabase.removeChannel(profilesChannel);
     };
   },
 
@@ -284,7 +341,13 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
         if (!isNaN(localTime) && localTime > lastTime) {
           lastTime = localTime;
         }
-      } catch {}
+      } catch (storageErr) {
+        logger.warn("ASTD-ADS-006", "Could not read last ad post time from localStorage", {
+          scope: "useTradingAdsStore",
+          action: "createAd",
+          error: storageErr,
+        });
+      }
 
       const { data: recentAds } = await supabase
         .from("trading_ads")
@@ -373,7 +436,12 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
 
     const { error } = await supabase.from("trading_ads").insert(payload);
     if (error) {
-      console.error("[useTradingAdsStore] Error posting ad:", error.message);
+      logger.error("ASTD-ADS-007", "Error posting ad to database", {
+        scope: "useTradingAdsStore",
+        action: "createAd",
+        metadata: { userId: payload.user_id },
+        error,
+      });
       return { error };
     }
 
@@ -382,7 +450,13 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
         `astd_last_ad_posted_${payload.user_id}`,
         Date.now().toString()
       );
-    } catch {}
+    } catch (storageErr) {
+      logger.warn("ASTD-ADS-008", "Could not save last ad post time to localStorage", {
+        scope: "useTradingAdsStore",
+        action: "createAd",
+        error: storageErr,
+      });
+    }
 
     return { error: null };
   },
@@ -435,7 +509,12 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
       .eq("id", id);
 
     if (error) {
-      console.error("[useTradingAdsStore] Error deleting ad:", error.message);
+      logger.error("ASTD-ADS-009", "Error deleting ad from database", {
+        scope: "useTradingAdsStore",
+        action: "deleteAd",
+        metadata: { id },
+        error,
+      });
       set({ ads: currentAds, userAdHistory: currentHistory });
       useToastStore
         .getState()

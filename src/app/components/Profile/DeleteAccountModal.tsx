@@ -111,7 +111,7 @@ export function DeleteAccountModal({
       aria-modal="true"
       aria-labelledby="delete-account-title"
       aria-describedby="delete-account-desc"
-      className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs select-none"
+      className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 select-none"
     >
       <div
         ref={modalRef}
@@ -179,6 +179,7 @@ export function DeleteAccountModal({
             </label>
             <input
               id="confirmation-input"
+              name="account_deletion_confirmation"
               ref={inputRef}
               type="text"
               autoComplete="off"
@@ -187,7 +188,7 @@ export function DeleteAccountModal({
               value={confirmationInput}
               onChange={(e) => setConfirmationInput(e.target.value)}
               placeholder="delete my account"
-              className="w-full px-3 py-2 text-[13px] bg-background border border-border rounded-[6px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-destructive focus:ring-1 focus:ring-destructive font-mono transition-colors"
+              className="w-full px-3 py-2 text-base sm:text-[13px] bg-background border border-border rounded-[6px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-destructive focus:ring-1 focus:ring-destructive font-mono transition-colors"
             />
           </div>
 

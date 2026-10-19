@@ -3,6 +3,7 @@
 // ================================================
 
 import { create } from 'zustand';
+import { logger } from '../lib/logger';
 
 interface ExternalLinkState {
   isOpen: boolean;
@@ -39,7 +40,12 @@ export const safeOpenExternal = (url: string) => {
       return;
     }
   } catch (e) {
-    // Fallback if URL parsing fails
+    logger.warn("ASTD-EXT-003", "URL parsing or trusted domain check failed in safeOpenExternal", {
+      scope: "useExternalLinkStore",
+      action: "safeOpenExternal",
+      metadata: { url },
+      error: e,
+    });
   }
 
   // Otherwise, trigger the modal warning

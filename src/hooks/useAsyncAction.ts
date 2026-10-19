@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useToastStore, ToastAction } from "../store/useToastStore";
 import { MOTION_DURATION_MS } from "../lib/motionTokens";
+import { logger } from "../lib/logger";
 
 export type AsyncActionStatus = "idle" | "loading" | "success" | "error";
 
@@ -113,6 +114,12 @@ export function useAsyncAction<TArgs extends unknown[], TResult>(
       } catch (err) {
         const normalizedError =
           err instanceof Error ? err : new Error(String(err ?? "Unknown error"));
+
+        logger.error("ASTD-ACT-001", "Managed async action execution failed", {
+          scope: "useAsyncAction",
+          action: "execute",
+          error: normalizedError,
+        });
 
         if (mountedRef.current) {
           setStatus("error");

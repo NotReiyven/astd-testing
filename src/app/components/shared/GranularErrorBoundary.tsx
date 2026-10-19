@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from "react";
+import { Component, ErrorInfo, ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { logger } from "../../../lib/logger";
 
@@ -39,7 +39,7 @@ export class GranularErrorBoundary extends Component<Props, State> {
           </p>
           <button
             onClick={() => this.setState({ hasError: false, error: null })}
-            className="flex items-center gap-2 px-5 py-2.5 bg-muted hover:bg-card border border-border hover:border-muted-foreground text-foreground rounded-[4px] text-[12px] font-bold transition-all focus-visible:outline-none cursor-pointer shadow-sm active:scale-95"
+            className="flex items-center gap-2 px-5 py-2.5 bg-muted hover:bg-card border border-border hover:border-muted-foreground text-foreground rounded-[4px] text-[12px] font-bold transition-[background-color,border-color,color,transform] duration-150 focus-visible:outline-none cursor-pointer shadow-sm active:scale-95"
           >
             <RefreshCw className="w-4 h-4" /> Attempt Recovery
           </button>

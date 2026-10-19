@@ -5,6 +5,7 @@ import { GiMagnifyingGlass } from "react-icons/gi";
 import { TradeCard } from "../../../types";
 import { useUnits } from "../../../context/UnitContext";
 import { ActiveCardRow } from "./ActiveCardRow";
+import { logger } from "../../../lib/logger";
 
 interface TradeSectionPanelProps {
   label: string;
@@ -21,7 +22,7 @@ interface TradeSectionPanelProps {
   onInputBlur?: () => void;
 }
 
-function MagneticCTA({ children, onClick, ariaLabel, isGive }: { children: React.ReactNode; onClick: () => void; ariaLabel: string, isGive: boolean }) {
+function MagneticCTA({ children, onClick, ariaLabel }: { children: React.ReactNode; onClick: () => void; ariaLabel: string }) {
   const prefersReducedMotion = useReducedMotion();
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -146,8 +147,13 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
           qty: 1,
         });
       }
-    } catch {
-      /* malformed payload */
+    } catch (err) {
+      logger.warn("ASTD-UI-038", "Malformed drag-and-drop payload dropped on TradeSectionPanel", {
+        scope: "TradeSectionPanel",
+        action: "handleDrop",
+        metadata: { panelType: type },
+        error: err,
+      });
     }
   };
 
@@ -241,7 +247,6 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
             <MagneticCTA
               onClick={onClear}
               ariaLabel={`Clear ${label} Section`}
-              isGive={isGive}
             >
               Clear {isGive ? "Give" : "Get"}
             </MagneticCTA>
@@ -260,6 +265,8 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
         >
           <GiMagnifyingGlass className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
           <input
+            id={`trade-section-search-${type}`}
+            name={`trade_section_search_${type}`}
             ref={searchInputRef}
             type="text"
             autoComplete="off"

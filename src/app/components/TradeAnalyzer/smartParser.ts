@@ -175,8 +175,12 @@ const readPersistedSlangCache = (): Record<string, string> => {
     if (parsed && typeof parsed === "object") {
       return { ...(parsed as Record<string, string>) };
     }
-  } catch {
-    // Fallback to in-memory cache if localStorage is unavailable
+  } catch (e) {
+    logger.warn("ASTD-UI-035", "Failed to read slang cache from localStorage", {
+      scope: "smartParser",
+      action: "readPersistedSlangCache",
+      error: e,
+    });
   }
   return inMemorySlangCache ? { ...inMemorySlangCache } : {};
 };

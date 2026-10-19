@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
+import { apiLogger } from "./lib/logger.js";
 
 export const config = {
   maxDuration: 15,
@@ -159,7 +160,12 @@ function initLocalMetadata() {
       }
     }
   } catch (err) {
-    console.error("[unitMeta] Error parsing local units metadata:", err);
+    apiLogger.error({
+      route: "/api/unitMeta",
+      code: "ASTD-META-001",
+      message: "Error parsing local units metadata file",
+      error: err,
+    });
   }
 
   localMetaMap = metaMap;
@@ -492,7 +498,12 @@ export async function GET(request: Request) {
       },
     });
   } catch (error: unknown) {
-    console.error("[unitMeta] Unhandled error:", error);
+    apiLogger.error({
+      route: "/api/unitMeta",
+      code: "ASTD-META-002",
+      message: "Unhandled error in unitMeta SSR handler",
+      error,
+    });
     const fallbackHtml = getBaseHtml();
     return new Response(fallbackHtml, {
       status: 200,

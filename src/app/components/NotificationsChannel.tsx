@@ -16,6 +16,8 @@ import {
 } from "../../store/useNotificationStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useToastStore } from "../../store/useToastStore";
+import { useAdInteractionStore } from "../../store/useAdInteractionStore";
+import { useTradeStore } from "../../store/useTradeStore";
 import { useShowDelay } from "../../hooks/useShowDelay";
 import { triggerHaptic } from "../../data/helpers";
 import { UserAvatar } from "./shared/UserAvatar";
@@ -139,9 +141,6 @@ export function NotificationsChannel() {
         notification.type === "warning" ||
         notification.type === "system")
     ) {
-      const { useAdInteractionStore } = await import(
-        "../../store/useAdInteractionStore"
-      );
       void useAdInteractionStore
         .getState()
         .openAdContext(notification.ad_id, profile?.id);
@@ -149,7 +148,6 @@ export function NotificationsChannel() {
       notification.type === "system" &&
       notification.message?.toLowerCase().includes("cooldown")
     ) {
-      const { useTradeStore } = await import("../../store/useTradeStore");
       useTradeStore.getState().setComposerOpen(true);
     }
   };
@@ -335,6 +333,16 @@ export function NotificationsChannel() {
           showNotificationsSkeleton ? (
             <NotificationsSkeletonList count={4} />
           ) : null
+        ) : !profile ? (
+          <EmptyState
+            icon={<GiCharacter className="w-5 h-5 text-[#5865F2]" />}
+            title="Sign in with Discord to view your notifications"
+            description="Log in with Discord to receive live alerts when other traders comment on or upvote your listings."
+            action={{
+              label: "Sign In with Discord",
+              onClick: loginWithDiscord,
+            }}
+          />
         ) : filteredNotifications.length === 0 ? (
           <EmptyState
             icon={<GiRingingBell className="w-5 h-5" />}
@@ -502,7 +510,7 @@ export function NotificationsChannel() {
                         }}
                         aria-label="Mark notification as read"
                         title="Mark as read"
-                        className="p-1.5 text-muted-foreground hover:text-primary hover:bg-muted rounded-[5px] transition-colors cursor-pointer"
+                        className="p-2 min-w-[36px] min-h-[36px] md:min-w-[28px] md:min-h-[28px] flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted rounded-[5px] transition-colors cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       >
                         <GiCheckMark className="w-3.5 h-3.5" />
                       </button>
@@ -515,7 +523,7 @@ export function NotificationsChannel() {
                       }
                       aria-label="Delete notification"
                       title="Remove notification"
-                      className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[5px] transition-colors cursor-pointer"
+                      className="p-2 min-w-[36px] min-h-[36px] md:min-w-[28px] md:min-h-[28px] flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-[5px] transition-colors cursor-pointer touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
                     >
                       <GiTrashCan className="w-3.5 h-3.5" />
                     </button>

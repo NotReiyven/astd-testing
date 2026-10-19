@@ -89,7 +89,6 @@ export function AdComposerModal() {
     activeAdsCount,
     isAtMaxActiveAds,
     isOnCooldown,
-    canPostAd,
     formattedCooldown,
   } = useAdCooldown();
 
@@ -196,10 +195,18 @@ export function AdComposerModal() {
         if (focusables.length === 0) return;
         const first = focusables[0];
         const last = focusables[focusables.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
+        if (
+          e.shiftKey &&
+          (document.activeElement === first ||
+            !dialogRef.current.contains(document.activeElement))
+        ) {
           e.preventDefault();
           last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
+        } else if (
+          !e.shiftKey &&
+          (document.activeElement === last ||
+            !dialogRef.current.contains(document.activeElement))
+        ) {
           e.preventDefault();
           first.focus();
         }
@@ -208,7 +215,7 @@ export function AdComposerModal() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  });
+  }, [isComposerOpen, showDiscardConfirm, isPublishing]);
 
   const handlePublish = async () => {
     if (publishingLockRef.current || isPublishing) return;
@@ -612,7 +619,7 @@ export function AdComposerModal() {
                           triggerHaptic("light");
                           setAdType(fmt.id);
                         }}
-                        className={`flex flex-col items-start p-3 rounded-[8px] border text-left transition-all cursor-pointer focus-visible:outline-none ${
+                        className={`flex flex-col items-start p-3 rounded-[8px] border text-left transition-[background-color,border-color,color] duration-150 cursor-pointer focus-visible:outline-none ${
                           isSelected
                             ? fmt.activeBorder
                             : "bg-[#2b2d31] hover:bg-[#35373c] border-[#3f4147] text-white/80 hover:text-white shadow-xs"
@@ -627,7 +634,7 @@ export function AdComposerModal() {
                             }`}
                           />
                           <span
-                            className={`w-2 h-2 rounded-full transition-all ${
+                            className={`w-2 h-2 rounded-full transition-[background-color,border-color] duration-150 ${
                               isSelected
                                 ? fmt.dotColor
                                 : "border border-white/30 bg-transparent"
@@ -755,6 +762,7 @@ export function AdComposerModal() {
                 <textarea
                   ref={noteTextareaRef}
                   id="ad-composer-note"
+                  name="ad_note"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   onKeyDown={(e) => {
@@ -834,7 +842,7 @@ export function AdComposerModal() {
                 disabled={
                   isPublishing || (!isStaff && (isOnCooldown || isAtMaxActiveAds))
                 }
-                className="px-4 h-9 bg-[#5865F2] hover:bg-[#4752c4] text-white text-[12px] font-bold rounded-[6px] transition-all flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 h-9 bg-[#5865F2] hover:bg-[#4752c4] text-white text-[12px] font-bold rounded-[6px] transition-[background-color,border-color,opacity] duration-150 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isOnCooldown
                   ? `Cooldown (${formattedCooldown})`

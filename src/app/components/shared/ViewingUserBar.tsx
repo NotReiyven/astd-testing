@@ -1,4 +1,3 @@
-import React from "react";
 import { GiCharacter, GiChest } from "react-icons/gi";
 
 export interface ViewingUserBarProps {

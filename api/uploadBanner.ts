@@ -1,8 +1,32 @@
+// ================================================
+// FILE: api/uploadBanner.ts
+// ================================================
+
 import { createClient } from "@supabase/supabase-js";
+import { Redis } from "@upstash/redis";
+import { Ratelimit } from "@upstash/ratelimit";
+import { apiLogger } from "./lib/logger.js";
 
 export const config = {
   maxDuration: 15,
 };
+
+// Top-level tunables & configuration
+const MAX_UPLOADS_PER_WINDOW = 5;
+const UPLOAD_WINDOW = "10 m";
+const MAX_PAYLOAD_BYTES = 5 * 1024 * 1024; // 5 MB
+
+let ratelimit: Ratelimit | null = null;
+if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+  const redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  });
+  ratelimit = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(MAX_UPLOADS_PER_WINDOW, UPLOAD_WINDOW),
+  });
+}
 
 function jsonResponse(status: number, body: Record<string, any>) {
   return new Response(JSON.stringify(body), {
@@ -12,6 +36,43 @@ function jsonResponse(status: number, body: Record<string, any>) {
       "X-Content-Type-Options": "nosniff",
     },
   });
+}
+
+/**
+ * Validates actual binary file signatures (magic bytes) to prevent extension spoofing.
+ */
+function verifyMagicBytes(buffer: Buffer, claimedMimeType: string): boolean {
+  if (claimedMimeType === "image/png") {
+    return (
+      buffer.length >= 8 &&
+      buffer[0] === 0x89 &&
+      buffer[1] === 0x50 &&
+      buffer[2] === 0x4e &&
+      buffer[3] === 0x47
+    );
+  }
+  if (claimedMimeType === "image/jpeg") {
+    return (
+      buffer.length >= 3 &&
+      buffer[0] === 0xff &&
+      buffer[1] === 0xd8 &&
+      buffer[2] === 0xff
+    );
+  }
+  if (claimedMimeType === "image/webp") {
+    return (
+      buffer.length >= 12 &&
+      buffer[0] === 0x52 &&
+      buffer[1] === 0x49 &&
+      buffer[2] === 0x46 &&
+      buffer[3] === 0x46 && // "RIFF"
+      buffer[8] === 0x57 &&
+      buffer[9] === 0x45 &&
+      buffer[10] === 0x42 &&
+      buffer[11] === 0x50 // "WEBP"
+    );
+  }
+  return false;
 }
 
 export async function POST(request: Request) {
@@ -47,8 +108,35 @@ export async function POST(request: Request) {
     return jsonResponse(401, { error: "Unauthorized or expired session." });
   }
 
+  // 2. Upstash Rate Limiting Gate (per authenticated user ID)
+  if (ratelimit) {
+    try {
+      const { success } = await ratelimit.limit(`upload_banner_${user.id}`);
+      if (!success) {
+        return jsonResponse(429, {
+          error: "Upload rate limit exceeded. Maximum 5 banner uploads per 10 minutes allowed.",
+        });
+      }
+    } catch (rlError) {
+      apiLogger.warn({
+        route: "/api/uploadBanner",
+        code: "ASTD-UP-001",
+        message: "Upstash rate limiter unavailable or failed",
+        meta: { userId: user.id },
+        error: rlError,
+      });
+      // Allow gracefully based on policy; here we log and proceed safely
+    }
+  }
+
   try {
-    const body = await request.json();
+    let body: any;
+    try {
+      body = await request.json();
+    } catch {
+      return jsonResponse(400, { error: "Invalid JSON request body." });
+    }
+
     const { imageBase64 } = body;
 
     if (!imageBase64 || typeof imageBase64 !== "string") {
@@ -67,9 +155,16 @@ export async function POST(request: Request) {
     // Decode base64 to buffer
     const buffer = Buffer.from(rawData, "base64");
 
-    // Enforce 5 MB max payload
-    if (buffer.length > 5 * 1024 * 1024) {
-      return jsonResponse(400, { error: "Image exceeds 5 MB limit." });
+    // Enforce max payload limit
+    if (buffer.length > MAX_PAYLOAD_BYTES) {
+      return jsonResponse(400, { error: `Image exceeds ${MAX_PAYLOAD_BYTES / (1024 * 1024)} MB limit.` });
+    }
+
+    // 3. Binary Magic Bytes Verification
+    if (!verifyMagicBytes(buffer, mimeType)) {
+      return jsonResponse(400, {
+        error: "File signature mismatch: binary header does not match claimed MIME type.",
+      });
     }
 
     const extension = mimeType === "image/png" ? "png" : mimeType === "image/jpeg" ? "jpg" : "webp";
@@ -84,7 +179,13 @@ export async function POST(request: Request) {
       });
 
     if (uploadError) {
-      console.error("[uploadBanner] Storage upload failed:", uploadError);
+      apiLogger.error({
+        route: "/api/uploadBanner",
+        code: "ASTD-UP-002",
+        message: "Supabase storage upload failed",
+        meta: { userId: user.id, filePath, mimeType },
+        error: uploadError,
+      });
       return jsonResponse(500, { error: "Failed to upload banner to storage." });
     }
 
@@ -94,10 +195,11 @@ export async function POST(request: Request) {
 
     // Opportunistically prune old banners for this user to keep storage clean
     try {
-      const { data: existingFiles } = await adminClient.storage
+      const { data: existingFiles, error: listError } = await adminClient.storage
         .from("banners")
         .list(user.id);
-      if (Array.isArray(existingFiles) && existingFiles.length > 1) {
+
+      if (!listError && Array.isArray(existingFiles) && existingFiles.length > 1) {
         const toDelete = existingFiles
           .filter((f) => f.name !== `banner-${filePath.split("/").pop()}` && f.name !== filePath.split("/").pop())
           .map((f) => `${user.id}/${f.name}`);
@@ -105,13 +207,25 @@ export async function POST(request: Request) {
           await adminClient.storage.from("banners").remove(toDelete);
         }
       }
-    } catch {
-      // Non-critical cleanup failure, ignore
+    } catch (cleanupErr) {
+      apiLogger.info({
+        route: "/api/uploadBanner",
+        code: "ASTD-UP-003",
+        message: "Failed to prune previous banners for user",
+        meta: { userId: user.id },
+        error: cleanupErr,
+      });
     }
 
     return jsonResponse(200, { publicUrl: pubData.publicUrl });
   } catch (err: unknown) {
-    console.error("[uploadBanner] Exception:", err);
+    apiLogger.error({
+      route: "/api/uploadBanner",
+      code: "ASTD-UP-004",
+      message: "Unexpected error during banner upload execution",
+      meta: { userId: user?.id },
+      error: err,
+    });
     return jsonResponse(500, { error: "An unexpected error occurred during upload." });
   }
 }

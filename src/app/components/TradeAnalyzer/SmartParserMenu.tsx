@@ -733,6 +733,7 @@ export function SmartParserMenu({
               <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   id="smart-parser-offer-input"
+                  name="trade_offer_text"
                   ref={smartInputRef}
                   value={smartInput}
                   onChange={(e) => {
@@ -798,6 +799,7 @@ export function SmartParserMenu({
                 </label>
                 <input
                   id="slang-key-input"
+                  name="slang_key"
                   ref={slangKeyInputRef}
                   value={newSlangKey}
                   onChange={(e) => {
@@ -836,6 +838,7 @@ export function SmartParserMenu({
                   <GiMagnifyingGlass className="w-4 h-4 text-muted-foreground mr-2 shrink-0" />
                   <input
                     id="slang-target-unit-input"
+                    name="slang_target_unit"
                     ref={slangTargetInputRef}
                     type="text"
                     value={searchQuery}

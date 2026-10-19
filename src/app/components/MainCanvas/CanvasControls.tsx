@@ -118,6 +118,8 @@ export function CanvasControls({
 
         {hasFiltersApplied && (
           <button
+            type="button"
+            aria-label="Reset all filters"
             onClick={() => {
               triggerHaptic("medium");
               handleResetFilters();

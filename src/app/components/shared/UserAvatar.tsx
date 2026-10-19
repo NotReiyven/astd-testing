@@ -131,6 +131,8 @@ export const UserAvatar = memo(function UserAvatar({
           alt={alt || username || "User avatar"}
           loading={priority ? "eager" : "lazy"}
           decoding="async"
+          width={40}
+          height={40}
           referrerPolicy="no-referrer"
           onLoad={() => setImgLoaded(true)}
           onError={handleError}

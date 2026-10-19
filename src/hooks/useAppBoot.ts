@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useInventoryStore } from "../store/useInventoryStore";
+import { logger } from "../lib/logger";
 
 export type BootStage =
   | "loading"
@@ -66,7 +67,14 @@ export function useAppBoot() {
           }, 900);
         }, 700);
       })
-      .catch(() => setBootStage("complete"));
+      .catch((err) => {
+        logger.warn("ASTD-BOOT-003", "Preloading route components failed during boot animation", {
+          scope: "useAppBoot",
+          action: "preloadRoutes",
+          error: err,
+        });
+        setBootStage("complete");
+      });
   }, []);
 
   return { bootStage, isMobile };

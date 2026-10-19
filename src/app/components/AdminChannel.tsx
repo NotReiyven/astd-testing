@@ -1,9 +1,8 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   GiLockedFortress,
   GiSpikedHalo,
-  GiShieldEchoes,
   GiSwordsEmblem,
   GiScrollUnfurled,
   GiBackpack,
@@ -15,7 +14,6 @@ import {
   GiHammerDrop,
   GiSparkles,
   GiCheckMark,
-  GiCrossMark,
   GiMagnifyingGlass,
   GiCycle,
   GiChest,
@@ -23,21 +21,23 @@ import {
 } from "react-icons/gi";
 import { useProfileStore } from "../../store/useProfileStore";
 import { useInventoryStore } from "../../store/useInventoryStore";
+import { useToastStore } from "../../store/useToastStore";
 import { useUnits } from "../../context/UnitContext";
 import { triggerHaptic, sanitizeUsername, resolveSafeUsername } from "../../data/helpers";
-import { getAvatarStyle, getInitials } from "./TradeAnalyzer/summaryUtils";
+import { getInitials } from "./TradeAnalyzer/summaryUtils";
 import { UserAvatar } from "./shared/UserAvatar";
 import { getProxyImage, handleImageError } from "../../data";
 import {
   useAdminIntel,
   CORE_SYSTEM_ROLES,
   RolePermissions,
-  RoleItem,
 } from "../../hooks/useAdminIntel";
 import { SecuritySettingsTab } from "./Admin/SecuritySettingsTab";
 import { AuditStreamTab } from "./Admin/AuditStreamTab";
 import { CommentsStreamTab } from "./Admin/CommentsStreamTab";
 import { DiscordRolePill, getContrastTextColor } from "./shared/DiscordRolePill";
+import { AsyncButton } from "./ui/AsyncButton";
+import { logger } from "../../lib/logger";
 
 type AdminTab =
   | "users"
@@ -97,9 +97,7 @@ export function AdminChannel({
     roleFilter,
     setRoleFilter,
     isLoading,
-    toast,
     showToast,
-    setToast,
     showBannedOnly,
     setShowBannedOnly,
     handleSearch,
@@ -130,7 +128,6 @@ export function AdminChannel({
     canManageUsers,
     canManageRoles,
     canDeleteAds,
-    canUseDestructiveTools,
     canUseMasterTools,
     canActOnUser,
     canToggleRole,
@@ -265,7 +262,46 @@ export function AdminChannel({
     isDestructive?: boolean;
   } | null>(null);
   const [modReason, setModReason] = useState("");
+  const [isExecutingModAction, setIsExecutingModAction] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const modModalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!modActionData) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isExecutingModAction) {
+        setModActionData(null);
+        setModReason("");
+      }
+      if (e.key === "Tab" && modModalRef.current) {
+        const focusable = modModalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), textarea:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (
+            document.activeElement === first ||
+            !modModalRef.current.contains(document.activeElement)
+          ) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (
+            document.activeElement === last ||
+            !modModalRef.current.contains(document.activeElement)
+          ) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [modActionData, isExecutingModAction]);
 
   const handleCopyText = (text: string, label = "ID") => {
     navigator.clipboard.writeText(text);
@@ -288,39 +324,51 @@ export function AdminChannel({
   };
 
   const executeModAction = async () => {
-    if (!modActionData || !modReason.trim()) return;
+    if (!modActionData || !modReason.trim() || isExecutingModAction) return;
 
     const reason = modReason.trim();
     const { type, payload, extraTargetUserId } = modActionData;
 
-    setModActionData(null);
-    setModReason("");
-
-    if (type === "delete_single_ad" && payload && extraTargetUserId) {
-      await deleteSingleAd(payload, extraTargetUserId, reason);
-      return;
-    }
-
-    if (!selectedUser) return;
-
-    if (type === "warn") {
-      await warnUser(selectedUser.id, selectedUser.username, reason);
-    } else if (type === "role" && payload) {
-      await updateUserRole(selectedUser.id, payload, reason);
-    } else if (type === "ban" && payload) {
-      await updateUserRole(selectedUser.id, payload, reason);
-    } else if (type === "reset_profile") {
-      await handleResetProfile(reason);
-    } else if (type === "purge_ads") {
-      await handlePurgeAds(reason);
-    } else if (type === "purge_comments") {
-      await handlePurgeComments(reason);
-    } else if (type === "wipe_inv") {
-      await handleWipeInventory(reason);
-    } else if (type === "wipe_wishlist") {
-      await handleWipeWishlist(reason);
-    } else if (type === "nuke") {
-      await handleTotalAccountNuke(reason);
+    setIsExecutingModAction(true);
+    try {
+      if (type === "delete_single_ad" && payload && extraTargetUserId) {
+        await deleteSingleAd(payload, extraTargetUserId, reason);
+      } else if (selectedUser) {
+        if (type === "warn") {
+          await warnUser(selectedUser.id, selectedUser.username, reason);
+        } else if (type === "role" && payload) {
+          await updateUserRole(selectedUser.id, payload, reason);
+        } else if (type === "ban" && payload) {
+          await updateUserRole(selectedUser.id, payload, reason);
+        } else if (type === "reset_profile") {
+          await handleResetProfile(reason);
+        } else if (type === "purge_ads") {
+          await handlePurgeAds(reason);
+        } else if (type === "purge_comments") {
+          await handlePurgeComments(reason);
+        } else if (type === "wipe_inv") {
+          await handleWipeInventory(reason);
+        } else if (type === "wipe_wishlist") {
+          await handleWipeWishlist(reason);
+        } else if (type === "nuke") {
+          await handleTotalAccountNuke(reason);
+        }
+      }
+      setModActionData(null);
+      setModReason("");
+    } catch (err) {
+      logger.error("ASTD-ADMIN-012", "Failed to execute moderation action", {
+        scope: "AdminChannel",
+        action: "executeModAction",
+        metadata: { type, payload },
+        error: err,
+      });
+      useToastStore.getState().addToast(
+        "Failed to execute moderation action. Please try again.",
+        "error"
+      );
+    } finally {
+      setIsExecutingModAction(false);
     }
   };
 
@@ -2785,19 +2833,37 @@ export function AdminChannel({
 
       {/* Confirmation Modal */}
       {modActionData && (
-        <div className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-black/80 animate-fade-in">
+        <div
+          ref={modModalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="mod-action-title"
+          className="fixed inset-0 z-[1000000] flex items-center justify-center p-4 bg-black/80 animate-fade-in"
+        >
           <div className="bg-card border border-border rounded-[6px] p-5 max-w-sm w-full shadow-2xl flex flex-col gap-3">
-            <h3 className="text-[14px] text-foreground border-b border-border pb-2.5">
+            <h3
+              id="mod-action-title"
+              className="text-[14px] font-bold text-foreground border-b border-border pb-2.5"
+            >
               {modActionData.label}
             </h3>
 
-            <textarea
-              value={modReason}
-              onChange={(e) => setModReason(e.target.value)}
-              placeholder="Audit reason…"
-              className="bg-input text-foreground text-[12px] font-mono p-2.5 rounded-[4px] border border-border focus:border-primary outline-none resize-none h-20"
-              required
-            />
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="mod-audit-reason"
+                className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block"
+              >
+                Audit Reason
+              </label>
+              <textarea
+                id="mod-audit-reason"
+                value={modReason}
+                onChange={(e) => setModReason(e.target.value)}
+                placeholder="Audit reason…"
+                className="bg-input text-foreground text-base sm:text-[12px] font-mono p-2.5 rounded-[4px] border border-border focus:border-primary outline-none resize-none h-20"
+                required
+              />
+            </div>
 
             <div className="flex gap-2">
               <button
@@ -2806,55 +2872,26 @@ export function AdminChannel({
                   setModActionData(null);
                   setModReason("");
                 }}
-                className="flex-1 h-9 rounded-[4px] bg-muted hover:bg-muted/80 border border-border text-foreground text-[11px] font-mono cursor-pointer"
+                disabled={isExecutingModAction}
+                className="flex-1 h-9 rounded-[4px] bg-muted hover:bg-muted/80 border border-border text-foreground text-[11px] font-mono cursor-pointer disabled:opacity-50"
               >
                 Cancel
               </button>
-              <button
+              <AsyncButton
                 type="button"
                 onClick={executeModAction}
-                disabled={!modReason.trim()}
-                className={`flex-1 h-9 rounded-[4px] text-white text-[11px] font-mono disabled:opacity-40 cursor-pointer ${
+                isLoading={isExecutingModAction}
+                disabled={!modReason.trim() || isExecutingModAction}
+                variant={modActionData.isDestructive ? "destructive" : "default"}
+                className={`flex-1 h-9 rounded-[4px] text-white text-[11px] font-mono cursor-pointer ${
                   modActionData.isDestructive
-                    ? "bg-destructive hover:bg-destructive/90"
-                    : "bg-[#FAA61A] hover:bg-[#d98b14]"
+                    ? ""
+                    : "bg-[#FAA61A] hover:bg-[#d98b14] border-transparent"
                 }`}
               >
                 Confirm
-              </button>
+              </AsyncButton>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Toast Notification — Positioned clear of mobile bottom bar */}
-      {toast && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-[100000] animate-slide-up"
-        >
-          <div
-            className={`px-3.5 py-2.5 rounded-[6px] shadow-xl flex items-center gap-2.5 border font-mono text-[11.5px] ${
-              toast.type === "error"
-                ? "bg-popover border-destructive/50 text-destructive"
-                : "bg-popover border-[#23a559]/50 text-[#23a559]"
-            }`}
-          >
-            {toast.type === "error" ? (
-              <GiCrossMark className="w-3.5 h-3.5 shrink-0" />
-            ) : (
-              <GiCheckMark className="w-3.5 h-3.5 shrink-0" />
-            )}
-            <span>{toast.text}</span>
-            <button
-              type="button"
-              onClick={() => setToast(null)}
-              className="ml-1 text-muted-foreground hover:text-foreground cursor-pointer"
-              aria-label="Dismiss"
-            >
-              ✕
-            </button>
           </div>
         </div>
       )}

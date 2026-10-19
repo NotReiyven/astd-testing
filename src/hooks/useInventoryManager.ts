@@ -12,6 +12,7 @@ import {
 import { parseSmartTradeAsync } from "../app/components/TradeAnalyzer/smartParser";
 import { triggerHaptic, copyTextWithFallback } from "../data/helpers";
 import { useToastStore } from "../store/useToastStore";
+import { logger } from "../lib/logger";
 
 export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
   const myItems = useInventoryStore((s) => s.items);
@@ -141,6 +142,12 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
           });
         }
       } catch (e) {
+        logger.error("ASTD-INV-004", `Failed to update quantity for ${unitName}`, {
+          scope: "useInventoryManager",
+          action: "handleQtyChange",
+          metadata: { unitId, delta },
+          error: e,
+        });
         addToast(
           `Could not update quantity for ${unitName}—check your connection and try again.`,
           "error",
@@ -180,6 +187,12 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
             : prev
         );
       } catch (e) {
+        logger.error("ASTD-INV-005", `Failed to toggle pin for ${unitName}`, {
+          scope: "useInventoryManager",
+          action: "handleTogglePin",
+          metadata: { unitId, status },
+          error: e,
+        });
         addToast(
           `Could not ${status ? "unlock" : "lock"} ${unitName}—try again.`,
           "error",
@@ -229,6 +242,12 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
           }
         );
       } catch (e) {
+        logger.error("ASTD-INV-006", `Failed to remove ${master.name}`, {
+          scope: "useInventoryManager",
+          action: "handleRemove",
+          metadata: { unitId: item.unit_id, isWishlistView },
+          error: e,
+        });
         addToast(
           `Could not remove ${master.name}—check your connection and try again.`,
           "error",
@@ -470,6 +489,12 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
         "info"
       );
     } catch (e) {
+      logger.error("ASTD-INV-007", `Failed to clear inventory (${mode})`, {
+        scope: "useInventoryManager",
+        action: "handleClearAction",
+        metadata: { mode },
+        error: e,
+      });
       addToast("Could not clear inventory—try again.", "error", {
         action: {
           label: "Retry",
@@ -682,6 +707,12 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
         },
       });
     } catch (e) {
+      logger.error("ASTD-INV-008", `Failed to move ${unitName} to Vault`, {
+        scope: "useInventoryManager",
+        action: "handleQuickTransfer",
+        metadata: { unitId },
+        error: e,
+      });
       addToast(`Could not move ${unitName} to Vault—try again.`, "error", {
         action: {
           label: "Retry",
@@ -710,7 +741,7 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
     });
   };
 
-  const handleQuickAdd = async (master: MasterUnit) => {
+  const handleQuickAdd = async (master: MasterUnit, keepSearch = false) => {
     if (!profile) {
       addToast(
         "Please sign in with Discord to add units to your vault.",
@@ -726,7 +757,9 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
       if (isWishlistView) await toggleWishlist(profile.id, master.id);
       else await addOrUpdateUnit(profile.id, master.id, 1);
       triggerHaptic("medium");
-      setSearchQuery("");
+      if (!keepSearch) {
+        setSearchQuery("");
+      }
       if (alreadyInWishlist) {
         addToast(`Removed ${master.name} from Wishlist.`, "info", {
           action: {
@@ -762,11 +795,17 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
         );
       }
     } catch (e) {
+      logger.error("ASTD-INV-009", `Failed to add ${master.name}`, {
+        scope: "useInventoryManager",
+        action: "handleQuickAdd",
+        metadata: { unitId: master.id, isWishlistView },
+        error: e,
+      });
       addToast(`Could not add ${master.name}—try again.`, "error", {
         action: {
           label: "Retry",
           onClick: () => {
-            void handleQuickAdd(master);
+            void handleQuickAdd(master, keepSearch);
           },
         },
       });
@@ -789,7 +828,12 @@ export function useInventoryManager(ALL_UNITS: MasterUnit[]) {
         await addOrUpdateUnit(profile.id, item.id, item.qty);
         successCount++;
       } catch (e) {
-        console.error("Failed to import", item.name);
+        logger.error("ASTD-INV-003", `Failed to import unit ${item.name} into vault`, {
+          scope: "useInventoryManager",
+          action: "handleImportSubmit",
+          metadata: { unitId: item.id, qty: item.qty },
+          error: e,
+        });
       }
     }
 

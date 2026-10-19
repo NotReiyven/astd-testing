@@ -10,6 +10,7 @@ import { useAuthStore } from "../../../store/useAuthStore";
 import { useToastStore } from "../../../store/useToastStore";
 import { supabase } from "../../../lib/supabase";
 import { UserAvatar } from "../shared/UserAvatar";
+import { logger } from "../../../lib/logger";
 
 // Clean Discord-style SVG Icons
 const IconClose = ({ className = "w-4 h-4" }: { className?: string }) => (
@@ -159,7 +160,11 @@ async function uploadBannerImage(dataUrl: string): Promise<string | null> {
       }
     }
   } catch (err) {
-    console.warn("[uploadBannerImage] API upload failed, falling back to data URL:", err);
+    logger.warn("ASTD-PROF-001", "API banner upload failed, falling back to data URL", {
+      scope: "ProfileCustomizerModal",
+      action: "uploadBannerImage",
+      error: err,
+    });
   }
   return null;
 }
@@ -632,7 +637,12 @@ export const ProfileCustomizerModal = memo(function ProfileCustomizerModal({
             if (cdnUrl) {
               setBannerImageUrl(cdnUrl);
             }
-          } catch {
+          } catch (err) {
+            logger.error("ASTD-PROF-006", "Failed to process banner image in ProfileCustomizerModal", {
+              scope: "ProfileCustomizerModal",
+              action: "handleFileChange",
+              error: err,
+            });
             useToastStore.getState().addToast(
               "Could not process banner image. Please try another image.",
               "error"
@@ -763,10 +773,13 @@ export const ProfileCustomizerModal = memo(function ProfileCustomizerModal({
           {/* Hidden File Input */}
           <input
             ref={fileInputRef}
+            id="profile-banner-file-input"
+            name="banner_file"
             type="file"
             accept=".png,.jpg,.jpeg,.webp"
             onChange={handleBannerFileSelect}
             className="hidden"
+            aria-label="Upload custom banner image"
           />
 
           {/* LIVE PROFILE PREVIEW CARD */}
@@ -809,7 +822,7 @@ export const ProfileCustomizerModal = memo(function ProfileCustomizerModal({
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-[12px] font-bold text-white">
+                <label htmlFor="profile-bio-textarea" className="text-[12px] font-bold text-white cursor-pointer">
                   About Me (Bio)
                 </label>
                 <span className="text-[11px] font-mono text-[#949ba4]">
@@ -817,24 +830,28 @@ export const ProfileCustomizerModal = memo(function ProfileCustomizerModal({
                 </span>
               </div>
               <textarea
+                id="profile-bio-textarea"
+                name="bio"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 maxLength={190}
                 placeholder="Share your trading goals, time zone, or preferred offers…"
-                className="w-full bg-[#1e1f22] border border-[#35373c] rounded-[6px] p-3 text-[13px] text-white outline-none resize-none h-20 focus:border-[#5865F2] transition-colors"
+                className="w-full bg-[#1e1f22] border border-[#35373c] rounded-[6px] p-3 text-base sm:text-[13px] text-white outline-none resize-none h-20 focus:border-[#5865F2] transition-colors"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[12px] font-bold text-white">
+              <label htmlFor="profile-roblox-username-input" className="text-[12px] font-bold text-white cursor-pointer">
                 Roblox Username
               </label>
               <input
+                id="profile-roblox-username-input"
+                name="roblox_username"
                 type="text"
                 value={robloxName}
                 onChange={(e) => setRobloxName(e.target.value)}
                 placeholder="Your Roblox username (optional)…"
-                className="w-full bg-[#1e1f22] border border-[#35373c] rounded-[6px] px-3.5 py-2 text-[13px] text-white outline-none focus:border-[#5865F2] transition-colors"
+                className="w-full bg-[#1e1f22] border border-[#35373c] rounded-[6px] px-3.5 py-2 text-base sm:text-[13px] text-white outline-none focus:border-[#5865F2] transition-colors"
               />
             </div>
           </div>

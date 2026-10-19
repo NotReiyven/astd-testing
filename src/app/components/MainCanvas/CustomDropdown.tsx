@@ -151,7 +151,7 @@ export function CustomDropdown({
         aria-expanded={isOpen}
         aria-controls={isOpen ? "custom-dropdown-list" : undefined}
         aria-activedescendant={activeDescendant}
-        className="w-full flex items-center justify-between bg-popover hover:bg-muted rounded-[4px] border border-border px-3 h-[34px] sm:h-[32px] transition-all shadow-inner whitespace-nowrap active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="w-full flex items-center justify-between bg-popover hover:bg-muted rounded-[4px] border border-border px-3 h-[34px] sm:h-[32px] transition-[background-color,border-color,transform] duration-150 shadow-inner whitespace-nowrap active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <div className="flex items-center min-w-0 pointer-events-none flex-1 pr-1">
           <Icon

@@ -67,33 +67,65 @@ const clearLocalAuthCache = () => {
 };
 
 let activeProfileChannel: RealtimeChannel | null = null;
+let profileChannelToken = 0;
 
-// SECURITY FIX: Sanitize the Supabase session object in both memory AND localStorage
+// SECURITY FIX: Sanitize OAuth provider tokens from both memory AND localStorage
 // to prevent Discord provider_token / provider_refresh_token leakage via XSS.
-const sanitizeSession = (rawSession: Session | null): Session | null => {
-  if (!rawSession) return null;
-  const safeSession = { ...rawSession };
-
-  // Strip dangerous OAuth tokens from memory state
-  delete safeSession.provider_token;
-  delete safeSession.provider_refresh_token;
-
-  // Also scrub any persisted sb-* session token in localStorage
+export const scrubLocalStorageProviderTokens = () => {
   try {
     for (const key of Object.keys(localStorage)) {
-      if (key.startsWith("sb-") && key.endsWith("-auth-token")) {
+      if (key.startsWith("sb-")) {
         const raw = localStorage.getItem(key);
-        if (raw && (raw.includes("provider_token") || raw.includes("provider_refresh_token"))) {
-          const parsed = JSON.parse(raw);
-          delete parsed.provider_token;
-          delete parsed.provider_refresh_token;
-          localStorage.setItem(key, JSON.stringify(parsed));
+        if (
+          raw &&
+          (raw.includes("provider_token") || raw.includes("provider_refresh_token"))
+        ) {
+          try {
+            const parsed = JSON.parse(raw);
+            let modified = false;
+
+            if ("provider_token" in parsed) {
+              delete parsed.provider_token;
+              modified = true;
+            }
+            if ("provider_refresh_token" in parsed) {
+              delete parsed.provider_refresh_token;
+              modified = true;
+            }
+            if (parsed.currentSession) {
+              if ("provider_token" in parsed.currentSession) {
+                delete parsed.currentSession.provider_token;
+                modified = true;
+              }
+              if ("provider_refresh_token" in parsed.currentSession) {
+                delete parsed.currentSession.provider_refresh_token;
+                modified = true;
+              }
+            }
+
+            if (modified) {
+              localStorage.setItem(key, JSON.stringify(parsed));
+            }
+          } catch {
+            // Non-JSON storage entry, skip
+          }
         }
       }
     }
   } catch {
     // Ignore storage parse errors
   }
+};
+
+const sanitizeSession = (rawSession: Session | null): Session | null => {
+  scrubLocalStorageProviderTokens();
+
+  if (!rawSession) return null;
+  const safeSession = { ...rawSession };
+
+  // Strip dangerous OAuth tokens from memory state
+  delete safeSession.provider_token;
+  delete safeSession.provider_refresh_token;
 
   return safeSession;
 };
@@ -138,8 +170,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
 
     if (activeProfileChannel) {
-      supabase.removeChannel(activeProfileChannel);
+      const prev = activeProfileChannel;
       activeProfileChannel = null;
+      void supabase.removeChannel(prev);
     }
 
     await supabase.auth.signOut();
@@ -172,6 +205,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       .eq("id", profile.id);
 
     if (error) {
+      logger.error("ASTD-AUTH-002", "Failed to update profile status in Supabase", {
+        scope: "useAuthStore",
+        action: "updateStatus",
+        metadata: { userId: profile.id, status },
+        error,
+      });
       set({ profile: { ...profile, status: previousStatus } });
       useProfileStore
         .getState()
@@ -250,7 +289,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           data = { ...defaultRow, created_at: new Date().toISOString() };
           error = null;
         }
-      } catch {
+      } catch (upsertErr) {
+        logger.warn("ASTD-AUTH-003", "Auto-provisioning profile upsert failed, using fallback in-memory profile", {
+          scope: "useAuthStore",
+          action: "fetchProfile",
+          metadata: { userId },
+          error: upsertErr,
+        });
         data = { ...defaultRow, created_at: new Date().toISOString() };
         error = null;
       }
@@ -354,36 +399,60 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       useProfileStore.getState().seedProfile(data);
 
       if (activeProfileChannel) {
-        supabase.removeChannel(activeProfileChannel);
+        const prev = activeProfileChannel;
         activeProfileChannel = null;
+        void supabase.removeChannel(prev);
       }
 
-      activeProfileChannel = supabase.channel(`user-profile-${userId}`);
-      activeProfileChannel
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "profiles",
-            filter: `id=eq.${userId}`,
-          },
-          async (payload) => {
-            const updatedProfile = payload.new as UserProfile;
-            if (updatedProfile.role === "banned") {
-              get().logout();
-            } else {
-              updatedProfile.username = resolveSafeUsername(updatedProfile.username, {
-                joinNumber: (updatedProfile as any).join_number,
-                discordId: updatedProfile.discord_id,
-                userId: updatedProfile.id,
-              });
-              set({ profile: updatedProfile });
-              useProfileStore.getState().seedProfile(payload.new);
-            }
+      profileChannelToken += 1;
+      const currentToken = profileChannelToken;
+
+      try {
+        for (const ch of supabase.getChannels()) {
+          if (ch.topic.startsWith(`realtime:user-profile-${userId}`)) {
+            void supabase.removeChannel(ch);
           }
-        )
-        .subscribe();
+        }
+      } catch {
+        // Ignore channel inspection errors
+      }
+
+      try {
+        const channel = supabase.channel(`user-profile-${userId}-${currentToken}`);
+        activeProfileChannel = channel;
+        channel
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: "profiles",
+              filter: `id=eq.${userId}`,
+            },
+            async (payload) => {
+              const updatedProfile = payload.new as UserProfile;
+              if (updatedProfile.role === "banned") {
+                get().logout();
+              } else {
+                updatedProfile.username = resolveSafeUsername(updatedProfile.username, {
+                  joinNumber: (updatedProfile as any).join_number,
+                  discordId: updatedProfile.discord_id,
+                  userId: updatedProfile.id,
+                });
+                set({ profile: updatedProfile });
+                useProfileStore.getState().seedProfile(payload.new);
+              }
+            }
+          )
+          .subscribe();
+      } catch (err) {
+        logger.warn("ASTD-AUTH-005", "Failed to subscribe to profile updates", {
+          scope: "useAuthStore",
+          action: "fetchProfile",
+          metadata: { userId, token: currentToken },
+          error: err,
+        });
+      }
     }
   },
 
@@ -428,7 +497,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         .getState()
         .addToast("Avatar is already up to date with Discord.", "info");
       return false;
-    } catch {
+    } catch (err) {
+      logger.error("ASTD-AUTH-004", "Failed to sync Discord avatar", {
+        scope: "useAuthStore",
+        action: "syncDiscordAvatar",
+        error: err,
+      });
       useToastStore
         .getState()
         .addToast("Could not sync Discord avatar. Try again.", "error");
@@ -464,7 +538,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       useToastStore.getState().addToast("Failed to update avatar in database.", "error");
       return false;
-    } catch {
+    } catch (err) {
+      logger.error("ASTD-AUTH-005", "Failed to update avatar URL in database", {
+        scope: "useAuthStore",
+        action: "updateAvatarUrl",
+        error: err,
+      });
       useToastStore.getState().addToast("Error updating avatar.", "error");
       return false;
     }
@@ -514,6 +593,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       return { success: true };
     } catch (err: any) {
+      logger.error("ASTD-AUTH-006", "Account deletion network request failed", {
+        scope: "useAuthStore",
+        action: "deleteAccount",
+        error: err,
+      });
       return {
         success: false,
         error: err?.message || "An unexpected network error occurred.",
@@ -522,24 +606,42 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   initialize: () => {
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-      if (error) clearLocalAuthCache();
-
-      const safeSession = sanitizeSession(session);
-      if (safeSession?.user) {
-        set({ session: safeSession });
-        try {
-          await get().fetchProfile(safeSession.user.id);
-        } finally {
-          set({ isLoading: false });
+    supabase.auth
+      .getSession()
+      .then(async ({ data: { session }, error }) => {
+        if (error) {
+          clearLocalAuthCache();
         }
-      } else {
-        set({ session: null, profile: null, isLoading: false });
-      }
-    });
 
-    supabase.auth.onAuthStateChange(async (_event, session) => {
+        const safeSession = sanitizeSession(session);
+        queueMicrotask(scrubLocalStorageProviderTokens);
+        if (safeSession?.user) {
+          set({ session: safeSession });
+          try {
+            await get().fetchProfile(safeSession.user.id);
+          } finally {
+            set({ isLoading: false });
+          }
+        } else {
+          set({ session: null, profile: null, isLoading: false });
+        }
+      })
+      .catch((err) => {
+        logger.warn("ASTD-AUTH-007", "Initial session retrieval failed, falling back to guest mode", {
+          scope: "useAuthStore",
+          action: "initialize",
+          error: err,
+        });
+        clearLocalAuthCache();
+        set({ session: null, profile: null, isLoading: false });
+      });
+
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_OUT") {
+        clearLocalAuthCache();
+      }
       const safeSession = sanitizeSession(session);
+      queueMicrotask(scrubLocalStorageProviderTokens);
       if (safeSession?.user) {
         set({ session: safeSession });
         try {
@@ -549,8 +651,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       } else {
         if (activeProfileChannel) {
-          supabase.removeChannel(activeProfileChannel);
+          const prev = activeProfileChannel;
           activeProfileChannel = null;
+          void supabase.removeChannel(prev);
         }
         set({ session: null, profile: null, isLoading: false });
       }

@@ -8,6 +8,7 @@ import {
   UserProfileData,
 } from "../store/useProfileStore";
 import { getUnitAssetUrl } from "../data/helpers";
+import { logger } from "../lib/logger";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -71,7 +72,12 @@ function getGuestPresenceKey(): string {
       sessionStorage.setItem(GUEST_STORAGE_KEY, guestId);
     }
     return guestId;
-  } catch {
+  } catch (err) {
+    logger.warn("ASTD-PRS-001", "sessionStorage unavailable for guest presence ID, using volatile fallback", {
+      scope: "usePresence",
+      action: "getGuestSessionId",
+      error: err,
+    });
     return `guest:${Math.random().toString(36).slice(2, 10)}`;
   }
 }
@@ -113,9 +119,10 @@ function ensurePresenceChannel(presenceKey: string, userId: string | null) {
   }
 
   if (activePresenceChannel) {
-    supabase.removeChannel(activePresenceChannel);
+    const prevChannel = activePresenceChannel;
     activePresenceChannel = null;
     activePresenceKey = null;
+    void supabase.removeChannel(prevChannel);
   }
 
   activePresenceKey = presenceKey;
@@ -124,55 +131,62 @@ function ensurePresenceChannel(presenceKey: string, userId: string | null) {
   });
   activePresenceChannel = room;
 
-  room
-    .on("presence", { event: "sync" }, () => {
-      if (activePresenceChannel !== room) return;
-      const state = room.presenceState();
-      const userIdSet = new Set<string>();
-      const guestKeyList: string[] = [];
+  try {
+    room
+      .on("presence", { event: "sync" }, () => {
+        if (activePresenceChannel !== room) return;
+        const state = room.presenceState();
+        const userIdSet = new Set<string>();
+        const guestKeyList: string[] = [];
 
-      for (const [key, presences] of Object.entries(state)) {
-        if (!Array.isArray(presences) || presences.length === 0) continue;
-        const trimmedKey = key.trim();
-        if (UUID_REGEX.test(trimmedKey)) {
-          userIdSet.add(trimmedKey);
-        } else {
-          guestKeyList.push(trimmedKey);
+        for (const [key, presences] of Object.entries(state)) {
+          if (!Array.isArray(presences) || presences.length === 0) continue;
+          const trimmedKey = key.trim();
+          if (UUID_REGEX.test(trimmedKey)) {
+            userIdSet.add(trimmedKey);
+          } else {
+            guestKeyList.push(trimmedKey);
+          }
         }
-      }
 
-      const uniqueUserIds = Array.from(userIdSet);
-      usePresenceStore
-        .getState()
-        .setPresenceSnapshot(uniqueUserIds, guestKeyList);
+        const uniqueUserIds = Array.from(userIdSet);
+        usePresenceStore
+          .getState()
+          .setPresenceSnapshot(uniqueUserIds, guestKeyList);
 
-      if (uniqueUserIds.length > 0) {
-        void useProfileStore.getState().fetchProfiles(uniqueUserIds);
-      }
-    })
-    .subscribe(async (status) => {
-      if (status === "SUBSCRIBED" && activePresenceChannel === room) {
-        const legacyUnit =
-          ANONYMOUS_UNIT_POOL[
-            hashSeed(presenceKey) % ANONYMOUS_UNIT_POOL.length
-          ];
-        await room.track({
-          id: presenceKey,
-          name: legacyUnit.name.replace(/^Anonymous\s+/i, ""),
-          color: legacyUnit.color,
-          unitId: legacyUnit.slug,
-          user_id: userId,
-          online_at: new Date().toISOString(),
-        });
-      }
+        if (uniqueUserIds.length > 0) {
+          void useProfileStore.getState().fetchProfiles(uniqueUserIds);
+        }
+      })
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED" && activePresenceChannel === room) {
+          const legacyUnit =
+            ANONYMOUS_UNIT_POOL[
+              hashSeed(presenceKey) % ANONYMOUS_UNIT_POOL.length
+            ];
+          await room.track({
+            id: presenceKey,
+            name: legacyUnit.name.replace(/^Anonymous\s+/i, ""),
+            color: legacyUnit.color,
+            unitId: legacyUnit.slug,
+            user_id: userId,
+            online_at: new Date().toISOString(),
+          });
+        }
+      });
+  } catch (err) {
+    logger.warn("ASTD-PRESENCE-001", "Failed to subscribe to global presence", {
+      error: err,
     });
+  }
 }
 
 function releasePresenceChannel() {
   if (subscriberCount <= 0 && activePresenceChannel) {
-    supabase.removeChannel(activePresenceChannel);
+    const prevChannel = activePresenceChannel;
     activePresenceChannel = null;
     activePresenceKey = null;
+    void supabase.removeChannel(prevChannel);
   }
 }
 

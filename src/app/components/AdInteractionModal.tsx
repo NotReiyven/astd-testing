@@ -33,7 +33,6 @@ import { useUnits } from "../../context/UnitContext";
 import { useShowDelay } from "../../hooks/useShowDelay";
 import {
   getProxyImage,
-  getUnitAssetUrl,
   handleImageError,
   GRID_STATUS_CFG,
 } from "../../data";
@@ -416,6 +415,8 @@ export function AdInteractionModal() {
 
   useEffect(() => {
     if (!activeAdId) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     previousFocusRef.current = document.activeElement as HTMLElement | null;
     const focusTimer = setTimeout(() => {
       closeBtnRef.current?.focus();
@@ -449,6 +450,7 @@ export function AdInteractionModal() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => {
+      document.body.style.overflow = originalOverflow;
       clearTimeout(focusTimer);
       window.removeEventListener("keydown", handleKeyDown);
       if (
@@ -1013,7 +1015,7 @@ export function AdInteractionModal() {
   return (
     <div
       ref={dialogRef}
-      className="fixed inset-0 z-[100000] flex items-center justify-center p-0 md:p-[var(--page-p)] bg-black/85 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[100000] flex items-center justify-center p-0 md:p-[var(--page-p)] bg-black/85 animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-label={`Trade listing by ${safeAdAuthor}`}
@@ -1524,6 +1526,8 @@ export function AdInteractionModal() {
                     <div className="relative flex-1">
                       <textarea
                         ref={textareaRef}
+                        id="ad-comment-input"
+                        name="ad_comment"
                         value={newComment}
                         onChange={(e) => {
                           setNewComment(e.target.value);

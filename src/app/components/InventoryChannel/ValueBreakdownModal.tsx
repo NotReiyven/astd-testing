@@ -81,6 +81,49 @@ function ModalContent({
   onClose,
   items,
 }: Omit<ValueBreakdownModalProps, "isOpen">) {
+  const dialogRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key === "Tab" && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (
+            document.activeElement === first ||
+            !dialogRef.current.contains(document.activeElement)
+          ) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (
+            document.activeElement === last ||
+            !dialogRef.current.contains(document.activeElement)
+          ) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = "auto";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
+
   const topUnits = [...items]
     .sort(
       (a, b) =>
@@ -119,7 +162,13 @@ function ModalContent({
   const totalValue = data.reduce((acc, curr) => acc + curr.value, 0);
 
   return (
-    <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4">
+    <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="wealth-modal-title"
+      className="fixed inset-0 z-[100000] flex items-center justify-center p-4"
+    >
       <div
         className="absolute inset-0 bg-background/95 animate-in fade-in duration-200"
         onClick={onClose}
@@ -127,7 +176,7 @@ function ModalContent({
 
       <div className="bg-card border border-border rounded-[12px] shadow-2xl w-full max-w-4xl relative z-10 flex flex-col overflow-hidden max-h-[90vh] animate-in fade-in zoom-in-95 duration-300 ease-out">
         <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-muted/20 flex-shrink-0">
-          <h2 className="text-xl font-black tracking-tight text-foreground flex items-center gap-2">
+          <h2 id="wealth-modal-title" className="text-xl font-black tracking-tight text-foreground flex items-center gap-2">
             <span className="w-2 h-6 bg-primary rounded-full"></span>
             Wealth Distribution
           </h2>
@@ -217,7 +266,7 @@ function ModalContent({
                   key={idx}
                   onMouseEnter={() => setActiveIndex(idx)}
                   onMouseLeave={() => setActiveIndex(undefined)}
-                  className={`flex items-center justify-between p-3.5 rounded-[8px] border transition-all cursor-default group ${
+                  className={`flex items-center justify-between p-3.5 rounded-[8px] border transition-[background-color,border-color,transform,box-shadow] duration-150 cursor-default group ${
                     activeIndex === idx
                       ? "bg-muted/60 border-border/80 scale-[1.02] shadow-md"
                       : "bg-muted/20 border-border hover:bg-muted/40"
