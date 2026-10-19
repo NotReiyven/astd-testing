@@ -11,7 +11,7 @@ import { useSearchParams } from "react-router-dom";
 import { ArrowUp } from "lucide-react";
 import { useVirtualizer, defaultRangeExtractor } from "@tanstack/react-virtual";
 import { FilterKey } from "../../../types";
-import { TIER_CONFIG } from "../../../data";
+import { TIER_CONFIG, FILTERS, getTier } from "../../../data";
 import { useUnits } from "../../../context/UnitContext";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { useToastStore } from "../../../store/useToastStore";
@@ -79,16 +79,7 @@ export const MainCanvas = memo(function MainCanvas({
     lastSerializedParamsRef.current = serialized;
 
     const urlTier = searchParams.get("tier");
-    const validTiers: FilterKey[] = [
-      "All",
-      "S",
-      "A",
-      "B",
-      "C",
-      "Pure",
-      "Oddities",
-      "Untiered",
-    ];
+    const validTiers = FILTERS;
     const targetTier: FilterKey =
       urlTier && validTiers.includes(urlTier as FilterKey)
         ? (urlTier as FilterKey)
@@ -102,6 +93,17 @@ export const MainCanvas = memo(function MainCanvas({
     setStatusFilter(targetStatus);
     setSearchQuery(targetQ);
   }, [searchParams, setActiveTierFilter, setSearchQuery]);
+
+  // Gracefully fallback to "All" if user was on "New" tier but no units exist in New
+  useEffect(() => {
+    if (
+      activeTierFilter === "New" &&
+      ALL_UNITS.length > 0 &&
+      !ALL_UNITS.some((u) => getTier(u) === "New")
+    ) {
+      setActiveTierFilter("All");
+    }
+  }, [ALL_UNITS, activeTierFilter, setActiveTierFilter]);
 
   // 2. Synchronize filter & search state changes to URL search params
   useEffect(() => {

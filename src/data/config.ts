@@ -2,6 +2,7 @@ import { FilterKey, TierConfig, UnitStatus, TradeCard } from "../types";
 
 export const FILTERS: FilterKey[] = [
   "All",
+  "New",
   "S",
   "A",
   "B",
@@ -19,6 +20,14 @@ export const TIER_CONFIG: Record<string, TierConfig> = {
     badgeColor: "#7289da",
     badgeShadow: "rgba(114,137,218,0.35)",
     subtitle: "Every tracked unit in the value list",
+  },
+  New: {
+    label: "New Units",
+    units: [],
+    badgeChar: "★",
+    badgeColor: "#eab308",
+    badgeShadow: "rgba(234, 179, 8, 0.35)",
+    subtitle: "Newly released units · Offers vary heavily",
   },
   S: {
     label: "S Tier",
@@ -79,6 +88,7 @@ export const TIER_CONFIG: Record<string, TierConfig> = {
 };
 
 export const TIER_STYLES: Record<string, string> = {
+  New: "text-black bg-yellow-400 border-yellow-500/40 shadow-xs",
   S: "text-black bg-yellow-400 border-black/20 shadow-xs",
   A: "text-white bg-orange-500 border-white/20 shadow-xs",
   B: "text-white bg-blue-500 border-white/20 shadow-xs",

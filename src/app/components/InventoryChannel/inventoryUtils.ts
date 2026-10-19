@@ -8,6 +8,7 @@ export const SORT_OPTIONS = {
 };
 
 export const TIER_ORDER: FilterKey[] = [
+  "New",
   "S",
   "A",
   "B",

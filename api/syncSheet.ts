@@ -114,6 +114,7 @@ export async function GET(request: Request) {
   }
 
   const ranges = [
+    "NewUnits!A:I",
     "S Tier!A:I", "A Tier!A:I", "B Tier!A:I", "C Tier!A:I",
     "Pure Tier!A:I", "Oddities!A:I", "Untiered!A:I",
     "Home!A:K", "Extra Notices!A:B", "Tutorial!A:I",
@@ -128,9 +129,21 @@ export async function GET(request: Request) {
   );
 
   try {
-    const response = await fetch(
+    let response = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batchRanges}&includeGridData=true&fields=${fields}&key=${API_KEY}`
     );
+
+    // If NewUnits sheet tab was deleted/moved in the future, fallback without NewUnits!A:I
+    if (!response.ok && ranges.includes("NewUnits!A:I")) {
+      const fallbackRanges = ranges.filter((r) => r !== "NewUnits!A:I");
+      const fallbackBatch = fallbackRanges.map((r) => `ranges=${encodeURIComponent(r)}`).join("&");
+      const retryRes = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${fallbackBatch}&includeGridData=true&fields=${fields}&key=${API_KEY}`
+      );
+      if (retryRes.ok) {
+        response = retryRes;
+      }
+    }
 
     if (!response.ok) {
       throw new Error(`Google Sheets responded with status ${response.status}`);

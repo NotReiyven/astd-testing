@@ -36,7 +36,9 @@ export function processUnits(
     if (sortMode === "value-desc") {
       if (valA === Infinity && valB === Infinity)
         return a.name.localeCompare(b.name);
-      return valB - valA;
+      if (valB !== valA) return valB - valA;
+      if (b.rarity !== a.rarity) return b.rarity - a.rarity;
+      return a.name.localeCompare(b.name);
     }
     if (sortMode === "value-asc") {
       if (valA === Infinity && valB === Infinity)

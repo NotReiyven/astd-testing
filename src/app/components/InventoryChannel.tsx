@@ -515,7 +515,11 @@ export function InventoryChannel() {
                 <span className="leading-none">Locked</span>
               </button>
             )}
-            {FILTERS.filter((f) => f !== "All").map((f) => (
+            {FILTERS.filter(
+              (f) =>
+                f !== "All" &&
+                (f !== "New" || ALL_UNITS.some((u) => getTier(u) === "New"))
+            ).map((f) => (
               <button
                 key={f}
                 type="button"

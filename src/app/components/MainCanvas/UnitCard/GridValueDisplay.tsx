@@ -41,7 +41,7 @@ export function GridValueDisplay({ unit }: { unit: GridUnit }) {
   }
 
   const displayNum =
-    typeof unit.value === "number" && unit.value > 0
+    typeof unit.value === "number" && (unit.value > 0 || (unit.value === 0 && unit.valueDisplay !== "N/A"))
       ? unit.value
       : typeof unit.valueMin === "number" && unit.valueMin > 0
       ? unit.valueMin

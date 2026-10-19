@@ -134,8 +134,9 @@ export function Sidebar({
   }, [canModerate]);
 
   const dynamicTierGroups = useMemo(() => {
-    const order = ["S", "A", "B", "C", "Pure", "Oddities", "Untiered"];
+    const order = ["New", "S", "A", "B", "C", "Pure", "Oddities", "Untiered"];
     const colorMap: Record<string, string> = {
+      New: "#eab308",
       S: "#dd7e6b",
       A: "#a855f7",
       B: "#3b82f6",
@@ -308,14 +309,17 @@ export function Sidebar({
                                       className="text-[10px] font-bold uppercase tracking-widest pl-2"
                                       style={{ color: group.color }}
                                     >
-                                      {group.tier}{" "}
-                                      {[
-                                        "Pure",
-                                        "Oddities",
-                                        "Untiered",
-                                      ].includes(group.tier)
-                                        ? ""
-                                        : "Tier"}
+                                      {group.tier === "New"
+                                        ? "New Units"
+                                        : `${group.tier} ${
+                                            [
+                                              "Pure",
+                                              "Oddities",
+                                              "Untiered",
+                                            ].includes(group.tier)
+                                              ? ""
+                                              : "Tier"
+                                          }`.trim()}
                                     </span>
                                   </div>
                                   <div className="relative flex flex-col ml-[6px] mt-0.5">

@@ -15,6 +15,7 @@ export type UnitStatus =
 
 export type FilterKey =
   | "All"
+  | "New"
   | "S"
   | "A"
   | "B"

@@ -10,8 +10,9 @@ import { GiCrossMark } from "react-icons/gi";
 import { FilterKey } from "../../../types";
 import { FILTERS } from "../../../data";
 import { CustomDropdown } from "./CustomDropdown";
-import { triggerHaptic } from "../../../data/helpers";
+import { triggerHaptic, getTier } from "../../../data/helpers";
 import { ResponsiveToolbar } from "../shared/ResponsiveToolbar";
+import { useUnits } from "../../../context/UnitContext";
 
 const SORT_OPTIONS = {
   "value-desc": "Value: High to Low",
@@ -172,11 +173,15 @@ export function CanvasControls({
     </>
   );
 
+  const { units } = useUnits();
+  const hasNewUnits = units.some((u) => getTier(u) === "New");
+  const visibleFilters = FILTERS.filter((f) => f !== "New" || hasNewUnits);
+
   return (
     <div className="flex flex-col w-full bg-card">
       <div className="flex bg-popover border-b border-border w-full overflow-x-auto hide-scrollbar px-[var(--panel-p)] py-1.5 items-center">
         <div className="flex bg-input rounded-[4px] p-1 border border-border overflow-x-auto hide-scrollbar shrink-0 shadow-inner h-[var(--ui-height-input)] items-center">
-          {FILTERS.map((f) => (
+          {visibleFilters.map((f) => (
             <button
               key={f}
               type="button"

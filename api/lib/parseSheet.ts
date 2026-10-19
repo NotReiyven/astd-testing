@@ -387,15 +387,21 @@ export function parseSpreadsheet(data: SpreadsheetData) {
     }
 
     let tierKey = "S";
-    if (tabName.includes("A Tier")) tierKey = "A";
+    if (tabName.toLowerCase().includes("new")) tierKey = "New";
+    else if (tabName.includes("A Tier")) tierKey = "A";
     else if (tabName.includes("B Tier")) tierKey = "B";
     else if (tabName.includes("C Tier")) tierKey = "C";
     else if (tabName.includes("Pure")) tierKey = "Pure";
     else if (tabName.includes("Oddities")) tierKey = "Oddities";
     else if (tabName.includes("Untiered")) tierKey = "Untiered";
 
-    let currentSubCategory = tabName, currentSubCategoryRange = "All";
+    let currentSubCategory = tierKey === "New" ? "New Units" : tabName;
+    let currentSubCategoryRange = tierKey === "New" ? "Newly Released" : "All";
     let colMap: { value: number; rarity: number; liquidity: number; notices: number; statusTxt: number } = { value: 2, rarity: 3, liquidity: -1, notices: 6, statusTxt: 7 };
+
+    if (tierKey === "New") {
+      colMap = { value: 2, rarity: 3, liquidity: 4, notices: 5, statusTxt: -1 };
+    }
 
     for (let i = 0; i < rowData.length; i++) {
       const row = rowData[i].values;
@@ -412,9 +418,9 @@ export function parseSpreadsheet(data: SpreadsheetData) {
       const hasNotices = rawRowStrs.some((s: string) => s === "notices" || s === "notice");
 
       if (hasValue || hasNotices) {
-        currentSubCategory = colB;
+        currentSubCategory = tierKey === "New" ? "New Units" : colB;
 
-        if (tierKey === "Oddities") {
+        if (tierKey === "Oddities" || tierKey === "New") {
           colMap = { value: 2, rarity: 3, liquidity: 4, notices: 5, statusTxt: -1 };
           continue;
         }
@@ -465,6 +471,9 @@ export function parseSpreadsheet(data: SpreadsheetData) {
       if (baseId === "ice-dragon" && subtitle.toLowerCase().includes("eis shenron")) {
         baseId = "eis";
       }
+      if (name.includes("💀")) {
+        baseId = "prince-of-layabouts-skull-knight";
+      }
 
       let unitId = baseId;
       if (idTracker.has(baseId)) {
@@ -483,7 +492,13 @@ export function parseSpreadsheet(data: SpreadsheetData) {
       if (rawValue.includes("owner") || rawValue.includes("o/c")) {
         numericValue = "owner";
         valueDisplay = "Owner's Choice";
-      } else if (rawValue.includes("-") || rawValue.includes("k") || rawValue.includes("m") || rawValue.includes("?")) {
+      } else if (rawValue === "n/a" || rawValue === "na") {
+        numericValue = 0;
+        valueDisplay = "N/A";
+      } else if (rawValue.includes("?")) {
+        numericValue = 0;
+        valueDisplay = "???";
+      } else if (rawValue.includes("-") || rawValue.includes("k") || rawValue.includes("m")) {
         const hasDigits = /\d/.test(rawValue);
         if (!hasDigits || rawValue.split(" ").length > 3) {
           numericValue = 0;
