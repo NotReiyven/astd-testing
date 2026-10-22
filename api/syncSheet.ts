@@ -113,13 +113,12 @@ export async function GET(request: Request) {
     return jsonResponse(500, { error: "Server misconfiguration." });
   }
 
-  const ranges = [
-    "NewUnits!A:I",
+  const standardRanges = [
     "S Tier!A:I", "A Tier!A:I", "B Tier!A:I", "C Tier!A:I",
     "Pure Tier!A:I", "Oddities!A:I", "Untiered!A:I",
     "Home!A:K", "Extra Notices!A:B", "Tutorial!A:I",
   ];
-  const batchRanges = ranges.map((r) => `ranges=${encodeURIComponent(r)}`).join("&");
+  const newUnitsRanges = ["'NEW UNITS'!A:I", "NewUnits!A:I"];
 
   // ── 6. FETCH WITH SELECTIVE FIELDS & RESPOND ─────────────────────────────
   // Explicitly filter Google Sheets API fields: drops raw JSON payload from ~56 MB to ~7 MB,
@@ -129,20 +128,27 @@ export async function GET(request: Request) {
   );
 
   try {
-    let response = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batchRanges}&includeGridData=true&fields=${fields}&key=${API_KEY}`
-    );
+    let response: Response | null = null;
 
-    // If NewUnits sheet tab was deleted/moved in the future, fallback without NewUnits!A:I
-    if (!response.ok && ranges.includes("NewUnits!A:I")) {
-      const fallbackRanges = ranges.filter((r) => r !== "NewUnits!A:I");
-      const fallbackBatch = fallbackRanges.map((r) => `ranges=${encodeURIComponent(r)}`).join("&");
-      const retryRes = await fetch(
+    // Try fetching with NEW UNITS tab first (exact name in sheet is 'NEW UNITS' with a space)
+    for (const newRange of newUnitsRanges) {
+      const candidateRanges = [newRange, ...standardRanges];
+      const batchRanges = candidateRanges.map((r) => `ranges=${encodeURIComponent(r)}`).join("&");
+      const res = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batchRanges}&includeGridData=true&fields=${fields}&key=${API_KEY}`
+      );
+      if (res.ok) {
+        response = res;
+        break;
+      }
+    }
+
+    // If new units tab failed (e.g. removed when units moved to permanent tiers), fetch standard ranges
+    if (!response || !response.ok) {
+      const fallbackBatch = standardRanges.map((r) => `ranges=${encodeURIComponent(r)}`).join("&");
+      response = await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${fallbackBatch}&includeGridData=true&fields=${fields}&key=${API_KEY}`
       );
-      if (retryRes.ok) {
-        response = retryRes;
-      }
     }
 
     if (!response.ok) {

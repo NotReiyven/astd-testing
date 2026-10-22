@@ -81,21 +81,33 @@ export async function GET(request: Request) {
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // 1. RUN CLEANUP AND SHEET FETCH CONCURRENTLY TO SLASH EXECUTION TIME
-    const ranges = [
+    const standardRanges = [
       "S Tier!A:I", "A Tier!A:I", "B Tier!A:I", "C Tier!A:I", 
       "Pure Tier!A:I", "Oddities!A:I", "Untiered!A:I"
     ];
-    const batchRanges = ranges.map(r => `ranges=${encodeURIComponent(r)}`).join("&");
+    const newUnitsRanges = ["'NEW UNITS'!A:I", "NewUnits!A:I"];
     const fields = encodeURIComponent(
       "properties.title,sheets(properties.title,data.rowData.values(formattedValue,effectiveFormat.backgroundColor))"
     );
-    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batchRanges}&includeGridData=true&fields=${fields}&key=${API_KEY}`;
+
+    const fetchSheetData = async (): Promise<Response> => {
+      for (const newRange of newUnitsRanges) {
+        const candidateRanges = [newRange, ...standardRanges];
+        const batch = candidateRanges.map((r) => `ranges=${encodeURIComponent(r)}`).join("&");
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${batch}&includeGridData=true&fields=${fields}&key=${API_KEY}`;
+        const res = await fetch(url);
+        if (res.ok) return res;
+      }
+      const fallbackBatch = standardRanges.map((r) => `ranges=${encodeURIComponent(r)}`).join("&");
+      const fallbackUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?${fallbackBatch}&includeGridData=true&fields=${fields}&key=${API_KEY}`;
+      return fetch(fallbackUrl);
+    };
 
     const retentionCutoffIso = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
     const [adPurgeResult, bannedUsersResult, sheetsResponse] = await Promise.all([
       supabase.from('trading_ads').delete().lt('expires_at', retentionCutoffIso),
       supabase.from('profiles').select('id').eq('role', 'banned'),
-      fetch(sheetsUrl)
+      fetchSheetData()
     ]);
 
     if (adPurgeResult.error) {
