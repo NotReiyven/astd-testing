@@ -820,60 +820,60 @@ export function TradingAdsChannel() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchFilter, setSearchFilter] = useState(() => searchParams.get("q") || "");
-  const [typeFilter, setTypeFilter] = useState(() => searchParams.get("type") || "all");
-  const [sortMode, setSortMode] = useState(() => searchParams.get("sort") || "newest");
-  const isUpdatingFromUrlRef = useRef(false);
 
-  // Synchronize state from URL search params on browser navigation (Back/Forward)
+  // URL search params are the single source of truth for filters & sorting
+  const typeFilter = searchParams.get("type") || "all";
+  const sortMode = searchParams.get("sort") || "newest";
+
+  // Keep searchFilter input in sync with browser Back/Forward navigation
   useEffect(() => {
-    const targetQ = searchParams.get("q") || "";
-    const targetType = searchParams.get("type") || "all";
-    const targetSort = searchParams.get("sort") || "newest";
-
-    const hasDiff =
-      (searchParams.has("q") && targetQ !== searchFilter) ||
-      (searchParams.has("type") && targetType !== typeFilter) ||
-      (searchParams.has("sort") && targetSort !== sortMode);
-
-    if (hasDiff) {
-      isUpdatingFromUrlRef.current = true;
-      if (searchParams.has("q") && targetQ !== searchFilter) setSearchFilter(targetQ);
-      if (searchParams.has("type") && targetType !== typeFilter) setTypeFilter(targetType);
-      if (searchParams.has("sort") && targetSort !== sortMode) setSortMode(targetSort);
+    const urlQ = searchParams.get("q") || "";
+    if (urlQ !== searchFilter) {
+      setSearchFilter(urlQ);
     }
-  }, [searchParams, searchFilter, typeFilter, sortMode]);
+  }, [searchParams]);
 
-  // Synchronize state changes to URL search params
-  useEffect(() => {
-    if (isUpdatingFromUrlRef.current) {
-      isUpdatingFromUrlRef.current = false;
-      return;
-    }
-
+  const handleTypeFilterChange = (newType: string) => {
+    triggerHaptic("light");
     const nextParams = new URLSearchParams(searchParams);
-
-    if (searchFilter.trim()) {
-      nextParams.set("q", searchFilter.trim());
-    } else {
-      nextParams.delete("q");
-    }
-
-    if (typeFilter && typeFilter !== "all") {
-      nextParams.set("type", typeFilter);
+    if (newType && newType !== "all") {
+      nextParams.set("type", newType);
     } else {
       nextParams.delete("type");
     }
+    setSearchParams(nextParams, { replace: true });
+  };
 
-    if (sortMode && sortMode !== "newest") {
-      nextParams.set("sort", sortMode);
+  const handleSortChange = (newSort: string) => {
+    triggerHaptic("light");
+    const nextParams = new URLSearchParams(searchParams);
+    if (newSort && newSort !== "newest") {
+      nextParams.set("sort", newSort);
     } else {
       nextParams.delete("sort");
     }
+    setSearchParams(nextParams, { replace: true });
+  };
 
-    if (nextParams.toString() !== searchParams.toString()) {
-      setSearchParams(nextParams, { replace: true });
+  const handleSearchChange = (val: string) => {
+    setSearchFilter(val);
+    const nextParams = new URLSearchParams(searchParams);
+    if (val.trim()) {
+      nextParams.set("q", val.trim());
+    } else {
+      nextParams.delete("q");
     }
-  }, [searchFilter, typeFilter, sortMode, searchParams, setSearchParams]);
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const handleClearFilters = () => {
+    triggerHaptic("light");
+    setSearchFilter("");
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("q");
+    nextParams.delete("type");
+    setSearchParams(nextParams, { replace: true });
+  };
 
   const [adPendingDelete, setAdPendingDelete] = useState<TradingAd | null>(null);
   const [isDeletingAd, setIsDeletingAd] = useState(false);
@@ -1010,11 +1010,21 @@ export function TradingAdsChannel() {
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
       }
-      const valA = a.give_items.reduce((s, i) => s + i.value * i.qty, 0);
-      const valB = b.give_items.reduce((s, i) => s + i.value * i.qty, 0);
-      return sortMode === "value-desc" ? valB - valA : valA - valB;
+      const getAdTotalValue = (ad: TradingAd) =>
+        ad.give_items.reduce((s, i) => {
+          const m = ALL_UNITS.find((u) => u.id === i.id);
+          const liveVal = m ? getUnitConservativeValue(m) : (i.value || 0);
+          return s + liveVal * (i.qty || 1);
+        }, 0);
+
+      const valA = getAdTotalValue(a);
+      const valB = getAdTotalValue(b);
+      return (
+        (sortMode === "value-desc" ? valB - valA : valA - valB) ||
+        (new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      );
     });
-  }, [ads, searchFilter, typeFilter, sortMode]);
+  }, [ads, searchFilter, typeFilter, sortMode, ALL_UNITS]);
 
   const activeFilterSummary = useMemo(() => {
     const parts: string[] = [];
@@ -1169,7 +1179,7 @@ export function TradingAdsChannel() {
         name="trading_ads_search"
         type="text"
         value={searchFilter}
-        onChange={(e) => setSearchFilter(e.target.value)}
+        onChange={(e) => handleSearchChange(e.target.value)}
         placeholder="Search board by unit or trader…"
         aria-label="Search trading board"
         className="w-full bg-input text-foreground text-[var(--ui-text-sm)] pl-9 pr-4 h-[var(--ui-height-input)] rounded-[4px] outline-none border border-border focus:border-primary transition-colors shadow-inner"
@@ -1190,10 +1200,7 @@ export function TradingAdsChannel() {
           <button
             key={t.id}
             type="button"
-            onClick={() => {
-              triggerHaptic("light");
-              setTypeFilter(t.id);
-            }}
+            onClick={() => handleTypeFilterChange(t.id)}
             className={`flex-1 sm:flex-none px-4 rounded-[4px] text-sm font-medium transition-[background-color,color,border-color,transform] duration-150 focus-visible:outline-none cursor-pointer whitespace-nowrap active:scale-95 flex items-center justify-center ${
               typeFilter === t.id
                 ? "bg-foreground text-background shadow-sm"
@@ -1209,10 +1216,7 @@ export function TradingAdsChannel() {
           icon={GiHourglass}
           value={sortMode}
           options={SORT_OPTIONS}
-          onChange={(val: string) => {
-            triggerHaptic("light");
-            setSortMode(val);
-          }}
+          onChange={handleSortChange}
           defaultLabel="Sort By"
           className="sm:min-w-[190px] md:min-w-[225px]"
         />
@@ -1340,10 +1344,7 @@ export function TradingAdsChannel() {
                 }
                 action={{
                   label: "Clear Filters",
-                  onClick: () => {
-                    setSearchFilter("");
-                    setTypeFilter("all");
-                  },
+                  onClick: handleClearFilters,
                 }}
               />
             </div>
