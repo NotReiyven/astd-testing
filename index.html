@@ -108,7 +108,10 @@
           if (parsed && parsed.state) {
             if (parsed.state.theme) theme = parsed.state.theme;
             if (parsed.state.globalCompactMode) density = 'compact';
-            if (parsed.state.fontFamily) font = parsed.state.fontFamily;
+            if (parsed.state.fontFamily) {
+              const legacyMap = { geist: 'oxanium', inter: 'space-grotesk', mono: 'jetbrains-mono' };
+              font = legacyMap[parsed.state.fontFamily] || parsed.state.fontFamily;
+            }
           }
         }
         document.documentElement.setAttribute('data-theme', theme);
@@ -146,8 +149,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <!-- ASTD Typography: Luckiest Guy + Geist + Inter + Geist Mono -->
-    <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=Luckiest+Guy&display=swap" rel="stylesheet" />
+    <!-- ASTD Typography: Luckiest Guy + Oxanium + Space Grotesk + JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Luckiest+Guy&family=Oxanium:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
     <style>html, body { height: 100%; margin: 0; background-color: var(--background, #000000); font-family: var(--font-sans, 'Luckiest Guy', cursive, sans-serif); } #root { height: 100%; }</style>
   </head>

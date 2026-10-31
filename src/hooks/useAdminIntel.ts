@@ -524,36 +524,73 @@ export function useAdminIntel() {
     async (query = "", bannedOnly = showBannedOnly) => {
       if (!canModerate) return;
       setIsLoading(true);
-      let request = supabase
-        .from("profiles")
-        .select("*, user_roles(roles(name))")
-        .limit(150);
 
-      if (bannedOnly) {
-        request = request.eq("role", "banned");
-      }
+      const trimmedQuery = query.trim();
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          trimmedQuery
+        );
 
-      if (query) {
-        if (/^\d+$/.test(query)) {
-          request = request.or(
-            `discord_id.eq.${query},username.ilike.%${query}%`
-          );
-        } else {
-          request = request.or(
-            `username.ilike.%${query}%,roblox_username.ilike.%${query}%`
-          );
-        }
-      }
+      const [profilesResult, repLogsResult] = await Promise.all([
+        (async () => {
+          const PAGE_SIZE = 1000;
+          const allProfiles: SupabaseProfile[] = [];
+          let from = 0;
+          let fetchError: any = null;
 
-      const [{ data, error }, { data: repLogs }] = await Promise.all([
-        request,
+          while (true) {
+            let request = supabase
+              .from("profiles")
+              .select("*, user_roles(roles(name))")
+              .order("created_at", { ascending: false })
+              .range(from, from + PAGE_SIZE - 1);
+
+            if (bannedOnly) {
+              request = request.eq("role", "banned");
+            }
+
+            if (trimmedQuery) {
+              if (isUuid) {
+                request = request.or(
+                  `id.eq.${trimmedQuery},username.ilike.%${trimmedQuery}%,roblox_username.ilike.%${trimmedQuery}%`
+                );
+              } else if (/^\d+$/.test(trimmedQuery)) {
+                request = request.or(
+                  `discord_id.eq.${trimmedQuery},username.ilike.%${trimmedQuery}%`
+                );
+              } else {
+                request = request.or(
+                  `username.ilike.%${trimmedQuery}%,roblox_username.ilike.%${trimmedQuery}%`
+                );
+              }
+            }
+
+            const { data, error } = await request;
+            if (error) {
+              fetchError = error;
+              break;
+            }
+            if (!data || data.length === 0) {
+              break;
+            }
+            allProfiles.push(...(data as SupabaseProfile[]));
+            if (data.length < PAGE_SIZE) {
+              break;
+            }
+            from += PAGE_SIZE;
+          }
+          return { data: allProfiles, error: fetchError };
+        })(),
         supabase
           .from("moderation_logs")
           .select("target_user_id, action_type, created_at")
           .ilike("action_type", "MASTER REP OVERRIDE:%")
           .order("created_at", { ascending: false })
-          .limit(100),
+          .limit(500),
       ]);
+
+      const { data, error } = profilesResult;
+      const repLogs = repLogsResult.data;
 
       const repOverrideMap = new Map<string, number>();
       (repLogs || []).forEach((log: any) => {
@@ -593,9 +630,10 @@ export function useAdminIntel() {
           const priorityA = ROLE_PRIORITY[a.role] ?? 99;
           const priorityB = ROLE_PRIORITY[b.role] ?? 99;
           if (priorityA !== priorityB) return priorityA - priorityB;
-          return (
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          );
+          const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+          if (timeA !== timeB) return timeB - timeA;
+          return (b.join_number || 0) - (a.join_number || 0);
         });
 
         setUsers(sorted);
@@ -604,7 +642,7 @@ export function useAdminIntel() {
             const refreshed = sorted.find((u) => u.id === prev.id);
             if (refreshed) return refreshed;
           }
-          if (sorted.length === 1 && query) return sorted[0];
+          if (sorted.length === 1 && trimmedQuery) return sorted[0];
           return prev;
         });
       }

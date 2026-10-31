@@ -3,7 +3,11 @@ import { persist } from "zustand/middleware";
 
 export type ThemeMode = "dark" | "light" | "discord";
 export type BootChannel = "last-used" | "home" | "value-list" | "trading-ads";
-export type FontFamily = "luckiest-guy" | "geist" | "inter" | "mono";
+export type FontFamily =
+  | "luckiest-guy"
+  | "oxanium"
+  | "space-grotesk"
+  | "jetbrains-mono";
 
 interface LayoutState {
   globalSearchQuery: string;
@@ -45,12 +49,30 @@ export const useLayoutStore = create<LayoutState>()(
       setBootChannel: (channel) => set({ bootChannel: channel }),
 
       setFontFamily: (fontFamily) => {
-        document.documentElement.setAttribute("data-font", fontFamily);
-        set({ fontFamily });
+        const legacyMap: Record<string, FontFamily> = {
+          geist: "oxanium",
+          inter: "space-grotesk",
+          mono: "jetbrains-mono",
+        };
+        const resolved = (legacyMap as any)[fontFamily] || fontFamily;
+        document.documentElement.setAttribute("data-font", resolved);
+        set({ fontFamily: resolved });
       },
     }),
     {
       name: "astd_layout_storage",
+      onRehydrateStorage: () => (state) => {
+        if (state?.fontFamily) {
+          const legacyMap: Record<string, FontFamily> = {
+            geist: "oxanium",
+            inter: "space-grotesk",
+            mono: "jetbrains-mono",
+          };
+          if ((legacyMap as any)[state.fontFamily]) {
+            state.setFontFamily((legacyMap as any)[state.fontFamily]);
+          }
+        }
+      },
       // We only persist personalization settings, not active search queries or modals
       partialize: (state) => ({
         theme: state.theme,

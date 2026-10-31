@@ -158,21 +158,24 @@
   letter-spacing: 0.03em;
 }
 
+[data-font="oxanium"],
 [data-font="geist"] {
-  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'Geist Mono', monospace;
+  --font-sans: 'Oxanium', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
   --font-baseline-offset: 0px;
 }
 
+[data-font="space-grotesk"],
 [data-font="inter"] {
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'Geist Mono', monospace;
+  --font-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
   --font-baseline-offset: 0px;
 }
 
+[data-font="jetbrains-mono"],
 [data-font="mono"] {
-  --font-sans: 'Geist Mono', monospace;
-  --font-mono: 'Geist Mono', monospace;
+  --font-sans: 'JetBrains Mono', monospace;
+  --font-mono: 'JetBrains Mono', monospace;
   --font-baseline-offset: 0px;
 }
 
