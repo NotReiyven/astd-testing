@@ -167,36 +167,101 @@ export function buildSections(
 export function TierBanner({
   tier,
 }: {
-  tier: { label: string; badgeColor: string; subtitle?: string };
+  tier: {
+    label: string;
+    badgeColor: string;
+    subtitle?: string;
+    gradient?: string;
+  };
 }) {
+  const c = tier.badgeColor;
+
+  const face =
+    tier.gradient ??
+    `linear-gradient(180deg, color-mix(in srgb, ${c} 80%, white), ${c})`;
+
+  const railColor = `color-mix(in srgb, ${c} 30%, black)`;
+  const SKEW = "skewX(-20deg)";
+
   return (
-    <div className="relative w-full rounded-xl bg-card border border-border shadow-sm overflow-hidden flex flex-col items-center justify-center py-6 my-4">
-      {/* Top Gradient Glow */}
-      <div 
-        className="absolute top-0 left-0 right-0 h-[3px] opacity-80"
+    <div className="relative my-4 h-[116px] w-full select-none">
+      {/* 1. MAIN COLORED FACE - BACK LAYER */}
+      <div
+        aria-hidden="true"
+        className="absolute left-6 right-0 top-0 h-[80px]"
         style={{
-          background: `linear-gradient(90deg, transparent 0%, ${tier.badgeColor} 50%, transparent 100%)`
+          transform: SKEW,
+          background: face,
+          borderRadius: 6,
+          boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.35)",
+          zIndex: 2,
         }}
-      />
-      <div 
-        className="absolute top-0 left-0 right-0 h-[30px] opacity-20 pointer-events-none"
-        style={{
-          background: `linear-gradient(180deg, ${tier.badgeColor} 0%, transparent 100%)`
-        }}
-      />
-      
-      
-      <h2 
-        className="text-2xl font-bold leading-none"
-        style={{ color: tier.badgeColor }}
       >
-        {tier.label}
-      </h2>
-      {tier.subtitle && (
-        <p className="text-[12px] text-muted-foreground font-medium tracking-wide mt-2">
-          {tier.subtitle}
-        </p>
-      )}
+        <div
+          className="absolute inset-[6px]"
+          style={{
+            border: "1px solid rgba(255,255,255,0.55)",
+            borderRadius: 3,
+          }}
+        />
+      </div>
+
+      {/* 2. SOLID METALLIC U-SHAPED FOREGROUND FRAME */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1 right-[-16px] top-[26px] h-[76px]"
+        style={{
+          transform: SKEW,
+          zIndex: 3,
+          filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.45))",
+        }}
+      >
+        {/* Outer silver U */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "linear-gradient(180deg, #e5e7eb, #9ca3af)",
+            clipPath:
+              "polygon(0% 0%, 2.2% 0%, 2.2% 70%, 97.8% 70%, 97.8% 0%, 100% 0%, 100% 100%, 0% 100%)",
+          }}
+        />
+
+        {/* Inner colored U */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: railColor,
+            clipPath:
+              "polygon(0.6% 4%, 1.6% 4%, 1.6% 73%, 98.4% 73%, 98.4% 4%, 99.4% 4%, 99% 94%, 1% 94%)",
+          }}
+        />
+      </div>
+
+      {/* 3. TEXT - TOP LAYER */}
+      <div className="absolute left-20 right-8 top-0 z-10 flex h-[80px] min-w-0 items-center gap-5">
+        <h2
+          className="shrink-0 whitespace-nowrap text-[42px] leading-none text-white"
+          style={{
+            WebkitTextStroke: "9px #2b2b2b",
+            paintOrder: "stroke fill",
+            textShadow: "0 4px 0 rgba(0,0,0,0.35)",
+          }}
+        >
+          {tier.label}
+        </h2>
+
+        {tier.subtitle && (
+          <p
+            className="hidden min-w-0 flex-1 truncate text-[15px] text-white/90 md:block"
+            style={{
+              WebkitTextStroke: "5px rgba(0,0,0,0.55)",
+              paintOrder: "stroke fill",
+            }}
+          >
+            {tier.subtitle}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -222,13 +287,12 @@ export function TierSubHeader({
           </span>
         )}
       </div>
-      
+
       <div className="flex-1 h-px bg-border/60 mx-4" />
-      
+
       <span className="shrink-0 text-[10px] font-black font-mono text-muted-foreground bg-muted border border-border px-2 py-1 rounded-[4px] leading-none">
         {count}
       </span>
     </div>
   );
 }
-

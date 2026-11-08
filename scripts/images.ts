@@ -701,4 +701,23 @@ export const UNIT_IMAGES: Record<string, string> = {
   "30-egg-ice": "https://static.wikia.nocookie.net/allstartd/images/8/82/30%25_Egg_-_Ice.png/revision/latest/scale-to-width-down/250?cb=20230113090622",
   "20-egg-shadow": "https://static.wikia.nocookie.net/allstartd/images/c/c3/20%25_Egg_-_Shadow.png/revision/latest/scale-to-width-down/250?cb=20230113090602",
   "10-egg-water": "https://static.wikia.nocookie.net/allstartd/images/8/8f/10%25_Egg_-_Water.png/revision/latest/scale-to-width-down/250?cb=20230113090627",
+
+  // New units added 2026-11-09
+  "kosuke-ballin": "https://static.wikia.nocookie.net/allstartd/images/3/36/Kosuke_%28BALLIN%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20261031172120",
+  "koniac": "https://static.wikia.nocookie.net/allstartd/images/1/1b/Koniac_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20261031172110",
+  "smoke-hunter": "https://static.wikia.nocookie.net/allstartd/images/3/31/Smoke_Hunter_%28Pose%29.png/revision/latest?cb=20261101020852",
+  "the-sniffer": "https://static.wikia.nocookie.net/allstartd/images/8/88/The_Sniffer_%28Pose%29.png/revision/latest?cb=20261031172302",
+  "crow-ballin": "https://static.wikia.nocookie.net/allstartd/images/5/5c/Crow_%28BALLIN%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20261031171743",
+  "koniac-b-kui": "https://static.wikia.nocookie.net/allstartd/images/b/b5/Koniac_%28B-Kui%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20261031172055",
+  "smoke-hunter-serious": "https://static.wikia.nocookie.net/allstartd/images/f/f8/Smoke_Hunter_%28Serious%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20261031172213",
+  "the-sniffer-outrage": "https://static.wikia.nocookie.net/allstartd/images/2/2a/The_Sniffer_%28OUTRAGE%29_%28Pose%29.png/revision/latest?cb=20261031172255",
+  "trello-lady-melonswag": "https://static.wikia.nocookie.net/allstartd/images/8/80/Trello_Lady_%28Pose%29.png/revision/latest?cb=20261016211901",
+  "ice-witch-all-seeing": "https://static.wikia.nocookie.net/allstartd/images/e/e9/Ice_Witch_%28All-Seeing%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20261016162405",
+  "prince-of-layabouts-skull-knight": "https://static.wikia.nocookie.net/allstartd/images/9/9d/Prince_of_Layabouts_%28%F0%9F%92%80%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20261022172922",
+  "prince-of-layabouts": "https://static.wikia.nocookie.net/allstartd/images/b/b8/Prince_of_Layabouts_%28Pose%29.png/revision/latest?cb=20261018064224",
+  "trello-lady": "https://static.wikia.nocookie.net/allstartd/images/6/62/Trello_Lady_%28Melonswag%29_%28Pose%29.png/revision/latest?cb=20261016162517",
+  "harrison-resurrection": "https://static.wikia.nocookie.net/allstartd/images/d/d0/Harrison_%28Pose%29.png/revision/latest?cb=20261016211935",
+  "the-guardian-team-captain": "https://static.wikia.nocookie.net/allstartd/images/6/6c/Harrison_%28Resurrection%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20261016162331",
+  "ring": "https://static.wikia.nocookie.net/allstartd/images/b/be/Ring_%28Pose%29.png/revision/latest?cb=20260715064823",
+  "ice-witch": "https://static.wikia.nocookie.net/allstartd/images/6/6e/Ice_Witch_%28Pose%29.png/revision/latest?cb=20261016211838",
 };

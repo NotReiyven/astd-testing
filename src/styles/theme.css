@@ -46,6 +46,19 @@
   --ring: #5865F2;
 
   --radius: 8px;
+
+  /* Centralized Theme-Aware Scrollbar & Slider Variables */
+  color-scheme: dark;
+  --scrollbar-track: rgba(0, 0, 0, 0.2);
+  --scrollbar-thumb: #2e2e2e;
+  --scrollbar-thumb-hover: #454545;
+  --scrollbar-thumb-active: #5c5c5c;
+
+  --slider-track: #262626;
+  --slider-fill: #7289da;
+  --slider-thumb: #7289da;
+  --slider-thumb-hover: #8298e8;
+  --slider-focus-ring: rgba(114, 137, 218, 0.45);
 }
 
 [data-theme="light"] {
@@ -89,6 +102,18 @@
   --input-background: #ffffff;
   --switch-background: #e4e4e7;
   --ring: #5865F2;
+
+  /* Centralized Theme-Aware Scrollbar & Slider Variables */
+  --scrollbar-track: rgba(0, 0, 0, 0.04);
+  --scrollbar-thumb: #d4d4d8;
+  --scrollbar-thumb-hover: #a1a1aa;
+  --scrollbar-thumb-active: #71717a;
+
+  --slider-track: #e4e4e7;
+  --slider-fill: #5865F2;
+  --slider-thumb: #5865F2;
+  --slider-thumb-hover: #4752c4;
+  --slider-focus-ring: rgba(88, 101, 242, 0.4);
 }
 
 [data-theme="discord"] {
@@ -131,6 +156,19 @@
   --input-background: #1E1F22;
   --switch-background: #1E1F22;
   --ring: #5865F2;
+
+  /* Centralized Theme-Aware Scrollbar & Slider Variables */
+  color-scheme: dark;
+  --scrollbar-track: rgba(0, 0, 0, 0.2);
+  --scrollbar-thumb: #1a1b1e;
+  --scrollbar-thumb-hover: #111214;
+  --scrollbar-thumb-active: #0c0d0e;
+
+  --slider-track: #4e5058;
+  --slider-fill: #5865F2;
+  --slider-thumb: #5865F2;
+  --slider-thumb-hover: #4752c4;
+  --slider-focus-ring: rgba(88, 101, 242, 0.45);
 }
 
 :root {
@@ -158,24 +196,30 @@
   letter-spacing: 0.03em;
 }
 
+[data-font="lilita-one"],
 [data-font="oxanium"],
-[data-font="geist"] {
-  --font-sans: 'Oxanium', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+[data-font="geist"],
+[data-font="ataria"] {
+  --font-sans: 'Lilita One', cursive, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   --font-baseline-offset: 0px;
 }
 
+[data-font="russo-one"],
 [data-font="space-grotesk"],
-[data-font="inter"] {
-  --font-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+[data-font="inter"],
+[data-font="gears-of-battle"] {
+  --font-sans: 'Russo One', sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   --font-baseline-offset: 0px;
 }
 
+[data-font="rubik-dirt"],
 [data-font="jetbrains-mono"],
-[data-font="mono"] {
-  --font-sans: 'JetBrains Mono', monospace;
-  --font-mono: 'JetBrains Mono', monospace;
+[data-font="mono"],
+[data-font="gamedone"] {
+  --font-sans: 'Rubik Dirt', cursive, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   --font-baseline-offset: 0px;
 }
 
@@ -240,6 +284,16 @@
   --color-switch-background: var(--switch-background);
   --color-ring: var(--ring);
 
+  --color-scrollbar-track: var(--scrollbar-track);
+  --color-scrollbar-thumb: var(--scrollbar-thumb);
+  --color-scrollbar-thumb-hover: var(--scrollbar-thumb-hover);
+  --color-scrollbar-thumb-active: var(--scrollbar-thumb-active);
+
+  --color-slider-track: var(--slider-track);
+  --color-slider-fill: var(--slider-fill);
+  --color-slider-thumb: var(--slider-thumb);
+  --color-slider-thumb-hover: var(--slider-thumb-hover);
+
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);
@@ -273,6 +327,207 @@ html, body {
   text-rendering: optimizeLegibility;
 }
 
+/* ========================================================
+   GLOBAL THEME-AWARE SCROLLBAR STYLING
+   ======================================================== */
 
+/* Standard Firefox & Modern CSS Scrollbars Level 1 */
+html,
+body,
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
 
+/* WebKit & Blink Browsers (Chrome, Edge, Safari, Opera, Brave) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
 
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 9999px;
+  border: 1px solid var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--scrollbar-thumb-active);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Specificity support for .custom-scrollbar utility classes */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 9999px;
+  border: 1px solid var(--scrollbar-track);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background-color: var(--scrollbar-thumb-active);
+}
+
+/* Hidden scrollbar utilities */
+.hide-scrollbar,
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+.hide-scrollbar::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* ========================================================
+   GLOBAL THEME-AWARE RANGE SLIDER STYLING
+   ======================================================== */
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--slider-track);
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+  accent-color: var(--slider-thumb);
+  vertical-align: middle;
+  transition: opacity 0.15s ease;
+}
+
+/* Keyboard focus state */
+input[type="range"]:focus-visible {
+  outline: 2px solid var(--slider-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Disabled state */
+input[type="range"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* WebKit/Blink Track */
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+}
+
+/* WebKit/Blink Thumb */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: var(--slider-thumb);
+  border: 2px solid var(--card, #171717);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  margin-top: -5px; /* Centers 16px thumb on standard 6px input */
+  transition: transform 0.12s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="range"].h-3::-webkit-slider-thumb {
+  margin-top: -2px; /* (12px track - 16px thumb) / 2 = -2px for h-3 inputs */
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background-color: var(--slider-thumb-hover);
+  transform: scale(1.1);
+}
+
+input[type="range"]:active::-webkit-slider-thumb {
+  background-color: var(--slider-thumb-hover);
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px var(--slider-focus-ring);
+}
+
+input[type="range"]:disabled::-webkit-slider-thumb {
+  cursor: not-allowed;
+  transform: none;
+  background-color: var(--muted-foreground);
+  box-shadow: none;
+}
+
+/* Firefox Track */
+input[type="range"]::-moz-range-track {
+  width: 100%;
+  height: 6px;
+  background: var(--slider-track);
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+}
+
+/* Firefox Filled Portion */
+input[type="range"]::-moz-range-progress {
+  height: 6px;
+  background-color: var(--slider-fill);
+  border-radius: 9999px;
+}
+
+/* Firefox Thumb */
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: var(--slider-thumb);
+  border: 2px solid var(--card, #171717);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition: transform 0.12s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  background-color: var(--slider-thumb-hover);
+  transform: scale(1.1);
+}
+
+input[type="range"]:active::-moz-range-thumb {
+  background-color: var(--slider-thumb-hover);
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px var(--slider-focus-ring);
+}
+
+input[type="range"]:disabled::-moz-range-thumb {
+  cursor: not-allowed;
+  transform: none;
+  background-color: var(--muted-foreground);
+  box-shadow: none;
+}

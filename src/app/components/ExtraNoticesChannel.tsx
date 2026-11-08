@@ -101,8 +101,8 @@ export function ExtraNoticesChannel() {
     <div className="flex-1 w-full h-full font-sans relative overflow-hidden flex flex-col bg-background">
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
       `}</style>
 
       <div className="flex flex-col md:flex-row gap-8 max-w-6xl mx-auto w-full h-full p-6 md:p-8 overflow-hidden">

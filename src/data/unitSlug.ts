@@ -244,6 +244,9 @@ export const UNIT_IMAGE_SLUG_MAP: Record<string, string> = {
   "nimbus": "nimbus-unit-mount-gamepass",
   "frieza": "frieza-pod-unit-mount-gamepass",
   "carpsule": "capsule-corp-car-unit-mount-gamepass",
+  // Prince of Layabouts (💀) — slug collision fix: toUnitSlug strips emoji
+  // so we explicitly map the unit ID to its own distinct slug
+  "prince-of-layabouts-skull-knight": "prince-of-layabouts-skull-knight",
 };
 
 /**
@@ -337,6 +340,24 @@ export const LOCAL_PREFERRED_UNIT_SLUGS = new Set<string>([
   "pages-man",
   "the-minor",
   "destroyguy",
+  // New units 2026-11-09 — served locally (not on CDN yet)
+  "kosuke-ballin",
+  "koniac",
+  "smoke-hunter",
+  "the-sniffer",
+  "crow-ballin",
+  "koniac-b-kui",
+  "smoke-hunter-serious",
+  "the-sniffer-outrage",
+  "trello-lady-melonswag",
+  "ice-witch-all-seeing",
+  "prince-of-layabouts-skull-knight",
+  "prince-of-layabouts",
+  "trello-lady",
+  "harrison-resurrection",
+  "the-guardian-team-captain",
+  "ring",
+  "ice-witch",
 ]);
 
 export function resolveUnitImageSlug(unitId: string): string {

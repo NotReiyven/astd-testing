@@ -5,9 +5,9 @@ export type ThemeMode = "dark" | "light" | "discord";
 export type BootChannel = "last-used" | "home" | "value-list" | "trading-ads";
 export type FontFamily =
   | "luckiest-guy"
-  | "oxanium"
-  | "space-grotesk"
-  | "jetbrains-mono";
+  | "lilita-one"
+  | "russo-one"
+  | "rubik-dirt";
 
 interface LayoutState {
   globalSearchQuery: string;
@@ -50,11 +50,26 @@ export const useLayoutStore = create<LayoutState>()(
 
       setFontFamily: (fontFamily) => {
         const legacyMap: Record<string, FontFamily> = {
-          geist: "oxanium",
-          inter: "space-grotesk",
-          mono: "jetbrains-mono",
+          oxanium: "lilita-one",
+          geist: "lilita-one",
+          ataria: "lilita-one",
+          "space-grotesk": "russo-one",
+          inter: "russo-one",
+          "gears-of-battle": "russo-one",
+          "jetbrains-mono": "rubik-dirt",
+          mono: "rubik-dirt",
+          gamedone: "rubik-dirt",
         };
-        const resolved = (legacyMap as any)[fontFamily] || fontFamily;
+        const validFonts: FontFamily[] = [
+          "luckiest-guy",
+          "lilita-one",
+          "russo-one",
+          "rubik-dirt",
+        ];
+        const mapped = (legacyMap as any)[fontFamily] || fontFamily;
+        const resolved: FontFamily = validFonts.includes(mapped)
+          ? mapped
+          : "luckiest-guy";
         document.documentElement.setAttribute("data-font", resolved);
         set({ fontFamily: resolved });
       },
@@ -64,12 +79,30 @@ export const useLayoutStore = create<LayoutState>()(
       onRehydrateStorage: () => (state) => {
         if (state?.fontFamily) {
           const legacyMap: Record<string, FontFamily> = {
-            geist: "oxanium",
-            inter: "space-grotesk",
-            mono: "jetbrains-mono",
+            oxanium: "lilita-one",
+            geist: "lilita-one",
+            ataria: "lilita-one",
+            "space-grotesk": "russo-one",
+            inter: "russo-one",
+            "gears-of-battle": "russo-one",
+            "jetbrains-mono": "rubik-dirt",
+            mono: "rubik-dirt",
+            gamedone: "rubik-dirt",
           };
-          if ((legacyMap as any)[state.fontFamily]) {
-            state.setFontFamily((legacyMap as any)[state.fontFamily]);
+          const validFonts: FontFamily[] = [
+            "luckiest-guy",
+            "lilita-one",
+            "russo-one",
+            "rubik-dirt",
+          ];
+          const mapped = (legacyMap as any)[state.fontFamily] || state.fontFamily;
+          const resolved: FontFamily = validFonts.includes(mapped)
+            ? mapped
+            : "luckiest-guy";
+          if (resolved !== state.fontFamily) {
+            state.setFontFamily(resolved);
+          } else {
+            document.documentElement.setAttribute("data-font", resolved);
           }
         }
       },
