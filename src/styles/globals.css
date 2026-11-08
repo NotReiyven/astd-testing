@@ -102,6 +102,13 @@ html, body {
   button, a {
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
+
+  /* ACCESSIBILITY: Global highly-visible focus ring for keyboard navigation */
+  *:focus-visible {
+    outline: 2px solid var(--primary) !important;
+    outline-offset: 2px !important;
+    border-radius: 2px;
+  }
 }
 
 @layer utilities {
@@ -129,99 +136,48 @@ html, body {
       rgba(255, 255, 255, 0) 0,
       rgba(255, 255, 255, 0.03) 20%,
       rgba(255, 255, 255, 0.06) 60%,
-      rgba(255, 255, 255, 0)
+      rgba(255, 255, 255, 0) 100%
     );
     animation: shimmer 1.5s infinite;
   }
 
   @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   @keyframes modalPop {
-    0% {
-      opacity: 0;
-      transform: scale(0.96) translateY(8px);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
+    0% { opacity: 0; transform: scale(0.96) translateY(8px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
   }
 
   @keyframes slideUp {
-    0% {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
 
   @keyframes tooltipPop {
-    0% {
-      opacity: 0;
-      transform: scale(0.92) translateY(4px);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
+    0% { opacity: 0; transform: scale(0.92) translateY(4px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
   }
 
   @keyframes celebratePop {
-    0% {
-      transform: scale(0.85);
-      opacity: 0;
-    }
-    60% {
-      transform: scale(1.06);
-    }
-    100% {
-      transform: scale(1);
-      opacity: 1;
-    }
+    0% { transform: scale(0.85); opacity: 0; }
+    60% { transform: scale(1.06); }
+    100% { transform: scale(1); opacity: 1; }
   }
 
   @keyframes badgePulse {
-    0%, 100% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.2);
-    }
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
   }
 
-  .animate-fade-in {
-    animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  .animate-modal-pop {
-    animation: modalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  .animate-slide-up {
-    animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  .animate-tooltip-pop {
-    animation: tooltipPop 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  .animate-celebrate {
-    animation: celebratePop 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  .animate-badge-pulse {
-    animation: badgePulse 2.2s ease-in-out infinite;
-  }
+  .animate-fade-in { animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .animate-modal-pop { animation: modalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .animate-slide-up { animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .animate-tooltip-pop { animation: tooltipPop 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .animate-celebrate { animation: celebratePop 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .animate-badge-pulse { animation: badgePulse 2.2s ease-in-out infinite; }
 
   @media (prefers-reduced-motion: reduce) {
     .animate-fade-in,
@@ -236,6 +192,7 @@ html, body {
     }
   }
 }
+
 @layer utilities {
   .grid-cards {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, memo, useMemo } from "react";
 import { motion, useMotionValue, useTransform, useReducedMotion } from "framer-motion";
-
 import { GiMagnifyingGlass } from "react-icons/gi";
 import { TradeCard } from "../../../types";
 import { useUnits } from "../../../context/UnitContext";
@@ -20,6 +19,8 @@ interface TradeSectionPanelProps {
   onTogglePin: (id: string) => void;
   onInputFocus?: () => void;
   onInputBlur?: () => void;
+  onReorder: (newOrder: TradeCard[]) => void;
+  onMoveToOtherSide: (cardId: string) => void;
 }
 
 function MagneticCTA({ children, onClick, ariaLabel }: { children: React.ReactNode; onClick: () => void; ariaLabel: string }) {
@@ -73,15 +74,16 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
   onTogglePin,
   onInputFocus,
   onInputBlur,
+  onReorder,
+  onMoveToOtherSide,
 }: TradeSectionPanelProps) {
   
   const { units: ALL_UNITS } = useUnits();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
-  
   const [selectedIndex, setSelectedIndex] = useState(-1);
-
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [draggedItem, setDraggedItem] = useState<{ id: string; type: string } | null>(null);
 
   useEffect(() => {
     setSelectedIndex(-1);
@@ -106,54 +108,97 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
       window.removeEventListener("focus-trade-search", handleFocusSearch);
   }, [type]);
 
-  const handleDragEnter = (e: React.DragEvent) => {
+  const handleDragStart = (e: React.DragEvent, card: TradeCard, cardType: "give" | "get") => {
+    const dataStr = JSON.stringify({ id: card.id, type: cardType });
+    e.dataTransfer.setData("trade-card", dataStr);
+    e.dataTransfer.setData("text/plain", dataStr); // Fallback for strict browsers
+    e.dataTransfer.effectAllowed = "move";
+    setDraggedItem({ id: card.id, type: cardType });
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItem(null);
+  };
+
+  const handleDragEnter = (e: React.DragEvent, targetId: string) => {
     e.preventDefault();
-    if (Array.from(e.dataTransfer.types).includes("unit")) {
-      e.dataTransfer.dropEffect = "copy";
+    // Only reorder if dragging within the same list
+    if (!draggedItem || draggedItem.type !== type || draggedItem.id === targetId) return;
+    
+    const currentItems = [...items];
+    const draggedIdx = currentItems.findIndex(c => c.id === draggedItem.id);
+    const targetIdx = currentItems.findIndex(c => c.id === targetId);
+    
+    if (draggedIdx !== -1 && targetIdx !== -1) {
+      const [moved] = currentItems.splice(draggedIdx, 1);
+      currentItems.splice(targetIdx, 0, moved);
+      onReorder(currentItems);
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handlePanelDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "copy";
+    e.dataTransfer.dropEffect = "move"; // Force move cursor
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handlePanelDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    const raw = e.dataTransfer.getData("unit");
-    if (!raw) return;
-    try {
-      const u = JSON.parse(raw);
-      if (
-        !u ||
-        typeof u !== "object" ||
-        typeof u.id !== "string" ||
-        typeof u.value !== "number"
-      ) {
-        return;
-      }
+    setDraggedItem(null);
 
-      const existing = items.find((c) => c.id === u.id);
-      if (existing) {
-        onQtyChange(existing.id, existing.qty + 1);
-      } else {
-        onAdd({
-          id: u.id,
-          name: u.name,
-          subtitle: u.subtitle,
-          value: u.value,
-          qty: 1,
+    const tradeCardData = e.dataTransfer.getData("trade-card") || e.dataTransfer.getData("text/plain");
+    if (tradeCardData) {
+      try {
+        const data = JSON.parse(tradeCardData);
+        if (data && data.id && data.type) {
+          if (data.type !== type) {
+            // Dropped from the other panel
+            onMoveToOtherSide(data.id);
+          }
+          return;
+        }
+      } catch (err) {
+        logger.warn("ASTD-UI-039", "Failed to parse trade-card drop", {
+          scope: "TradeSectionPanel",
+          action: "handlePanelDrop",
+          error: err,
         });
       }
-    } catch (err) {
-      logger.warn("ASTD-UI-038", "Malformed drag-and-drop payload dropped on TradeSectionPanel", {
-        scope: "TradeSectionPanel",
-        action: "handleDrop",
-        metadata: { panelType: type },
-        error: err,
-      });
+    }
+
+    const rawUnit = e.dataTransfer.getData("unit");
+    if (rawUnit) {
+      try {
+        const u = JSON.parse(rawUnit);
+        if (
+          !u ||
+          typeof u !== "object" ||
+          typeof u.id !== "string" ||
+          typeof u.value !== "number"
+        ) {
+          return;
+        }
+
+        const existing = items.find((c) => c.id === u.id);
+        if (existing) {
+          onQtyChange(existing.id, existing.qty + 1);
+        } else {
+          onAdd({
+            id: u.id,
+            name: u.name,
+            subtitle: u.subtitle,
+            value: u.value,
+            qty: 1,
+          });
+        }
+      } catch (err) {
+        logger.warn("ASTD-UI-038", "Malformed drag-and-drop payload dropped on TradeSectionPanel", {
+          scope: "TradeSectionPanel",
+          action: "handleDrop",
+          metadata: { panelType: type },
+          error: err,
+        });
+      }
     }
   };
 
@@ -205,7 +250,6 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
     dropZoneClasses += "bg-transparent border border-transparent";
   }
 
-  // HighlightText Helper omitted for brevity, keeping original inside file if needed.
   const HighlightedText = ({ text, q }: { text: string; q: string }) => {
     if (!q || !text) return <>{text}</>;
     const escapedQuery = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -383,10 +427,8 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
       <div
         style={dropZoneStyle}
         className={dropZoneClasses}
-        onDragEnter={handleDragEnter}
-        onDragOver={handleDragOver}
-        
-        onDrop={handleDrop}
+        onDragOver={handlePanelDragOver}
+        onDrop={handlePanelDrop}
       >
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center pointer-events-none gap-0.5 py-4">
@@ -406,15 +448,18 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
         ) : (
           <div className="flex flex-col gap-[var(--gap-sm)]">
             {items.map((card) => (
-              <div key={card.id} style={{ contentVisibility: "auto" }}>
-                <ActiveCardRow
-                  card={card}
-                  onQtyChange={onQtyChange}
-                  onRemove={onRemove}
-                  isPinned={pinnedIds.has(`${type}-${card.id}`)}
-                  onTogglePin={onTogglePin}
-                />
-              </div>
+              <ActiveCardRow
+                key={card.id}
+                card={card}
+                type={type}
+                onQtyChange={onQtyChange}
+                onRemove={onRemove}
+                isPinned={pinnedIds.has(`${type}-${card.id}`)}
+                onTogglePin={onTogglePin}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onDragEnter={handleDragEnter}
+              />
             ))}
           </div>
         )}

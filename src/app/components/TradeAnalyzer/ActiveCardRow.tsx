@@ -1,12 +1,13 @@
 import { useCallback, useMemo, memo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { GripVertical } from "lucide-react";
 import { TradeCard } from "../../../types";
 import { GRID_STATUS_CFG } from "../../../data";
 import { useUnits } from "../../../context/UnitContext";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { StatusIcon, JargonWrap } from "../MainCanvas/UnitGrid";
 import { QuantitySelector } from "../ui/QuantitySelector";
-import { triggerHaptic } from "../../../data/helpers";
+import { triggerHaptic, copyTextWithFallback } from "../../../data/helpers";
 import { UnitAvatar } from "../shared/UnitAvatar";
 import { GiChest } from "react-icons/gi";
 import { useAuthStore } from "../../../store/useAuthStore";
@@ -16,22 +17,30 @@ import { logger } from "../../../lib/logger";
 
 export const ActiveCardRow = memo(function ActiveCardRow({
   card,
+  type,
   onQtyChange,
   onRemove,
   isPinned,
   onTogglePin,
+  onDragStart,
+  onDragEnd,
+  onDragEnter,
 }: {
   card: TradeCard;
+  type: "give" | "get";
   onQtyChange: (id: string, qty: number) => void;
   onRemove: (id: string) => void;
   isPinned: boolean;
   onTogglePin: (id: string) => void;
+  onDragStart: (e: React.DragEvent, card: TradeCard, type: "give" | "get") => void;
+  onDragEnd: () => void;
+  onDragEnter: (e: React.DragEvent, targetId: string) => void;
 }) {
   const { units } = useUnits();
   const profile = useAuthStore((s) => s.profile);
   const addOrUpdateUnit = useInventoryStore((s) => s.addOrUpdateUnit);
   const addToast = useToastStore((s) => s.addToast);
-
+  
   const collapseUnitsByDefault = useTradeStore(
     (s) => s.analyzerSettings?.collapseUnitsByDefault ?? false
   );
@@ -87,6 +96,14 @@ export const ActiveCardRow = memo(function ActiveCardRow({
     }
   };
 
+  const handleCopyName = async () => {
+    triggerHaptic("light");
+    const ok = await copyTextWithFallback(card.name);
+    if (ok) {
+      addToast(`Copied "${card.name}" to clipboard!`, "success");
+    }
+  };
+
   const toggleQty = useCallback(() => {
     triggerHaptic("light");
     setQtyOpen((o) => !o);
@@ -99,19 +116,33 @@ export const ActiveCardRow = memo(function ActiveCardRow({
 
   const pinButtonClass = (compact: boolean) =>
     `flex items-center justify-center transition-[transform,background-color,border-color,color] duration-150 flex-shrink-0 active:scale-90 rounded-[4px] focus-visible:outline-none cursor-pointer ${
-      compact
-        ? "w-7 h-7"
-        : "w-8 h-8"
+      compact ? "w-7 h-7" : "w-8 h-8"
     }`;
 
   return (
     <div
+      onDragEnter={(e) => onDragEnter(e, card.id)}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+      }}
       className={`flex flex-col bg-card hover:bg-muted/70 rounded-[8px] border transition-[background-color,border-color] duration-150 animate-fade-in group ${
         qtyOpen ? "p-2.5" : "px-2.5 py-1.5"
       } ${isPinned ? "border-primary" : "border-border"}`}
     >
-      {/* ── Top Row: Avatar / Name / Value / Toggle ── */}
+      {/* ── Top Row: Drag Handle / Avatar / Name / Value / Toggle ── */}
       <div className="flex items-center gap-2 w-full min-w-0">
+        
+        {/* DRAG HANDLE */}
+        <div
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-1 -ml-1 touch-none"
+          draggable={true}
+          onDragStart={(e) => onDragStart(e, card, type)}
+          onDragEnd={onDragEnd}
+        >
+          <GripVertical className="w-4 h-4" />
+        </div>
+
         <div
           className={`relative ${
             qtyOpen ? "w-9 h-9" : "w-7 h-7"
@@ -132,8 +163,9 @@ export const ActiveCardRow = memo(function ActiveCardRow({
         <div className="flex flex-col min-w-0 flex-1">
           <div className="flex items-center gap-1.5 min-w-0">
             <span
-              className="text-[13px] font-extrabold text-foreground truncate leading-tight"
-              title={card.name}
+              className="text-[13px] font-extrabold text-foreground truncate leading-tight cursor-pointer hover:underline"
+              title={`Click to copy "${card.name}"`}
+              onClick={handleCopyName}
             >
               {card.name}
             </span>

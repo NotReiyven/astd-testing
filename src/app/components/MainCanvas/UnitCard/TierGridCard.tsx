@@ -1,6 +1,7 @@
 import React, { useState, memo, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { GiPayMoney, GiReceiveMoney, GiHourglass, GiChest, GiCheckMark, GiSpinningBlades } from "react-icons/gi";
+import { FiCopy } from "react-icons/fi";
 import { PopupUnit, GridUnit, MasterUnit } from "../../../../types";
 import {
   getTier,
@@ -14,7 +15,7 @@ import {
 import { getAvatarStyle, getInitials } from "../../TradeAnalyzer/summaryUtils";
 import { useTradeStore } from "../../../../store/useTradeStore";
 import { useHistoryModalStore } from "../../../../store/useHistoryModalStore";
-import { triggerHaptic } from "../../../../data/helpers";
+import { triggerHaptic, copyTextWithFallback } from "../../../../data/helpers";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useInventoryStore } from "../../../../store/useInventoryStore";
 import {
@@ -300,6 +301,7 @@ function TierGridCardImpl({
   const openModal = useHistoryModalStore((state) => state.openModal);
   const profile = useAuthStore((state) => state.profile);
   const addOrUpdateUnit = useInventoryStore((state) => state.addOrUpdateUnit);
+  const addToast = useToastStore((state) => state.addToast);
 
   const isInTrade = useTradeStore(
     (s) =>
@@ -356,6 +358,14 @@ function TierGridCardImpl({
         );
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleCopyName = async () => {
+    triggerHaptic("light");
+    const ok = await copyTextWithFallback(unit.name);
+    if (ok) {
+      addToast(`Copied "${unit.name}" to clipboard!`, "success");
     }
   };
 
@@ -561,9 +571,19 @@ function TierGridCardImpl({
                   </div>
 
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[16px] font-black text-foreground tracking-tight truncate">
-                      {unit.name}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[16px] font-black text-foreground tracking-tight truncate">
+                        {unit.name}
+                      </span>
+                      <button
+                        onClick={handleCopyName}
+                        className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+                        title="Copy exact name"
+                        aria-label="Copy unit name"
+                      >
+                        <FiCopy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                     <span className="text-xs font-semibold text-muted-foreground truncate">
                       {unit.subtitle}
                     </span>
@@ -576,14 +596,7 @@ function TierGridCardImpl({
                   data-tooltip="Close"
                   className="w-11 h-11 md:w-8 md:h-8 rounded-[4px] border border-transparent hover:border-border hover:bg-muted flex items-center justify-center text-muted-foreground shrink-0 focus-visible:outline-none transition-[transform,background-color] duration-150 active:scale-90"
                 >
-                  <svg
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    className="w-4 h-4"
-                  >
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-4 h-4">
                     <path d="M3.5 3.5l9 9M12.5 3.5l-9 9" />
                   </svg>
                 </button>
@@ -654,8 +667,8 @@ function areCardPropsEqual(prev: TierGridCardProps, next: TierGridCardProps) {
     a.notice === b.notice &&
     a.name === b.name &&
     a.subtitle === b.subtitle &&
-    a.tier === b.tier && // Added tier check
-    a.obtainability === b.obtainability && // Added obtainability check
+    a.tier === b.tier &&
+    a.obtainability === b.obtainability &&
     prev.isSelected === next.isSelected &&
     prev.isSelectMode === next.isSelectMode &&
     prev.searchQuery === next.searchQuery &&

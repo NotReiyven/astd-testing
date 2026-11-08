@@ -63,8 +63,10 @@ export const UnitAvatar = memo(
                 setImgError(true);
               }
             }}
-            className={`${imageClassName} transition-opacity duration-200 ease-out ${
-              imgLoaded ? "opacity-100" : "opacity-0"
+            className={`${imageClassName} transition-[opacity,filter,transform] duration-300 ease-out ${
+              imgLoaded 
+                ? "opacity-100 blur-0 scale-100" 
+                : "opacity-0 blur-[4px] scale-105"
             }`}
             style={{ objectPosition: "center 15%" }}
           />
@@ -73,5 +75,3 @@ export const UnitAvatar = memo(
     );
   }
 );
-
-

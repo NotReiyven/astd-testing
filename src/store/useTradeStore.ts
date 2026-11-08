@@ -61,6 +61,7 @@ interface TradeState {
     mode?: "standard" | "lf_offers" | "inventory"
   ) => void;
   updateAnalyzerSettings: (patch: Partial<AnalyzerSettings>) => void;
+  reorderCards: (col: "give" | "get", newCards: TradeCard[]) => void;
 
   savePreset: (name: string) => void;
   renamePreset: (id: string, name: string) => void;
@@ -91,6 +92,14 @@ export const useTradeStore = create<TradeState>()(
             ...patch,
           },
         })),
+
+      reorderCards: (col, newCards) => {
+        set(
+          col === "give"
+            ? { giveItems: newCards }
+            : { getItems: newCards }
+        );
+      },
 
       addCard: (col, card) => {
         if (typeof window !== "undefined") {
@@ -239,7 +248,7 @@ export const useTradeStore = create<TradeState>()(
     }),
     {
       name: "astd_trade_storage",
-      version: 4,
+      version: 5,
       migrate: (persistedState: any, version: number) => {
         if (version < 3) {
           persistedState.giveItems = Array.isArray(persistedState.giveItems)

@@ -74,6 +74,10 @@ export function TradeAnalyzerPanel({
   const loadPreset = useTradeStore((s) => s.loadPreset);
   const rawSettings = useTradeStore((s) => s.analyzerSettings);
   const updateAnalyzerSettings = useTradeStore((s) => s.updateAnalyzerSettings);
+  const reorderCards = useTradeStore((s) => s.reorderCards);
+
+  // Memoize the Set to prevent infinite re-renders in child components
+  const pinnedIdsSet = useMemo(() => new Set(pinnedIds), [pinnedIds]);
 
   const settings: AnalyzerSettings = {
     ...DEFAULT_ANALYZER_SETTINGS,
@@ -1072,12 +1076,28 @@ export function TradeAnalyzerPanel({
                     })
                   );
                 }}
-                pinnedIds={new Set(pinnedIds)}
+                pinnedIds={pinnedIdsSet}
                 onTogglePin={(id) => {
                   togglePin("give", id);
                 }}
                 onInputFocus={() => setIsInputFocused(true)}
                 onInputBlur={() => setIsInputFocused(false)}
+                onReorder={(newOrder) => reorderCards("give", newOrder)}
+                onMoveToOtherSide={(cardId) => {
+                  const card = giveItems.find((c) => c.id === cardId);
+                  if (!card) return;
+                  const newGive = giveItems.filter((c) => c.id !== cardId);
+                  const existingGet = getItems.find((c) => c.id === cardId);
+                  let newGet;
+                  if (existingGet) {
+                    newGet = getItems.map((c) => c.id === cardId ? { ...c, qty: c.qty + card.qty } : c);
+                  } else {
+                    newGet = [...getItems, card];
+                  }
+                  overwrite(newGive, newGet);
+                  triggerHaptic("medium");
+                  addToast(`Moved ${card.name} to You Get.`, "success");
+                }}
               />
             </div>
 
@@ -1140,12 +1160,28 @@ export function TradeAnalyzerPanel({
                   })
                 );
               }}
-              pinnedIds={new Set(pinnedIds)}
+              pinnedIds={pinnedIdsSet}
               onTogglePin={(id) => {
                 togglePin("get", id);
               }}
               onInputFocus={() => setIsInputFocused(true)}
               onInputBlur={() => setIsInputFocused(false)}
+              onReorder={(newOrder) => reorderCards("get", newOrder)}
+              onMoveToOtherSide={(cardId) => {
+                const card = getItems.find((c) => c.id === cardId);
+                if (!card) return;
+                const newGet = getItems.filter((c) => c.id !== cardId);
+                const existingGive = giveItems.find((c) => c.id === cardId);
+                let newGive;
+                if (existingGive) {
+                  newGive = giveItems.map((c) => c.id === cardId ? { ...c, qty: c.qty + card.qty } : c);
+                } else {
+                  newGive = [...giveItems, card];
+                }
+                overwrite(newGive, newGet);
+                triggerHaptic("medium");
+                addToast(`Moved ${card.name} to You Give.`, "success");
+              }}
             />
 
             <TradeNotices
