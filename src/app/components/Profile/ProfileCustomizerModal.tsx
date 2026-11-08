@@ -525,6 +525,7 @@ interface ProfileCustomizerModalProps {
     banner_style: BannerStyleType;
     banner_image_url?: string;
     trading_stance: TradingStanceType;
+    hide_view_count: boolean;
   }) => Promise<void>;
   isSaving: boolean;
 }
@@ -549,6 +550,7 @@ const ProfileCustomizerContent = memo(function ProfileCustomizerContent({
   const [tradingStance, setTradingStance] = useState<TradingStanceType>(
     profileData.trading_stance || "open"
   );
+  const [hideViewCount, setHideViewCount] = useState(profileData.hide_view_count || false);
   const [isSyncingAvatar, setIsSyncingAvatar] = useState(false);
   const [isProcessingBanner, setIsProcessingBanner] = useState(false);
 
@@ -729,6 +731,7 @@ const ProfileCustomizerContent = memo(function ProfileCustomizerContent({
       banner_style: bannerStyle,
       banner_image_url: finalBannerUrl,
       trading_stance: tradingStance,
+      hide_view_count: hideViewCount,
     });
   };
 
@@ -851,6 +854,35 @@ const ProfileCustomizerContent = memo(function ProfileCustomizerContent({
                 className="w-full bg-[#1e1f22] border border-[#35373c] rounded-[6px] px-3.5 py-2 text-base sm:text-[13px] text-white outline-none focus:border-[#5865F2] transition-colors"
               />
             </div>
+          </div>
+
+          {/* PRIVACY SETTINGS */}
+          <div className="flex flex-col gap-2 p-3.5 bg-[#232428] rounded-[8px] border border-[#35373c]">
+            <span className="text-[12px] font-bold text-white mb-1">
+              Privacy Settings
+            </span>
+            
+            <button
+              type="button"
+              onClick={() => setHideViewCount(!hideViewCount)}
+              className={`flex items-center justify-between gap-3 w-full p-2.5 rounded-[6px] border text-left transition-colors cursor-pointer ${
+                hideViewCount
+                  ? "bg-[#1e1f22] border-[#5865F2]"
+                  : "bg-[#1e1f22] border-[#35373c] hover:bg-[#2b2d31]"
+              }`}
+            >
+              <div className="flex flex-col min-w-0 pr-2">
+                <span className="text-[12.5px] font-bold text-white leading-tight">
+                  Hide Profile View Counter
+                </span>
+                <span className="text-[10.5px] text-[#949ba4] font-medium mt-0.5 leading-snug">
+                  Only you will be able to see your view count and vault stats.
+                </span>
+              </div>
+              <div className={`w-8 h-4.5 rounded-full p-0.5 transition-colors shrink-0 flex items-center ${hideViewCount ? "bg-[#5865F2] justify-end" : "bg-[#35373c] justify-start"}`}>
+                <div className={`w-3.5 h-3.5 rounded-full transition-transform ${hideViewCount ? "bg-white" : "bg-[#949ba4]"}`} />
+              </div>
+            </button>
           </div>
         </div>
 

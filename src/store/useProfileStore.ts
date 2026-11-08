@@ -5,6 +5,7 @@ import { logger } from '../lib/logger';
 import { get as getIdb, set as setIdb } from 'idb-keyval';
 import { useToastStore } from "./useToastStore";
 import { resolveSafeUsername } from "../data/helpers";
+import { useAuthStore } from "./useAuthStore";
 import {
   formatRoleLabel,
   getStandardRoleColor,
@@ -104,7 +105,15 @@ export interface UserProfileData {
   roblox_username: string;
   global_rep: number;
   status: "online" | "dnd" | "invisible" | "offline";
-  // Unpacked extended profile customization & privacy fields
+  
+  // View Tracking Fields
+  view_count?: number;
+  vault_view_count?: number;
+  last_viewed_at?: string;
+  hide_view_count?: boolean;
+  vault_view_stats?: Record<string, number>;
+
+  // Extended customization fields
   accent_color?: string;
   banner_style?: BannerStyleType;
   banner_image_url?: string;
@@ -152,7 +161,6 @@ export async function getJoinNumber(createdAt: string): Promise<number | null> {
   return null;
 }
 
-
 const VALID_HEX = /^#[0-9A-Fa-f]{6}$/;
 const VALID_STYLES: BannerStyleType[] = [
   "solid",
@@ -193,6 +201,7 @@ export function unpackProfileRow(raw: any): UserProfileData {
   let ad_history_public = true;
   let wishlist_public = true;
   let hide_discord_id = false;
+  let hide_view_count = false;
   let private_ad_ids: string[] = [];
   let master_rep_override: number | null = null;
 
@@ -224,6 +233,7 @@ export function unpackProfileRow(raw: any): UserProfileData {
       if (params.get("ahp") === "0") ad_history_public = false;
       if (params.get("wlp") === "0") wishlist_public = false;
       if (params.get("hdi") === "1") hide_discord_id = true;
+      if (params.get("hvc") === "1") hide_view_count = true;
 
       const pids = params.get("pids");
       if (pids) {
@@ -250,7 +260,7 @@ export function unpackProfileRow(raw: any): UserProfileData {
       ? raw.global_rep
       : 0;
 
-  // Unpack user roles from relational query or assigned array
+  // Unpack user roles
   let assigned_roles: string[] = [];
   const roleDetailsMap = new Map<string, UserRoleBadge>();
 
@@ -289,7 +299,6 @@ export function unpackProfileRow(raw: any): UserProfileData {
     }
   }
 
-  // Ensure base profile.role is included if special
   if (raw?.role && raw.role !== "user" && !roleDetailsMap.has(raw.role.toLowerCase())) {
     roleDetailsMap.set(raw.role.toLowerCase(), {
       id: raw.role.toLowerCase(),
@@ -322,12 +331,17 @@ export function unpackProfileRow(raw: any): UserProfileData {
     ad_history_public,
     wishlist_public,
     hide_discord_id,
+    hide_view_count,
     private_ad_ids,
     master_rep_override,
     join_number:
       typeof raw?.join_number === "number" ? raw.join_number : undefined,
     assigned_roles,
     role_details,
+    view_count: typeof raw?.view_count === "number" ? raw.view_count : 0,
+    vault_view_count: typeof raw?.vault_view_count === "number" ? raw.vault_view_count : 0,
+    vault_view_stats: typeof raw?.vault_view_stats === "object" ? raw.vault_view_stats : {},
+    last_viewed_at: raw?.last_viewed_at || undefined,
   };
 }
 
@@ -358,6 +372,9 @@ export function packBannerConfig(profile: Partial<UserProfileData>): string {
   }
   if (profile.hide_discord_id === true) {
     params.set("hdi", "1");
+  }
+  if (profile.hide_view_count === true) {
+    params.set("hvc", "1");
   }
   if (
     Array.isArray(profile.private_ad_ids) &&
@@ -515,6 +532,7 @@ interface ProfileState {
     userId: string,
     updates: Partial<UserProfileData>
   ) => Promise<{ error: any }>;
+  recordView: (targetUserId: string, type: "profile" | "vault", sourceUnitId?: string) => Promise<void>;
 }
 
 const CACHE_TTL = 5 * 60 * 1000;
@@ -544,6 +562,63 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
   setViewingProfile: (userId, returnChannel = null) =>
     set({ viewingProfileId: userId, returnChannel }),
+
+  recordView: async (targetUserId, type, sourceUnitId) => {
+    const currentUser = useAuthStore.getState().profile;
+    if (currentUser?.id === targetUserId) return;
+
+    const sessionKey = `astd_viewed_${type}_${targetUserId}_${sourceUnitId || "any"}`;
+    try {
+      if (sessionStorage.getItem(sessionKey)) return;
+      sessionStorage.setItem(sessionKey, "true");
+    } catch {}
+
+    setTimeout(async () => {
+      try {
+        const res = await fetch("/api/profile/view", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ targetUserId, type, sourceUnitId }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.counted) {
+            set((state) => {
+              const existing = state.cache[targetUserId];
+              if (!existing) return state;
+              
+              const updatedData = { ...existing.data };
+              if (type === "profile") {
+                updatedData.view_count = (updatedData.view_count || 0) + 1;
+                updatedData.last_viewed_at = new Date().toISOString();
+              } else {
+                updatedData.vault_view_count = (updatedData.vault_view_count || 0) + 1;
+                if (sourceUnitId) {
+                  const stats = { ...(updatedData.vault_view_stats || {}) };
+                  stats[sourceUnitId] = (stats[sourceUnitId] || 0) + 1;
+                  updatedData.vault_view_stats = stats;
+                }
+              }
+
+              return {
+                cache: {
+                  ...state.cache,
+                  [targetUserId]: { ...existing, data: updatedData },
+                },
+              };
+            });
+          }
+        }
+      } catch (err) {
+        logger.warn("ASTD-PROF-011", "Failed to send view metric", {
+          scope: "useProfileStore",
+          action: "recordView",
+          error: err,
+        });
+      }
+    }, 3000);
+  },
 
   seedProfile: (rawRow) => {
     if (!rawRow?.id || !UUID_REGEX.test(String(rawRow.id))) return;
@@ -793,7 +868,6 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   },
 
   saveProfileUpdates: async (userId, updates) => {
-    // SECURITY: Verify active authenticated session matches target userId
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -818,6 +892,8 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
         updates.wishlist_public ?? existing?.wishlist_public ?? true,
       hide_discord_id:
         updates.hide_discord_id ?? existing?.hide_discord_id ?? false,
+      hide_view_count:
+        updates.hide_view_count ?? existing?.hide_view_count ?? false,
       private_ad_ids:
         updates.private_ad_ids ?? existing?.private_ad_ids ?? [],
       master_rep_override: existing?.master_rep_override ?? null,
@@ -843,12 +919,10 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       merged.roblox_username = dbPayload.roblox_username;
     }
 
-    // Clean hex in local memory
     if (merged.banner_color && !VALID_HEX.test(merged.banner_color)) {
       merged.banner_color = "#121214";
     }
 
-    // OFFLINE QUEUE INTERCEPTION
     if (!navigator.onLine) {
       const queue: any[] = (await getIdb("astd_offline_profile")) || [];
       queue.push({ userId, updates: dbPayload });

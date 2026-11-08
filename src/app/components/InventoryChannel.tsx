@@ -6,12 +6,16 @@ import {
   GiPadlock,
   GiHeartInside,
   GiFairyWand,
+  GiEyeTarget,
+  GiArchiveRegister,
 } from "react-icons/gi";
 import { useUnits } from "../../context/UnitContext";
 import { useShowDelay } from "../../hooks/useShowDelay";
 import { EmptyState } from "./ui/EmptyState";
 import { AsyncButton } from "./ui/AsyncButton";
 import { getContrastTextColor } from "./shared/DiscordRolePill";
+import { useProfileStore } from "../../store/useProfileStore";
+import { UnitAvatar } from "./shared/UnitAvatar";
 
 // Inline SVG icons — no lucide-react
 const IconSearch = ({ className }: { className?: string }) => (
@@ -183,6 +187,8 @@ export function InventoryChannel() {
   const loginWithDiscord = useAuthStore((s) => s.loginWithDiscord);
   const giveItems = useTradeStore((s) => s.giveItems);
   const getItems = useTradeStore((s) => s.getItems);
+  const recordView = useProfileStore((s) => s.recordView);
+  const fetchProfile = useProfileStore((s) => s.fetchProfile);
 
   const {
     vaultView,
@@ -208,6 +214,7 @@ export function InventoryChannel() {
     confirmClear,
     setConfirmClear,
     isReadOnly,
+    viewingUserId,
     viewingUsername,
     profile,
     metrics,
@@ -228,7 +235,6 @@ export function InventoryChannel() {
     handleQuickAdd,
     executeMassImport,
     handleCloseVault,
-    viewingUserId,
     returnChannel,
     handleSwitchToProfile,
   } = useInventoryManager(ALL_UNITS);
@@ -237,6 +243,8 @@ export function InventoryChannel() {
   const [omniboxIndex, setOmniboxIndex] = useState(-1);
   const [isControlsCollapsed, setIsControlsCollapsed] = useState(false);
   const [breakdownModalOpen, setBreakdownModalOpen] = useState(false);
+
+  const [viewedProfileData, setViewedProfileData] = useState<any>(null);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const omniboxRef = useRef<HTMLDivElement>(null);
@@ -255,6 +263,22 @@ export function InventoryChannel() {
     setManageOpen(false);
     setConfirmClear(null);
   });
+
+  // Fetch viewed profile data for insights
+  useEffect(() => {
+    if (viewingUserId && isReadOnly) {
+      fetchProfile(viewingUserId).then((data) => {
+        if (data) setViewedProfileData(data);
+      });
+    }
+  }, [viewingUserId, isReadOnly, fetchProfile]);
+
+  // Track vault views (3 second delayed API call handled by store)
+  useEffect(() => {
+    if (viewingUserId && isReadOnly) {
+      void recordView(viewingUserId, "vault");
+    }
+  }, [viewingUserId, isReadOnly, recordView]);
 
   useEffect(() => {
     const activeDialog = importMenuOpen
@@ -978,6 +1002,55 @@ export function InventoryChannel() {
             </div>
           ) : (
             <>
+              {/* Vault Insights Dashboard (Only visible to owner) */}
+              {!isReadOnly && viewedProfileData?.vault_view_count > 0 && (
+                <div className="bg-card border border-border rounded-[8px] p-4 flex flex-col gap-3 mb-6 shadow-sm">
+                  <div className="flex items-center gap-2 border-b border-border pb-2.5">
+                    <GiEyeTarget className="w-4 h-4 text-primary" />
+                    <h3 className="text-[13px] font-bold text-foreground">
+                      Vault Insights
+                    </h3>
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[12.5px] text-muted-foreground">
+                        Your Vault was inspected <strong className="text-foreground">{viewedProfileData.vault_view_count.toLocaleString()}</strong> times this week.
+                      </p>
+                      <p className="text-[11.5px] text-muted-foreground">
+                        "People are looking at your units. Maybe you should post a Trade Ad for them to capitalize on this interest."
+                      </p>
+                    </div>
+
+                    {viewedProfileData.vault_view_stats && Object.keys(viewedProfileData.vault_view_stats).length > 0 && (
+                      <div className="bg-popover rounded-[6px] border border-border p-2.5 flex flex-col gap-1 min-w-[200px] shrink-0">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                          Most Inspected Units
+                        </span>
+                        {Object.entries(viewedProfileData.vault_view_stats)
+                          .sort(([, a]: any, [, b]: any) => b - a)
+                          .slice(0, 3)
+                          .map(([unitId, count]: any) => {
+                            const master = ALL_UNITS.find(u => u.id === unitId);
+                            if (!master) return null;
+                            return (
+                              <div key={unitId} className="flex items-center justify-between text-[11px] py-1 border-t border-border/50 first:border-0">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-5 h-5 rounded-[2px] overflow-hidden bg-muted border border-border relative shrink-0">
+                                    <UnitAvatar unitId={master.id} unitName={master.name} imageUrl={master.imageUrl} />
+                                  </div>
+                                  <span className="text-foreground font-medium truncate max-w-[120px]">{master.name}</span>
+                                </div>
+                                <span className="text-primary font-mono font-bold">{count} views</span>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Portfolio Dashboard */}
               {!searchQuery &&
                 activeTierFilter === "All" &&

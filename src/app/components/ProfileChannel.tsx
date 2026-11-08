@@ -24,6 +24,7 @@ import {
 } from "../../store/useProfileStore";
 import { ProfileCustomizerModal } from "./Profile/ProfileCustomizerModal";
 import { DeleteAccountModal } from "./Profile/DeleteAccountModal";
+import { ProfileViewCount } from "./shared/ProfileViewCount";
 import { useAuthStore, UserProfile } from "../../store/useAuthStore";
 import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
 import { useAdInteractionStore } from "../../store/useAdInteractionStore";
@@ -746,6 +747,7 @@ export function ProfileChannel() {
     saveProfileUpdates,
     returnChannel,
     setViewingProfile,
+    recordView,
   } = useProfileStore();
   const {
     session,
@@ -925,6 +927,13 @@ export function ProfileChannel() {
     fetchWishlist,
   ]);
 
+  // Record profile view when visiting someone else's profile
+  useEffect(() => {
+    if (targetId && !isOwner) {
+      void recordView(targetId, "profile");
+    }
+  }, [targetId, isOwner, recordView]);
+
   const activeVaultItems = isOwner ? ownInventoryItems : viewedItems;
   const activeWishlistItems = isOwner ? wishlistItems : viewedWishlist;
 
@@ -969,14 +978,14 @@ export function ProfileChannel() {
   };
 
   const handleToggleProfilePrivacy = async (
-    field: "ad_history_public" | "wishlist_public" | "hide_discord_id"
+    field: "ad_history_public" | "wishlist_public" | "hide_discord_id" | "hide_view_count"
   ) => {
     if (!isOwner || !targetId || !profileData) return;
     triggerHaptic("light");
 
     const currentVal =
-      field === "hide_discord_id"
-        ? Boolean(profileData.hide_discord_id)
+      field === "hide_discord_id" || field === "hide_view_count"
+        ? Boolean(profileData[field])
         : profileData[field] ?? true;
     const nextVal = !currentVal;
 
@@ -1758,6 +1767,12 @@ export function ProfileChannel() {
                     <GiSpikedHalo className="w-3.5 h-3.5" />
                     {repRank.label} ({safeRep > 0 ? `+${safeRep}` : safeRep})
                   </span>
+
+                  {/* View Counter (next to Reputation Badge) */}
+                  <ProfileViewCount
+                    profile={profileData}
+                    isOwner={isOwner}
+                  />
 
                   {/* Trading Stance Pill */}
                   <span
@@ -2975,7 +2990,7 @@ export function ProfileChannel() {
                     </div>
 
                     {/* Hide Raw Discord ID Toggle */}
-                    <div className="py-3 last:pb-0 flex items-center justify-between gap-4">
+                    <div className="py-3 flex items-center justify-between gap-4">
                       <div className="flex flex-col gap-0.5">
                         <span className="text-[13px] text-foreground">
                           Mask Raw Discord ID on Profile
@@ -2999,6 +3014,38 @@ export function ProfileChannel() {
                         <div
                           className={`absolute top-0.5 left-0.5 bg-white w-5 h-5 rounded-full transition-transform ${
                             profileData.hide_discord_id
+                              ? "translate-x-5"
+                              : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Hide Profile View Counter Toggle */}
+                    <div className="py-3 last:pb-0 flex items-center justify-between gap-4">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[13px] text-foreground">
+                          Hide Profile View Counter
+                        </span>
+                        <span className="text-[12px] text-muted-foreground">
+                          Only you will be able to see your view count and vault
+                          stats.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleToggleProfilePrivacy("hide_view_count")
+                        }
+                        className={`relative w-11 h-6 rounded-full transition-colors shrink-0 cursor-pointer ${
+                          profileData.hide_view_count
+                            ? "bg-primary"
+                            : "bg-muted border border-border"
+                        }`}
+                      >
+                        <div
+                          className={`absolute top-0.5 left-0.5 bg-white w-5 h-5 rounded-full transition-transform ${
+                            profileData.hide_view_count
                               ? "translate-x-5"
                               : "translate-x-0"
                           }`}

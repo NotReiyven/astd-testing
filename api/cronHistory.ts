@@ -1,13 +1,6 @@
-// ================================================
-// FILE: api/cronHistory.ts
-// ================================================
-
 import { createClient } from "@supabase/supabase-js";
 import { parseSpreadsheet, SpreadsheetData, ParsedUnit } from "./lib/parseSheet.js";
 import { apiLogger } from "./lib/logger.js";
-
-// Removed runtime: 'edge' - This function requires Node.js memory limits 
-// to safely process large Google Sheets JSON payloads without OOM crashes.
 
 interface UnitStateRow {
   unit_id: string;
@@ -80,7 +73,7 @@ export async function GET(request: Request) {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // 1. RUN CLEANUP AND SHEET FETCH CONCURRENTLY TO SLASH EXECUTION TIME
+    // 1. RUN CLEANUP, NOTIFICATIONS AND SHEET FETCH CONCURRENTLY
     const standardRanges = [
       "S Tier!A:I", "A Tier!A:I", "B Tier!A:I", "C Tier!A:I", 
       "Pure Tier!A:I", "Oddities!A:I", "Untiered!A:I"
@@ -103,11 +96,35 @@ export async function GET(request: Request) {
       return fetch(fallbackUrl);
     };
 
+    const sendMissedOpportunityNotifications = async () => {
+      const yesterday = new Date(Date.now() - 86400000).toISOString();
+      const { data: users } = await supabase
+        .from("profiles")
+        .select("id")
+        .gt("view_count", 10)
+        .gt("last_viewed_at", yesterday)
+        .eq("banner_color", "#121214")
+        .eq("bio", "");
+
+      if (!users || users.length === 0) return;
+
+      const notifications = users.map((u: any) => ({
+        user_id: u.id,
+        actor_id: "system",
+        type: "system",
+        message: "Your profile was viewed over 10 times today. Your banner is still the default. Visit your profile to customize it and make a better first impression.",
+      }));
+
+      await supabase.from("notifications").insert(notifications);
+    };
+
     const retentionCutoffIso = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
-    const [adPurgeResult, bannedUsersResult, sheetsResponse] = await Promise.all([
+    
+    const [adPurgeResult, bannedUsersResult, sheetsResponse, _notifyResult] = await Promise.all([
       supabase.from('trading_ads').delete().lt('expires_at', retentionCutoffIso),
       supabase.from('profiles').select('id').eq('role', 'banned'),
-      fetchSheetData()
+      fetchSheetData(),
+      sendMissedOpportunityNotifications()
     ]);
 
     if (adPurgeResult.error) {
@@ -140,11 +157,11 @@ export async function GET(request: Request) {
     const { units } = parseSpreadsheet(data);
     if (!units || units.length === 0) return new Response(JSON.stringify({ message: "No units parsed" }), { status: 200, headers: { "Content-Type": "application/json" } });
 
-    // 3. FETCH EXISTING DB STATE (Single query, pagination is overkill for < 500 units)
+    // 3. FETCH EXISTING DB STATE
     const { data: currentDbState, error: fetchError } = await supabase
       .from('unit_current_state')
       .select('*')
-      .limit(1000); // Failsafe limit
+      .limit(1000);
 
     if (fetchError) throw fetchError;
 
@@ -211,7 +228,7 @@ export async function GET(request: Request) {
       }
     });
 
-    // 5. CHUNKED DATABASE WRITES TO PREVENT PAYLOAD CRASHES
+    // 5. CHUNKED DATABASE WRITES
     if (snapshotsToInsert.length > 0) {
       const CHUNK_SIZE = 500;
       
@@ -228,7 +245,6 @@ export async function GET(request: Request) {
       }
     }
 
-    // Build fields for the Discord embed
     const embedFields = [
       { name: "Total Tracked Units", value: `${units.length}`, inline: true },
       { name: "Updates Detected", value: `${snapshotsToInsert.length}`, inline: true }
@@ -245,7 +261,7 @@ export async function GET(request: Request) {
     await sendDiscordEmbed({
       title: "ASTD Value List Autonomous Sync",
       description: "Successfully processed live spreadsheet state and purged expired database ads.",
-      color: 3066993, // Green
+      color: 3066993,
       fields: embedFields
     });
 
@@ -261,7 +277,7 @@ export async function GET(request: Request) {
     await sendDiscordEmbed({
       title: "ASTD Value List Critical Crash",
       description: `\`\`\`${errorDetails}\`\`\``,
-      color: 15158332 // Red
+      color: 15158332
     });
     return new Response(JSON.stringify({ error: "An internal error occurred. Check server logs for details." }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
