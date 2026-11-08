@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { get, set, del } from "idb-keyval";
+import { create } from "zustand";
 import { supabase } from "../lib/supabase";
 import { useToastStore } from "../store/useToastStore";
 import { copyTextWithFallback } from "../data/helpers";
-
 import { useAuthStore } from "../store/useAuthStore";
 import { logger } from "../lib/logger";
 
@@ -98,7 +98,6 @@ function classifySyncError(err: any): {
       ? err.message.trim()
       : "Request rejected by server";
 
-  // 1. Explicit retryable statuses: 408 Request Timeout, 429 Rate Limit, and all 5xx
   if (status === 408 || status === 429 || (status >= 500 && status < 600)) {
     return {
       category: "retryable",
@@ -106,7 +105,6 @@ function classifySyncError(err: any): {
     };
   }
 
-  // 2. Auth expired / permission denied (401, 403, PGRST301, 42501): keep in queue without counting attempt
   if (
     AUTH_EXPIRED_HTTP_STATUSES.has(status) ||
     AUTH_EXPIRED_DB_CODES.has(code) ||
@@ -118,7 +116,6 @@ function classifySyncError(err: any): {
     };
   }
 
-  // 3. Clear permanent errors (400, 404, 409, 422, or explicit Postgres constraint/schema codes)
   if (PERMANENT_HTTP_STATUSES.has(status)) {
     return {
       category: "permanent",
@@ -133,7 +130,6 @@ function classifySyncError(err: any): {
     };
   }
 
-  // 4. Default to retryable for transient network/unknown errors
   return {
     category: "retryable",
     reason: message,
@@ -151,9 +147,35 @@ function throwIfError(result: { error: any; status?: number }) {
   }
 }
 
+interface NetworkSyncState {
+  pendingChangesCount: number;
+  setPendingChangesCount: (count: number) => void;
+}
+
+export const useNetworkSyncStore = create<NetworkSyncState>((set) => ({
+  pendingChangesCount: 0,
+  setPendingChangesCount: (count) => set({ pendingChangesCount: count }),
+}));
+
+async function updatePendingCount() {
+  let total = 0;
+  try {
+    for (const key of QUEUE_KEYS) {
+      const q = (await get(key)) || [];
+      if (Array.isArray(q)) total += q.length;
+    }
+  } catch {
+    // Ignore indexdb read errors
+  }
+  useNetworkSyncStore.getState().setPendingChangesCount(total);
+}
+
 export async function syncAllQueues(): Promise<void> {
   if (isSyncInFlight) return;
-  if (typeof navigator !== "undefined" && !navigator.onLine) return;
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    updatePendingCount();
+    return;
+  }
 
   isSyncInFlight = true;
 
@@ -163,9 +185,11 @@ export async function syncAllQueues(): Promise<void> {
     } = await supabase.auth.getSession();
     const currentUserId = session?.user?.id;
 
-    if (!currentUserId) return;
+    if (!currentUserId) {
+      updatePendingCount();
+      return;
+    }
 
-    // 1. Inspect queues first & normalize legacy items missing _syncId/_attempts
     let totalActionable = 0;
     for (const key of QUEUE_KEYS) {
       const rawQueue: any[] = (await get(key)) || [];
@@ -197,6 +221,8 @@ export async function syncAllQueues(): Promise<void> {
       );
       totalActionable += Math.min(userItems.length, MAX_BATCH_SIZE);
     }
+
+    updatePendingCount();
 
     if (totalActionable === 0) return;
 
@@ -233,7 +259,6 @@ export async function syncAllQueues(): Promise<void> {
       const rawInitial: any[] = (await get(storageKey)) || [];
       if (!Array.isArray(rawInitial) || rawInitial.length === 0) return;
 
-      // Ensure every item in storageKey has _syncId and retryCount defaulted to 0 on read
       let normalizedChanged = false;
       const initialQueue = rawInitial.map((entry) => {
         if (
@@ -285,7 +310,6 @@ export async function syncAllQueues(): Promise<void> {
           const { category, reason } = classifySyncError(err);
 
           if (category === "auth_expired") {
-            // Keep item in queue, do NOT increment retryCount, and ask user to sign in again
             authExpired = true;
             logger.warn("ASTD-SYNC-002", "Session expired while syncing offline queue item", {
               scope: "useNetworkSync",
@@ -343,14 +367,12 @@ export async function syncAllQueues(): Promise<void> {
         }
       }
 
-      // Re-read current queue from IndexedDB so any items queued DURING sync are preserved
       const latestQueue: any[] = (await get(storageKey)) || [];
       const reconciledQueue = latestQueue
         .filter((entry) => {
           if (!belongsToUser(entry, currentUserId)) return true;
           const id = entry?._syncId;
           if (!id) return true;
-          // Purge ONLY successfully synced items or permanently dropped items; keep retryable failed items
           if (syncedIds.has(id) || permanentlyDroppedIds.has(id)) return false;
           return true;
         })
@@ -368,9 +390,10 @@ export async function syncAllQueues(): Promise<void> {
       } else {
         await set(storageKey, reconciledQueue);
       }
+      
+      updatePendingCount();
     };
 
-    // 1. Profile Sync
     await processQueue("astd_offline_profile", async (op) => {
       const res = await supabase
         .from("profiles")
@@ -379,7 +402,6 @@ export async function syncAllQueues(): Promise<void> {
       throwIfError(res);
     });
 
-    // 2. Wishlist Sync
     await processQueue("astd_offline_wishlist", async (op) => {
       if (op.action === "ADD") {
         const res = await supabase
@@ -399,7 +421,6 @@ export async function syncAllQueues(): Promise<void> {
       }
     });
 
-    // 3. Inventory Sync
     await processQueue("astd_offline_inventory", async (op) => {
       if (op.action === "UPSERT") {
         const res = await supabase
@@ -426,8 +447,6 @@ export async function syncAllQueues(): Promise<void> {
           const res = await supabase.from("user_inventory").insert(op.item);
           const errCode = String(res.error?.code || "");
           if (errCode === "23505" || res.status === 409) {
-            // Row already exists on server (already restored or updated with newer state);
-            // treat as success and drop silently without overwriting newer server data.
             return;
           }
           throwIfError(res);
@@ -455,7 +474,6 @@ export async function syncAllQueues(): Promise<void> {
       }
     });
 
-    // 4. Comments Sync
     await processQueue("astd_offline_comments", async (c) => {
       const res = await supabase.from("ad_comments").insert({
         ad_id: c.adId,
@@ -466,11 +484,12 @@ export async function syncAllQueues(): Promise<void> {
       throwIfError(res);
     });
 
-    // 5. Ads Sync
     await processQueue("astd_offline_ads", async (cleanPayload) => {
       const res = await supabase.from("trading_ads").insert(cleanPayload);
       throwIfError(res);
     });
+
+    updatePendingCount();
 
     if (authExpired) {
       updateToast(SYNC_TOAST_ID, {
@@ -487,7 +506,6 @@ export async function syncAllQueues(): Promise<void> {
       return;
     }
 
-    // Notify user about any permanently dropped changes
     if (droppedNotices.length > 0) {
       const summary =
         droppedNotices.length === 1
@@ -560,11 +578,15 @@ export async function syncAllQueues(): Promise<void> {
     }
   } finally {
     isSyncInFlight = false;
+    updatePendingCount();
   }
 }
 
 export function useNetworkSync() {
   useEffect(() => {
+    // Initial count on mount
+    void updatePendingCount();
+
     const handleOffline = () => {
       useToastStore
         .getState()
@@ -573,13 +595,13 @@ export function useNetworkSync() {
           "warning",
           { dedupeKey: "network-offline-banner" }
         );
+      void updatePendingCount();
     };
 
     const handleOnline = () => {
       void syncAllQueues();
     };
 
-    // Attempt to flush any pending offline queues on initial mount if online
     if (typeof navigator !== "undefined" && navigator.onLine) {
       void syncAllQueues();
     }
@@ -593,4 +615,3 @@ export function useNetworkSync() {
     };
   }, []);
 }
-

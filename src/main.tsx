@@ -1,6 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+import { MotionConfig } from "framer-motion";
 import App from "./app/App.tsx";
 import "./styles/index.css";
 import "./styles/density.css";
@@ -14,7 +15,12 @@ Sentry.init({
   tunnel: "/api/monitoring",
   integrations: [
     Sentry.browserTracingIntegration({ enableInp: false }),
-    Sentry.replayIntegration(),
+    Sentry.replayIntegration({
+      // ── Explicit privacy mask for session replay (Item 16) ─────────────
+      maskAllText: true,
+      maskAllInputs: true,
+      blockAllMedia: true,
+    }),
   ],
   // Performance Monitoring: sample 10% to prevent transaction alert spam
   tracesSampleRate: 0.1,
@@ -31,7 +37,13 @@ Sentry.init({
 });
 
 // Auto-reload on deployment chunk version mismatches (prevents text/html MIME error)
+// Guarded against infinite reload loops if the chunk is genuinely broken.
 window.addEventListener("vite:preloadError", () => {
+  if (sessionStorage.getItem("astd_chunk_reload") === "1") {
+    logger.warn("ASTD-BOOT-004", "Chunk reload already attempted — skipping to prevent loop");
+    return;
+  }
+  sessionStorage.setItem("astd_chunk_reload", "1");
   window.location.reload();
 });
 
@@ -147,21 +159,30 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 }
 
+// Successful boot clears the reload-loop guard set by vite:preloadError.
+try {
+  sessionStorage.removeItem("astd_chunk_reload");
+} catch {
+  // Ignore storage errors — non-fatal.
+}
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <UnitProvider>
-          <BrowserRouter
-            future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true,
-            }}
-          >
-            <App />
-          </BrowserRouter>
-        </UnitProvider>
-      </QueryClientProvider>
+      <MotionConfig reducedMotion="user">
+        <QueryClientProvider client={queryClient}>
+          <UnitProvider>
+            <BrowserRouter
+              future={{
+                v7_startTransition: true,
+                v7_relativeSplatPath: true,
+              }}
+            >
+              <App />
+            </BrowserRouter>
+          </UnitProvider>
+        </QueryClientProvider>
+      </MotionConfig>
     </ErrorBoundary>
   </React.StrictMode>
 );

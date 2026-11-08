@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function useCanvasScroll(isMobile: boolean) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -10,6 +10,9 @@ export function useCanvasScroll(isMobile: boolean) {
   const lastScrollY = useRef(0);
   const scrollDeltaRef = useRef(0);
   const lastToggleTimeRef = useRef(0);
+
+  // React state so consumers can react (e.g. collapse paddingTop when hidden)
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -58,6 +61,7 @@ export function useCanvasScroll(isMobile: boolean) {
         if (currentScroll < 40) {
           if (!headerVisibleRef.current) {
             headerVisibleRef.current = true;
+            setIsHeaderVisible(true);
             if (headerRef.current) {
               headerRef.current.classList.remove("-translate-y-full");
               headerRef.current.classList.add("translate-y-0");
@@ -78,6 +82,7 @@ export function useCanvasScroll(isMobile: boolean) {
 
         if (scrollDeltaRef.current > 40 && headerVisibleRef.current) {
           headerVisibleRef.current = false;
+          setIsHeaderVisible(false);
           if (headerRef.current) {
             headerRef.current.classList.remove("translate-y-0");
             headerRef.current.classList.add("-translate-y-full");
@@ -86,6 +91,7 @@ export function useCanvasScroll(isMobile: boolean) {
           scrollDeltaRef.current = 0;
         } else if (scrollDeltaRef.current < -40 && !headerVisibleRef.current) {
           headerVisibleRef.current = true;
+          setIsHeaderVisible(true);
           if (headerRef.current) {
             headerRef.current.classList.remove("-translate-y-full");
             headerRef.current.classList.add("translate-y-0");
@@ -103,6 +109,7 @@ export function useCanvasScroll(isMobile: boolean) {
   const scrollToTop = () => {
     lastToggleTimeRef.current = Date.now();
     headerVisibleRef.current = true;
+    setIsHeaderVisible(true);
     if (headerRef.current) {
       headerRef.current.classList.remove("-translate-y-full");
       headerRef.current.classList.add("translate-y-0");
@@ -118,6 +125,7 @@ export function useCanvasScroll(isMobile: boolean) {
     scrollTopBtnRef,
     scrollToTop,
     headerVisibleRef,
+    isHeaderVisible,
     skipNextResetRef: useRef(false),
   };
 }

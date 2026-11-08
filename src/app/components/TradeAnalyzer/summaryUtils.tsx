@@ -18,8 +18,22 @@ export const getAvatarStyle = (name?: string | null) => {
 };
 
 export const getInitials = (name?: string | null) => {
-  const clean = sanitizeUsername(name);
-  return (clean || "TR").substring(0, 2).toUpperCase();
+  const cleanName = sanitizeUsername(name);
+  if (!cleanName) return "TR";
+
+  const words = cleanName.split(/\s+/);
+  if (words.length > 1) {
+    // First letter of first two words (e.g., "Legendary Borul" -> "LB")
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+
+  // If it's a single long word, take the first 3 letters (e.g., "Borul" -> "BOR")
+  if (cleanName.length > 4) {
+    return cleanName.substring(0, 3).toUpperCase();
+  }
+
+  // Default to first 2 letters
+  return cleanName.substring(0, 2).toUpperCase();
 };
 
 // Performance Optimization: Global Map Cache

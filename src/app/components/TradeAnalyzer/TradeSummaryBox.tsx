@@ -3,12 +3,15 @@ import {
   avgStat,
   getTradeForecast,
   getLiquidityScore,
+  getShareText,
 } from "./summaryUtils";
 import { TradeCard, MasterUnit } from "../../../types";
 import { GiUpgrade, GiHourglass } from "react-icons/gi";
+import { FiCopy } from "react-icons/fi";
 import { RollingNumber } from "../shared/Formatters";
 import { useTradeStore, DEFAULT_ANALYZER_SETTINGS } from "../../../store/useTradeStore";
-import { triggerHaptic } from "../../../data/helpers";
+import { triggerHaptic, copyTextWithFallback } from "../../../data/helpers";
+import { useToastStore } from "../../../store/useToastStore";
 
 interface TradeSummaryBoxProps {
   isAnalyzerTarget: boolean;
@@ -36,6 +39,7 @@ export function TradeSummaryBox({
   const [activeTip, currentTip] = useState<string | null>(null);
   const rawSettings = useTradeStore((s) => s.analyzerSettings);
   const updateAnalyzerSettings = useTradeStore((s) => s.updateAnalyzerSettings);
+  const addToast = useToastStore((s) => s.addToast);
 
   const settings = {
     ...DEFAULT_ANALYZER_SETTINGS,
@@ -50,16 +54,11 @@ export function TradeSummaryBox({
     settings.showLiquidity,
   ].filter(Boolean).length;
 
-  const forecast = getTradeForecast(
-    giveItems,
-    getItems,
-    ALL_UNITS
-  );
+  const forecast = getTradeForecast(giveItems, getItems, ALL_UNITS);
 
   const isOcPresent = useMemo(() => {
     return [...giveItems, ...getItems].some((c) => {
       const master = ALL_UNITS.find((u) => u.id === c.id);
-
       return (
         master?.value === "owner" ||
         master?.valueDisplay === "Owner's Choice" ||
@@ -70,15 +69,9 @@ export function TradeSummaryBox({
 
   const getLiqLabel = (items: TradeCard[]) => {
     if (items.length === 0) return "-";
-
-    const score = getLiquidityScore(
-      items,
-      ALL_UNITS
-    );
-
+    const score = getLiquidityScore(items, ALL_UNITS);
     if (score >= 3.0) return "High";
     if (score <= 0.6) return "Low";
-
     return "Avg";
   };
 
@@ -99,23 +92,40 @@ export function TradeSummaryBox({
     });
   };
 
+  const handleCopyTrade = async () => {
+    if (giveItems.length === 0 && getItems.length === 0) return;
+    
+    const text = getShareText(
+      giveItems, 
+      getItems, 
+      giveTotal, 
+      getTotal, 
+      ALL_UNITS
+    );
+
+    triggerHaptic("medium");
+    const ok = await copyTextWithFallback(text);
+    if (ok) {
+      addToast("Trade copied to clipboard for Discord!", "success");
+    } else {
+      addToast("Could not copy trade automatically.", "error");
+    }
+  };
+
   const valDiff = getTotal - giveTotal;
 
   if (isCompact) {
     return (
       <div className="flex-shrink-0 mx-[var(--panel-p)] mt-[var(--gap-sm)] rounded-[6px] px-3.5 py-2.5 bg-popover border border-border flex items-center justify-between shadow-sm z-20 animate-fade-in">
-        {/* Give */}
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-[12px] font-medium text-muted-foreground">
             Give:
           </span>
-
           <span className="text-[12px] font-black font-mono text-[#FAA61A] truncate">
             <RollingNumber value={giveTotal} />
           </span>
         </div>
 
-        {/* Difference */}
         <div className="flex items-center gap-1 font-mono text-[11px] font-black shrink-0">
           {isOcPresent ? (
             <span className="text-muted-foreground">
@@ -137,12 +147,10 @@ export function TradeSummaryBox({
           )}
         </div>
 
-        {/* Get */}
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-[12px] font-medium text-muted-foreground">
             Get:
           </span>
-
           <span className="text-[12px] font-black font-mono text-primary truncate">
             <RollingNumber value={getTotal} />
           </span>
@@ -168,13 +176,12 @@ export function TradeSummaryBox({
           : "border-border"
       }`}
     >
-      <div className="flex items-start justify-between w-full">
+      <div className="flex items-start justify-between w-full gap-2">
         {/* Total Give */}
         <div className="flex-1 min-w-0 text-left">
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
             Total Give
           </p>
-
           <p
             className="text-[16px] md:text-[18px] font-black text-foreground font-mono tabular-nums truncate"
             title={giveTotal.toLocaleString()}
@@ -188,13 +195,12 @@ export function TradeSummaryBox({
         </div>
 
         {/* Center Difference */}
-        <div className="flex flex-col items-center px-2 md:px-4 shrink-0">
+        <div className="flex flex-col items-center px-1 md:px-2 shrink-0">
           {isOcPresent ? (
             <>
               <span className="text-[14px] md:text-[16px] font-black font-mono tabular-nums text-muted-foreground">
                 N/A
               </span>
-
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-0.5">
                 O/C Present
               </span>
@@ -213,7 +219,6 @@ export function TradeSummaryBox({
                 {getTotal > giveTotal ? "+" : ""}
                 <RollingNumber value={valDiff} />
               </span>
-
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-0.5">
                 Raw Diff
               </span>
@@ -226,7 +231,6 @@ export function TradeSummaryBox({
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
             Total Get
           </p>
-
           <p
             className="text-[16px] md:text-[18px] font-black text-foreground font-mono tabular-nums truncate"
             title={getTotal.toLocaleString()}
@@ -238,6 +242,17 @@ export function TradeSummaryBox({
             )}
           </p>
         </div>
+
+        {/* Copy Button */}
+        <button
+          type="button"
+          onClick={handleCopyTrade}
+          disabled={giveItems.length === 0 && getItems.length === 0}
+          title="Copy formatted trade to clipboard"
+          className="ml-1 p-1.5 md:p-2 rounded-[4px] bg-muted hover:bg-primary/20 text-muted-foreground hover:text-primary border border-border transition-colors shrink-0 disabled:opacity-50 cursor-pointer"
+        >
+          <FiCopy className="w-4 h-4" />
+        </button>
       </div>
 
       <div className="flex w-full h-[6px] gap-1.5 rounded-full overflow-hidden bg-popover">
@@ -316,7 +331,6 @@ export function TradeSummaryBox({
                 >
                   <div className="flex items-center gap-1 mb-1 max-w-full">
                     <GiUpgrade className="w-3 h-3 text-[#FAA61A] shrink-0" />
-
                     <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground truncate">
                       ST Flip
                     </span>

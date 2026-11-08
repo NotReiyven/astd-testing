@@ -21,6 +21,7 @@ import { AdComposerModal } from "./components/layout/AdComposerModal";
 import { AdInteractionModal } from "./components/AdInteractionModal";
 import { MiniProfilePopout } from "./components/layout/MiniProfilePopout";
 import { LoginRecommendationModal } from "./components/layout/LoginRecommendationModal";
+import { KeyboardShortcutsModal } from "./components/layout/KeyboardShortcutsModal";
 import { useTradeStore } from "../store/useTradeStore";
 import { useLayoutStore } from "../store/useLayoutStore";
 import { HistoryModal } from "./components/MainCanvas/HistoryModal";
@@ -179,8 +180,21 @@ export default function App() {
   const getItems = useTradeStore((s) => s.getItems);
   const { profile, isLoading: isAuthLoading } = useAuthStore();
   const { units } = useUnits();
+  const setShortcutsModalOpen = useLayoutStore((s) => s.setShortcutsModalOpen);
 
-  // Auto-open unit history modal when navigating directly to /unit/:unitId
+  useEffect(() => {
+    const handleShortcut = (e: KeyboardEvent) => {
+      if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
+        const activeEl = document.activeElement;
+        if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) return;
+        e.preventDefault();
+        setShortcutsModalOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, [setShortcutsModalOpen]);
+
   useEffect(() => {
     if (!location.pathname.startsWith("/unit/")) return;
     const rawTarget = decodeURIComponent(
@@ -203,12 +217,10 @@ export default function App() {
     }
   }, [location.pathname, units]);
 
-  // Realtime Notification Listener
   const {
     subscribe: subscribeToNotifications,
   } = useNotificationStore();
 
-  // Monitor value list updates with debounce settle window
   useValueListNotification();
 
   const {
@@ -249,7 +261,6 @@ export default function App() {
 
   useNetworkSync();
 
-  // Map Zustand layout state to native DOM for responsive density and typography foundations
   useEffect(() => {
     if (globalCompactMode) {
       document.documentElement.setAttribute("data-density", "compact");
@@ -295,7 +306,6 @@ export default function App() {
     }
   }, [location.pathname, bootStage]);
 
-  // Handle Login Modal Logic with session dismissal and boot stabilization
   const [dismissedLoginRecs, setDismissedLoginRecs] = useState<
     Record<string, boolean>
   >(() => {
@@ -356,7 +366,6 @@ export default function App() {
     }
   }, [activeChannel, profile, isAuthLoading, bootStage, dismissedLoginRecs]);
 
-  // Hook up notification subscriptions for authenticated users and local cache for guests
   useEffect(() => {
     const targetId = profile?.id ?? null;
     subscribeToNotifications(targetId);
@@ -593,7 +602,6 @@ export default function App() {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Synchronous global overlays outside lazy Suspense so route transitions never freeze modals */}
         <GlobalToastContainer />
         <GlobalTooltip />
         <WelcomeModal />
@@ -601,6 +609,7 @@ export default function App() {
         <ExternalLinkModal />
         <AdComposerModal />
         <AdInteractionModal />
+        <KeyboardShortcutsModal />
         <LoginRecommendationModal
           isOpen={Boolean(loginModalChannel && bootStage === "complete" && !profile)}
           onClose={() => handleDismissLoginRec()}

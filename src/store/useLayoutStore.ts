@@ -12,12 +12,14 @@ export type FontFamily =
 interface LayoutState {
   globalSearchQuery: string;
   commandPaletteOpen: boolean;
+  shortcutsModalOpen: boolean;
   theme: ThemeMode;
   globalCompactMode: boolean;
   bootChannel: BootChannel;
   fontFamily: FontFamily;
   setGlobalSearchQuery: (query: string) => void;
   setCommandPaletteOpen: (isOpen: boolean) => void;
+  setShortcutsModalOpen: (isOpen: boolean) => void;
   setTheme: (theme: ThemeMode) => void;
   setGlobalCompactMode: (isCompact: boolean) => void;
   setBootChannel: (channel: BootChannel) => void;
@@ -29,6 +31,7 @@ export const useLayoutStore = create<LayoutState>()(
     (set) => ({
       globalSearchQuery: "",
       commandPaletteOpen: false,
+      shortcutsModalOpen: false,
       theme: "dark",
       globalCompactMode: false,
       bootChannel: "last-used",
@@ -37,6 +40,8 @@ export const useLayoutStore = create<LayoutState>()(
       setGlobalSearchQuery: (query) => set({ globalSearchQuery: query }),
 
       setCommandPaletteOpen: (isOpen) => set({ commandPaletteOpen: isOpen }),
+
+      setShortcutsModalOpen: (isOpen) => set({ shortcutsModalOpen: isOpen }),
 
       setTheme: (theme) => {
         document.documentElement.setAttribute("data-theme", theme);
@@ -106,7 +111,6 @@ export const useLayoutStore = create<LayoutState>()(
           }
         }
       },
-      // We only persist personalization settings, not active search queries or modals
       partialize: (state) => ({
         theme: state.theme,
         globalCompactMode: state.globalCompactMode,

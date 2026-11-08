@@ -246,16 +246,17 @@ export function WelcomeModal() {
 
   const handleFinishOnboarding = (startTutorial: boolean) => {
     triggerHaptic("success");
-    localStorage.setItem(WELCOME_ACK_STORAGE_KEY, "true");
-    localStorage.setItem(WELCOME_VERSION_STORAGE_KEY, LEGAL_VERSION);
-    localStorage.setItem("astd_welcome_completed", "true");
-    localStorage.setItem("astd_cookie_consent", "granted");
-
-    if (typeof window !== "undefined" && (window as any).gtag) {
-      (window as any).gtag("consent", "update", {
-        analytics_storage: "granted",
-      });
+    
+    // Only persist acceptance if the user actually checked the box.
+    // If they just closed the modal, we don't want to falsely track consent.
+    if (hasConsented) {
+      localStorage.setItem(WELCOME_ACK_STORAGE_KEY, "true");
+      localStorage.setItem(WELCOME_VERSION_STORAGE_KEY, LEGAL_VERSION);
+      localStorage.setItem("astd_welcome_completed", "true");
     }
+
+    // NOTE: We deliberately do NOT set `astd_cookie_consent` here.
+    // The CookieBanner handles consent separately (and Google Consent Mode v2 defaults to denied).
 
     setIsVisible(false);
     document.body.style.overflow = "auto";

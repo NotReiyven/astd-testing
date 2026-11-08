@@ -21,6 +21,7 @@ export interface AnalyzerSettings {
   showGiveNotices: boolean;
   showGetNotices: boolean;
   showTermsInTrade: boolean;
+  enableMarkdownCopy: boolean;
 }
 
 export const DEFAULT_ANALYZER_SETTINGS: AnalyzerSettings = {
@@ -35,6 +36,7 @@ export const DEFAULT_ANALYZER_SETTINGS: AnalyzerSettings = {
   showGiveNotices: true,
   showGetNotices: true,
   showTermsInTrade: true,
+  enableMarkdownCopy: true,
 };
 
 interface TradeState {
@@ -200,7 +202,6 @@ export const useTradeStore = create<TradeState>()(
             give: [...state.giveItems],
             get: [...state.getItems],
           };
-          // Insert at the beginning so newest presets are at the top
           return { presets: [newPreset, ...state.presets] };
         });
       },
@@ -233,7 +234,6 @@ export const useTradeStore = create<TradeState>()(
         set((state) => {
           const preset = state.presets.find((p) => p.id === id);
           if (!preset) return {};
-          // Overwrite the current calculator state with the preset
           return { giveItems: [...preset.give], getItems: [...preset.get] };
         }),
     }),

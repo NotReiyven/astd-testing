@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
   X,
@@ -115,6 +115,38 @@ export const UnitListRow = memo(function UnitListRow({
   const addOrUpdateUnit = useInventoryStore((s) => s.addOrUpdateUnit);
 
   const isCompact = viewMode === "compact";
+
+  // Trap focus and handle Escape for the modal
+  useEffect(() => {
+    if (!menuOpen) return;
+    const modal = document.getElementById(`unit-modal-${unit.id}`);
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setMenuOpen(false);
+      }
+      if (e.key === "Tab" && modal) {
+        const focusables = modal.querySelectorAll<HTMLElement>('button:not([disabled]), [tabindex="0"]');
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    
+    window.addEventListener("keydown", handleKeyDown);
+    // Initial focus
+    setTimeout(() => modal?.querySelector<HTMLElement>("button")?.focus(), 50);
+    
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [menuOpen, unit.id]);
 
   const numericValue =
     typeof unit.value === "number"
@@ -336,6 +368,7 @@ export const UnitListRow = memo(function UnitListRow({
       {menuOpen &&
         createPortal(
           <div
+            id={`unit-modal-${unit.id}`}
             role="dialog"
             aria-modal="true"
             aria-label={`${unit.name} actions`}
@@ -428,4 +461,3 @@ export const UnitListRow = memo(function UnitListRow({
     </>
   );
 });
-

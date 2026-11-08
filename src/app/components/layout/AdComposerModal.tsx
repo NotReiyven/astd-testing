@@ -136,7 +136,6 @@ export function AdComposerModal() {
   const unpinnedInventory = inventoryItems.filter((i) => !i.is_pinned);
   const hasUnpinnedInventory = unpinnedInventory.length > 0;
 
-  // Clear inline item validation when items or adType satisfy requirements
   useEffect(() => {
     if (!itemsError) return;
     if (adType === "standard" && hasGiveItems && hasGetItems) {
@@ -771,6 +770,7 @@ export function AdComposerModal() {
                       void handlePublish();
                     }
                   }}
+                  autoFocus
                   placeholder="Add context or specific conditions…"
                   aria-invalid={Boolean(noteError || isNoteOverLimit)}
                   aria-describedby={noteError ? "ad-composer-note-error" : undefined}

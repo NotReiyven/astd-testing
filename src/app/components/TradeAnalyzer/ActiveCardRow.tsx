@@ -8,6 +8,11 @@ import { StatusIcon, JargonWrap } from "../MainCanvas/UnitGrid";
 import { QuantitySelector } from "../ui/QuantitySelector";
 import { triggerHaptic } from "../../../data/helpers";
 import { UnitAvatar } from "../shared/UnitAvatar";
+import { GiChest } from "react-icons/gi";
+import { useAuthStore } from "../../../store/useAuthStore";
+import { useInventoryStore } from "../../../store/useInventoryStore";
+import { useToastStore } from "../../../store/useToastStore";
+import { logger } from "../../../lib/logger";
 
 export const ActiveCardRow = memo(function ActiveCardRow({
   card,
@@ -23,6 +28,10 @@ export const ActiveCardRow = memo(function ActiveCardRow({
   onTogglePin: (id: string) => void;
 }) {
   const { units } = useUnits();
+  const profile = useAuthStore((s) => s.profile);
+  const addOrUpdateUnit = useInventoryStore((s) => s.addOrUpdateUnit);
+  const addToast = useToastStore((s) => s.addToast);
+
   const collapseUnitsByDefault = useTradeStore(
     (s) => s.analyzerSettings?.collapseUnitsByDefault ?? false
   );
@@ -58,6 +67,26 @@ export const ActiveCardRow = memo(function ActiveCardRow({
     onTogglePin(card.id);
   }, [card.id, onTogglePin]);
 
+  const handleAddToVault = async () => {
+    if (!profile) {
+      addToast("Sign in with Discord to save units to your Vault.", "warning");
+      return;
+    }
+    triggerHaptic("medium");
+    try {
+      await addOrUpdateUnit(profile.id, card.id, 1);
+      addToast(`Added 1× ${card.name} to your Vault.`, "success");
+    } catch (err) {
+      logger.error("ASTD-ANALYZER-001", "Failed to add unit to vault from analyzer", {
+        scope: "ActiveCardRow",
+        action: "handleAddToVault",
+        metadata: { unitId: card.id },
+        error: err,
+      });
+      addToast(`Could not save ${card.name} to your Vault.`, "error");
+    }
+  };
+
   const toggleQty = useCallback(() => {
     triggerHaptic("light");
     setQtyOpen((o) => !o);
@@ -75,68 +104,13 @@ export const ActiveCardRow = memo(function ActiveCardRow({
         : "w-8 h-8"
     }`;
 
-  const qtyControls = (compact: boolean) => (
-    <>
-      <QuantitySelector qty={card.qty} onChange={handleQtyInput} minQty={1} />
-      <div className="flex items-center flex-shrink-0 gap-1">
-        <button
-          onClick={handlePin}
-          aria-label={isPinned ? "Unpin unit" : "Pin unit"}
-          data-tooltip={isPinned ? "Unpin unit" : "Pin unit (prevents clearing)"}
-          className={`${pinButtonClass(compact)} ${
-            isPinned
-              ? compact
-                ? "text-foreground bg-muted border border-border"
-                : "bg-primary text-primary-foreground border border-primary"
-              : compact
-              ? "text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent"
-              : "bg-popover text-muted-foreground border border-border hover:bg-muted hover:text-foreground"
-          }`}
-        >
-          <svg
-            viewBox="0 0 16 16"
-            className={compact ? "w-3.5 h-3.5" : "w-3.5 h-3.5"}
-            fill={isPinned ? "currentColor" : "none"}
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M9.5 2.5L13.5 6.5L12 8L9.5 6.5L6.5 9.5L8 12L6.5 13.5L3.5 10.5L1.5 14.5L5.5 12.5L2.5 9.5L4 8L6.5 9.5L9.5 6.5L8 4L9.5 2.5Z" />
-          </svg>
-        </button>
-        <button
-          onClick={handleRemove}
-          aria-label="Remove unit from trade"
-          data-tooltip="Remove unit"
-          className={`${pinButtonClass(compact)} ${
-            compact
-              ? "text-muted-foreground hover:text-destructive-foreground hover:bg-destructive"
-              : "bg-popover border border-border hover:bg-destructive hover:text-destructive-foreground text-muted-foreground"
-          }`}
-        >
-          <svg
-            viewBox="0 0 16 16"
-            fill="none"
-            className={compact ? "w-3.5 h-3.5" : "w-3.5 h-3.5"}
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          >
-            <path d="M4 4L12 12M12 4L4 12" />
-          </svg>
-        </button>
-      </div>
-    </>
-  );
-
   return (
     <div
       className={`flex flex-col bg-card hover:bg-muted/70 rounded-[8px] border transition-[background-color,border-color] duration-150 animate-fade-in group ${
         qtyOpen ? "p-2.5" : "px-2.5 py-1.5"
       } ${isPinned ? "border-primary" : "border-border"}`}
     >
-      {/* ── Single Primary Row: Avatar / Name / Inline Qty Pill (when collapsed) / Value / Toggle ── */}
+      {/* ── Top Row: Avatar / Name / Value / Toggle ── */}
       <div className="flex items-center gap-2 w-full min-w-0">
         <div
           className={`relative ${
@@ -191,7 +165,6 @@ export const ActiveCardRow = memo(function ActiveCardRow({
           )}
         </div>
 
-        {/* Inline Qty Badge when collapsed (both narrow and wide modes) */}
         {!qtyOpen && (
           <button
             type="button"
@@ -221,25 +194,6 @@ export const ActiveCardRow = memo(function ActiveCardRow({
           )}
         </span>
 
-        {/* Wide container inline controls */}
-        <div className="hidden @[36rem]/analyzer:flex items-center gap-1.5 shrink-0">
-          <AnimatePresence initial={false}>
-            {qtyOpen && (
-              <motion.div
-                key="compact-qty"
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: "auto" }}
-                exit={{ opacity: 0, width: 0 }}
-                transition={{ duration: 0.16, ease: "easeInOut" }}
-                className="flex items-center gap-1.5 overflow-hidden"
-              >
-                {qtyControls(true)}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Always-present compact collapse/expand button on the right edge */}
         <button
           type="button"
           onClick={toggleQty}
@@ -268,28 +222,72 @@ export const ActiveCardRow = memo(function ActiveCardRow({
         </button>
       </div>
 
-      {/* ── Narrow / Standard Sidebar Mode: Collapsible Controls Row (completely hidden when !qtyOpen) ── */}
+      {/* ── Bottom Row: Quantity, Chest, Pin, Remove (Expanded) ── */}
       <AnimatePresence initial={false}>
         {qtyOpen && (
           <motion.div
-            key="mobile-qty"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            key="bottom-controls"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.16, ease: "easeInOut" }}
-            className="overflow-hidden @[36rem]/analyzer:hidden"
+            className="overflow-hidden"
           >
             <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-border/70 min-w-0">
-              <button
-                type="button"
-                onClick={toggleQty}
-                title="Collapse unit controls"
-                className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase tracking-widest shrink-0 hover:text-foreground transition-colors cursor-pointer"
-              >
-                <span>Qty</span>
-              </button>
-              <div className="flex items-center gap-1.5 min-w-0">
-                {qtyControls(false)}
+              <div className="flex items-center gap-1.5 ml-auto">
+                <QuantitySelector qty={card.qty} onChange={handleQtyInput} minQty={1} />
+                
+                <div className="flex items-center shrink-0 gap-1 ml-1">
+                  <button
+                    onClick={handleAddToVault}
+                    aria-label="Add 1 to Vault"
+                    data-tooltip="Add 1 to Vault"
+                    className={`${pinButtonClass(false)} bg-popover text-muted-foreground border border-border hover:bg-muted hover:text-foreground`}
+                  >
+                    <GiChest className="w-4 h-4" />
+                  </button>
+                  
+                  <button
+                    onClick={handlePin}
+                    aria-label={isPinned ? "Unpin unit" : "Pin unit"}
+                    data-tooltip={isPinned ? "Unpin unit" : "Pin unit (prevents clearing)"}
+                    className={`${pinButtonClass(false)} ${
+                      isPinned
+                        ? "bg-primary text-primary-foreground border border-primary"
+                        : "bg-popover text-muted-foreground border border-border hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    <svg
+                      viewBox="0 0 16 16"
+                      className="w-3.5 h-3.5"
+                      fill={isPinned ? "currentColor" : "none"}
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M9.5 2.5L13.5 6.5L12 8L9.5 6.5L6.5 9.5L8 12L6.5 13.5L3.5 10.5L1.5 14.5L5.5 12.5L2.5 9.5L4 8L6.5 9.5L9.5 6.5L8 4L9.5 2.5Z" />
+                    </svg>
+                  </button>
+                  
+                  <button
+                    onClick={handleRemove}
+                    aria-label="Remove unit from trade"
+                    data-tooltip="Remove unit"
+                    className={`${pinButtonClass(false)} bg-popover border border-border hover:bg-destructive hover:text-destructive-foreground text-muted-foreground`}
+                  >
+                    <svg
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      className="w-3.5 h-3.5"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    >
+                      <path d="M4 4L12 12M12 4L4 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>

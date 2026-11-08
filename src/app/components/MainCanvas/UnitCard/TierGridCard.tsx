@@ -33,19 +33,9 @@ import { logger } from "../../../../lib/logger";
 const BLANK_PIXEL =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
-/**
- * URLs that have already 404'd this session. Lives outside React so virtualized
- * cards that unmount/remount never re-request (or re-flash) a known-bad image.
- */
 const FAILED_IMAGE_URLS = new Set<string>();
-
-/** Local visual fallback. Never retries another external image host. */
 const getFallbackUrl = (_unitId: string): string => BLANK_PIXEL;
 
-/**
- * Mutates the <img> directly. No setState, so no re-render mid-scroll.
- * data-fb: undefined = primary, "1" = on fallback, "2" = gave up.
- */
 function handleCardImageError(
   e: React.SyntheticEvent<HTMLImageElement>,
   primaryUrl: string,
@@ -81,7 +71,6 @@ const CardImage = memo(function CardImage({
   const fallback = getFallbackUrl(unitId);
   const primaryFailed = FAILED_IMAGE_URLS.has(primary);
 
-  // Known-bad URL: skip straight to the fallback on first paint.
   const src = !primaryFailed
     ? primary
     : FAILED_IMAGE_URLS.has(fallback)
@@ -121,7 +110,6 @@ const CardImage = memo(function CardImage({
 
 export function GridStatusBadge({ status }: { status: string }) {
   const c = GRID_STATUS_CFG[status as keyof typeof GRID_STATUS_CFG];
-
   const badgeRef = useRef<HTMLDivElement>(null);
   const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -132,7 +120,6 @@ export function GridStatusBadge({ status }: { status: string }) {
     };
   }, []);
 
-  // Hooks above, early return below (Rules of Hooks).
   if (!c) return null;
 
   const openTip = () => {
@@ -314,8 +301,6 @@ function TierGridCardImpl({
   const profile = useAuthStore((state) => state.profile);
   const addOrUpdateUnit = useInventoryStore((state) => state.addOrUpdateUnit);
 
-  // Boolean selector: only re-renders when THIS card's membership flips,
-  // not on every trade-array change.
   const isInTrade = useTradeStore(
     (s) =>
       s.giveItems.some((c) => c.id === unit.id) ||
@@ -404,7 +389,6 @@ function TierGridCardImpl({
     e.dataTransfer.setData("unit", JSON.stringify(popupUnit));
     e.dataTransfer.effectAllowed = "copy";
 
-    // Skip the heavy browser-generated ghost image.
     let ghost = document.getElementById("drag-ghost");
     if (!ghost) {
       ghost = document.createElement("div");
@@ -427,6 +411,13 @@ function TierGridCardImpl({
     setMenuOpen(true);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleCardClick();
+    }
+  };
+
   const tierKey = getTier(unit as MasterUnit);
   const tierColor = TIER_CONFIG[tierKey]?.badgeColor || "var(--primary)";
 
@@ -437,8 +428,12 @@ function TierGridCardImpl({
           draggable={!isSelectMode}
           onDragStart={handleDragStart as any}
           onClick={handleCardClick}
+          onKeyDown={handleKeyDown}
+          role="button"
+          tabIndex={0}
+          aria-label={`${unit.name} - View details and actions`}
           onContextMenu={(e) => e.preventDefault()}
-          className={`flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10 bg-card border [contain:layout_style] transition-[transform,box-shadow,border-color] duration-200 active:scale-[0.98] ${
+          className={`flex flex-col h-full rounded-[8px] overflow-hidden cursor-pointer relative z-10 bg-card border [contain:layout_style] transition-[transform,box-shadow,border-color] duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
             isSelected
               ? "border-primary ring-2 ring-primary"
               : "hover:-translate-y-1.5 hover:shadow-2xl hover:scale-[1.01] ease-out"
@@ -449,7 +444,6 @@ function TierGridCardImpl({
             } as React.CSSProperties
           }
         >
-          {/* Image: square box is reserved before the bitmap arrives */}
           <div
             className="relative w-full overflow-hidden flex-shrink-0 border-b border-border bg-[#0b0c0e]"
             style={{
@@ -476,11 +470,9 @@ function TierGridCardImpl({
             )}
           </div>
 
-          {/* Content: every row has a fixed height so cards never resize */}
           <div className="flex flex-col flex-1 p-3 relative z-10 bg-card">
             <div className="flex flex-col">
               <div className="flex items-start gap-2">
-                {/* 2 lines x leading-snug (1.375em) = 2.75em, locked */}
                 <h3 className="text-[var(--ui-text-base)] font-extrabold tracking-tight leading-snug flex-1 min-w-0 line-clamp-2 text-foreground h-[2.75em]">
                   <HighlightText query={searchQuery} text={unit.name} />
                 </h3>
@@ -648,11 +640,6 @@ function TierGridCardImpl({
   );
 }
 
-/**
- * Re-render only when something this card actually displays changes.
- * onToggleSelect is included because a changed identity would leave a stale
- * closure; it is stable (useCallback) in MainCanvas, so this costs nothing.
- */
 function areCardPropsEqual(prev: TierGridCardProps, next: TierGridCardProps) {
   const a = prev.unit;
   const b = next.unit;
@@ -667,6 +654,8 @@ function areCardPropsEqual(prev: TierGridCardProps, next: TierGridCardProps) {
     a.notice === b.notice &&
     a.name === b.name &&
     a.subtitle === b.subtitle &&
+    a.tier === b.tier && // Added tier check
+    a.obtainability === b.obtainability && // Added obtainability check
     prev.isSelected === next.isSelected &&
     prev.isSelectMode === next.isSelectMode &&
     prev.searchQuery === next.searchQuery &&
@@ -675,4 +664,3 @@ function areCardPropsEqual(prev: TierGridCardProps, next: TierGridCardProps) {
 }
 
 export const TierGridCard = memo(TierGridCardImpl, areCardPropsEqual);
-

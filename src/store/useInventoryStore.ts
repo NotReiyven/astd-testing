@@ -59,8 +59,11 @@ const safeGenerateId = () => {
     : Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
 
-let activeFetchId = 0;
-let activeViewFetchId = 0;
+// Split request IDs for Inventory and Wishlist
+let activeInvFetchId = 0;
+let activeViewInvFetchId = 0;
+let activeWishlistFetchId = 0;
+let activeViewWishlistFetchId = 0;
 
 export const useInventoryStore = create<InventoryState>((set, get) => ({
   items: [],
@@ -104,7 +107,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   fetchInventory: async (userId: string, isViewing = false) => {
     if (!userId) return;
 
-    const currentRequestId = isViewing ? ++activeViewFetchId : ++activeFetchId;
+    const currentRequestId = isViewing ? ++activeViewInvFetchId : ++activeInvFetchId;
 
     set({ isLoading: true });
     const { data, error } = await supabase
@@ -113,8 +116,9 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
-    if (isViewing && currentRequestId !== activeViewFetchId) return;
-    if (!isViewing && currentRequestId !== activeFetchId) return;
+    // Discard if a newer fetch was initiated
+    if (isViewing && currentRequestId !== activeViewInvFetchId) return;
+    if (!isViewing && currentRequestId !== activeInvFetchId) return;
 
     if (!error && data) {
       if (isViewing) {
@@ -141,7 +145,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   fetchWishlist: async (userId: string, isViewing = false) => {
     if (!userId) return;
 
-    const currentRequestId = isViewing ? activeViewFetchId : activeFetchId;
+    const currentRequestId = isViewing ? ++activeViewWishlistFetchId : ++activeWishlistFetchId;
 
     const { data, error } = await supabase
       .from("user_wishlist")
@@ -149,8 +153,9 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
-    if (isViewing && currentRequestId !== activeViewFetchId) return;
-    if (!isViewing && currentRequestId !== activeFetchId) return;
+    // Discard if a newer wishlist fetch was initiated
+    if (isViewing && currentRequestId !== activeViewWishlistFetchId) return;
+    if (!isViewing && currentRequestId !== activeWishlistFetchId) return;
 
     if (!error && data) {
       if (isViewing) set({ viewedWishlist: data });
@@ -476,4 +481,3 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     }
   },
 }));
-

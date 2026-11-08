@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { PanelLeft, Hash, Search, X, LogIn, LogOut, User, Check, Calculator } from "lucide-react";
-import { GiMagicPortal, GiSparkles, GiRingingBell, GiProgression, GiShield, GiScrollUnfurled } from "react-icons/gi";
+import { PanelLeft, Hash, Search, X, LogIn, LogOut, User, Check, Calculator, HelpCircle } from "lucide-react";
+import { GiMagicPortal, GiSparkles, GiRingingBell, GiProgression, GiShield, GiScrollUnfurled, GiCloudUpload } from "react-icons/gi";
 import { LiveAvatars } from "./LiveAvatars";
 import {
   STATUS_COLORS,
@@ -22,6 +22,7 @@ import {
   usePrefersReducedMotion,
 } from "../../../lib/motionTokens";
 import { logger } from "../../../lib/logger";
+import { useNetworkSyncStore } from "../../../hooks/useNetworkSync";
 
 interface TopBarProps {
   calcHeaderZ: string;
@@ -51,6 +52,8 @@ export function TopBar({
   const setGlobalSearchQuery = useLayoutStore((s) => s.setGlobalSearchQuery);
   const commandPaletteOpen = useLayoutStore((s) => s.commandPaletteOpen);
   const setCommandPaletteOpen = useLayoutStore((s) => s.setCommandPaletteOpen);
+  const setShortcutsModalOpen = useLayoutStore((s) => s.setShortcutsModalOpen);
+  const pendingChangesCount = useNetworkSyncStore((s) => s.pendingChangesCount);
 
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -304,6 +307,16 @@ export function TopBar({
         </div>
 
         <div className="flex items-center justify-end gap-2 md:gap-3 shrink min-w-0">
+          {pendingChangesCount > 0 && (
+            <div 
+              className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-[#d97706]/15 border border-[#d97706]/30 text-[#d97706] rounded-[4px] text-[11px] font-bold font-mono shrink-0 animate-pulse cursor-default"
+              title={`${pendingChangesCount} offline changes queued. They will sync automatically.`}
+            >
+              <GiCloudUpload className="w-3.5 h-3.5" />
+              <span>{pendingChangesCount} Queued</span>
+            </div>
+          )}
+
           <LiveAvatars />
 
           {!isAuthLoading && (
@@ -645,6 +658,21 @@ export function TopBar({
 
           <button
             type="button"
+            aria-label="Keyboard Shortcuts"
+            onClick={() => {
+              triggerHaptic("light");
+              setShortcutsModalOpen(true);
+            }}
+            className="hidden md:flex items-center justify-center w-8 h-8 rounded-[4px] bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none shrink-0 cursor-pointer"
+            data-tooltip="Keyboard Shortcuts"
+            data-tooltip-shortcut="Shift + /"
+            data-tooltip-side="bottom"
+          >
+            <HelpCircle className="w-4 h-4" />
+          </button>
+
+          <button
+            type="button"
             aria-label="Open Command Palette"
             onClick={() => {
               triggerHaptic("light");
@@ -761,4 +789,3 @@ export function TopBar({
     </div>
   );
 }
-

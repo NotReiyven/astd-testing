@@ -510,7 +510,7 @@ const TradingStanceSelector = memo(function TradingStanceSelector({
 });
 
 // ============================================================================
-// MAIN MODAL
+// MAIN CONTENT (Inner component to prevent Hook order crashes)
 // ============================================================================
 
 interface ProfileCustomizerModalProps {
@@ -529,15 +529,12 @@ interface ProfileCustomizerModalProps {
   isSaving: boolean;
 }
 
-export const ProfileCustomizerModal = memo(function ProfileCustomizerModal({
-  isOpen,
+const ProfileCustomizerContent = memo(function ProfileCustomizerContent({
   onClose,
   profileData,
   onSave,
   isSaving,
 }: ProfileCustomizerModalProps) {
-  if (!isOpen) return null;
-
   // Local, isolated component state
   const [bio, setBio] = useState(profileData.bio || "");
   const [robloxName, setRobloxName] = useState(profileData.roblox_username || "");
@@ -885,4 +882,15 @@ export const ProfileCustomizerModal = memo(function ProfileCustomizerModal({
       </div>
     </div>
   );
+});
+
+// ============================================================================
+// OUTER WRAPPER (Handles conditional rendering safely)
+// ============================================================================
+
+export const ProfileCustomizerModal = memo(function ProfileCustomizerModal(
+  props: ProfileCustomizerModalProps
+) {
+  if (!props.isOpen) return null;
+  return <ProfileCustomizerContent {...props} />;
 });

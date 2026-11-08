@@ -17,6 +17,27 @@ import {
 } from "react-icons/gi";
 import { triggerHaptic } from "../../../data/helpers";
 
+// Add this helper at the top of the file or replace the existing getInitials in summaryUtils.tsx
+export const getInitials = (name?: string | null) => {
+  if (!name) return "UN"; // Unknown
+  const cleanName = name.trim();
+  if (!cleanName) return "UN";
+  
+  const words = cleanName.split(/\s+/);
+  if (words.length > 1) {
+    // First letter of first two words (e.g., "Legendary Borul" -> "LB")
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+  
+  // If it's a single long word, take the first 3 letters (e.g., "Borul" -> "BOR")
+  if (cleanName.length > 4) {
+    return cleanName.substring(0, 3).toUpperCase();
+  }
+  
+  // Default to first 2 letters
+  return cleanName.substring(0, 2).toUpperCase();
+};
+
 export function JargonWrap({
   title,
   tip,

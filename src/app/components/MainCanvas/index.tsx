@@ -6,15 +6,17 @@ import {
   useRef,
   memo,
   useCallback,
+  useMemo,
 } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ArrowUp } from "lucide-react";
 import { useVirtualizer, defaultRangeExtractor } from "@tanstack/react-virtual";
-import { FilterKey } from "../../../types";
+import { FilterKey, MasterUnit } from "../../../types";
 import { TIER_CONFIG, FILTERS, getTier } from "../../../data";
 import { useUnits } from "../../../context/UnitContext";
 import { useTradeStore } from "../../../store/useTradeStore";
 import { useToastStore } from "../../../store/useToastStore";
+import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 import { useShowDelay } from "../../../hooks/useShowDelay";
 import { logger } from "../../../lib/logger";
 
@@ -28,6 +30,7 @@ import { useCanvasVirtualization } from "./useCanvasVirtualization";
 import { useCanvasScroll } from "../../../hooks/useCanvasScroll";
 import { triggerHaptic } from "../../../data/helpers";
 import { EmptyState } from "../ui/EmptyState";
+import { UnitAvatar } from "../shared/UnitAvatar";
 
 export const MainCanvas = memo(function MainCanvas({
   activeTierFilter,
@@ -50,6 +53,15 @@ export const MainCanvas = memo(function MainCanvas({
   const showSkeleton = useShowDelay(isLoading);
   const addCard = useTradeStore((s) => s.addCard);
 
+  // Safe selector that does NOT return a new reference when undefined
+  const recentUnitIds = useHistoryModalStore((s) => s.recentUnitIds);
+  const recentUnits = useMemo(() => {
+    if (!recentUnitIds) return [];
+    return recentUnitIds
+      .map((id) => ALL_UNITS.find((u) => u.id === id))
+      .filter(Boolean) as MasterUnit[];
+  }, [recentUnitIds, ALL_UNITS]);
+
   const [showWelcome] = useState(() => {
     try {
       return localStorage.getItem("astd_welcome_dismissed") !== "true";
@@ -70,7 +82,6 @@ export const MainCanvas = memo(function MainCanvas({
   const [searchParams, setSearchParams] = useSearchParams();
   const lastSerializedParamsRef = useRef<string | null>(null);
 
-  // 1. Synchronize state from URL search params on mount and browser navigation (Back/Forward)
   useEffect(() => {
     const serialized = searchParams.toString();
     if (serialized === lastSerializedParamsRef.current) {
@@ -94,7 +105,6 @@ export const MainCanvas = memo(function MainCanvas({
     setSearchQuery(targetQ);
   }, [searchParams, setActiveTierFilter, setSearchQuery]);
 
-  // Gracefully fallback to "All" if user was on "New" tier but no units exist in New
   useEffect(() => {
     if (
       activeTierFilter === "New" &&
@@ -105,7 +115,6 @@ export const MainCanvas = memo(function MainCanvas({
     }
   }, [ALL_UNITS, activeTierFilter, setActiveTierFilter]);
 
-  // 2. Synchronize filter & search state changes to URL search params
   useEffect(() => {
     const nextParams = new URLSearchParams();
 
@@ -139,6 +148,7 @@ export const MainCanvas = memo(function MainCanvas({
     headerRef,
     scrollTopBtnRef,
     scrollToTop,
+    isHeaderVisible,
   } = useCanvasScroll(isMobile);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
@@ -358,6 +368,7 @@ export const MainCanvas = memo(function MainCanvas({
     },
     estimateSize: (index) => {
       const item = flattenedItems[index];
+      if (!item) return 50;
       switch (item.type) {
         case "space-top":
           return 20;
@@ -450,9 +461,10 @@ export const MainCanvas = memo(function MainCanvas({
         ref={scrollRef}
         className="flex-1 overflow-y-auto custom-scrollbar relative z-0 h-full px-[var(--page-p)]"
         style={{
-          paddingTop: headerHeight + 16,
+          paddingTop: isMobile && !isHeaderVisible ? 16 : headerHeight + 16,
           overflowAnchor: "none",
           touchAction: "pan-y",
+          transition: "padding-top 300ms cubic-bezier(0.16,1,0.3,1)",
         }}
       >
         {showSkeleton ? (
@@ -471,6 +483,7 @@ export const MainCanvas = memo(function MainCanvas({
           >
             {virtualizer.getVirtualItems().map((virtualRow) => {
               const item = flattenedItems[virtualRow.index];
+              if (!item) return null;
 
               return (
                 <div
@@ -480,7 +493,29 @@ export const MainCanvas = memo(function MainCanvas({
                   className="absolute top-0 left-0 w-full"
                   style={{ transform: `translateY(${virtualRow.start}px)` }}
                 >
-                  {item.type === "space-top" && <div className="h-[20px]" />}
+                  {item.type === "space-top" && (
+                    <div className="pt-2">
+                      {recentUnits.length > 0 && (
+                        <div className="w-full bg-popover border border-border rounded-[8px] px-3 py-2 flex items-center gap-3 overflow-x-auto hide-scrollbar mb-2 shadow-sm">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground shrink-0 flex items-center gap-1.5">
+                            Recently Viewed
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {recentUnits.map((u) => (
+                              <button
+                                key={`recent-${u.id}`}
+                                onClick={() => useHistoryModalStore.getState().openModal(u.id)}
+                                className="w-8 h-8 rounded-[4px] overflow-hidden border border-border hover:border-primary hover:scale-105 transition-all shrink-0 bg-muted relative cursor-pointer"
+                                title={u.name}
+                              >
+                                <UnitAvatar unitId={u.id} unitName={u.name} imageUrl={u.imageUrl} />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {item.type === "space-bottom" && (
                     <div className="h-[120px]" />
                   )}
@@ -585,10 +620,3 @@ export const MainCanvas = memo(function MainCanvas({
     </div>
   );
 });
-
-
-
-
-
-
-
