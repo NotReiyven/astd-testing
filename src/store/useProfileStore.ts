@@ -106,14 +106,12 @@ export interface UserProfileData {
   global_rep: number;
   status: "online" | "dnd" | "invisible" | "offline";
   
-  // View Tracking Fields
   view_count?: number;
   vault_view_count?: number;
   last_viewed_at?: string;
   hide_view_count?: boolean;
   vault_view_stats?: Record<string, number>;
 
-  // Extended customization fields
   accent_color?: string;
   banner_style?: BannerStyleType;
   banner_image_url?: string;
@@ -875,7 +873,9 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       return { error: new Error("Unauthorized profile update attempt.") };
     }
 
-    const existing = get().cache[userId]?.data;
+    const previousData = get().cache[userId]?.data;
+    const existing = previousData;
+    
     const merged: Partial<UserProfileData> = {
       banner_color: updates.banner_color ?? existing?.banner_color ?? "#121214",
       accent_color: updates.accent_color ?? existing?.accent_color ?? "#7289da",
@@ -939,8 +939,20 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       .from("profiles")
       .update(dbPayload)
       .eq("id", userId);
+      
     if (!error) {
       get().updateLocalProfile(userId, merged);
+      
+      if (previousData) {
+        useToastStore.getState().addToast("Profile updated.", "success", {
+          action: {
+            label: "Undo",
+            onClick: () => {
+              void get().saveProfileUpdates(userId, previousData);
+            }
+          }
+        });
+      }
     }
     return { error };
   },

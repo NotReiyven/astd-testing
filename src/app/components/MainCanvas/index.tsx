@@ -53,7 +53,6 @@ export const MainCanvas = memo(function MainCanvas({
   const showSkeleton = useShowDelay(isLoading);
   const addCard = useTradeStore((s) => s.addCard);
 
-  // Safe selector that does NOT return a new reference when undefined
   const recentUnitIds = useHistoryModalStore((s) => s.recentUnitIds);
   const recentUnits = useMemo(() => {
     if (!recentUnitIds) return [];
@@ -370,26 +369,16 @@ export const MainCanvas = memo(function MainCanvas({
       const item = flattenedItems[index];
       if (!item) return 50;
       switch (item.type) {
-        case "space-top":
-          return 20;
-        case "welcome":
-          return 150;
-        case "search-stats":
-          return 48;
-        case "no-results":
-          return 250;
-        case "tier-banner":
-          return 90;
-        case "sub-header":
-          return 60;
-        case "grid-row":
-          return 300;
-        case "list-row":
-          return viewMode === "compact" ? 40 : 70;
-        case "space-bottom":
-          return 120;
-        default:
-          return 50;
+        case "space-top": return 20;
+        case "welcome": return 150;
+        case "search-stats": return 48;
+        case "no-results": return 250;
+        case "tier-banner": return 90;
+        case "sub-header": return 60;
+        case "grid-row": return 300;
+        case "list-row": return viewMode === "compact" ? 40 : 70;
+        case "space-bottom": return 120;
+        default: return 50;
       }
     },
     overscan: 2,

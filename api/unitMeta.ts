@@ -108,9 +108,47 @@ function getBaseHtml(): string {
 
 function initLocalMetadata() {
   if (localMetaMap && aliasMap) return;
+
   const metaMap = new Map<string, LocalUnitMeta>();
   const aMap = new Map<string, string>();
 
+  // ── Strategy 1: read build-time dist/unit-meta.json (production fast path) ──
+  const jsonPath = path.join(process.cwd(), "dist", "unit-meta.json");
+  if (fs.existsSync(jsonPath)) {
+    try {
+      const raw = fs.readFileSync(jsonPath, "utf-8");
+      const parsed = JSON.parse(raw) as Record<string, LocalUnitMeta>;
+      if (parsed && typeof parsed === "object") {
+        for (const [id, meta] of Object.entries(parsed)) {
+          if (!meta || typeof meta !== "object") continue;
+          const lowerId = id.toLowerCase();
+          metaMap.set(lowerId, { ...meta, id: meta.id || id });
+          aMap.set(lowerId, id);
+          if (Array.isArray(meta.aliases)) {
+            for (const alias of meta.aliases) {
+              if (typeof alias === "string" && alias.trim().length > 0) {
+                aMap.set(alias.toLowerCase().trim(), id);
+              }
+            }
+          }
+        }
+        if (metaMap.size > 0) {
+          localMetaMap = metaMap;
+          aliasMap = aMap;
+          return;
+        }
+      }
+    } catch (err) {
+      apiLogger.warn({
+        route: "/api/unitMeta",
+        code: "ASTD-META-003",
+        message: "Failed to parse dist/unit-meta.json; falling back to source parsing",
+        error: err,
+      });
+    }
+  }
+
+  // ── Strategy 2: parse src/data/units.ts (local dev fallback) ──
   try {
     const filePath = path.join(process.cwd(), "src", "data", "units.ts");
     if (fs.existsSync(filePath)) {
@@ -269,7 +307,7 @@ export async function GET(request: Request) {
     const cacheKey = resolvedId.toLowerCase();
     const cached = memoryCache.get(cacheKey);
     let dbUnit: UnitStateRow | null = null;
-    let localMeta: LocalUnitMeta | null =
+    const localMeta: LocalUnitMeta | null =
       localMetaMap?.get(cacheKey) || null;
 
     if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {

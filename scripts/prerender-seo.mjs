@@ -46,6 +46,11 @@ function parseUnits(filePath) {
     const obtMatch = rawObj.match(/obtainability:\s*"([^"]+)"/);
     const statusMatch = rawObj.match(/status:\s*"([^"]+)"/);
 
+    const aliasesMatch = rawObj.match(/aliases:\s*\[([^\]]*)\]/);
+    const aliases = aliasesMatch
+      ? Array.from(aliasesMatch[1].matchAll(/"([^"]+)"/g)).map((m) => m[1])
+      : [];
+
     const formattedName = id
       .replace(/-/g, " ")
       .replace(/\b\w/g, (c) => c.toUpperCase());
@@ -57,6 +62,7 @@ function parseUnits(filePath) {
       notice: noticeMatch ? noticeMatch[1] : "",
       obtainability: obtMatch ? obtMatch[1] : "UNOB",
       status: statusMatch ? statusMatch[1] : "stable",
+      aliases,
     });
   }
 
@@ -103,6 +109,21 @@ function generateSitemap(units) {
   return xml;
 }
 
+function generateUnitMetaJson(units) {
+  const metaMap = {};
+  for (const u of units) {
+    metaMap[u.id] = {
+      id: u.id,
+      name: u.name,
+      subtitle: u.subtitle,
+      notice: u.notice,
+      obtainability: u.obtainability,
+      aliases: u.aliases,
+    };
+  }
+  return JSON.stringify(metaMap, null, 2);
+}
+
 function prerender() {
   if (!fs.existsSync(templatePath)) {
     console.error(`[SEO Prerender] dist/index.html not found. Run "vite build" first.`);
@@ -124,13 +145,22 @@ function prerender() {
     }
   }
 
+  // ── Emit dist/unit-meta.json for /api/unitMeta serverless function ──
+  const unitMetaJson = generateUnitMetaJson(units);
+  fs.writeFileSync(path.join(distDir, "unit-meta.json"), unitMetaJson, "utf-8");
+  console.log(
+    `[SEO Prerender] Generated dist/unit-meta.json (${units.length} entries).`
+  );
+
   // Generate updated sitemaps (both in public and dist)
   const sitemapXml = generateSitemap(units);
   fs.writeFileSync(path.join(publicDir, "sitemap.xml"), sitemapXml, "utf-8");
   if (fs.existsSync(distDir)) {
     fs.writeFileSync(path.join(distDir, "sitemap.xml"), sitemapXml, "utf-8");
   }
-  console.log(`[SEO Prerender] Generated comprehensive sitemap.xml with ${units.length + 7} URLs.`);
+  console.log(
+    `[SEO Prerender] Generated comprehensive sitemap.xml with ${units.length + 7} URLs.`
+  );
 
   // Generate robots.txt
   const robotsTxt = `User-agent: *

@@ -6,12 +6,14 @@ import React, {
   useCallback,
 } from "react";
 import { GiRoundStar, GiCheckMark } from "react-icons/gi";
+import { FiClock, FiBell } from "react-icons/fi";
 import { useHistoryModalStore } from "../../../store/useHistoryModalStore";
 import { useUnitHistory, HistorySnapshot } from "../../../hooks/useUnitHistory";
 import { useUnits } from "../../../context/UnitContext";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useInventoryStore } from "../../../store/useInventoryStore";
 import { useToastStore } from "../../../store/useToastStore";
+import { useAlertStore } from "../../../lib/alertEngine";
 import { useShowDelay } from "../../../hooks/useShowDelay";
 import { logger } from "../../../lib/logger";
 import { GRID_STATUS_CFG, TIER_CONFIG, getProxyImage, getTier, handleImageError } from "../../../data";
@@ -380,6 +382,14 @@ export function HistoryModal() {
   const [isVaultPending, setIsVaultPending] = useState(false);
   const [isWishlistPending, setIsWishlistPending] = useState(false);
 
+  const [diffSinceLastVisit, setDiffSinceLastVisit] = useState<any>(null);
+  const [alertValue, setAlertValue] = useState("");
+  const addAlert = useAlertStore((s) => s.addAlert);
+  const removeAlert = useAlertStore((s) => s.removeAlert);
+  
+  // Stable reference: undefined instead of empty array
+  const userAlerts = useAlertStore((s) => (profile ? s.alerts[profile.id] : undefined));
+
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -423,6 +433,34 @@ export function HistoryModal() {
     () => (unitId ? units.find((u) => u.id === unitId) ?? null : null),
     [unitId, units]
   );
+
+  // Item 12: "What changed?" diff calculation
+  useEffect(() => {
+    if (!isOpen || !currentUnit) return;
+
+    const storageKey = `astd_last_viewed_${currentUnit.id}`;
+    try {
+      const rawLast = localStorage.getItem(storageKey);
+      if (rawLast) {
+        const last = JSON.parse(rawLast);
+        setDiffSinceLastVisit({
+          value: currentUnit.value !== last.value ? { old: last.value, new: currentUnit.value } : null,
+          status: currentUnit.status !== last.status ? { old: last.status, new: currentUnit.status } : null,
+          rarity: currentUnit.rarity !== last.rarity ? { old: last.rarity, new: currentUnit.rarity } : null,
+        });
+      }
+      
+      // Save current state for next time
+      localStorage.setItem(storageKey, JSON.stringify({
+        value: currentUnit.value,
+        status: currentUnit.status,
+        rarity: currentUnit.rarity,
+        timestamp: Date.now(),
+      }));
+    } catch (err) {
+      console.warn("Failed to read/write last viewed state", err);
+    }
+  }, [isOpen, currentUnit]);
 
   const [shareLinkCopied, setShareLinkCopied] = useState(false);
 
@@ -864,6 +902,15 @@ export function HistoryModal() {
     setIsScrolled(e.currentTarget.scrollTop > 10);
   };
 
+  const handleSetAlert = (condition: "above" | "below") => {
+    if (!profile || !currentUnit) return;
+    const val = parseFloat(alertValue);
+    if (isNaN(val) || val <= 0) return;
+    triggerHaptic("success");
+    addAlert(profile.id, { unitId: currentUnit.id, condition, value: val });
+    setAlertValue("");
+  };
+
   if (!isOpen || !unitId || !currentUnit) return null;
 
   const tierKey = getTier(currentUnit);
@@ -1277,6 +1324,8 @@ export function HistoryModal() {
     currentUnit.notice ||
       (currentUnit.secondaryTags && currentUnit.secondaryTags.length > 0)
   );
+
+  const currentUnitAlerts = (userAlerts || []).filter(a => a.unitId === currentUnit.id);
 
   return (
     <div
@@ -1701,6 +1750,79 @@ export function HistoryModal() {
                     </button>
                   </div>
                 </div>
+              </section>
+
+              {/* Item 12: "What Changed" Banner */}
+              {diffSinceLastVisit && (diffSinceLastVisit.value || diffSinceLastVisit.status || diffSinceLastVisit.rarity) && (
+                <div className="bg-[#23a559]/10 border border-[#23a559]/30 rounded-[8px] p-4 flex flex-col gap-1.5 shadow-sm">
+                  <span className="text-[12px] font-bold text-[#23a559] uppercase tracking-wider flex items-center gap-1.5">
+                    <FiClock className="w-3.5 h-3.5" /> Changes Since Your Last Visit
+                  </span>
+                  <div className="flex flex-col gap-1 text-[12.5px] font-mono">
+                    {diffSinceLastVisit.value && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Value:</span>
+                        <span className="text-foreground">
+                          {typeof diffSinceLastVisit.value.old === "number" ? diffSinceLastVisit.value.old.toLocaleString() : diffSinceLastVisit.value.old} → <strong className="font-bold">{typeof diffSinceLastVisit.value.new === "number" ? diffSinceLastVisit.value.new.toLocaleString() : diffSinceLastVisit.value.new}</strong>
+                        </span>
+                      </div>
+                    )}
+                    {diffSinceLastVisit.status && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Status:</span>
+                        <span className="text-foreground capitalize">
+                          {diffSinceLastVisit.status.old} → <strong className="font-bold">{diffSinceLastVisit.status.new}</strong>
+                        </span>
+                      </div>
+                    )}
+                    {diffSinceLastVisit.rarity && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Rarity:</span>
+                        <span className="text-foreground">
+                          {diffSinceLastVisit.rarity.old} → <strong className="font-bold">{diffSinceLastVisit.rarity.new}</strong>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Item 15: Watchlist Alerts */}
+              <section className="rounded-[8px] border border-border bg-card p-4 flex flex-col gap-3 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[13px] font-bold text-foreground uppercase tracking-wider">Price Alerts</h3>
+                  <FiBell className="w-4 h-4 text-muted-foreground" />
+                </div>
+                
+                {!profile ? (
+                  <span className="text-[12.5px] text-muted-foreground">Sign in with Discord to configure price alerts.</span>
+                ) : (
+                  <>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        placeholder="Set target value..."
+                        value={alertValue}
+                        onChange={(e) => setAlertValue(e.target.value)}
+                        className="flex-1 bg-input border border-border rounded-[4px] px-3 py-1.5 text-[12px] text-foreground focus:outline-none focus:border-primary"
+                      />
+                      <button onClick={() => handleSetAlert("above")} className="px-3 py-1.5 bg-muted hover:bg-[#23a559] hover:text-white rounded-[4px] text-[11px] font-bold transition-colors cursor-pointer">Above</button>
+                      <button onClick={() => handleSetAlert("below")} className="px-3 py-1.5 bg-muted hover:bg-rose-500 hover:text-white rounded-[4px] text-[11px] font-bold transition-colors cursor-pointer">Below</button>
+                    </div>
+
+                    {currentUnitAlerts.map((alert, i) => (
+                      <div key={i} className="flex items-center justify-between bg-popover p-2.5 rounded-[4px] border border-border text-[12px]">
+                        <span className="text-muted-foreground">
+                          Alert when value is <strong className="text-foreground">{alert.condition}</strong> {alert.value?.toLocaleString()}
+                        </span>
+                        <button onClick={() => removeAlert(profile.id, currentUnit.id, alert.condition)} className="text-destructive hover:underline text-[11px] cursor-pointer font-bold">Remove</button>
+                      </div>
+                    ))}
+                    {currentUnitAlerts.length === 0 && (
+                      <span className="text-[11.5px] text-muted-foreground italic">No active alerts for this unit.</span>
+                    )}
+                  </>
+                )}
               </section>
 
               {/* SECTION C: Latest Shift */}

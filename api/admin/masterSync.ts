@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { apiLogger } from "../lib/logger.js";
+import { verifyLiveClearance } from "../lib/clearance.js";
 
 export const config = {
   maxDuration: 30,
@@ -32,7 +33,6 @@ const SNOWFLAKE_REGEX = /^\d{17,21}$/;
 
 function extractDiscordId(user: any): string | null {
   if (!user) return null;
-
   if (Array.isArray(user.identities)) {
     const discordIdentity = user.identities.find(
       (i: any) => i?.provider === "discord"
@@ -57,7 +57,6 @@ function extractDiscordId(user: any): string | null {
       }
     }
   }
-
   const metaProviderId = user.user_metadata?.provider_id;
   if (
     typeof metaProviderId === "string" &&
@@ -65,24 +64,19 @@ function extractDiscordId(user: any): string | null {
   ) {
     return metaProviderId.trim();
   }
-
   const metaSub = user.user_metadata?.sub;
   if (typeof metaSub === "string" && SNOWFLAKE_REGEX.test(metaSub.trim())) {
     return metaSub.trim();
   }
-
   return null;
 }
 
 function extractDiscordUsername(user: any): string | null {
   if (!user) return null;
-
   const discordIdentity = Array.isArray(user.identities)
     ? user.identities.find((i: any) => i?.provider === "discord")
     : null;
 
-  // 1. First, evaluate global_name (optional display name).
-  // Must be strictly non-empty after stripping invisible Unicode chars.
   const globalNameCandidates: unknown[] = [
     user.user_metadata?.custom_claims?.global_name,
     discordIdentity?.identity_data?.custom_claims?.global_name,
@@ -95,8 +89,6 @@ function extractDiscordUsername(user: any): string | null {
     if (sanitized) return sanitized;
   }
 
-  // 2. If global_name is absent, null, empty, or invisible filler,
-  // fall back directly to the mandatory unique Discord username.
   const usernameCandidates: unknown[] = [
     user.user_metadata?.username,
     discordIdentity?.identity_data?.username,
@@ -120,16 +112,13 @@ function extractDiscordUsername(user: any): string | null {
     if (sanitized) return sanitized;
   }
 
-  // 3. Failsafe snowflake fallback
   const dId = extractDiscordId(user);
   if (dId) return `discord_${dId.slice(-6)}`;
-
   return null;
 }
 
 function extractDiscordAvatar(user: any): string | null {
   if (!user) return null;
-
   const discordIdentity = Array.isArray(user.identities)
     ? user.identities.find((i: any) => i?.provider === "discord")
     : null;
@@ -148,61 +137,31 @@ function extractDiscordAvatar(user: any): string | null {
       return candidate.trim();
     }
   }
-
   return null;
 }
 
 export async function POST(request: Request) {
+  // 1. Live Clearance Check (verifies JWT + queries current DB role)
+  const clearance = await verifyLiveClearance(request, ["master"]);
+  if (!clearance.ok) {
+    return jsonResponse(clearance.status || 403, { error: clearance.error });
+  }
+
   const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
   if (!supabaseUrl || !serviceKey) {
     return jsonResponse(500, { error: "Database configuration unavailable." });
-  }
-
-  // 1. Auth Gate: Validate Bearer token
-  const authHeader = request.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return jsonResponse(401, {
-      error: "Authentication required to access master tools.",
-    });
-  }
-
-  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-  if (!token) {
-    return jsonResponse(401, { error: "Invalid authorization header." });
   }
 
   const adminClient = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  // 2. Cryptographically verify the session token via Supabase Auth
-  const {
-    data: { user: callerUser },
-    error: authError,
-  } = await adminClient.auth.getUser(token);
-
-  if (authError || !callerUser) {
-    return jsonResponse(401, { error: "Unauthorized or expired session." });
-  }
-
-  // 3. Strict Master Role Verification
-  const { data: callerProfile, error: profileError } = await adminClient
-    .from("profiles")
-    .select("role, username")
-    .eq("id", callerUser.id)
-    .maybeSingle();
-
-  if (profileError || !callerProfile) {
-    return jsonResponse(403, { error: "Caller profile not found." });
-  }
-
-  if (callerProfile.role !== "master") {
-    return jsonResponse(403, {
-      error: "Access denied. Master authorization required.",
-    });
-  }
+  // Extract user ID from JWT for logging purposes
+  const authHeader = request.headers.get("authorization")!;
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  const { data: { user: callerUser } } = await adminClient.auth.getUser(token);
+  const callerId = callerUser?.id || "unknown";
 
   // 4. Parse request payload
   let body: any = {};
@@ -259,9 +218,8 @@ export async function POST(request: Request) {
           }
         }
 
-        // Audit log
         await adminClient.from("moderation_logs").insert({
-          moderator_id: callerUser.id,
+          moderator_id: callerId,
           action: "MASTER_SYNC_USER",
           details: `Manual Discord resync for user ${targetUserId} (${extractedName || "unknown"}). Updated: ${Object.keys(updates).join(", ")}`,
         });
@@ -276,7 +234,6 @@ export async function POST(request: Request) {
       case "repair_all":
       case "sync_all_avatars":
       case "sync_all_usernames": {
-        // Fetch all auth users (handles up to 1000 users)
         const {
           data: { users: allAuthUsers },
           error: listError,
@@ -288,7 +245,6 @@ export async function POST(request: Request) {
           });
         }
 
-        // Fetch all existing public profiles
         const { data: allProfiles, error: fetchProfilesError } =
           await adminClient
             .from("profiles")
@@ -317,7 +273,6 @@ export async function POST(request: Request) {
           const changes: string[] = [];
 
           if (existingProfile) {
-            // Check username
             const currentSanitized = sanitizeUsername(existingProfile.username);
             const needsUsernameRepair =
               action === "sync_all_usernames" ||
@@ -329,7 +284,6 @@ export async function POST(request: Request) {
               changes.push(`username: "${existingProfile.username || ""}" -> "${extractedName}"`);
             }
 
-            // Check avatar
             const needsAvatarRepair =
               action === "sync_all_avatars" ||
               (action === "repair_all" && !existingProfile.avatar_url);
@@ -339,7 +293,6 @@ export async function POST(request: Request) {
               changes.push("avatar updated from Discord");
             }
 
-            // Check discord_id
             if (
               action === "repair_all" &&
               extractedDiscordId &&
@@ -364,7 +317,6 @@ export async function POST(request: Request) {
               }
             }
           } else {
-            // Profile missing completely: create it
             const defaultRow = {
               id: authUser.id,
               discord_id: extractedDiscordId || "",
@@ -392,9 +344,8 @@ export async function POST(request: Request) {
           }
         }
 
-        // Audit log
         await adminClient.from("moderation_logs").insert({
-          moderator_id: callerUser.id,
+          moderator_id: callerId,
           action: `MASTER_PLATFORM_${action.toUpperCase()}`,
           details: `Processed ${allAuthUsers.length} accounts. Updated ${updatedRecords.length} records.`,
         });

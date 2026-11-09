@@ -261,10 +261,6 @@ export function useAdminIntel() {
   const isMod = callerRole === "mod";
   const canModerate = isMaster || isAdmin || isMod;
 
-  // Strict capability flags matching the staff hierarchy:
-  // Master: Everything + Debug/Cheats + Security + Destructive Vault/Account Nuke
-  // Admin: Delete Ads + Manage Roles (non-master/non-admin) + Manage Users (Ban/Unban, Reset Profile, Purge Comments)
-  // Mod: Manage Roles (community roles only) + Delete Ads
   const canManageUsers = isMaster || isAdmin;
   const canManageRoles = isMaster || isAdmin || isMod;
   const canDeleteAds = isMaster || isAdmin || isMod;
@@ -312,7 +308,6 @@ export function useAdminIntel() {
     []
   );
 
-  // Live server-side clearance check to prevent DevTools state spoofing
   const verifyLiveClearance = useCallback(
     async (
       allowedRoles: ("master" | "admin" | "mod")[],
@@ -350,7 +345,6 @@ export function useAdminIntel() {
         const targetHighest = getUserHighestRank(targetUser, availableRoles);
         const callerRank = ROLE_PRIORITY[liveRole] ?? 99;
 
-        // Nobody except master can act on master; admin cannot act on master/admin; mod cannot act on master/admin/mod
         if (liveRole !== "master" && targetHighest <= callerRank) {
           showToast(
             `Hierarchy Violation: ${liveRole.toUpperCase()} cannot modify a user of equal or higher rank.`,
@@ -365,7 +359,6 @@ export function useAdminIntel() {
     [profile, callerRole, availableRoles, showToast]
   );
 
-  // Check if current staff member is allowed to modify a target user in the UI
   const canActOnUser = useCallback(
     (target: UserProfile | null | undefined): boolean => {
       if (!target || !canModerate) return false;
@@ -377,13 +370,11 @@ export function useAdminIntel() {
     [canModerate, isMaster, availableRoles, callerRole]
   );
 
-  // Check if current staff member can toggle a specific role on a target user
   const canToggleRole = useCallback(
     (roleName: string, target: UserProfile | null | undefined): boolean => {
       if (!target || !canManageRoles) return false;
       const normalized = roleName.toLowerCase();
 
-      // Prevent stripping master or banning oneself
       if (
         target.id === profile?.id &&
         (normalized === "master" || normalized === "banned")
@@ -393,16 +384,13 @@ export function useAdminIntel() {
 
       if (isMaster) return true;
 
-      // Non-master staff cannot modify equal/higher rank users
       if (!canActOnUser(target)) return false;
 
       if (isAdmin) {
-        // Admin can toggle mod, user, banned, and custom roles, but NEVER master or admin
         return normalized !== "master" && normalized !== "admin";
       }
 
       if (isMod) {
-        // Mod can ONLY toggle custom community roles (cannot toggle master, admin, mod, user, or banned)
         return !CORE_SYSTEM_ROLES.includes(normalized);
       }
 
@@ -744,12 +732,11 @@ export function useAdminIntel() {
       const allUserAds = (adsRes.data || []) as TradingAd[];
       const activeUserAds = allUserAds.filter((a) => a.expires_at > now);
 
-      // Privacy enforcement: Master sees all ads (including private/expired); Admin/Mod see active ads or public history
       const visibleAds = isMaster
         ? allUserAds
         : allUserAds.filter((ad) => {
             const isLive = ad.expires_at > now;
-            if (isLive) return true; // Staff can always moderate live ads
+            if (isLive) return true;
             if (targetUser.ad_history_public === false) return false;
             if (targetUser.private_ad_ids?.includes(ad.id)) return false;
             return true;
@@ -835,9 +822,6 @@ export function useAdminIntel() {
     }
   };
 
-  // ============================================================================
-  // ROLE MANAGEMENT (Master, Admin, Mod — scoped by rank hierarchy)
-  // ============================================================================
   const updateUserRole = async (
     targetUserId: string,
     newRole: string,
@@ -855,7 +839,6 @@ export function useAdminIntel() {
       return false;
     }
 
-    // Banning via role toggle requires Admin or Master
     if (newRole.toLowerCase() === "banned" && !canManageUsers) {
       showToast("Only Admins and Master can ban or unban accounts.", "error");
       return false;
@@ -873,7 +856,7 @@ export function useAdminIntel() {
     });
 
     if (error) {
-      showToast("Could not update role—check database permissions.", "error");
+      showToast("Could not update role. Check database permissions.", "error");
       return false;
     }
 
@@ -896,7 +879,22 @@ export function useAdminIntel() {
       });
     }
     fetchUsers(searchQuery, showBannedOnly);
-    showToast(`Toggled role: ${newRole.toUpperCase()}`);
+    
+    useToastStore.getState().addToast(`Role ${newRole.toUpperCase()} updated.`, "success", {
+      action: {
+        label: "Undo",
+        onClick: () => {
+          void (async () => {
+             const { error: undoErr } = await supabase.rpc("admin_assign_role", { target_user_id: targetUserId, role_name: newRole });
+             if (!undoErr) {
+               showToast(`Reverted role ${newRole.toUpperCase()}.`, "success");
+               fetchUsers(searchQuery, showBannedOnly);
+             }
+          })();
+        }
+      }
+    });
+
     if (newRole === "banned") loadMetrics();
     return true;
   };
@@ -920,11 +918,6 @@ export function useAdminIntel() {
       return;
     }
 
-    // Hierarchy rank boundary:
-    // Users of the same rank CANNOT create another role of equal or higher rank.
-    // Master (0) can create Admin (1), Mod (2), Custom (>= 3), or any rank >= 0.
-    // Admin (1) can create Mod (2) or Custom (>= 3). Cannot create rank 0 or 1.
-    // Mod (2) can only create Custom (>= 3). Cannot create rank 0, 1, or 2.
     let minAllowedRank = 3;
     if (isMaster) {
       minAllowedRank = 0;
@@ -936,8 +929,6 @@ export function useAdminIntel() {
 
     const safeRank = Math.max(minAllowedRank, rank);
 
-    // Permissions boundary:
-    // Staff cannot grant permissions higher than their own clearance.
     const safePerms: RolePermissions = { ...permissions };
     if (!isMaster) {
       safePerms.access_master_lab = false;
@@ -989,7 +980,6 @@ export function useAdminIntel() {
     const targetRank = targetRoleObj ? targetRoleObj.rank : 99;
     const callerRank = isMaster ? 0 : isAdmin ? 1 : isMod ? 2 : 99;
 
-    // Hierarchy rule: Cannot edit role of equal or higher rank (except Master)
     if (!isMaster && targetRank <= callerRank) {
       showToast(
         `Hierarchy Violation: Cannot modify role '${name}' of equal or higher rank.`,
@@ -1050,7 +1040,6 @@ export function useAdminIntel() {
     const targetRank = targetRoleObj ? targetRoleObj.rank : 99;
     const callerRank = isMaster ? 0 : isAdmin ? 1 : isMod ? 2 : 99;
 
-    // Hierarchy rule: Cannot delete role of equal or higher rank (except Master)
     if (!isMaster && targetRank <= callerRank) {
       showToast(
         `Hierarchy Violation: Cannot delete role '${name}' of equal or higher rank.`,
@@ -1074,9 +1063,6 @@ export function useAdminIntel() {
     }
   };
 
-  // ============================================================================
-  // COMMENTS MODERATION (Master, Admin, Mod)
-  // ============================================================================
   const fetchRecentComments = useCallback(async () => {
     if (!canModerate) return;
     setIsLoadingComments(true);
@@ -1105,6 +1091,8 @@ export function useAdminIntel() {
     if (!clearance.ok) return false;
 
     triggerHaptic("heavy");
+    const targetComment = recentComments.find((c) => c.id === commentId);
+
     await logModAction(
       authorId,
       `DELETED COMMENT: @${authorUsername || "User"}`,
@@ -1123,7 +1111,25 @@ export function useAdminIntel() {
 
     setRecentComments((prev) => prev.filter((c) => c.id !== commentId));
     loadMetrics();
-    showToast("Comment removed and logged.");
+    
+    if (targetComment) {
+      useToastStore.getState().addToast("Comment removed.", "info", {
+        action: {
+          label: "Undo",
+          onClick: () => {
+            void (async () => {
+               const { error: undoErr } = await supabase.from("ad_comments").insert(targetComment);
+               if (!undoErr) {
+                 showToast("Comment restored.", "success");
+                 fetchRecentComments();
+               }
+            })();
+          }
+        }
+      });
+    } else {
+      showToast("Comment removed and logged.");
+    }
     return true;
   };
 
@@ -1165,9 +1171,6 @@ export function useAdminIntel() {
     return true;
   };
 
-  // ============================================================================
-  // AD MODERATION (Master, Admin, Mod)
-  // ============================================================================
   const deleteSingleAd = async (
     adId: string,
     adOwnerId: string,
@@ -1232,9 +1235,6 @@ export function useAdminIntel() {
     }
   };
 
-  // ============================================================================
-  // USER MANAGEMENT SANCTIONS (Master & Admin ONLY — Mods blocked)
-  // ============================================================================
   const handleResetProfile = async (reason: string) => {
     if (!selectedUser) return;
     const clearance = await verifyLiveClearance(
@@ -1289,9 +1289,6 @@ export function useAdminIntel() {
     }
   };
 
-  // ============================================================================
-  // DESTRUCTIVE VAULT & ACCOUNT NUKE (Master ONLY)
-  // ============================================================================
   const handleWipeInventory = async (reason: string) => {
     if (!selectedUser) return;
     const clearance = await verifyLiveClearance(["master"], selectedUser);
@@ -1387,9 +1384,6 @@ export function useAdminIntel() {
     loadMetrics();
   };
 
-  // ============================================================================
-  // MASTER SOVEREIGN CHEATS, DEBUG & OVERRIDE TOOLS (Strictly Master ONLY)
-  // ============================================================================
   const masterSetReputation = async (
     targetUserId: string,
     newRep: number,
@@ -1462,7 +1456,6 @@ export function useAdminIntel() {
       return false;
     }
 
-    // Check current quantity
     const { data: existing } = await supabase
       .from("user_inventory")
       .select("quantity")
@@ -1512,7 +1505,7 @@ export function useAdminIntel() {
       await refreshSelectedUserIntel(selectedUser);
     }
     showToast(
-      `Vault updated: ${unitObj.name} → ×${Math.max(0, nextQty)}`
+      `Vault updated: ${unitObj.name} -> x${Math.max(0, nextQty)}`
     );
     return true;
   };

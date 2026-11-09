@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { get as getIdb } from "idb-keyval";
 import { useAuthStore } from "../store/useAuthStore";
 import { useTradingAdsStore, TradingAd } from "../store/useTradingAdsStore";
 import { useTradeStore } from "../store/useTradeStore";
@@ -36,11 +37,57 @@ export function useAdCooldown() {
 
   const isStaff = useMemo(() => isStaffRole(profile?.role), [profile?.role]);
 
-  // Compute active ads count for this user
+  // ── Count of offline-queued ads for this user (IndexedDB) ──
+  const [pendingQueueCount, setPendingQueueCount] = useState(0);
+
+  useEffect(() => {
+    if (!profile?.id) {
+      setPendingQueueCount(0);
+      return;
+    }
+
+    let cancelled = false;
+
+    const refresh = async () => {
+      try {
+        const queue: any[] = (await getIdb("astd_offline_ads")) || [];
+        if (cancelled) return;
+        const count = Array.isArray(queue)
+          ? queue.filter(
+              (item) => item && typeof item === "object" && item.user_id === profile.id
+            ).length
+          : 0;
+        setPendingQueueCount(count);
+      } catch (err) {
+        if (cancelled) return;
+        logger.warn("ASTD-ADS-020", "Failed to read offline ad queue count", {
+          scope: "useAdCooldown",
+          action: "refreshPendingQueue",
+          metadata: { userId: profile.id },
+          error: err,
+        });
+        setPendingQueueCount(0);
+      }
+    };
+
+    void refresh();
+
+    window.addEventListener("online", refresh);
+    window.addEventListener("offline", refresh);
+    window.addEventListener("storage", refresh);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("online", refresh);
+      window.removeEventListener("offline", refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, [profile?.id]);
+
+  // Compute active ads count for this user (server + pending)
   const activeUserAds = useMemo(() => {
     if (!profile?.id) return [];
     const now = Date.now();
-    // Gather from both active ads and userAdHistory to be fully consistent
     const combinedMap = new Map<string, TradingAd>();
     ads.forEach((ad) => {
       if (ad.user_id === profile.id && new Date(ad.expires_at).getTime() > now) {
@@ -55,7 +102,8 @@ export function useAdCooldown() {
     return Array.from(combinedMap.values());
   }, [ads, userAdHistory, profile?.id]);
 
-  const activeAdsCount = activeUserAds.length;
+  const serverActiveAdsCount = activeUserAds.length;
+  const activeAdsCount = serverActiveAdsCount + pendingQueueCount;
   const isAtMaxActiveAds = !isStaff && activeAdsCount >= MAX_ACTIVE_ADS_REGULAR;
 
   // Find the most recent ad post timestamp
@@ -63,7 +111,6 @@ export function useAdCooldown() {
     if (!profile?.id) return 0;
     let mostRecent = 0;
 
-    // Check localStorage timestamp
     try {
       const stored = localStorage.getItem(`astd_last_ad_posted_${profile.id}`);
       if (stored) {
@@ -81,7 +128,6 @@ export function useAdCooldown() {
       });
     }
 
-    // Check memory ads and user history
     [...ads, ...userAdHistory].forEach((ad) => {
       if (ad.user_id === profile.id) {
         const createdMs = new Date(ad.created_at).getTime();
@@ -113,14 +159,12 @@ export function useAdCooldown() {
       const remaining = Math.max(0, AD_POST_COOLDOWN_MS - elapsed);
       setCooldownRemainingMs(remaining);
 
-      // Check if cooldown just finished
       if (remaining === 0 && lastPost > 0) {
         const notifKey = `astd_cooldown_notified_${profile.id}_${lastPost}`;
         try {
           if (!localStorage.getItem(notifKey)) {
             localStorage.setItem(notifKey, "1");
 
-            // Dispatch in-app notification & toast
             void useNotificationStore.getState().createNotification({
               user_id: profile.id,
               type: "system",
@@ -168,7 +212,6 @@ export function useAdCooldown() {
 
       userAds.forEach((ad) => {
         const expiresMs = new Date(ad.expires_at).getTime();
-        // If not expired yet, skip
         if (expiresMs > now) return;
 
         const expiredKey = `astd_expired_notif_${ad.id}`;
@@ -183,7 +226,6 @@ export function useAdCooldown() {
             (n.type === "system" || n.message?.toLowerCase().includes("expired"))
         );
 
-        // If already flagged in localStorage or already present in notifications database/store, record flag and skip
         if (hasLocalStorageFlag || hasExistingNotification) {
           if (!hasLocalStorageFlag) {
             try {
@@ -193,8 +235,6 @@ export function useAdCooldown() {
           return;
         }
 
-        // Ad expired in the past while user was offline or historical (> 2 minutes ago):
-        // Mark localStorage so it won't be checked again, but NEVER spam live toasts or duplicate rows on mount.
         try {
           localStorage.setItem(expiredKey, "1");
         } catch {}
@@ -228,7 +268,7 @@ export function useAdCooldown() {
     };
 
     checkExpiredAds();
-    const interval = setInterval(checkExpiredAds, 30000); // Check every 30s
+    const interval = setInterval(checkExpiredAds, 30000);
     return () => clearInterval(interval);
   }, [profile?.id, userAdHistory, addToast, openAdContext, sessionStartTime]);
 
@@ -238,6 +278,8 @@ export function useAdCooldown() {
   return {
     isStaff,
     activeAdsCount,
+    serverActiveAdsCount,
+    pendingQueueCount,
     maxActiveAds: isStaff ? Infinity : MAX_ACTIVE_ADS_REGULAR,
     isAtMaxActiveAds,
     cooldownRemainingMs,

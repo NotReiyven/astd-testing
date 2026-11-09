@@ -23,20 +23,16 @@ export const getInitials = (name?: string | null) => {
 
   const words = cleanName.split(/\s+/);
   if (words.length > 1) {
-    // First letter of first two words (e.g., "Legendary Borul" -> "LB")
     return (words[0][0] + words[1][0]).toUpperCase();
   }
 
-  // If it's a single long word, take the first 3 letters (e.g., "Borul" -> "BOR")
   if (cleanName.length > 4) {
     return cleanName.substring(0, 3).toUpperCase();
   }
 
-  // Default to first 2 letters
   return cleanName.substring(0, 2).toUpperCase();
 };
 
-// Performance Optimization: Global Map Cache
 let cachedMap: Map<string, MasterUnit> | null = null;
 let cachedArrayRef: MasterUnit[] | null = null;
 
@@ -123,25 +119,51 @@ export const getLiquidityScore = (
   return totalWeight > 0 ? weightedSum / totalWeight : 1.0;
 };
 
-export const getTradeForecast = (
+export interface TradeForecastBreakdown {
+  calculable: boolean;
+  st: number;
+  lt: number;
+  rawValueRatio: number;
+  stLiquidityMult: number;
+  ltLiquidityMult: number;
+  stRarityMult: number;
+  ltRarityMult: number;
+  stMomentum: number;
+  ltMomentum: number;
+}
+
+export const getTradeForecastBreakdown = (
   giveItems: TradeCard[],
   getItems: TradeCard[],
   ALL_UNITS: MasterUnit[]
-) => {
-  if (giveItems.length === 0 || getItems.length === 0)
-    return { calculable: false, st: 0, lt: 0 };
-  const unitMap = getUnitMap(ALL_UNITS);
+): TradeForecastBreakdown => {
+  const defaultBreakdown: TradeForecastBreakdown = {
+    calculable: false,
+    st: 0,
+    lt: 0,
+    rawValueRatio: 0,
+    stLiquidityMult: 1,
+    ltLiquidityMult: 1,
+    stRarityMult: 1,
+    ltRarityMult: 1,
+    stMomentum: 0,
+    ltMomentum: 0,
+  };
 
+  if (giveItems.length === 0 || getItems.length === 0) return defaultBreakdown;
+  
+  const unitMap = getUnitMap(ALL_UNITS);
   const isOC = (id: string) => {
     const u = unitMap.get(id);
     return u?.value === "owner" || u?.valueDisplay === "Owner's Choice";
   };
+  
   if (giveItems.some((i) => isOC(i.id)) || getItems.some((i) => isOC(i.id)))
-    return { calculable: false, st: 0, lt: 0 };
+    return defaultBreakdown;
 
   const v_given = giveItems.reduce((acc, c) => acc + c.value * c.qty, 0);
   const v_received = getItems.reduce((acc, c) => acc + c.value * c.qty, 0);
-  if (v_given === 0) return { calculable: false, st: 0, lt: 0 };
+  if (v_given === 0) return defaultBreakdown;
 
   const vw = v_received / v_given;
 
@@ -184,7 +206,27 @@ export const getTradeForecast = (
   const score_lt =
     (0.85 * (vt_lt - 1) + 0.4 * (ld - 1) + 0.25 * (ra - 1)) * 100;
 
-  return { calculable: true, st: score_st, lt: score_lt };
+  return {
+    calculable: true,
+    st: score_st,
+    lt: score_lt,
+    rawValueRatio: vw,
+    stLiquidityMult: ld,
+    ltLiquidityMult: ld, // Liquidity weight is currently the same for both
+    stRarityMult: ra,
+    ltRarityMult: ra, // Rarity weight is currently the same for both
+    stMomentum: tm_st_received / tm_st_given,
+    ltMomentum: tm_lt_received / tm_lt_given,
+  };
+};
+
+export const getTradeForecast = (
+  giveItems: TradeCard[],
+  getItems: TradeCard[],
+  ALL_UNITS: MasterUnit[]
+) => {
+  const breakdown = getTradeForecastBreakdown(giveItems, getItems, ALL_UNITS);
+  return { calculable: breakdown.calculable, st: breakdown.st, lt: breakdown.lt };
 };
 
 export const getShareText = (

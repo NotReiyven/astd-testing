@@ -5,12 +5,10 @@
 
 html, body {
   color-scheme: dark;
-  /* Prevent iOS bounce scroll and highlight tap boxes for native app feel */
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Universal Slim Scrollbars with theme-aware styling */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
@@ -39,7 +37,6 @@ html, body {
   background-color: var(--scrollbar-thumb-active);
 }
 
-/* Explicit Custom Scrollbar Class */
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
@@ -68,7 +65,6 @@ html, body {
   background-color: var(--scrollbar-thumb-active);
 }
 
-/* Hide Scrollbars cleanly */
 .hide-scrollbar::-webkit-scrollbar {
   display: none !important;
 }
@@ -103,7 +99,6 @@ html, body {
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
 
-  /* ACCESSIBILITY: Global highly-visible focus ring for keyboard navigation */
   *:focus-visible {
     outline: 2px solid var(--primary) !important;
     outline-offset: 2px !important;
@@ -186,7 +181,8 @@ html, body {
     .animate-tooltip-pop,
     .animate-celebrate,
     .animate-badge-pulse,
-    .animate-shimmer::after {
+    .animate-shimmer::after,
+    .animate-pulse {
       animation: none !important;
       transition: none !important;
     }

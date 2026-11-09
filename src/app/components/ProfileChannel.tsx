@@ -13,6 +13,7 @@ import {
   GiPadlock,
   GiCycle,
   GiTrashCan,
+  GiTrophyCup,
 } from "react-icons/gi";
 import {
   useProfileStore,
@@ -46,6 +47,7 @@ import { useUnits } from "../../context/UnitContext";
 import { getUnitConservativeValue } from "./InventoryChannel/inventoryUtils";
 import { useShowDelay } from "../../hooks/useShowDelay";
 import { ErrorState } from "./ui/ErrorState";
+import { EmptyState } from "./ui/EmptyState";
 import { GRID_STATUS_CFG, TIER_CONFIG, getTier, getObtainability } from "../../data";
 import { StatusIcon } from "./shared/Formatters";
 import { TradeCard, MasterUnit } from "../../types";
@@ -773,6 +775,10 @@ export function ProfileChannel() {
     updateAnalyzerSettings,
     addCard,
     overwrite,
+    tradeJournal,
+    journalPublic,
+    toggleJournalPrivacy,
+    updateJournalOutcome,
   } = useTradeStore();
 
   const openHistoryModal = useHistoryModalStore((s) => s.openModal);
@@ -821,7 +827,7 @@ export function ProfileChannel() {
     if (isOwner && currentUser) return false;
     return true;
   });
-  const [activeTab, setActiveTab] = useState<"board" | "wishlist" | "settings">(
+  const [activeTab, setActiveTab] = useState<"board" | "wishlist" | "journal" | "settings">(
     "board"
   );
   const [joinNumber, setJoinNumber] = useState<number | null>(null);
@@ -2106,7 +2112,7 @@ export function ProfileChannel() {
             </div>
           </aside>
 
-          {/* RIGHT MAIN WORKSPACE: Ad History, Target Wishlist, Preferences */}
+          {/* RIGHT MAIN WORKSPACE: Ad History, Target Wishlist, Journal, Preferences */}
           <div className="flex-1 flex flex-col min-w-0 gap-5">
             {/* Clean Tab Navigation (No Overflow Scrollbar Artifacts) */}
             <div
@@ -2178,6 +2184,34 @@ export function ProfileChannel() {
                     }`}
                   >
                     {activeWishlistItems.length}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "journal"}
+                onClick={() => {
+                  triggerHaptic("light");
+                  setActiveTab("journal");
+                }}
+                className={`px-4 py-2 rounded-[3px] text-[13px] font-medium transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 flex items-center gap-2 cursor-pointer focus-visible:outline-none ${
+                  activeTab === "journal"
+                    ? "bg-foreground text-background shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
+                }`}
+              >
+                <GiTrophyCup
+                  className="w-4 h-4"
+                  style={{
+                    color: activeTab === "journal" ? "inherit" : accentColor,
+                  }}
+                />
+                <span>Trade Journal</span>
+                {isOwner && (
+                  <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-[3px] border border-border font-mono">
+                    {tradeJournal.length}
                   </span>
                 )}
               </button>
@@ -2906,8 +2940,96 @@ export function ProfileChannel() {
                 )}
               </div>
             )}
+
             {/* ============================================================== */}
-            {/* TAB 3: PREFERENCES & PRIVACY (Discord-Style Settings)          */}
+            {/* TAB 3: TRADE JOURNAL (Private, Optional Log)                   */}
+            {/* ============================================================== */}
+            {activeTab === "journal" && (
+              <div className="flex flex-col gap-4 animate-fade-in">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex flex-col gap-0.5">
+                    <h3 className="text-[16px] font-bold text-foreground">Trade Journal</h3>
+                    <p className="text-[12px] text-muted-foreground">Log your completed trades to track your long-term win rate and personal performance.</p>
+                  </div>
+                  {isOwner && (
+                    <label className="flex items-center gap-2 text-[12px] text-muted-foreground cursor-pointer bg-card px-3 py-1.5 rounded-[6px] border border-border shadow-sm">
+                      <input
+                        type="checkbox"
+                        checked={journalPublic}
+                        onChange={() => toggleJournalPrivacy()}
+                        className="rounded border-border text-primary focus:ring-primary cursor-pointer"
+                      />
+                      Make Journal Public
+                    </label>
+                  )}
+                </div>
+
+                {isOwner || journalPublic ? (
+                  tradeJournal.length === 0 ? (
+                    <EmptyState
+                      title="No trades logged yet"
+                      description="Log a trade from the Calculator to start building your personal win-rate."
+                      action={{
+                        label: "Open Calculator",
+                        onClick: () => {
+                          window.dispatchEvent(new Event("open-analyzer"));
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {tradeJournal.map((entry) => (
+                        <div key={entry.id} className="bg-card border border-border rounded-[8px] p-4 flex flex-col gap-3">
+                          <div className="flex items-center justify-between border-b border-border pb-2">
+                            <span className="text-[12px] text-muted-foreground font-mono">
+                              {new Date(entry.timestamp).toLocaleDateString()}
+                            </span>
+                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-[4px] uppercase tracking-wider ${
+                              entry.outcome === "win" ? "bg-[#23a559]/20 text-[#23a559]" :
+                              entry.outcome === "loss" ? "bg-destructive/20 text-destructive" :
+                              entry.outcome === "fair" ? "bg-[#3b82f6]/20 text-[#3b82f6]" :
+                              "bg-muted text-muted-foreground"
+                            }`}>
+                              {entry.outcome}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4 text-[12px]">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[#FAA61A] font-bold">You Gave:</span>
+                              {entry.give.map((c) => (
+                                <span key={c.id} className="text-foreground truncate">{c.qty}x {c.name}</span>
+                              ))}
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-primary font-bold">You Got:</span>
+                              {entry.get.map((c) => (
+                                <span key={c.id} className="text-foreground truncate">{c.qty}x {c.name}</span>
+                              ))}
+                            </div>
+                          </div>
+
+                          {isOwner && entry.outcome === "pending" && (
+                            <div className="flex gap-2 pt-2 border-t border-border">
+                              <button onClick={() => updateJournalOutcome(entry.id, "win")} className="flex-1 py-1.5 bg-[#23a559]/20 hover:bg-[#23a559] text-[#23a559] hover:text-white rounded text-[11px] font-bold transition-colors cursor-pointer">Mark Win</button>
+                              <button onClick={() => updateJournalOutcome(entry.id, "fair")} className="flex-1 py-1.5 bg-[#3b82f6]/20 hover:bg-[#3b82f6] text-[#3b82f6] hover:text-white rounded text-[11px] font-bold transition-colors cursor-pointer">Mark Fair</button>
+                              <button onClick={() => updateJournalOutcome(entry.id, "loss")} className="flex-1 py-1.5 bg-destructive/20 hover:bg-destructive text-destructive hover:text-white rounded text-[11px] font-bold transition-colors cursor-pointer">Mark Loss</button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  <div className="text-center py-10 text-muted-foreground text-[13px]">
+                    This trader has kept their Trade Journal private.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ============================================================== */}
+            {/* TAB 4: PREFERENCES & PRIVACY (Discord-Style Settings)          */}
             {/* ============================================================== */}
             {activeTab === "settings" && isOwner && (
               <div className="flex flex-col gap-5 animate-fade-in">

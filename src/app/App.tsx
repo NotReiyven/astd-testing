@@ -43,6 +43,9 @@ import { GlobalToastContainer } from "./components/layout/GlobalToastContainer";
 import { GlobalTooltip } from "./components/ui/GlobalTooltip";
 import { GranularErrorBoundary } from "./components/shared/GranularErrorBoundary";
 
+import { useCrossTabSync } from "../hooks/useCrossTabSync";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+
 const TradeAnalyzerPanel = lazy(() =>
   import("./components/TradeAnalyzer").then((module) => ({
     default: module.TradeAnalyzerPanel,
@@ -181,6 +184,9 @@ export default function App() {
   const { profile, isLoading: isAuthLoading } = useAuthStore();
   const { units } = useUnits();
   const setShortcutsModalOpen = useLayoutStore((s) => s.setShortcutsModalOpen);
+
+  useCrossTabSync();
+  useKeyboardShortcuts();
 
   useEffect(() => {
     const handleShortcut = (e: KeyboardEvent) => {

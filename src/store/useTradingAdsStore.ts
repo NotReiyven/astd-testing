@@ -32,6 +32,11 @@ interface FetchHistoryOptions {
   privateAdIds?: string[];
 }
 
+interface CreateAdResult {
+  error: any | null;
+  queued?: boolean;
+}
+
 interface TradingAdsState {
   ads: TradingAd[];
   userAdHistory: TradingAd[];
@@ -44,10 +49,14 @@ interface TradingAdsState {
   ) => Promise<void>;
   subscribeToAds: () => () => void;
   deleteAd: (id: string) => Promise<boolean>;
+  restoreDeletedAd: (ad: TradingAd) => Promise<boolean>;
   repostAd: (ad: TradingAd) => Promise<boolean>;
-  createAd: (adData: any) => Promise<{ error: any | null }>;
+  createAd: (adData: any) => Promise<CreateAdResult>;
   fetchAdById: (id: string) => Promise<TradingAd | null>;
 }
+
+const MAX_ACTIVE_ADS_REGULAR = 3;
+const AD_POST_COOLDOWN_MS = 15 * 60 * 1000;
 
 const containsPhishingOrLink = (text: string) => {
   const normalized = text.normalize("NFKD").toLowerCase();
@@ -105,7 +114,6 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
   },
 
   fetchUserAdHistory: async (userId: string, options: FetchHistoryOptions) => {
-    // SECURITY: Never fetch or expose ad history if viewer is not the owner and history is set to private
     if (!userId || (!options.isOwner && options.adHistoryPublic === false)) {
       set({ userAdHistory: [], isLoadingHistory: false });
       return;
@@ -138,7 +146,6 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
 
     let records = (data || []) as TradingAd[];
 
-    // SECURITY: Filter out individually hidden ads when viewed by visitors
     if (!options.isOwner && Array.isArray(options.privateAdIds) && options.privateAdIds.length > 0) {
       const hiddenSet = new Set(options.privateAdIds);
       records = records.filter((ad) => !hiddenSet.has(ad.id));
@@ -155,16 +162,12 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
       for (const ch of supabase.getChannels()) {
         if (
           ch.topic.startsWith("realtime:trading-ads-") ||
-          ch.topic.startsWith("realtime:profiles-status-") ||
-          ch.topic === "realtime:public:trading_ads" ||
-          ch.topic === "realtime:public:profiles_status"
+          ch.topic.startsWith("realtime:profiles-status-")
         ) {
           void supabase.removeChannel(ch);
         }
       }
-    } catch {
-      // Ignore channel inspection errors
-    }
+    } catch {}
 
     let adsChannel: any = null;
     let profilesChannel: any = null;
@@ -187,14 +190,7 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
                 .eq("id", newRecord.id)
                 .single()
                 .then(({ data, error }) => {
-                  if (error) {
-                    logger.error("ASTD-ADS-003", "Realtime fetch error on ad insert", {
-                      scope: "useTradingAdsStore",
-                      action: "subscribeToAds",
-                      error,
-                    });
-                  }
-                  if (data) {
+                  if (!error && data) {
                     set((state) => ({ ads: [data as TradingAd, ...state.ads] }));
                   }
                 });
@@ -218,14 +214,7 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
           }
         )
         .subscribe();
-    } catch (err) {
-      logger.warn("ASTD-ADS-021", "Failed to subscribe to trading ads channel", {
-        scope: "useTradingAdsStore",
-        action: "subscribeToAds.adsChannel",
-        metadata: { token: currentToken },
-        error: err,
-      });
-    }
+    } catch {}
 
     try {
       profilesChannel = supabase
@@ -262,14 +251,7 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
           }
         )
         .subscribe();
-    } catch (err) {
-      logger.warn("ASTD-ADS-022", "Failed to subscribe to profiles status channel", {
-        scope: "useTradingAdsStore",
-        action: "subscribeToAds.profilesChannel",
-        metadata: { token: currentToken },
-        error: err,
-      });
-    }
+    } catch {}
 
     return () => {
       if (adsChannel) void supabase.removeChannel(adsChannel);
@@ -302,71 +284,76 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
       return { error: new Error("Authentication required.") };
     }
 
-    // Role check for staff bypass
     const callerProfile = useAuthStore.getState().profile;
     const isStaff = Boolean(
       callerProfile?.role &&
         ["mod", "admin", "master"].includes(callerProfile.role.toLowerCase())
     );
 
-    // Regular users: Enforce max 3 active ads and 15-minute cooldown
     if (!isStaff) {
-      const nowIso = new Date().toISOString();
-      const { count: activeCount } = await supabase
-        .from("trading_ads")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", payload.user_id)
-        .gt("expires_at", nowIso);
+      let localPendingCount = 0;
+      try {
+        const offlineQueue: any[] = (await getIdb("astd_offline_ads")) || [];
+        if (Array.isArray(offlineQueue)) {
+          localPendingCount = offlineQueue.filter(
+            (item) =>
+              item && typeof item === "object" && item.user_id === payload.user_id
+          ).length;
+        }
+      } catch {}
 
-      if (typeof activeCount === "number" && activeCount >= 3) {
-        useToastStore
-          .getState()
-          .addToast(
-            "Listing limit reached: Regular users can have at most 3 active listings simultaneously.",
-            "warning"
-          );
-        return {
-          error: new Error(
-            "Listing limit reached. Regular users can have at most 3 active listings at a time."
-          ),
-        };
+      let serverActiveCount = 0;
+      if (navigator.onLine) {
+        const { count } = await supabase
+          .from("trading_ads")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", payload.user_id)
+          .gt("expires_at", new Date().toISOString());
+
+        if (typeof count === "number") {
+          serverActiveCount = count;
+        }
       }
 
-      const COOLDOWN_MS = 15 * 60 * 1000;
+      if (serverActiveCount + localPendingCount >= MAX_ACTIVE_ADS_REGULAR) {
+        const msg =
+          localPendingCount > 0
+            ? `Listing limit reached: ${serverActiveCount} active + ${localPendingCount} queued = ${MAX_ACTIVE_ADS_REGULAR} max.`
+            : "Listing limit reached: Regular users can have at most 3 active listings simultaneously.";
+        useToastStore.getState().addToast(msg, "warning");
+        return { error: new Error(msg) };
+      }
+
       let lastTime = 0;
       try {
         const localTime = Number(
           localStorage.getItem(`astd_last_ad_posted_${payload.user_id}`) || 0
         );
-        if (!isNaN(localTime) && localTime > lastTime) {
+        if (!isNaN(localTime) && localTime > 0) {
           lastTime = localTime;
         }
-      } catch (storageErr) {
-        logger.warn("ASTD-ADS-006", "Could not read last ad post time from localStorage", {
-          scope: "useTradingAdsStore",
-          action: "createAd",
-          error: storageErr,
-        });
-      }
+      } catch {}
 
-      const { data: recentAds } = await supabase
-        .from("trading_ads")
-        .select("created_at")
-        .eq("user_id", payload.user_id)
-        .order("created_at", { ascending: false })
-        .limit(1);
+      if (navigator.onLine) {
+        const { data: recentAds } = await supabase
+          .from("trading_ads")
+          .select("created_at")
+          .eq("user_id", payload.user_id)
+          .order("created_at", { ascending: false })
+          .limit(1);
 
-      if (recentAds && recentAds.length > 0) {
-        const dbTime = new Date(recentAds[0].created_at).getTime();
-        if (dbTime > lastTime) {
-          lastTime = dbTime;
+        if (recentAds && recentAds.length > 0) {
+          const dbTime = new Date(recentAds[0].created_at).getTime();
+          if (dbTime > lastTime) {
+            lastTime = dbTime;
+          }
         }
       }
 
       if (lastTime > 0) {
         const timeDiff = Date.now() - lastTime;
-        if (timeDiff < COOLDOWN_MS) {
-          const remainingMs = COOLDOWN_MS - timeDiff;
+        if (timeDiff < AD_POST_COOLDOWN_MS) {
+          const remainingMs = AD_POST_COOLDOWN_MS - timeDiff;
           const totalSecs = Math.ceil(remainingMs / 1000);
           const mins = Math.floor(totalSecs / 60);
           const secs = totalSecs % 60;
@@ -388,9 +375,7 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
 
     const validTypes = ["standard", "lf_offers", "inventory"];
     const requestedType = adData.ad_type || adData.adType || "standard";
-    payload.ad_type = validTypes.includes(requestedType)
-      ? requestedType
-      : "standard";
+    payload.ad_type = validTypes.includes(requestedType) ? requestedType : "standard";
 
     const rawGive = Array.isArray(adData.give_items || adData.giveItems)
       ? adData.give_items || adData.giveItems
@@ -403,7 +388,7 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
     payload.get_items = rawGet.slice(0, 20);
 
     payload.note = DOMPurify.sanitize(rawNote, {
-      ALLOWED_TAGS: [], // Strip all HTML tags entirely
+      ALLOWED_TAGS: [],
       ALLOWED_ATTR: [],
     });
 
@@ -411,27 +396,35 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
     if (rawExpires) {
       payload.expires_at = rawExpires;
     } else {
-      const hours = Math.min(
-        24,
-        Math.max(1, Number(adData.ttlHours || adData.ttl || 24))
-      );
+      const hours = Math.min(24, Math.max(1, Number(adData.ttlHours || adData.ttl || 24)));
       const exp = new Date();
       exp.setHours(exp.getHours() + hours);
       payload.expires_at = exp.toISOString();
     }
 
-    // OFFLINE QUEUE INTERCEPTION
     if (!navigator.onLine) {
-      const queue: any[] = (await getIdb("astd_offline_ads")) || [];
-      queue.push(payload);
-      await setIdb("astd_offline_ads", queue);
-      useToastStore
-        .getState()
-        .addToast(
-          "You're offline. Ad queued to post when connection is restored.",
-          "warning"
-        );
-      return { error: null };
+      try {
+        const queue: any[] = (await getIdb("astd_offline_ads")) || [];
+        queue.push({ ...payload, _queuedAt: Date.now() });
+        await setIdb("astd_offline_ads", queue);
+
+        try {
+          localStorage.setItem(
+            `astd_last_ad_posted_${payload.user_id}`,
+            Date.now().toString()
+          );
+        } catch {}
+
+        useToastStore
+          .getState()
+          .addToast(
+            "Offline. Your listing is queued and will publish automatically when you reconnect.",
+            "info"
+          );
+        return { error: null, queued: true };
+      } catch (queueErr) {
+        return { error: queueErr as Error };
+      }
     }
 
     const { error } = await supabase.from("trading_ads").insert(payload);
@@ -450,15 +443,9 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
         `astd_last_ad_posted_${payload.user_id}`,
         Date.now().toString()
       );
-    } catch (storageErr) {
-      logger.warn("ASTD-ADS-008", "Could not save last ad post time to localStorage", {
-        scope: "useTradingAdsStore",
-        action: "createAd",
-        error: storageErr,
-      });
-    }
+    } catch {}
 
-    return { error: null };
+    return { error: null, queued: false };
   },
 
   fetchAdById: async (id: string) => {
@@ -496,8 +483,10 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
       return false;
     }
 
+    const deletedAd = get().ads.find(a => a.id === id) || get().userAdHistory.find(a => a.id === id);
     const currentAds = get().ads;
     const currentHistory = get().userAdHistory;
+    
     set({
       ads: currentAds.filter((ad) => ad.id !== id),
       userAdHistory: currentHistory.filter((ad) => ad.id !== id),
@@ -518,13 +507,46 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
       set({ ads: currentAds, userAdHistory: currentHistory });
       useToastStore
         .getState()
-        .addToast("Unable to delete ad—please try again.", "error");
+        .addToast("Unable to delete ad. Please try again.", "error");
       return false;
     }
+
+    if (deletedAd) {
+      useToastStore.getState().addToast("Trade ad deleted.", "info", {
+        action: {
+          label: "Undo",
+          onClick: () => {
+            void get().restoreDeletedAd(deletedAd);
+          }
+        }
+      });
+    }
+
+    return true;
+  },
+
+  restoreDeletedAd: async (ad: TradingAd) => {
+    const { error } = await supabase.from("trading_ads").insert(ad);
+    if (error) {
+      useToastStore.getState().addToast("Failed to restore ad.", "error");
+      return false;
+    }
+    await get().fetchAds();
+    useToastStore.getState().addToast("Trade ad restored.", "success");
     return true;
   },
 
   repostAd: async (ad: TradingAd) => {
+    if (!navigator.onLine) {
+      useToastStore
+        .getState()
+        .addToast(
+          "Reposting requires an active connection. Try again when you're back online.",
+          "warning"
+        );
+      return false;
+    }
+
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -536,7 +558,7 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
     }
 
     const newExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    const { error } = await get().createAd({
+    const result = await get().createAd({
       user_id: session.user.id,
       ad_type: ad.ad_type,
       give_items: ad.give_items,
@@ -545,14 +567,23 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
       expires_at: newExpires,
     });
 
-    if (error) {
+    if (result.error) {
       useToastStore
         .getState()
-        .addToast("Could not repost trade ad—check rate limits.", "error");
+        .addToast("Could not repost trade ad. Check rate limits.", "error");
       return false;
     }
 
-    // Delete old expired record so history stays clean
+    if (result.queued) {
+      useToastStore
+        .getState()
+        .addToast(
+          "Repost queued. It will publish automatically when you reconnect.",
+          "info"
+        );
+      return true;
+    }
+
     await get().deleteAd(ad.id);
     await get().fetchAds();
     await get().fetchUserAdHistory(session.user.id, { isOwner: true });

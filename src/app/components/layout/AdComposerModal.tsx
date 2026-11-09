@@ -87,6 +87,7 @@ export function AdComposerModal() {
   const {
     isStaff,
     activeAdsCount,
+    pendingQueueCount,
     isAtMaxActiveAds,
     isOnCooldown,
     formattedCooldown,
@@ -236,11 +237,17 @@ export function AdComposerModal() {
 
     if (!isStaff) {
       if (isOnCooldown) {
-        setError(`Posting cooldown active. You can publish another listing in ${formattedCooldown}.`);
+        setError(
+          `Posting cooldown active. You can publish another listing in ${formattedCooldown}.`
+        );
         return;
       }
       if (isAtMaxActiveAds) {
-        setError("Maximum active listings reached: Regular users can have at most 3 active listings at a time.");
+        setError(
+          pendingQueueCount > 0
+            ? `Maximum active listings reached: ${activeAdsCount} total (includes ${pendingQueueCount} queued offline).`
+            : "Maximum active listings reached: Regular users can have at most 3 active listings at a time."
+        );
         return;
       }
     }
@@ -351,12 +358,27 @@ export function AdComposerModal() {
         throw result.error;
       }
 
+      // ── OFFLINE-QUEUED PATH ──
+      if (result.queued) {
+        triggerHaptic("medium");
+        addToast(
+          "Offline. Your listing is queued and will publish automatically when you reconnect.",
+          "info",
+          {
+            duration: 6000,
+            dedupeKey: "ad-queued-offline",
+          }
+        );
+        setNote("");
+        setShowDiscardConfirm(false);
+        setComposerOpen(false);
+        return;
+      }
+
+      // ── ONLINE SUCCESS PATH ──
       window.dispatchEvent(new Event("academy-posted-ad"));
 
-      addToast(
-        "Published your listing to the Live Trading Board.",
-        "success"
-      );
+      addToast("Published your listing to the Live Trading Board.", "success");
 
       triggerHaptic("medium");
       setNote("");
@@ -369,7 +391,7 @@ export function AdComposerModal() {
         })
       );
     } catch (err: any) {
-      logger.error('ASTD-UI-032', 'Ad publish failed', { err });
+      logger.error("ASTD-UI-032", "Ad publish failed", { err });
 
       const errMessage =
         typeof err?.message === "string" && err.message.trim().length > 0
@@ -455,6 +477,7 @@ export function AdComposerModal() {
   };
 
   const isNoteOverLimit = note.length > MAX_NOTE_LENGTH;
+  const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
 
   return (
     <AnimatePresence>
@@ -532,6 +555,30 @@ export function AdComposerModal() {
                 </div>
               )}
 
+              {isOffline && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="bg-[#d97706] text-white border border-[#f59e0b]/40 px-3.5 py-2.5 rounded-[6px] text-[12px] font-bold flex items-center gap-2.5 shadow-xs"
+                >
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    className="w-4 h-4 shrink-0"
+                  >
+                    <path
+                      d="M2 2L14 14M10.7 10.7A5.5 5.5 0 0 0 5.3 5.3M13.5 7.5A9 9 0 0 0 5.2 4.2M2.5 7.5A9 9 0 0 1 4 6.2M8 13h.01"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span>You're offline. Your listing will be queued and publish automatically when you reconnect.</span>
+                </div>
+              )}
+
               {error && (
                 <div
                   role="alert"
@@ -568,10 +615,15 @@ export function AdComposerModal() {
                   className="bg-[#ef4444] text-white border border-[#ef4444]/40 px-3.5 py-2.5 rounded-[6px] text-[12px] font-bold flex items-center justify-between gap-2.5 shadow-xs"
                 >
                   <span>
-                    Listing limit reached (3/3 active). Delete an existing ad to post.
+                    Listing limit reached (
+                    {activeAdsCount}/{isStaff ? "∞" : "3"}
+                    {pendingQueueCount > 0
+                      ? ` — includes ${pendingQueueCount} queued offline`
+                      : ""}
+                    ). Delete an existing ad to post.
                   </span>
                   <span className="font-mono font-bold px-2 py-0.5 rounded bg-black/30 text-white">
-                    3/3
+                    {activeAdsCount}/{isStaff ? "∞" : "3"}
                   </span>
                 </div>
               )}
@@ -589,8 +641,14 @@ export function AdComposerModal() {
                   <span>
                     Active Listings:{" "}
                     <strong className="text-white font-mono">
-                      {activeAdsCount}/3
+                      {activeAdsCount}/{MAX_ACTIVE_ADS_REGULAR_DISPLAY}
                     </strong>
+                    {pendingQueueCount > 0 && (
+                      <span className="text-[#FAA61A] font-mono">
+                        {" "}
+                        (+{pendingQueueCount} queued)
+                      </span>
+                    )}
                   </span>
                   <span>
                     Cooldown:{" "}
@@ -847,7 +905,9 @@ export function AdComposerModal() {
                 {isOnCooldown
                   ? `Cooldown (${formattedCooldown})`
                   : isAtMaxActiveAds && !isStaff
-                  ? "Limit Reached (3/3)"
+                  ? `Limit Reached (${activeAdsCount}/${MAX_ACTIVE_ADS_REGULAR_DISPLAY})`
+                  : isOffline
+                  ? "Queue Listing (Offline)"
                   : "Publish Listing"}
               </AsyncButton>
             </div>
@@ -857,3 +917,5 @@ export function AdComposerModal() {
     </AnimatePresence>
   );
 }
+
+const MAX_ACTIVE_ADS_REGULAR_DISPLAY = 3;

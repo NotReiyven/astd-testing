@@ -39,6 +39,15 @@ export const DEFAULT_ANALYZER_SETTINGS: AnalyzerSettings = {
   enableMarkdownCopy: true,
 };
 
+export interface TradeJournalEntry {
+  id: string;
+  timestamp: string;
+  give: TradeCard[];
+  get: TradeCard[];
+  valueDiff: number;
+  outcome: "pending" | "win" | "fair" | "loss";
+}
+
 interface TradeState {
   giveItems: TradeCard[];
   getItems: TradeCard[];
@@ -47,6 +56,9 @@ interface TradeState {
   composerMode: "standard" | "lf_offers" | "inventory";
   presets: TradePreset[];
   analyzerSettings: AnalyzerSettings;
+  
+  tradeJournal: TradeJournalEntry[];
+  journalPublic: boolean;
 
   addCard: (col: "give" | "get", card: TradeCard) => void;
   changeQty: (col: "give" | "get", id: string, qty: number) => void;
@@ -68,6 +80,10 @@ interface TradeState {
   deletePreset: (id: string) => void;
   restorePreset: (preset: TradePreset, index: number) => void;
   loadPreset: (id: string) => void;
+
+  logTrade: (valueDiff: number) => void;
+  updateJournalOutcome: (id: string, outcome: TradeJournalEntry["outcome"]) => void;
+  toggleJournalPrivacy: () => void;
 }
 
 export const useTradeStore = create<TradeState>()(
@@ -80,6 +96,8 @@ export const useTradeStore = create<TradeState>()(
       composerMode: "standard",
       presets: [],
       analyzerSettings: DEFAULT_ANALYZER_SETTINGS,
+      tradeJournal: [],
+      journalPublic: false,
 
       setComposerOpen: (isOpen, mode = "standard") =>
         set({ isComposerOpen: isOpen, composerMode: mode }),
@@ -245,26 +263,49 @@ export const useTradeStore = create<TradeState>()(
           if (!preset) return {};
           return { giveItems: [...preset.give], getItems: [...preset.get] };
         }),
+
+      logTrade: (valueDiff) => {
+        const state = get();
+        if (state.giveItems.length === 0 && state.getItems.length === 0) return;
+        
+        const newEntry: TradeJournalEntry = {
+          id: Date.now().toString(),
+          timestamp: new Date().toISOString(),
+          give: [...state.giveItems],
+          get: [...state.getItems],
+          valueDiff,
+          outcome: "pending",
+        };
+        
+        set({ tradeJournal: [newEntry, ...state.tradeJournal] });
+        window.dispatchEvent(new Event("academy-trade-logged"));
+      },
+
+      updateJournalOutcome: (id, outcome) =>
+        set((state) => ({
+          tradeJournal: state.tradeJournal.map((t) =>
+            t.id === id ? { ...t, outcome } : t
+          ),
+        })),
+
+      toggleJournalPrivacy: () =>
+        set((state) => ({ journalPublic: !state.journalPublic })),
     }),
     {
       name: "astd_trade_storage",
-      version: 5,
+      version: 6,
       migrate: (persistedState: any, version: number) => {
         if (version < 3) {
-          persistedState.giveItems = Array.isArray(persistedState.giveItems)
-            ? persistedState.giveItems
-            : [];
-          persistedState.getItems = Array.isArray(persistedState.getItems)
-            ? persistedState.getItems
-            : [];
-          persistedState.pinnedIds = Array.isArray(persistedState.pinnedIds)
-            ? persistedState.pinnedIds
-            : [];
+          persistedState.giveItems = Array.isArray(persistedState.giveItems) ? persistedState.giveItems : [];
+          persistedState.getItems = Array.isArray(persistedState.getItems) ? persistedState.getItems : [];
+          persistedState.pinnedIds = Array.isArray(persistedState.pinnedIds) ? persistedState.pinnedIds : [];
           persistedState.isComposerOpen = false;
           persistedState.composerMode = "standard";
-          persistedState.presets = Array.isArray(persistedState.presets)
-            ? persistedState.presets
-            : [];
+          persistedState.presets = Array.isArray(persistedState.presets) ? persistedState.presets : [];
+        }
+        if (version < 6) {
+          persistedState.tradeJournal = [];
+          persistedState.journalPublic = false;
         }
         persistedState.analyzerSettings = {
           ...DEFAULT_ANALYZER_SETTINGS,

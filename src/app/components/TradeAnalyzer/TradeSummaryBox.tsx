@@ -1,13 +1,13 @@
 import { useState, useMemo } from "react";
 import {
   avgStat,
-  getTradeForecast,
+  getTradeForecastBreakdown,
   getLiquidityScore,
   getShareText,
 } from "./summaryUtils";
 import { TradeCard, MasterUnit } from "../../../types";
-import { GiUpgrade, GiHourglass } from "react-icons/gi";
-import { FiCopy } from "react-icons/fi";
+import { GiUpgrade, GiHourglass, GiCalculator } from "react-icons/gi";
+import { FiCopy, FiChevronUp } from "react-icons/fi";
 import { RollingNumber } from "../shared/Formatters";
 import { useTradeStore, DEFAULT_ANALYZER_SETTINGS } from "../../../store/useTradeStore";
 import { triggerHaptic, copyTextWithFallback } from "../../../data/helpers";
@@ -36,7 +36,9 @@ export function TradeSummaryBox({
   ALL_UNITS,
   isCompact = false,
 }: TradeSummaryBoxProps) {
-  const [activeTip, currentTip] = useState<string | null>(null);
+  const [activeTip, setActiveTip] = useState<string | null>(null);
+  const [showBreakdown, setShowBreakdown] = useState<boolean>(false);
+  
   const rawSettings = useTradeStore((s) => s.analyzerSettings);
   const updateAnalyzerSettings = useTradeStore((s) => s.updateAnalyzerSettings);
   const addToast = useToastStore((s) => s.addToast);
@@ -54,7 +56,10 @@ export function TradeSummaryBox({
     settings.showLiquidity,
   ].filter(Boolean).length;
 
-  const forecast = getTradeForecast(giveItems, getItems, ALL_UNITS);
+  const forecast = useMemo(
+    () => getTradeForecastBreakdown(giveItems, getItems, ALL_UNITS),
+    [giveItems, getItems, ALL_UNITS]
+  );
 
   const isOcPresent = useMemo(() => {
     return [...giveItems, ...getItems].some((c) => {
@@ -77,12 +82,12 @@ export function TradeSummaryBox({
 
   const handleEnter = (tip: string) => {
     if (window.matchMedia("(hover: hover)").matches) {
-      currentTip(tip);
+      setActiveTip(tip);
     }
   };
 
   const handleLeave = () => {
-    currentTip(null);
+    setActiveTip(null);
   };
 
   const handleToggleExpanded = () => {
@@ -110,6 +115,12 @@ export function TradeSummaryBox({
     } else {
       addToast("Could not copy trade automatically.", "error");
     }
+  };
+
+  const handleOpenBreakdown = () => {
+    if (!forecast.calculable) return;
+    triggerHaptic("light");
+    setShowBreakdown((prev) => !prev);
   };
 
   const valDiff = getTotal - giveTotal;
@@ -177,7 +188,6 @@ export function TradeSummaryBox({
       }`}
     >
       <div className="flex items-start justify-between w-full gap-2">
-        {/* Total Give */}
         <div className="flex-1 min-w-0 text-left">
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
             Total Give
@@ -194,7 +204,6 @@ export function TradeSummaryBox({
           </p>
         </div>
 
-        {/* Center Difference */}
         <div className="flex flex-col items-center px-1 md:px-2 shrink-0">
           {isOcPresent ? (
             <>
@@ -226,7 +235,6 @@ export function TradeSummaryBox({
           ) : null}
         </div>
 
-        {/* Total Get */}
         <div className="flex-1 min-w-0 text-right">
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
             Total Get
@@ -243,7 +251,6 @@ export function TradeSummaryBox({
           </p>
         </div>
 
-        {/* Copy Button */}
         <button
           type="button"
           onClick={handleCopyTrade}
@@ -325,7 +332,8 @@ export function TradeSummaryBox({
             <div className={`grid ${gridColsClass} gap-1.5 w-full`}>
               {settings.showStFlip && (
                 <div
-                  className="flex flex-col items-center justify-center min-w-0 p-2 rounded-[6px] bg-black/20 border border-border/50 hover:bg-black/30 transition-colors cursor-help relative"
+                  onClick={handleOpenBreakdown}
+                  className="flex flex-col items-center justify-center min-w-0 p-2 rounded-[6px] bg-black/20 border border-border/50 hover:bg-black/30 transition-colors cursor-pointer relative"
                   onMouseEnter={() => handleEnter("st")}
                   onMouseLeave={handleLeave}
                 >
@@ -358,15 +366,15 @@ export function TradeSummaryBox({
                     <strong className="text-[#FAA61A] block mb-1">
                       Short-Term Flip
                     </strong>
-                    Scores &gt; 0 are wins. Calculated using Raw Value,
-                    Liquidity, and immediate Market Tag momentum.
+                    Scores &gt; 0 are wins. Click to see the exact math breakdown.
                   </div>
                 </div>
               )}
 
               {settings.showLtHold && (
                 <div
-                  className="flex flex-col items-center justify-center min-w-0 p-2 rounded-[6px] bg-black/20 border border-border/50 hover:bg-black/30 transition-colors cursor-help relative"
+                  onClick={handleOpenBreakdown}
+                  className="flex flex-col items-center justify-center min-w-0 p-2 rounded-[6px] bg-black/20 border border-border/50 hover:bg-black/30 transition-colors cursor-pointer relative"
                   onMouseEnter={() => handleEnter("lt")}
                   onMouseLeave={handleLeave}
                 >
@@ -400,8 +408,7 @@ export function TradeSummaryBox({
                     <strong className="text-primary block mb-1">
                       Long-Term Hold
                     </strong>
-                    Scores &gt; 0 are wins. Weighs Rarity heavily and
-                    mathematically punishes &ldquo;Hyped&rdquo; or &ldquo;Unstable&rdquo; units.
+                    Scores &gt; 0 are wins. Click to see the exact math breakdown.
                   </div>
                 </div>
               )}
@@ -477,6 +484,42 @@ export function TradeSummaryBox({
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {showBreakdown && (
+            <div className="mt-2 p-3 bg-popover border border-border rounded-[6px] text-[11px] font-mono text-muted-foreground animate-fade-in shadow-inner flex flex-col gap-1.5">
+              <div className="flex items-center justify-between border-b border-border/50 pb-1.5 mb-1.5 text-foreground font-bold font-sans text-[12px]">
+                <span className="flex items-center gap-1.5">
+                  <GiCalculator className="w-3.5 h-3.5" /> Score Breakdown
+                </span>
+                <button onClick={() => setShowBreakdown(false)} className="text-muted-foreground hover:text-foreground">
+                  <FiChevronUp className="w-4 h-4" />
+                </button>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span>Raw Value Ratio:</span>
+                <span className="text-foreground font-bold">{forecast.rawValueRatio.toFixed(2)}x</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Liquidity Multiplier:</span>
+                <span className="text-foreground font-bold">{forecast.stLiquidityMult.toFixed(2)}x</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Rarity Multiplier:</span>
+                <span className="text-foreground font-bold">{forecast.stRarityMult.toFixed(2)}x</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Status Momentum (ST):</span>
+                <span className={`font-bold ${forecast.stMomentum > 1 ? 'text-[#23a559]' : forecast.stMomentum < 1 ? 'text-rose-400' : 'text-foreground'}`}>
+                  {forecast.stMomentum > 1 ? "+" : ""}{((forecast.stMomentum - 1) * 100).toFixed(1)}%
+                </span>
+              </div>
+              <div className="flex justify-between items-center border-t border-border/50 pt-1.5 mt-1.5">
+                <span className="font-sans font-bold text-foreground">Formula:</span>
+                <span className="text-foreground/70 text-[10px]">(0.8 * value) + (0.6 * liq) + (0.1 * rarity)</span>
+              </div>
             </div>
           )}
         </>

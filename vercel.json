@@ -8,7 +8,7 @@
   ],
   "functions": {
     "api/unitMeta.ts": {
-      "includeFiles": "dist/index.html"
+      "includeFiles": "dist/{index.html,unit-meta.json}"
     }
   },
   "rewrites": [
