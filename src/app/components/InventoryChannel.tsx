@@ -16,7 +16,7 @@ import { getContrastTextColor } from "./shared/DiscordRolePill";
 import { useProfileStore } from "../../store/useProfileStore";
 import { UnitAvatar } from "./shared/UnitAvatar";
 
-// Inline SVG icons — no lucide-react
+// Inline SVG icons
 const IconSearch = ({ className }: { className?: string }) => (
   <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <circle cx="11" cy="11" r="8" />
@@ -272,7 +272,7 @@ export function InventoryChannel() {
     }
   }, [viewingUserId, isReadOnly, fetchProfile]);
 
-  // Track vault views (3 second delayed API call handled by store)
+  // Track vault views
   useEffect(() => {
     if (viewingUserId && isReadOnly) {
       void recordView(viewingUserId, "vault");
@@ -377,14 +377,14 @@ export function InventoryChannel() {
   const activeFilterDescription = useMemo(() => {
     const parts: string[] = [];
     if (searchQuery.trim()) {
-      parts.push(`search “${searchQuery.trim()}”`);
+      parts.push(`search "${searchQuery.trim()}"`);
     }
     if (activeTierFilter !== "All") {
       parts.push(
-        `tier “${activeTierFilter === "Pinned" ? "Locked" : activeTierFilter}”`
+        `tier "${activeTierFilter === "Pinned" ? "Locked" : activeTierFilter}"`
       );
     }
-    return parts.join(" & ");
+    return parts.join(" and ");
   }, [searchQuery, activeTierFilter]);
 
   if (!profile && !isReadOnly && !isVaultLoading) {
@@ -459,9 +459,7 @@ export function InventoryChannel() {
                 : "text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border"
             }`}
           >
-            <span className="leading-none">
-              Wishlist
-            </span>
+            <span className="leading-none">Wishlist</span>
           </button>
         </div>
 
@@ -563,7 +561,7 @@ export function InventoryChannel() {
 
           {/* Action Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full lg:w-auto min-w-0">
-            {/* Search Input: full width on mobile, dedicated width on sm+ */}
+            {/* Search Input */}
             <div
               className="relative w-full sm:w-[220px] lg:w-[260px] min-w-0 flex items-center gap-1.5"
               ref={omniboxRef}
@@ -633,7 +631,7 @@ export function InventoryChannel() {
                   {unownedSearchResults.length === 0 ? (
                     <div className="px-3 py-6 text-center text-[12px] text-muted-foreground flex flex-col items-center gap-1.5 select-none">
                       <IconSearch className="w-5 h-5 opacity-40" />
-                      <span>No units match “{searchQuery.trim()}”</span>
+                      <span>No units match "{searchQuery.trim()}"</span>
                     </div>
                   ) : (
                     unownedSearchResults.map((u, i) => {
@@ -697,7 +695,7 @@ export function InventoryChannel() {
                             </span>
                             <div className="flex items-center gap-1.5 mt-0.5">
                               <span className="text-[11px] font-mono text-muted-foreground font-semibold tabular-nums">
-                                {unitVal > 0 ? unitVal.toLocaleString() : "—"} Val
+                                {unitVal > 0 ? unitVal.toLocaleString() : "-"} Val
                               </span>
                               <span className="text-border text-[10px]">·</span>
                               <span
@@ -772,7 +770,7 @@ export function InventoryChannel() {
               )}
             </div>
 
-            {/* Action Buttons Bar: Bulk Select + Sort Dropdown + Copy + Manage */}
+            {/* Action Buttons Bar */}
             <div className="flex items-center gap-2 w-full sm:w-auto min-w-0">
               {!isReadOnly && vaultView !== "wishlist" && (
                 <button
@@ -932,7 +930,7 @@ export function InventoryChannel() {
                   title="No Matching Units Found"
                   description={`No units in this ${
                     vaultView === "wishlist" ? "wishlist" : "vault"
-                  } match “${searchQuery.trim()}”.`}
+                  } match "${searchQuery.trim()}".`}
                   action={{
                     label: "Clear Search",
                     onClick: () => setSearchQuery(""),
@@ -948,7 +946,7 @@ export function InventoryChannel() {
                   }
                   description={
                     isReadOnly
-                      ? "This trader hasn't added any target units to their wishlist yet."
+                      ? "This trader has not added any target units to their wishlist yet."
                       : "Search for units using the bar above to set your trading targets and track your goal progress automatically."
                   }
                   action={
@@ -970,7 +968,7 @@ export function InventoryChannel() {
                   }
                   description={
                     isReadOnly
-                      ? "This trader hasn't added any units to their collection yet."
+                      ? "This trader has not added any units to their collection yet."
                       : "Search for your first unit to start tracking your net worth, or import your entire list from text at once."
                   }
                   action={
@@ -984,7 +982,7 @@ export function InventoryChannel() {
                   secondaryAction={
                     !isReadOnly
                       ? {
-                          label: "Import from Text…",
+                          label: "Import from Text...",
                           variant: "outline",
                           onClick: () => {
                             setImportMenuOpen(true);
@@ -1001,28 +999,28 @@ export function InventoryChannel() {
             </div>
           ) : (
             <>
-              {/* Vault Insights Dashboard (Only visible to owner) */}
+              {/* Vault Insights Dashboard */}
               {!isReadOnly && viewedProfileData?.vault_view_count > 0 && (
-                <div className="bg-card border border-border rounded-[8px] p-4 flex flex-col gap-3 mb-6 shadow-sm">
+                <div className="bg-card border border-border rounded-[8px] p-4 flex flex-col gap-3 mb-8 shadow-sm">
                   <div className="flex items-center gap-2 border-b border-border pb-2.5">
                     <GiEyeTarget className="w-4 h-4 text-primary" />
-                    <h3 className="text-[13px] font-bold text-foreground">
+                    <h3 className="text-[13px] font-bold text-foreground uppercase tracking-wider">
                       Vault Insights
                     </h3>
                   </div>
                   
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex flex-col gap-1">
-                      <p className="text-[12.5px] text-muted-foreground">
-                        Your Vault was inspected <strong className="text-foreground">{viewedProfileData.vault_view_count.toLocaleString()}</strong> times this week.
+                      <p className="text-[13px] text-foreground">
+                        Your Vault was inspected <strong className="font-bold">{viewedProfileData.vault_view_count.toLocaleString()}</strong> times this week.
                       </p>
-                      <p className="text-[11.5px] text-muted-foreground">
-                        "People are looking at your units. Maybe you should post a Trade Ad for them to capitalize on this interest."
+                      <p className="text-[12px] text-muted-foreground leading-relaxed">
+                        People are looking at your units. Consider posting a Trade Ad for them to capitalize on this interest.
                       </p>
                     </div>
 
                     {viewedProfileData.vault_view_stats && Object.keys(viewedProfileData.vault_view_stats).length > 0 && (
-                      <div className="bg-popover rounded-[6px] border border-border p-2.5 flex flex-col gap-1 min-w-[200px] shrink-0">
+                      <div className="bg-popover rounded-[6px] border border-border p-3 flex flex-col gap-1 min-w-[220px] shrink-0">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
                           Most Inspected Units
                         </span>
@@ -1033,12 +1031,12 @@ export function InventoryChannel() {
                             const master = ALL_UNITS.find(u => u.id === unitId);
                             if (!master) return null;
                             return (
-                              <div key={unitId} className="flex items-center justify-between text-[11px] py-1 border-t border-border/50 first:border-0">
+                              <div key={unitId} className="flex items-center justify-between text-[11px] py-1.5 border-t border-border/50 first:border-0">
                                 <div className="flex items-center gap-2">
                                   <div className="w-5 h-5 rounded-[2px] overflow-hidden bg-muted border border-border relative shrink-0">
                                     <UnitAvatar unitId={master.id} unitName={master.name} imageUrl={master.imageUrl} />
                                   </div>
-                                  <span className="text-foreground font-medium truncate max-w-[120px]">{master.name}</span>
+                                  <span className="text-foreground font-bold truncate max-w-[120px]">{master.name}</span>
                                 </div>
                                 <span className="text-primary font-mono font-bold">{count} views</span>
                               </div>
@@ -1055,7 +1053,7 @@ export function InventoryChannel() {
                 activeTierFilter === "All" &&
                 (vaultView === "wishlist" ? (
                   <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6 mb-8">
-                    <div className="bg-card border border-border rounded-[8px] p-4 sm:p-6 flex flex-col justify-center relative shadow-sm">
+                    <div className="bg-card border border-border rounded-[8px] p-5 sm:p-6 flex flex-col justify-center relative shadow-sm">
                       <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-4">
                         {isReadOnly && viewingUsername
                           ? `${viewingUsername}'s Wishlist Progress`
@@ -1069,7 +1067,7 @@ export function InventoryChannel() {
                               / {metrics.estimatedValue.toLocaleString()}
                             </span>
                           </span>
-                          <span className="text-[11px] text-muted-foreground mt-2 font-medium">
+                          <span className="text-[12px] text-muted-foreground mt-2 font-medium">
                             Vault Net Worth vs Wishlist Target Value
                           </span>
                         </div>
@@ -1084,11 +1082,11 @@ export function InventoryChannel() {
                         />
                       </div>
                     </div>
-                    <div className="bg-card border border-border rounded-[8px] p-4 sm:p-6 flex flex-col shadow-sm">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
+                    <div className="bg-card border border-border rounded-[8px] p-5 sm:p-6 flex flex-col shadow-sm">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-4">
                         Most Expensive Targets
                       </span>
-                      <div className="flex flex-col gap-2.5 flex-1 justify-center">
+                      <div className="flex flex-col gap-3 flex-1 justify-center">
                         {top3Units.map((item, idx) => {
                           const proxyUrl = getProxyImage(
                             item.master.id,
@@ -1098,7 +1096,7 @@ export function InventoryChannel() {
                           return (
                             <div
                               key={item.id}
-                              className="flex items-center justify-between p-2.5 rounded-[4px] bg-muted border border-border"
+                              className="flex items-center justify-between p-3 rounded-[4px] bg-muted border border-border"
                             >
                               <div className="flex items-center gap-3 min-w-0 pr-2">
                                 <span className="font-mono font-black text-[12px] text-muted-foreground w-6 text-center shrink-0 py-0.5">
@@ -1140,7 +1138,7 @@ export function InventoryChannel() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6 mb-8">
-                    <div className="bg-card border border-border rounded-[8px] p-4 sm:p-6 flex flex-col justify-between relative shadow-sm">
+                    <div className="bg-card border border-border rounded-[8px] p-5 sm:p-6 flex flex-col justify-between relative shadow-sm">
                       <Sparkline />
                       <div className="relative z-10">
                         <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
@@ -1174,7 +1172,7 @@ export function InventoryChannel() {
 
                         <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-border">
                           <div className="bg-muted p-3 rounded-[4px] border border-border flex flex-col">
-                            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                               Liquid Assets
                             </span>
                             <span className="text-[14px] font-bold text-foreground font-mono mt-0.5">
@@ -1182,7 +1180,7 @@ export function InventoryChannel() {
                             </span>
                           </div>
                           <div className="bg-muted p-3 rounded-[4px] border border-border flex flex-col">
-                            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                               UNOB Proportion
                             </span>
                             <span className="text-[13px] sm:text-[14px] font-bold text-foreground font-mono mt-0.5 truncate" title={`${metrics.unobPercentage.toFixed(0)}% Unobtainable`}>
@@ -1226,7 +1224,7 @@ export function InventoryChannel() {
                             )}%`}
                           />
                         </div>
-                        <div className="flex justify-between items-center text-[9px] font-bold text-muted-foreground">
+                        <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground">
                           <span>High: {metrics.highPct.toFixed(0)}%</span>
                           <span>Avg: {metrics.avgPct.toFixed(0)}%</span>
                           <span>Low: {metrics.lowPct.toFixed(0)}%</span>
@@ -1234,12 +1232,12 @@ export function InventoryChannel() {
                       </div>
                     </div>
 
-                    <div className="bg-card border border-border rounded-[8px] p-4 sm:p-6 flex flex-col shadow-sm">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
+                    <div className="bg-card border border-border rounded-[8px] p-5 sm:p-6 flex flex-col shadow-sm">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-4">
                         Crown Assets
                       </span>
 
-                      <div className="flex flex-col gap-2.5 flex-1 justify-center">
+                      <div className="flex flex-col gap-3 flex-1 justify-center">
                         {top3Units.map((item, idx) => {
                           const proxyUrl = getProxyImage(
                             item.master.id,
@@ -1256,7 +1254,7 @@ export function InventoryChannel() {
                           return (
                             <div
                               key={item.id}
-                              className="flex items-center justify-between p-2.5 rounded-[4px] bg-muted border border-border"
+                              className="flex items-center justify-between p-3 rounded-[4px] bg-muted border border-border"
                             >
                               <div className="flex items-center gap-3 min-w-0 pr-2">
                                 <span className="font-mono font-black text-[12px] text-muted-foreground w-6 text-center shrink-0 py-0.5">
@@ -1303,7 +1301,7 @@ export function InventoryChannel() {
                   </div>
                 ))}
 
-              {/* Unit Cards Grid */}
+              {/* Unit Cards Grid with Sticky Tier Headers */}
               {totalFilteredUnits === 0 ? (
                 <div className="py-12 max-w-lg mx-auto">
                   <EmptyState
@@ -1326,7 +1324,7 @@ export function InventoryChannel() {
                   />
                 </div>
               ) : (
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-10">
                   {TIER_ORDER.map((tier) => {
                     const tierItems = tierGroupedUnits[tier] || [];
                     if (tierItems.length === 0) return null;
@@ -1346,57 +1344,61 @@ export function InventoryChannel() {
                       totalInTier > 0 ? (uniqueCollected / totalInTier) * 100 : 0;
 
                     return (
-                      <div key={tier} className="flex flex-col gap-3">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-[3px] h-[16px] rounded-full"
-                            style={{ backgroundColor: tierCfg.badgeColor }}
-                          />
-                          <h3 className="text-[15px] font-black uppercase tracking-wider text-foreground leading-none mt-0.5">
-                            {tierCfg.label}
-                          </h3>
-                          <span className="text-[11px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-[2px] border border-border ml-1 tabular-nums">
-                            {tierItems.reduce((s, i) => s + i.quantity, 0)} Units
-                          </span>
-
-                          {vaultView !== "wishlist" && (
-                            <div className="hidden md:flex items-center gap-2 ml-4">
-                              <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
-                                {uniqueCollected} / {totalInTier} Collected
-                              </span>
-                              <div className="w-20 h-1.5 bg-muted rounded-[2px] overflow-hidden border border-border">
-                                <div
-                                  className="h-full"
-                                  style={{
-                                    width: `${progressPct}%`,
-                                    backgroundColor: tierCfg.badgeColor,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="flex-1 h-px bg-border ml-2" />
-                          <button
-                            onClick={() =>
-                              setCollapsedTiers((prev) => ({
-                                ...prev,
-                                [tier]: !prev[tier],
-                              }))
-                            }
-                            aria-label={isCollapsed ? "Expand tier" : "Collapse tier"}
-                            className="p-1 rounded-[4px] hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer"
-                          >
-                            <IconChevronDown
-                              className={`w-4 h-4 transition-transform duration-200 ${
-                                isCollapsed ? "-rotate-90" : ""
-                              }`}
+                      <div key={tier} className="flex flex-col relative">
+                        {/* Sticky Tier Header */}
+                        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm pt-4 pb-3 -mx-3 px-3 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 border-b border-border/50 shadow-sm">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <div
+                              className="w-[4px] h-[20px] rounded-full shrink-0"
+                              style={{ backgroundColor: tierCfg.badgeColor }}
                             />
-                          </button>
+                            <h3 className="text-[18px] font-black uppercase tracking-wider text-foreground leading-none mt-0.5">
+                              {tierCfg.label}
+                            </h3>
+                            <span className="text-[12px] font-bold text-muted-foreground bg-muted px-2.5 py-1 rounded-[4px] border border-border ml-1 tabular-nums">
+                              {tierItems.reduce((s, i) => s + i.quantity, 0)} Units
+                            </span>
+
+                            {vaultView !== "wishlist" && (
+                              <div className="hidden md:flex items-center gap-3 ml-4">
+                                <span className="text-[11px] font-mono font-bold text-muted-foreground tabular-nums">
+                                  {uniqueCollected} / {totalInTier} Collected
+                                </span>
+                                <div className="w-24 h-2 bg-muted rounded-[2px] overflow-hidden border border-border">
+                                  <div
+                                    className="h-full"
+                                    style={{
+                                      width: `${progressPct}%`,
+                                      backgroundColor: tierCfg.badgeColor,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="flex-1" />
+                            <button
+                              onClick={() =>
+                                setCollapsedTiers((prev) => ({
+                                  ...prev,
+                                  [tier]: !prev[tier],
+                                }))
+                              }
+                              aria-label={isCollapsed ? "Expand tier" : "Collapse tier"}
+                              className="p-1.5 rounded-[4px] hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none cursor-pointer bg-card border border-border"
+                            >
+                              <IconChevronDown
+                                className={`w-5 h-5 transition-transform duration-200 ${
+                                  isCollapsed ? "-rotate-90" : ""
+                                }`}
+                              />
+                            </button>
+                          </div>
                         </div>
 
+                        {/* Grid Content */}
                         {!isCollapsed && (
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 pt-4">
                             {tierItems.map((item, idx) => {
                               const stagedGive =
                                 giveItems.find((g) => g.id === item.unit_id)
@@ -1455,7 +1457,7 @@ export function InventoryChannel() {
       {importMenuOpen && !isReadOnly && (
         <div className="absolute inset-0 z-[100000] flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-black/80"
+            className="absolute inset-0 bg-background"
             onClick={() => setImportMenuOpen(false)}
           />
           <div
@@ -1486,7 +1488,7 @@ export function InventoryChannel() {
                 Paste your inventory text below. The parser automatically
                 detects unit names and quantities (e.g.{" "}
                 <strong className="text-foreground">
-                  “3x Koku Drip, 1 Death”
+                  "3x Koku Drip, 1 Death"
                 </strong>
                 ).
               </p>
@@ -1508,7 +1510,7 @@ export function InventoryChannel() {
                     void executeMassImport();
                   }
                 }}
-                placeholder="Paste items here…"
+                placeholder="Paste items here..."
                 aria-label="Inventory text to import"
                 className="w-full h-[120px] bg-input border border-border rounded-[4px] p-3 text-base sm:text-[13px] text-foreground outline-none focus:border-foreground resize-none custom-scrollbar"
               />
@@ -1535,7 +1537,7 @@ export function InventoryChannel() {
                   </div>
                 ) : (
                   <span className="text-[11px] text-muted-foreground italic mt-1">
-                    Waiting for valid input…
+                    Waiting for valid input...
                   </span>
                 )}
               </div>
@@ -1551,7 +1553,7 @@ export function InventoryChannel() {
               <AsyncButton
                 onClick={executeMassImport}
                 isLoading={isImporting}
-                loadingAnnouncement="Importing…"
+                loadingAnnouncement="Importing..."
                 disabled={parsedImportItems.length === 0 || isImporting}
                 className="px-5 py-2 rounded-[4px] text-[12px] font-bold text-background bg-foreground hover:bg-foreground/90 disabled:bg-muted disabled:text-muted-foreground shadow-sm flex items-center gap-2 focus-visible:outline-none cursor-pointer"
               >
@@ -1566,7 +1568,7 @@ export function InventoryChannel() {
       {inspectTarget && (
         <div className="absolute inset-0 z-[100000] flex flex-col justify-end md:justify-center md:items-center p-0 md:p-4">
           <div
-            className="absolute inset-0 bg-black/80"
+            className="absolute inset-0 bg-background"
             onClick={() => setInspectTarget(null)}
           />
           <div
