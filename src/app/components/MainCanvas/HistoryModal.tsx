@@ -66,7 +66,7 @@ function getSnapNumericValue(
 }
 
 function formatSnapValue(snap: HistorySnapshot | undefined | null): string {
-  if (!snap) return "—";
+  if (!snap) return "N/A";
   if (isOwnerChoiceSnap(snap)) return "O/C";
   if (snap.value_display && snap.value_display.trim().length > 0) {
     return snap.value_display.trim();
@@ -77,7 +77,7 @@ function formatSnapValue(snap: HistorySnapshot | undefined | null): string {
   if (typeof snap.value_min === "number" && snap.value_min > 0) {
     return `${snap.value_min.toLocaleString()}+`;
   }
-  return "—";
+  return "N/A";
 }
 
 function formatLiquidityLabel(liq: string | null | undefined): string {
@@ -188,11 +188,6 @@ interface ChartPoint {
   prevSnap: HistorySnapshot | null;
 }
 
-/**
- * Renders structured before -> after rows for a snapshot pair.
- * Used in both the Latest Shift region and the Audit Timeline summary rows
- * so field transitions always align predictably.
- */
 function SnapshotDiffList({
   curr,
   prev,
@@ -217,17 +212,15 @@ function SnapshotDiffList({
 
   const rarityDiff = (curr.rarity ?? 0) - (prev.rarity ?? 0);
 
-  const currCfg =
-    GRID_STATUS_CFG[curr.status as keyof typeof GRID_STATUS_CFG];
-  const prevCfg =
-    GRID_STATUS_CFG[prev.status as keyof typeof GRID_STATUS_CFG];
+  const currCfg = GRID_STATUS_CFG[curr.status as keyof typeof GRID_STATUS_CFG];
+  const prevCfg = GRID_STATUS_CFG[prev.status as keyof typeof GRID_STATUS_CFG];
 
   return (
     <div
       className={
         compact
-          ? "flex flex-col gap-1.5"
-          : "grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2"
+          ? "flex flex-col gap-2"
+          : "grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5"
       }
     >
       {changed.includes("Value") && (
@@ -247,7 +240,7 @@ function SnapshotDiffList({
                   valPct >= 0 ? "text-[#23a559]" : "text-destructive"
                 }`}
               >
-                ({valPct >= 0 ? "+" : "−"}
+                ({valPct >= 0 ? "+" : "-"}
                 {Math.abs(valPct).toFixed(1)}%)
               </span>
             )}
@@ -260,7 +253,7 @@ function SnapshotDiffList({
           <span className="w-[64px] shrink-0 text-[12px] text-muted-foreground">
             Status
           </span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span
               className="text-[11px] font-bold font-mono uppercase tracking-wider px-2 py-0.5 rounded-[4px] border shadow-xs inline-flex items-center"
               style={{
@@ -301,7 +294,7 @@ function SnapshotDiffList({
             <span className="font-bold text-[#4DB6AC]">{curr.rarity ?? 0}</span>
             {rarityDiff !== 0 && (
               <span className="text-[11.5px] text-muted-foreground">
-                ({rarityDiff > 0 ? "+" : "−"}
+                ({rarityDiff > 0 ? "+" : "-"}
                 {Math.abs(rarityDiff)})
               </span>
             )}
@@ -328,16 +321,18 @@ function SnapshotDiffList({
 
       {changed.includes("Notice") && (
         <div
-          className={`flex items-baseline justify-between sm:justify-start gap-3 text-[12.5px] ${
+          className={`flex flex-col gap-1 text-[12.5px] ${
             compact ? "" : "sm:col-span-2"
           }`}
         >
-          <span className="w-[64px] shrink-0 text-[12px] text-muted-foreground">
+          <span className="text-[12px] text-muted-foreground font-medium">
             Notice
           </span>
-          <span className="text-foreground/90 italic leading-snug">
-            {curr.notice ? `“${curr.notice}”` : "Notice cleared"}
-          </span>
+          <div className="bg-muted/50 p-2.5 rounded-[4px] border border-border">
+            <span className="text-foreground/90 italic leading-snug">
+              {curr.notice ? `"${curr.notice}"` : "Notice cleared"}
+            </span>
+          </div>
         </div>
       )}
     </div>
@@ -508,7 +503,6 @@ export function HistoryModal() {
     };
   }, [isOpen, handleModalClose, selectedSnapId]);
 
-  // Synchronize browser address bar with /unit/:unitId when modal opens
   useEffect(() => {
     if (!isOpen || !currentUnit) return;
     const currentPath = window.location.pathname;
@@ -518,7 +512,6 @@ export function HistoryModal() {
     }
   }, [isOpen, currentUnit?.id]);
 
-  // Handle browser Back/Forward navigation to smoothly close modal
   useEffect(() => {
     const handlePopState = () => {
       if (
@@ -532,7 +525,6 @@ export function HistoryModal() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  // Build chronological snapshot list including live state if different
   const displayHistory = useMemo<HistorySnapshot[]>(() => {
     if (!currentUnit) return [];
     const list = [...history];
@@ -654,6 +646,16 @@ export function HistoryModal() {
     return timeline.filter((t) => t.changed.includes(timelineFilter));
   }, [timeline, timelineFilter]);
 
+  const groupedTimeline = useMemo(() => {
+    const groups: Record<string, TimelineEvent[]> = {};
+    filteredTimeline.forEach((t) => {
+      const dateKey = formatShortDate(t.snap.recorded_at);
+      if (!groups[dateKey]) groups[dateKey] = [];
+      groups[dateKey].push(t);
+    });
+    return Object.entries(groups);
+  }, [filteredTimeline]);
+
   const chartData = useMemo<ChartPoint[]>(() => {
     return filteredHistory.map((snap, idx) => {
       const prev = predecessorMap.get(snap.id) ?? null;
@@ -668,7 +670,7 @@ export function HistoryModal() {
         : formatShortDate(snap.recorded_at);
 
       let plotVal: number | null = null;
-      let displayLabel = "—";
+      let displayLabel = "N/A";
       let prevDisplayLabel: string | null = null;
       let deltaFromPrev: number | null = null;
       let pctFromPrev: number | null = null;
@@ -918,14 +920,13 @@ export function HistoryModal() {
       : currentUnit.valueDisplay ||
         (typeof currentUnit.value === "number"
           ? currentUnit.value.toLocaleString()
-          : "—");
+          : "N/A");
 
   const currentRarityVal = latestSnap?.rarity ?? currentUnit.rarity ?? 0;
   const currentLiqVal = formatLiquidityLabel(
     latestSnap?.liquidity ?? currentUnit.liquidity
   );
 
-  // Determine which snapshot shift is displayed in the "Latest Shift" / "Selected Snapshot" panel
   const activeShiftEvent: TimelineEvent | null = selectedPoint
     ? selectedPoint.prevSnap && selectedPoint.changedFields.length > 0
       ? {
@@ -970,7 +971,7 @@ export function HistoryModal() {
     setIsVaultPending(true);
     try {
       await addOrUpdateUnit(profile.id, currentUnit.id, 1);
-      addToast(`Added 1× ${currentUnit.name} to your Vault.`, "success", {
+      addToast(`Added 1x ${currentUnit.name} to your Vault.`, "success", {
         dedupeKey: `history-vault-${currentUnit.id}`,
       });
     } catch (err) {
@@ -1051,7 +1052,7 @@ export function HistoryModal() {
 
   const handleCopySummary = async () => {
     const lines: string[] = [
-      `${currentUnit.name} (${currentUnit.subtitle || "Official Unit"}) — Tier ${tierKey}`,
+      `${currentUnit.name} (${currentUnit.subtitle || "Official Unit"}) - Tier ${tierKey}`,
       `Value: ${currentValFormatted}${
         rangeSummary.valuePct !== null
           ? ` (${
@@ -1085,7 +1086,7 @@ export function HistoryModal() {
             )} -> ${formatLiquidityLabel(ev.snap.liquidity)}`
           );
         }
-        return `• ${formatShortDate(ev.snap.recorded_at)}: ${parts.join(", ")}`;
+        return `- ${formatShortDate(ev.snap.recorded_at)}: ${parts.join(", ")}`;
       });
       lines.push("Recent Shifts:", ...recent);
     } else {
@@ -1257,11 +1258,11 @@ export function HistoryModal() {
                 {activeMetric === "liquidity"
                   ? `${point.prevDisplayLabel} → ${point.displayLabel}`
                   : `${
-                      point.deltaFromPrev > 0 ? "+" : "−"
+                      point.deltaFromPrev > 0 ? "+" : "-"
                     }${Math.abs(point.deltaFromPrev).toLocaleString()}${
                       point.pctFromPrev !== null
                         ? ` (${
-                            point.pctFromPrev >= 0 ? "+" : "−"
+                            point.pctFromPrev >= 0 ? "+" : "-"
                           }${Math.abs(point.pctFromPrev).toFixed(1)}%)`
                         : ""
                     }`}
@@ -1291,26 +1292,26 @@ export function HistoryModal() {
         onClick={handleModalClose}
       />
 
-      <div className="bg-card border border-border rounded-none sm:rounded-[10px] w-full h-full sm:h-auto sm:max-w-5xl sm:max-h-[90vh] flex flex-col relative shadow-2xl overflow-hidden animate-slide-up">
+      <div className="bg-card border border-border rounded-none sm:rounded-[12px] w-full h-full sm:h-auto sm:max-w-6xl sm:max-h-[92vh] flex flex-col relative shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden animate-slide-up">
         <div
-          className="absolute top-0 left-0 right-0 h-[2px] z-[200]"
+          className="absolute top-0 left-0 right-0 h-[3px] z-[200]"
           style={{ background: tierCfg.badgeColor }}
         />
 
-        {/* SECTION A: Unit Header */}
+        {/* SECTION A: Unit Header (Sticky) */}
         <header
-          className={`px-4 sm:px-6 py-4 shrink-0 z-[100] bg-popover transition-colors ${
+          className={`px-4 sm:px-6 py-4 shrink-0 z-[100] bg-popover transition-shadow ${
             isScrolled
-              ? "border-b border-border shadow-sm"
-              : "border-b border-border/80"
+              ? "border-b border-border shadow-md"
+              : "border-b border-border"
           }`}
         >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
-            <div className="flex items-center justify-between sm:justify-start gap-3.5 min-w-0">
-              <div className="flex items-center gap-3.5 min-w-0">
-                <div className="relative overflow-hidden bg-black/30 flex items-center justify-center border border-border w-12 h-12 rounded-[6px] shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center justify-between sm:justify-start gap-4 min-w-0">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="relative overflow-hidden bg-[#0b0c0e] flex items-center justify-center border border-border w-14 h-14 rounded-[8px] shrink-0 shadow-sm">
                   <div
-                    className="absolute inset-0 flex items-center justify-center text-white font-bold text-base z-0"
+                    className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg z-0"
                     style={getAvatarStyle(currentUnit.name)}
                   >
                     {getInitials(currentUnit.name)}
@@ -1326,11 +1327,11 @@ export function HistoryModal() {
                   )}
                 </div>
 
-                <div className="flex flex-col min-w-0 gap-0.5">
+                <div className="flex flex-col min-w-0 gap-1">
                   <div className="flex items-center gap-2.5 flex-wrap">
                     <h2
                       id="history-modal-title"
-                      className="text-foreground text-[18px] sm:text-[20px] font-bold tracking-tight truncate leading-snug"
+                      className="text-foreground text-[20px] sm:text-[24px] font-black tracking-tight truncate leading-none"
                     >
                       {currentUnit.name}
                     </h2>
@@ -1351,20 +1352,20 @@ export function HistoryModal() {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground truncate">
+                  <div className="flex items-center gap-2 text-[13px] text-muted-foreground truncate font-medium">
                     <span className="truncate">
                       {currentUnit.subtitle || "Official Unit"}
                     </span>
-                    <span className="text-border">·</span>
+                    <span className="text-border">•</span>
                     <span
-                      className="font-semibold"
+                      className="font-bold"
                       style={{ color: tierCfg.badgeColor }}
                     >
                       Tier {tierKey}
                     </span>
                     {currentUnit.obtainability && (
                       <>
-                        <span className="text-border">·</span>
+                        <span className="text-border">•</span>
                         <span className="text-muted-foreground truncate">
                           {currentUnit.obtainability}
                         </span>
@@ -1378,14 +1379,14 @@ export function HistoryModal() {
                 type="button"
                 onClick={handleModalClose}
                 aria-label="Close"
-                className="sm:hidden text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-[6px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0 cursor-pointer"
+                className="sm:hidden text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-[6px] transition-colors focus-visible:outline-none shrink-0 cursor-pointer"
               >
                 <svg
                   viewBox="0 0 16 16"
                   fill="none"
-                  className="w-4 h-4"
+                  className="w-5 h-5"
                   stroke="currentColor"
-                  strokeWidth="1.8"
+                  strokeWidth="2"
                   strokeLinecap="round"
                   aria-hidden="true"
                 >
@@ -1395,7 +1396,7 @@ export function HistoryModal() {
             </div>
 
             <div
-              className="flex items-center gap-1.5 flex-wrap shrink-0"
+              className="flex items-center gap-2 flex-wrap shrink-0"
               aria-live="polite"
             >
               <AsyncButton
@@ -1405,14 +1406,14 @@ export function HistoryModal() {
                   await handleAddToVault();
                 }}
                 isLoading={isVaultPending}
-                className="px-2.5 py-1.5 rounded-[4px] border border-[#23a559]/40 bg-[#23a559] hover:bg-[#1f934f] text-white text-[11.5px] font-bold font-mono uppercase tracking-wider tabular-nums transition-colors shadow-xs"
+                className="px-3 py-2 rounded-[6px] border border-[#23a559]/40 bg-[#23a559] hover:bg-[#1f934f] text-white text-[12px] font-bold font-mono uppercase tracking-wider tabular-nums transition-colors shadow-sm active:scale-95"
                 title={
                   profile
                     ? "Add 1 copy to your Vault"
                     : "Sign in with Discord to save to your Vault"
                 }
               >
-                +Vault{vaultQty > 0 ? `\u00A0(${vaultQty})` : ""}
+                +Vault{vaultQty > 0 ? ` (${vaultQty})` : ""}
               </AsyncButton>
 
               <AsyncButton
@@ -1424,7 +1425,7 @@ export function HistoryModal() {
                 }}
                 isLoading={isWishlistPending}
                 aria-pressed={isWishlisted}
-                className={`px-2.5 py-1.5 rounded-[4px] text-[11.5px] font-bold font-mono uppercase tracking-wider transition-colors shadow-xs ${
+                className={`px-3 py-2 rounded-[6px] text-[12px] font-bold font-mono uppercase tracking-wider transition-colors shadow-sm active:scale-95 ${
                   isWishlisted
                     ? "border-[#8b5cf6]/40 bg-[#8b5cf6] text-white hover:bg-[#7c3aed]"
                     : "border-border bg-card hover:bg-muted text-foreground"
@@ -1444,10 +1445,10 @@ export function HistoryModal() {
               <button
                 type="button"
                 onClick={() => void handleShareUnitLink()}
-                className={`px-3 py-1.5 rounded-[6px] border text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-2 rounded-[6px] border text-[12px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer flex items-center gap-1.5 active:scale-95 ${
                   shareLinkCopied
                     ? "border-[#23a559]/40 bg-[#23a559]/10 text-[#23a559]"
-                    : "border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground"
+                    : "border-border bg-card hover:bg-muted text-foreground"
                 }`}
                 title="Copy shareable link to this unit"
                 aria-label="Share unit link"
@@ -1455,7 +1456,7 @@ export function HistoryModal() {
                 {shareLinkCopied ? (
                   <>
                     <GiCheckMark className="w-3.5 h-3.5 text-[#23a559]" />
-                    <span className="font-semibold text-[#23a559]">Copied Link</span>
+                    <span className="font-semibold text-[#23a559]">Copied</span>
                   </>
                 ) : (
                   <>
@@ -1472,7 +1473,7 @@ export function HistoryModal() {
                       <path d="M6.5 9.5a3.5 3.5 0 0 0 4.95 0l2-2a3.5 3.5 0 0 0-4.95-4.95l-1 1" />
                       <path d="M9.5 6.5a3.5 3.5 0 0 0-4.95 0l-2 2a3.5 3.5 0 0 0 4.95 4.95l1-1" />
                     </svg>
-                    <span className="hidden md:inline">Share Link</span>
+                    <span className="hidden md:inline">Share</span>
                   </>
                 )}
               </button>
@@ -1480,18 +1481,14 @@ export function HistoryModal() {
               <button
                 type="button"
                 onClick={handleCopySummary}
-                className="px-3 py-1.5 rounded-[6px] border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer flex items-center gap-1.5"
+                className="px-3 py-2 rounded-[6px] border border-border bg-card hover:bg-muted text-foreground text-[12px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer flex items-center gap-1.5 active:scale-95"
                 title="Copy plain-text market summary to clipboard"
                 aria-label="Copy market summary"
               >
                 {copyState === "copied" ? (
-                  <span className="text-[#23a559] font-semibold">
-                    Copied Summary
-                  </span>
+                  <span className="text-[#23a559] font-semibold">Copied</span>
                 ) : copyState === "error" ? (
-                  <span className="text-destructive font-semibold">
-                    Copy Failed
-                  </span>
+                  <span className="text-destructive font-semibold">Failed</span>
                 ) : (
                   <>
                     <svg
@@ -1517,14 +1514,14 @@ export function HistoryModal() {
                 type="button"
                 onClick={handleModalClose}
                 aria-label="Close"
-                className="hidden sm:inline-flex text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-[6px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0 cursor-pointer"
+                className="hidden sm:inline-flex text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-[6px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0 cursor-pointer ml-1"
               >
                 <svg
                   viewBox="0 0 16 16"
                   fill="none"
-                  className="w-4 h-4"
+                  className="w-5 h-5"
                   stroke="currentColor"
-                  strokeWidth="1.8"
+                  strokeWidth="2"
                   strokeLinecap="round"
                   aria-hidden="true"
                 >
@@ -1539,23 +1536,22 @@ export function HistoryModal() {
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 flex flex-col gap-6"
+          className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 flex flex-col gap-8 bg-background"
           style={{ fontVariantNumeric: "tabular-nums" }}
         >
           {/* UPPER WORKSPACE: Left Overview (4 cols) + Right Chart (8 cols) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* LEFT COLUMN: Current Statistics, Latest Shift, Unit Notes */}
-            <div className="lg:col-span-4 flex flex-col gap-4 min-w-0">
-              {/* SECTION B: Current Market Statistics (Unified Group) */}
-              <section
-                aria-label="Current market statistics"
-                className="flex flex-col gap-2"
-              >
-                <div className="flex items-baseline justify-between gap-2">
-                  <h3 className="text-[13px] font-semibold text-foreground">
+            
+            {/* LEFT COLUMN */}
+            <div className="lg:col-span-4 flex flex-col gap-5 min-w-0">
+              
+              {/* SECTION B: Market Statistics */}
+              <section aria-label="Current market statistics" className="flex flex-col gap-2">
+                <div className="flex items-baseline justify-between gap-2 px-1">
+                  <h3 className="text-[13px] font-bold text-foreground uppercase tracking-wider">
                     Market Statistics
                   </h3>
-                  <span className="text-[11.5px] text-muted-foreground">
+                  <span className="text-[11px] text-muted-foreground font-medium">
                     Select to switch chart
                   </span>
                 </div>
@@ -1563,9 +1559,9 @@ export function HistoryModal() {
                 <div
                   role="tablist"
                   aria-label="Select historical metric to chart"
-                  className="rounded-[8px] border border-border bg-popover overflow-hidden divide-y divide-border"
+                  className="rounded-[8px] border border-border bg-card overflow-hidden divide-y divide-border shadow-sm"
                 >
-                  {/* Primary Statistic: Current Value */}
+                  {/* Primary Statistic */}
                   <button
                     type="button"
                     role="tab"
@@ -1574,30 +1570,30 @@ export function HistoryModal() {
                       triggerHaptic("light");
                       setActiveMetric("value");
                     }}
-                    className={`w-full px-4 py-3.5 text-left transition-colors relative flex flex-col gap-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${
+                    className={`w-full px-4 py-4 text-left transition-colors relative flex flex-col gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${
                       activeMetric === "value"
-                        ? "bg-primary/[0.08]"
-                        : "hover:bg-muted/40"
+                        ? "bg-primary/[0.06]"
+                        : "hover:bg-muted/50"
                     }`}
                   >
                     {activeMetric === "value" && (
                       <div className="absolute top-0 left-0 bottom-0 w-[3px] bg-primary" />
                     )}
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[12px] font-medium text-muted-foreground flex items-center gap-1.5">
+                      <span className="text-[12px] font-semibold text-muted-foreground flex items-center gap-1.5">
                         Current Value
                         {activeMetric === "value" && (
-                          <span className="text-[10.5px] font-semibold text-primary">
-                            · Charting
+                          <span className="text-[10.5px] font-bold text-primary">
+                            Charting
                           </span>
                         )}
                       </span>
                       {rangeSummary.valuePct !== null && (
                         <span
-                          className={`text-[12px] font-semibold font-mono ${
+                          className={`text-[12px] font-bold font-mono px-1.5 py-0.5 rounded-[4px] border ${
                             rangeSummary.valuePct >= 0
-                              ? "text-[#23a559]"
-                              : "text-destructive"
+                              ? "bg-[#23a559]/10 text-[#23a559] border-[#23a559]/20"
+                              : "bg-destructive/10 text-destructive border-destructive/20"
                           }`}
                           title={
                             rangeSummary.baselineDate
@@ -1605,19 +1601,19 @@ export function HistoryModal() {
                               : undefined
                           }
                         >
-                          {rangeSummary.valuePct >= 0 ? "+" : "−"}
+                          {rangeSummary.valuePct >= 0 ? "+" : "-"}
                           {Math.abs(rangeSummary.valuePct).toFixed(1)}%
                         </span>
                       )}
                     </div>
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-[22px] sm:text-[24px] font-bold font-mono text-foreground tracking-tight truncate">
+                      <span className="text-[26px] font-black font-mono text-foreground tracking-tight truncate">
                         {currentValFormatted}
                       </span>
                       {rangeSummary.valueDelta !== null &&
                         rangeSummary.valueDelta !== 0 && (
-                          <span className="text-[11.5px] font-mono text-muted-foreground">
-                            {rangeSummary.valueDelta > 0 ? "+" : "−"}
+                          <span className="text-[12px] font-mono text-muted-foreground font-semibold">
+                            {rangeSummary.valueDelta > 0 ? "+" : "-"}
                             {Math.abs(rangeSummary.valueDelta).toLocaleString()}{" "}
                             ({rangeFilter})
                           </span>
@@ -1625,9 +1621,8 @@ export function HistoryModal() {
                     </div>
                   </button>
 
-                  {/* Secondary Statistics Row: Rarity & Liquidity */}
+                  {/* Secondary Statistics */}
                   <div className="grid grid-cols-2 divide-x divide-border">
-                    {/* Rarity */}
                     <button
                       type="button"
                       role="tab"
@@ -1636,44 +1631,43 @@ export function HistoryModal() {
                         triggerHaptic("light");
                         setActiveMetric("rarity");
                       }}
-                      className={`px-4 py-3 text-left transition-colors relative flex flex-col gap-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#4DB6AC] ${
+                      className={`px-4 py-3.5 text-left transition-colors relative flex flex-col gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#4DB6AC] ${
                         activeMetric === "rarity"
-                          ? "bg-[#4DB6AC]/[0.08]"
-                          : "hover:bg-muted/40"
+                          ? "bg-[#4DB6AC]/[0.06]"
+                          : "hover:bg-muted/50"
                       }`}
                     >
                       {activeMetric === "rarity" && (
                         <div className="absolute top-0 left-0 bottom-0 w-[3px] bg-[#4DB6AC]" />
                       )}
                       <div className="flex items-center justify-between gap-1">
-                        <span className="text-[12px] font-medium text-muted-foreground">
+                        <span className="text-[12px] font-semibold text-muted-foreground">
                           Rarity
                         </span>
                         {activeMetric === "rarity" ? (
-                          <span className="text-[10.5px] font-semibold text-[#4DB6AC]">
+                          <span className="text-[10.5px] font-bold text-[#4DB6AC]">
                             Charting
                           </span>
                         ) : (
                           rangeSummary.rarityDelta !== null &&
                           rangeSummary.rarityDelta !== 0 && (
-                            <span className="text-[11px] font-mono font-semibold text-[#4DB6AC]">
-                              {rangeSummary.rarityDelta > 0 ? "+" : "−"}
+                            <span className="text-[11px] font-mono font-bold text-[#4DB6AC]">
+                              {rangeSummary.rarityDelta > 0 ? "+" : "-"}
                               {Math.abs(rangeSummary.rarityDelta)}
                             </span>
                           )
                         )}
                       </div>
                       <div className="flex items-baseline gap-1 font-mono">
-                        <span className="text-[17px] font-bold text-[#4DB6AC]">
+                        <span className="text-[20px] font-black text-[#4DB6AC]">
                           {currentRarityVal}
                         </span>
-                        <span className="text-[12px] text-muted-foreground">
+                        <span className="text-[13px] text-muted-foreground font-semibold">
                           / 20
                         </span>
                       </div>
                     </button>
 
-                    {/* Liquidity */}
                     <button
                       type="button"
                       role="tab"
@@ -1682,26 +1676,26 @@ export function HistoryModal() {
                         triggerHaptic("light");
                         setActiveMetric("liquidity");
                       }}
-                      className={`px-4 py-3 text-left transition-colors relative flex flex-col gap-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#81C784] ${
+                      className={`px-4 py-3.5 text-left transition-colors relative flex flex-col gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#81C784] ${
                         activeMetric === "liquidity"
-                          ? "bg-[#81C784]/[0.08]"
-                          : "hover:bg-muted/40"
+                          ? "bg-[#81C784]/[0.06]"
+                          : "hover:bg-muted/50"
                       }`}
                     >
                       {activeMetric === "liquidity" && (
                         <div className="absolute top-0 left-0 bottom-0 w-[3px] bg-[#81C784]" />
                       )}
                       <div className="flex items-center justify-between gap-1">
-                        <span className="text-[12px] font-medium text-muted-foreground">
+                        <span className="text-[12px] font-semibold text-muted-foreground">
                           Liquidity
                         </span>
                         {activeMetric === "liquidity" && (
-                          <span className="text-[10.5px] font-semibold text-[#81C784]">
+                          <span className="text-[10.5px] font-bold text-[#81C784]">
                             Charting
                           </span>
                         )}
                       </div>
-                      <span className="text-[16px] font-bold font-mono text-[#81C784] truncate">
+                      <span className="text-[18px] font-black font-mono text-[#81C784] truncate">
                         {currentLiqVal}
                       </span>
                     </button>
@@ -1709,34 +1703,34 @@ export function HistoryModal() {
                 </div>
               </section>
 
-              {/* SECTION C: Latest Shift / Selected Snapshot (Distinct Region) */}
+              {/* SECTION C: Latest Shift */}
               <section
                 aria-label="Latest market shift and comparison"
-                className="rounded-[8px] border border-border bg-popover/60 p-4 flex flex-col gap-3"
+                className="rounded-[8px] border border-border bg-card p-4 flex flex-col gap-3 shadow-sm"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-col gap-0.5">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-[13px] font-semibold text-foreground">
+                      <h3 className="text-[13px] font-bold text-foreground uppercase tracking-wider">
                         {selectedPoint ? "Selected Snapshot" : "Latest Shift"}
                       </h3>
                       {selectedPoint && (
                         <button
                           type="button"
                           onClick={() => setSelectedSnapId(null)}
-                          className="text-[11px] font-medium text-primary hover:underline cursor-pointer"
+                          className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
                         >
                           Reset to latest
                         </button>
                       )}
                     </div>
                     {activeShiftEvent ? (
-                      <span className="text-[11.5px] font-mono text-muted-foreground">
+                      <span className="text-[11.5px] font-mono text-muted-foreground font-medium">
                         {activeShiftEvent.dateFormatted} ·{" "}
                         {activeShiftEvent.relativeTime}
                       </span>
                     ) : selectedPoint ? (
-                      <span className="text-[11.5px] font-mono text-muted-foreground">
+                      <span className="text-[11.5px] font-mono text-muted-foreground font-medium">
                         {selectedPoint.fullDate} · {selectedPoint.relativeTime}
                       </span>
                     ) : null}
@@ -1750,10 +1744,10 @@ export function HistoryModal() {
                         setIsCompareOpen((v) => !v);
                       }}
                       aria-expanded={isCompareOpen}
-                      className={`px-2.5 py-1 rounded-[5px] text-[11.5px] font-medium border transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                      className={`px-2.5 py-1 rounded-[5px] text-[11.5px] font-bold border transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                         isCompareOpen
                           ? "bg-primary/15 border-primary/40 text-primary"
-                          : "bg-card border-border text-muted-foreground hover:text-foreground"
+                          : "bg-popover border-border text-muted-foreground hover:text-foreground hover:bg-muted"
                       }`}
                     >
                       {isCompareOpen ? "Hide Compare" : "Compare"}
@@ -1761,9 +1755,8 @@ export function HistoryModal() {
                   )}
                 </div>
 
-                {/* Shift Rows */}
                 {activeShiftEvent ? (
-                  <div className="pt-2 border-t border-border/60">
+                  <div className="pt-3 border-t border-border/60">
                     <SnapshotDiffList
                       curr={activeShiftEvent.snap}
                       prev={activeShiftEvent.prev}
@@ -1772,25 +1765,24 @@ export function HistoryModal() {
                     />
                   </div>
                 ) : selectedPoint ? (
-                  <p className="text-[12.5px] text-muted-foreground pt-2 border-t border-border/60">
+                  <p className="text-[12.5px] text-muted-foreground pt-3 border-t border-border/60 leading-relaxed">
                     Initial baseline snapshot in this sequence (
-                    <span className="font-mono text-foreground font-semibold">
+                    <span className="font-mono text-foreground font-bold">
                       {selectedPoint.displayLabel}
                     </span>
                     ). No prior snapshot to diff against.
                   </p>
                 ) : (
-                  <p className="text-[12.5px] text-muted-foreground">
+                  <p className="text-[12.5px] text-muted-foreground leading-relaxed">
                     No recorded field changes in the {rangeFilter} window.
                   </p>
                 )}
 
-                {/* Optional Snapshot Comparison Tool */}
                 {isCompareOpen && compareTargetCurr && compareTargetPrev && (
-                  <div className="pt-3 border-t border-border flex flex-col gap-2.5">
-                    <div className="flex flex-col gap-1.5">
+                  <div className="pt-4 border-t border-border flex flex-col gap-3">
+                    <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-[12px] font-semibold text-foreground">
+                        <span className="text-[12px] font-bold text-foreground uppercase tracking-wider">
                           Snapshot Comparison
                         </span>
                         <div
@@ -1801,9 +1793,9 @@ export function HistoryModal() {
                           <button
                             type="button"
                             onClick={() => setCompareMode("previous")}
-                            className={`px-2 py-0.5 rounded-[4px] text-[11px] font-medium transition-colors cursor-pointer ${
+                            className={`px-2.5 py-1 rounded-[3px] text-[11px] font-bold transition-colors cursor-pointer ${
                               compareMode === "previous"
-                                ? "bg-popover text-foreground font-semibold shadow-sm"
+                                ? "bg-muted text-foreground shadow-sm"
                                 : "text-muted-foreground hover:text-foreground"
                             }`}
                           >
@@ -1812,9 +1804,9 @@ export function HistoryModal() {
                           <button
                             type="button"
                             onClick={() => setCompareMode("baseline")}
-                            className={`px-2 py-0.5 rounded-[4px] text-[11px] font-medium transition-colors cursor-pointer ${
+                            className={`px-2.5 py-1 rounded-[3px] text-[11px] font-bold transition-colors cursor-pointer ${
                               compareMode === "baseline"
-                                ? "bg-popover text-foreground font-semibold shadow-sm"
+                                ? "bg-muted text-foreground shadow-sm"
                                 : "text-muted-foreground hover:text-foreground"
                             }`}
                           >
@@ -1825,7 +1817,7 @@ export function HistoryModal() {
                       <span className="text-[11.5px] font-mono text-muted-foreground">
                         Comparing{" "}
                         {formatShortDate(compareTargetPrev.recorded_at)} →{" "}
-                        <strong className="text-foreground font-semibold">
+                        <strong className="text-foreground font-bold">
                           {compareTargetCurr.id === "live-now"
                             ? "Current"
                             : formatShortDate(compareTargetCurr.recorded_at)}
@@ -1833,7 +1825,7 @@ export function HistoryModal() {
                       </span>
                     </div>
 
-                    <div className="rounded-[6px] bg-black/25 border border-border/60 px-3 py-1.5 divide-y divide-border/50 text-[12.5px]">
+                    <div className="rounded-[6px] bg-background border border-border px-3 py-2 divide-y divide-border text-[12.5px]">
                       {(
                         [
                           {
@@ -1867,9 +1859,9 @@ export function HistoryModal() {
                         return (
                           <div
                             key={row.label}
-                            className="py-1.5 flex items-center justify-between gap-2"
+                            className="py-2 flex items-center justify-between gap-2"
                           >
-                            <span className="text-[12px] text-muted-foreground">
+                            <span className="text-[12px] font-medium text-muted-foreground">
                               {row.label}
                             </span>
                             {isSame ? (
@@ -1880,8 +1872,8 @@ export function HistoryModal() {
                                 </span>
                               </span>
                             ) : (
-                              <span className="font-mono font-semibold text-foreground capitalize">
-                                <span className="text-muted-foreground font-normal">
+                              <span className="font-mono font-bold text-foreground capitalize">
+                                <span className="text-muted-foreground font-normal line-through decoration-muted-foreground/50">
                                   {row.before}
                                 </span>{" "}
                                 → {row.after}
@@ -1895,29 +1887,27 @@ export function HistoryModal() {
                 )}
               </section>
 
-              {/* SECTION D: Unit Notice & Market Tags (Separate Background Context) */}
+              {/* SECTION D: Unit Notice */}
               {hasUnitContext && (
                 <section
                   aria-label="Unit notice and market tags"
-                  className="rounded-[8px] border border-border/80 bg-popover/30 p-4 flex flex-col gap-3"
+                  className="rounded-[8px] border border-border bg-card p-4 flex flex-col gap-3 shadow-sm"
                 >
-                  <h3 className="text-[13px] font-semibold text-foreground">
-                    Unit Notes & Context
+                  <h3 className="text-[13px] font-bold text-foreground uppercase tracking-wider">
+                    Unit Notes
                   </h3>
-
                   {currentUnit.notice && (
-                    <p className="text-[13px] text-foreground/90 leading-relaxed">
+                    <p className="text-[13px] text-foreground/90 leading-relaxed font-medium bg-muted/50 p-3 rounded-[6px] border border-border">
                       {currentUnit.notice}
                     </p>
                   )}
-
                   {currentUnit.secondaryTags &&
                     currentUnit.secondaryTags.length > 0 && (
                       <div className="flex flex-wrap gap-1.5">
                         {currentUnit.secondaryTags.map((tag) => (
                           <span
                             key={tag}
-                            className="text-[11.5px] font-medium px-2.5 py-0.5 rounded-[4px] bg-muted/70 text-muted-foreground"
+                            className="text-[11.5px] font-bold px-2.5 py-1 rounded-[4px] bg-muted text-muted-foreground border border-border"
                           >
                             {tag}
                           </span>
@@ -1928,25 +1918,24 @@ export function HistoryModal() {
               )}
             </div>
 
-            {/* RIGHT COLUMN: Historical Chart Workspace (Section E) */}
+            {/* RIGHT COLUMN: Chart */}
             <section
               aria-label="Historical chart"
-              className="lg:col-span-8 flex flex-col gap-2 min-w-0"
+              className="lg:col-span-8 flex flex-col gap-3 min-w-0"
             >
-              {/* Chart Header: 1. Metric, 2. Time Range, 3. Snapshot Count */}
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                <div className="flex flex-col gap-0.5">
+              <div className="flex items-center justify-between flex-wrap gap-4 bg-card p-4 rounded-[8px] border border-border shadow-sm">
+                <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">
                     <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      className="w-3 h-3 rounded-full shrink-0"
                       style={{ backgroundColor: currentConfig.color }}
                       aria-hidden="true"
                     />
-                    <h3 className="text-foreground text-[14px] font-semibold">
+                    <h3 className="text-foreground text-[16px] font-bold">
                       {currentConfig.label}
                     </h3>
                   </div>
-                  <div className="flex items-center gap-2 text-[12px] text-muted-foreground flex-wrap">
+                  <div className="flex items-center gap-2 text-[12px] text-muted-foreground flex-wrap font-medium">
                     <span className="font-mono">
                       {filteredHistory.length} snapshot
                       {filteredHistory.length === 1 ? "" : "s"} in range
@@ -1954,45 +1943,33 @@ export function HistoryModal() {
                     {activeMetric !== "liquidity" &&
                       plottableChartData.length > 1 && (
                         <>
-                          <span className="text-border">·</span>
+                          <span className="text-border">•</span>
                           <span className="font-mono">
                             High{" "}
-                            <strong className="text-foreground font-semibold">
+                            <strong className="text-foreground font-bold">
                               {rangeSummary.maxVal.toLocaleString()}
                             </strong>
                           </span>
-                          <span className="text-border">·</span>
+                          <span className="text-border">•</span>
                           <span className="font-mono">
                             Low{" "}
-                            <strong className="text-foreground font-semibold">
+                            <strong className="text-foreground font-bold">
                               {rangeSummary.minVal.toLocaleString()}
                             </strong>
                           </span>
                         </>
                       )}
-                    {activeMetric === "liquidity" &&
-                      filteredHistory.length > 1 && (
-                        <>
-                          <span className="text-border">·</span>
-                          <span className="font-mono">
-                            {rangeSummary.liqStart} →{" "}
-                            <strong className="text-foreground font-semibold">
-                              {rangeSummary.liqEnd}
-                            </strong>
-                          </span>
-                        </>
-                      )}
                     {activeMetric === "value" && ocSnapshotCount > 0 && (
-                      <span className="text-[#FAA61A] font-mono">
-                        · {ocSnapshotCount} O/C
+                      <span className="text-[#FAA61A] font-bold bg-[#FAA61A]/10 px-1.5 py-0.5 rounded border border-[#FAA61A]/20">
+                        {ocSnapshotCount} O/C
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* Time Range Filter: 7D, 30D, 90D, ALL */}
+                {/* Time Range Filter */}
                 <div
-                  className="inline-flex items-center bg-popover p-0.5 rounded-[6px] border border-border font-mono"
+                  className="inline-flex items-center bg-popover p-1 rounded-[6px] border border-border font-mono shadow-inner"
                   role="group"
                   aria-label="Filter chart by time range"
                 >
@@ -2009,12 +1986,12 @@ export function HistoryModal() {
                           triggerHaptic("light");
                           setRangeFilter(rk);
                         }}
-                        className={`px-3 py-1 rounded-[5px] text-[11.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                        className={`px-3 py-1.5 rounded-[4px] text-[12px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                           disabled
                             ? "opacity-40 cursor-not-allowed text-muted-foreground"
                             : active
-                            ? "bg-primary text-primary-foreground shadow-sm cursor-pointer"
-                            : "text-muted-foreground hover:text-foreground cursor-pointer"
+                            ? "bg-foreground text-background shadow-sm cursor-pointer"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
                         }`}
                         title={
                           rk === "ALL"
@@ -2029,11 +2006,10 @@ export function HistoryModal() {
                 </div>
               </div>
 
-              {/* Unified Chart Frame + Snapshot Inspector Bar */}
-              <div className="rounded-[8px] border border-border bg-popover overflow-hidden flex flex-col">
-                {/* Plotting Area */}
+              {/* Chart Frame */}
+              <div className="rounded-[8px] border border-border bg-card overflow-hidden flex flex-col shadow-sm">
                 {showChartSkeleton ? (
-                  <div className="h-[290px] p-6 flex flex-col justify-between animate-pulse">
+                  <div className="h-[320px] p-6 flex flex-col justify-between animate-pulse">
                     <div className="h-full w-full flex flex-col justify-evenly">
                       <div className="border-t border-border/40" />
                       <div className="border-t border-border/40" />
@@ -2041,22 +2017,22 @@ export function HistoryModal() {
                     </div>
                   </div>
                 ) : error ? (
-                  <div className="h-[290px] flex flex-col items-center justify-center text-center p-6 gap-1.5">
-                    <span className="text-[14px] font-semibold text-destructive">
+                  <div className="h-[320px] flex flex-col items-center justify-center text-center p-6 gap-2">
+                    <span className="text-[15px] font-bold text-destructive">
                       Unable to Load Unit History
                     </span>
-                    <p className="text-[12.5px] text-muted-foreground max-w-sm">
+                    <p className="text-[13px] text-muted-foreground max-w-sm">
                       {error}
                     </p>
                   </div>
                 ) : displayHistory.length <= 1 ? (
-                  <div className="flex flex-col items-center justify-center h-[290px] text-center p-6 gap-2">
-                    <p className="text-foreground font-semibold text-[14px]">
+                  <div className="flex flex-col items-center justify-center h-[320px] text-center p-6 gap-3">
+                    <p className="text-foreground font-bold text-[16px]">
                       Baseline Snapshot Recorded
                     </p>
-                    <p className="text-muted-foreground text-[13px] max-w-md leading-relaxed">
+                    <p className="text-muted-foreground text-[13.5px] max-w-md leading-relaxed">
                       {currentUnit.name} currently has 1 recorded snapshot (
-                      <span className="text-foreground font-mono font-semibold">
+                      <span className="text-foreground font-mono font-bold">
                         {currentValFormatted}
                       </span>
                       , Rarity {currentRarityVal}/20, {currentLiqVal}{" "}
@@ -2066,13 +2042,13 @@ export function HistoryModal() {
                   </div>
                 ) : activeMetric === "value" &&
                   plottableChartData.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-[290px] text-center p-6 gap-3">
-                    <div className="flex flex-col gap-1">
-                      <p className="text-foreground font-semibold text-[14px]">
-                        Owner’s Choice (Non-Numeric Value)
+                  <div className="flex flex-col items-center justify-center h-[320px] text-center p-6 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <p className="text-foreground font-bold text-[16px]">
+                        Owner's Choice (Non-Numeric Value)
                       </p>
-                      <p className="text-muted-foreground text-[13px] max-w-md leading-relaxed">
-                        This unit is valued as Owner’s Choice (O/C) in the
+                      <p className="text-muted-foreground text-[13.5px] max-w-md leading-relaxed">
+                        This unit is valued as Owner's Choice (O/C) in the
                         selected range and cannot be plotted on a numeric scale.
                       </p>
                     </div>
@@ -2080,28 +2056,28 @@ export function HistoryModal() {
                       <button
                         type="button"
                         onClick={() => setActiveMetric("rarity")}
-                        className="px-3 py-1.5 rounded-[6px] bg-card hover:bg-muted border border-border text-foreground text-[12px] font-medium transition-colors cursor-pointer"
+                        className="px-4 py-2 rounded-[6px] bg-muted hover:bg-popover border border-border text-foreground text-[12.5px] font-bold transition-colors cursor-pointer"
                       >
                         View Rarity Chart
                       </button>
                       <button
                         type="button"
                         onClick={() => setActiveMetric("liquidity")}
-                        className="px-3 py-1.5 rounded-[6px] bg-card hover:bg-muted border border-border text-foreground text-[12px] font-medium transition-colors cursor-pointer"
+                        className="px-4 py-2 rounded-[6px] bg-muted hover:bg-popover border border-border text-foreground text-[12.5px] font-bold transition-colors cursor-pointer"
                       >
                         View Liquidity Chart
                       </button>
                     </div>
                   </div>
                 ) : plottableChartData.length === 1 ? (
-                  <div className="flex flex-col items-center justify-center h-[290px] text-center p-6 gap-3">
-                    <div className="flex flex-col gap-1">
-                      <p className="text-foreground font-semibold text-[14px]">
+                  <div className="flex flex-col items-center justify-center h-[320px] text-center p-6 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <p className="text-foreground font-bold text-[16px]">
                         Single Snapshot in {rangeFilter} Range
                       </p>
-                      <p className="text-muted-foreground text-[13px] max-w-md leading-relaxed">
+                      <p className="text-muted-foreground text-[13.5px] max-w-md leading-relaxed">
                         Only 1 plottable snapshot (
-                        <span className="text-foreground font-mono font-semibold">
+                        <span className="text-foreground font-mono font-bold">
                           {plottableChartData[0].displayLabel}
                         </span>{" "}
                         on {plottableChartData[0].fullDate}) falls within this
@@ -2112,7 +2088,7 @@ export function HistoryModal() {
                       <button
                         type="button"
                         onClick={() => setRangeFilter("ALL")}
-                        className="px-3.5 py-1.5 rounded-[6px] bg-primary text-primary-foreground text-[12px] font-semibold transition-colors cursor-pointer"
+                        className="px-4 py-2 rounded-[6px] bg-primary text-primary-foreground text-[12.5px] font-bold transition-colors cursor-pointer hover:bg-primary/90 shadow-sm"
                       >
                         Switch to ALL ({displayHistory.length} snapshots)
                       </button>
@@ -2124,7 +2100,7 @@ export function HistoryModal() {
                     role="region"
                     aria-label={`${currentConfig.label} interactive chart. Use Left and Right arrow keys to step through snapshots.`}
                     onKeyDown={handleChartKeyDown}
-                    className="h-[280px] sm:h-[300px] w-full p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary flex items-center justify-center relative"
+                    className="h-[320px] sm:h-[360px] w-full p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary flex items-center justify-center relative bg-[#0b0c0e]"
                   >
                     {RechartsLib ? (
                       (() => {
@@ -2182,7 +2158,7 @@ export function HistoryModal() {
                               </defs>
                               <CartesianGrid
                                 strokeDasharray="2 4"
-                                stroke="rgba(255,255,255,0.05)"
+                                stroke="rgba(255,255,255,0.06)"
                                 vertical={false}
                               />
                               <XAxis
@@ -2256,12 +2232,12 @@ export function HistoryModal() {
                                 isAnimationActive={false}
                                 dataKey="value"
                                 stroke={currentConfig.color}
-                                strokeWidth={2}
+                                strokeWidth={2.5}
                                 fillOpacity={1}
                                 fill={`url(#${currentConfig.gradientId})`}
                                 dot={<CustomizedDot />}
                                 activeDot={{
-                                  r: 5.5,
+                                  r: 6,
                                   fill: currentConfig.color,
                                   stroke: "#111214",
                                   strokeWidth: 2,
@@ -2273,55 +2249,55 @@ export function HistoryModal() {
                       })()
                     ) : (
                       <span className="text-[12.5px] text-muted-foreground">
-                        Loading chart…
+                        Loading chart...
                       </span>
                     )}
                   </div>
                 )}
 
-                {/* 4 & 5: Snapshot Inspector Bar (Stepping + Selected Point Summary) */}
+                {/* Snapshot Inspector Bar */}
                 {chartData.length > 1 && (
-                  <div className="px-4 py-2.5 bg-card/60 border-t border-border flex flex-wrap items-center justify-between gap-3 text-[12px]">
+                  <div className="px-4 py-3 bg-popover border-t border-border flex flex-wrap items-center justify-between gap-3 text-[12px]">
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => handleStepSnapshot(-1)}
-                        className="px-2.5 py-1 rounded-[5px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        className="px-2.5 py-1 rounded-[4px] border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground font-bold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
                         title="Inspect previous historical snapshot (Left Arrow)"
                       >
-                        ‹ Prev Snapshot
+                        <span aria-hidden="true">‹</span> Prev
                       </button>
                       <button
                         type="button"
                         onClick={() => handleStepSnapshot(1)}
-                        className="px-2.5 py-1 rounded-[5px] border border-border bg-popover hover:bg-muted text-muted-foreground hover:text-foreground font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        className="px-2.5 py-1 rounded-[4px] border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground font-bold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
                         title="Inspect next historical snapshot (Right Arrow)"
                       >
-                        Next Snapshot ›
+                        Next <span aria-hidden="true">›</span>
                       </button>
                     </div>
 
                     {selectedPoint ? (
                       <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
-                        <span className="font-mono text-muted-foreground">
+                        <span className="font-mono text-muted-foreground font-medium">
                           Snapshot{" "}
                           <strong className="text-foreground">
                             {selectedPoint.index + 1} of {chartData.length}
                           </strong>{" "}
                           · {selectedPoint.fullDate} ·{" "}
-                          <strong className="text-foreground">
+                          <strong className="text-foreground font-bold">
                             {selectedPoint.displayLabel}
                           </strong>
                           {selectedPoint.pctFromPrev !== null &&
                             selectedPoint.pctFromPrev !== 0 && (
                               <span
-                                className={`ml-1.5 font-semibold ${
+                                className={`ml-1.5 font-bold ${
                                   selectedPoint.pctFromPrev > 0
                                     ? "text-[#23a559]"
                                     : "text-destructive"
                                 }`}
                               >
-                                ({selectedPoint.pctFromPrev > 0 ? "+" : "−"}
+                                ({selectedPoint.pctFromPrev > 0 ? "+" : "-"}
                                 {Math.abs(selectedPoint.pctFromPrev).toFixed(1)}
                                 %)
                               </span>
@@ -2330,15 +2306,14 @@ export function HistoryModal() {
                         <button
                           type="button"
                           onClick={() => setSelectedSnapId(null)}
-                          className="text-primary hover:underline font-medium cursor-pointer shrink-0"
+                          className="text-primary hover:underline font-bold cursor-pointer shrink-0 bg-primary/10 px-2 py-0.5 rounded-[4px]"
                         >
-                          Clear
+                          Clear Selection
                         </button>
                       </div>
                     ) : (
-                      <span className="text-muted-foreground">
-                        Select a chart point or timeline event to inspect a
-                        snapshot
+                      <span className="text-muted-foreground font-medium">
+                        Select a chart point or timeline event to inspect a snapshot
                       </span>
                     )}
                   </div>
@@ -2347,18 +2322,17 @@ export function HistoryModal() {
             </section>
           </div>
 
-          {/* SECTION F: Audit Timeline — Full-Width Historical Record */}
+          {/* SECTION F: Audit Timeline */}
           <section
             aria-label="Audit timeline"
-            className="flex flex-col gap-4 w-full pt-6 border-t border-border"
+            className="flex flex-col gap-5 w-full pt-8 border-t border-border"
           >
-            {/* Timeline Heading & Filter Toolbar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-baseline gap-2.5">
-                <h3 className="text-foreground text-[14px] font-semibold">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-baseline gap-3">
+                <h3 className="text-foreground text-[18px] font-bold">
                   Audit Timeline
                 </h3>
-                <span className="text-[12px] font-mono text-muted-foreground">
+                <span className="text-[13px] font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded-[4px] font-bold border border-border">
                   {filteredTimeline.length}{" "}
                   {filteredTimeline.length === 1
                     ? "recorded change"
@@ -2369,7 +2343,7 @@ export function HistoryModal() {
               {/* Predictable Filter Toolbar */}
               {timeline.length > 0 && (
                 <div
-                  className="flex items-center gap-1.5 flex-wrap"
+                  className="flex items-center gap-2 flex-wrap"
                   role="group"
                   aria-label="Filter timeline by changed field"
                 >
@@ -2394,16 +2368,16 @@ export function HistoryModal() {
                           triggerHaptic("light");
                           setTimelineFilter(f);
                         }}
-                        className={`px-3 py-1 rounded-[5px] text-[12px] font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary flex items-center gap-1.5 ${
+                        className={`px-3 py-1.5 rounded-[6px] text-[12px] font-bold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary flex items-center gap-2 border active:scale-95 ${
                           active
-                            ? "bg-primary text-primary-foreground font-semibold shadow-sm"
-                            : "bg-popover/80 border border-border/70 text-muted-foreground hover:text-foreground hover:bg-popover"
+                            ? "bg-foreground text-background border-foreground shadow-sm"
+                            : "bg-card border-border text-muted-foreground hover:text-foreground hover:bg-muted"
                         }`}
                       >
                         <span>{f}</span>
                         <span
-                          className={`font-mono text-[11px] ${
-                            active ? "opacity-90" : "opacity-65"
+                          className={`font-mono text-[10.5px] px-1.5 py-0.2 rounded-full font-bold ${
+                            active ? "bg-background/20 text-background" : "bg-muted text-muted-foreground border border-border"
                           }`}
                         >
                           {count}
@@ -2415,15 +2389,15 @@ export function HistoryModal() {
               )}
             </div>
 
-            {/* Timeline Event List */}
+            {/* Timeline Event List (Grouped by Date) */}
             {filteredTimeline.length === 0 ? (
-              <div className="py-10 px-6 text-center flex flex-col items-center justify-center gap-2 border border-border rounded-[8px] bg-popover/30">
-                <span className="text-[14px] font-semibold text-foreground">
+              <div className="py-12 px-6 text-center flex flex-col items-center justify-center gap-3 border border-border rounded-[8px] bg-card shadow-sm">
+                <span className="text-[16px] font-bold text-foreground">
                   {timeline.length === 0
                     ? "No Recorded Shifts Yet"
                     : `No ${timelineFilter} Changes in ${rangeFilter} Range`}
                 </span>
-                <p className="text-[13px] text-muted-foreground max-w-md">
+                <p className="text-[13.5px] text-muted-foreground max-w-md leading-relaxed font-medium">
                   {timeline.length === 0
                     ? `All snapshots for ${currentUnit.name} in this time window match its baseline values.`
                     : `No events modified ${timelineFilter.toLowerCase()} during this period.`}
@@ -2432,172 +2406,186 @@ export function HistoryModal() {
                   <button
                     type="button"
                     onClick={() => setTimelineFilter("All")}
-                    className="mt-1 px-3 py-1.5 rounded-[6px] bg-primary text-primary-foreground text-[12px] font-semibold transition-colors cursor-pointer"
+                    className="mt-2 px-4 py-2 rounded-[6px] bg-muted hover:bg-popover border border-border text-foreground text-[13px] font-bold transition-colors cursor-pointer active:scale-95"
                   >
                     Return to All ({timeline.length})
                   </button>
                 )}
               </div>
             ) : (
-              <div className="rounded-[8px] border border-border bg-popover/40 divide-y divide-border overflow-hidden">
-                {filteredTimeline.map((t) => {
-                  const isSelected = selectedSnapId === t.id;
-                  const isExpanded = !!expandedEventIds[t.id];
+              <div className="flex flex-col gap-8 relative pl-4 sm:pl-6">
+                {/* Vertical Line */}
+                <div className="absolute left-[27px] sm:left-[39px] top-2 bottom-2 w-[2px] bg-border/80" />
 
-                  return (
-                    <div
-                      key={t.id}
-                      ref={(el) => {
-                        timelineRefs.current[t.id] = el;
-                      }}
-                      className={`transition-colors relative ${
-                        isSelected ? "bg-primary/[0.06]" : ""
-                      }`}
-                    >
-                      {isSelected && (
-                        <div className="absolute top-0 left-0 bottom-0 w-[3px] bg-primary z-10" />
-                      )}
+                {groupedTimeline.map(([dateKey, events]) => (
+                  <div key={dateKey} className="flex flex-col gap-4 relative">
+                    {/* Date Header */}
+                    <div className="flex items-center gap-3 relative z-10">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-card border-2 border-border flex items-center justify-center shadow-sm shrink-0 -ml-3 sm:-ml-4">
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+                      </div>
+                      <span className="text-[13px] font-bold font-mono text-muted-foreground uppercase tracking-widest bg-background px-2 py-0.5 rounded-[4px] border border-border/50">
+                        {dateKey}
+                      </span>
+                    </div>
 
-                      {/* LEVEL 1: Event Summary */}
-                      <div
-                        onClick={() => handleSelectSnapshot(t.id, false)}
-                        className="px-4 py-3.5 sm:px-5 sm:py-4 grid grid-cols-1 md:grid-cols-[200px_1fr_auto] gap-3 md:gap-6 items-start md:items-center cursor-pointer hover:bg-popover/80 transition-colors"
-                      >
-                        {/* Timestamp Column */}
-                        <div className="flex md:flex-col items-baseline md:items-start justify-between gap-2">
-                          <span className="text-[12.5px] font-mono font-semibold text-foreground">
-                            {t.dateFormatted}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[11.5px] font-mono text-muted-foreground">
-                              {t.relativeTime}
-                            </span>
-                            {isSelected && (
-                              <span className="text-[10.5px] font-semibold text-primary">
-                                · Selected
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                    {/* Event Cards */}
+                    <div className="flex flex-col gap-4 ml-4 sm:ml-6">
+                      {events.map((t) => {
+                        const isSelected = selectedSnapId === t.id;
+                        const isExpanded = !!expandedEventIds[t.id];
 
-                        {/* Structured Field Changes */}
-                        <div className="min-w-0">
-                          <SnapshotDiffList
-                            curr={t.snap}
-                            prev={t.prev}
-                            changed={t.changed}
-                          />
-                        </div>
-
-                        {/* Details Action */}
-                        <div className="flex items-center justify-end md:self-center">
-                          <button
-                            type="button"
-                            aria-expanded={isExpanded}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              triggerHaptic("light");
-                              setExpandedEventIds((prev) => ({
-                                ...prev,
-                                [t.id]: !prev[t.id],
-                              }));
+                        return (
+                          <div
+                            key={t.id}
+                            ref={(el) => {
+                              timelineRefs.current[t.id] = el;
                             }}
-                            className={`px-2.5 py-1 rounded-[5px] text-[11.5px] font-medium border transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                              isExpanded
-                                ? "bg-primary/15 border-primary/40 text-primary"
-                                : "bg-card/80 border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                            className={`transition-all duration-200 relative rounded-[8px] border bg-card overflow-hidden group ${
+                              isSelected
+                                ? "border-primary shadow-[0_0_15px_rgba(var(--primary-rgb),0.15)]"
+                                : "border-border hover:border-border/80 shadow-sm"
                             }`}
                           >
-                            {isExpanded
-                              ? "Hide Details ▴"
-                              : "Snapshot Details ▾"}
-                          </button>
-                        </div>
-                      </div>
+                            {/* Timeline Connector */}
+                            <div className="absolute left-[-22px] sm:left-[-38px] top-5 w-[14px] sm:w-[22px] h-[2px] bg-border/80" />
 
-                      {/* LEVEL 2: Expanded Details (Visibly Distinct Recessed Region) */}
-                      {isExpanded && (
-                        <div
-                          onClick={(e) => e.stopPropagation()}
-                          className="bg-black/30 border-t border-border px-4 py-3.5 sm:px-5 sm:py-4 flex flex-col gap-3 cursor-default"
-                        >
-                          <div className="flex items-center justify-between flex-wrap gap-2">
-                            <span className="text-[12px] font-semibold text-foreground">
-                              Complete Snapshot Record
-                            </span>
-                            <span className="text-[11.5px] font-mono text-muted-foreground">
-                              ID: {t.snap.id.slice(0, 8)} · Recorded{" "}
-                              {t.dateFormatted}
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-[11.5px] text-muted-foreground">
-                                Recorded Value
-                              </span>
-                              <span className="text-[13.5px] font-mono font-bold text-foreground">
-                                {formatSnapValue(t.snap)}
-                              </span>
-                            </div>
-
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-[11.5px] text-muted-foreground">
-                                Market Status
-                              </span>
-                              <span className="text-[13.5px] font-semibold text-foreground capitalize">
-                                {t.snap.status || "stable"}
-                              </span>
-                            </div>
-
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-[11.5px] text-muted-foreground">
-                                Rarity Rating
-                              </span>
-                              <span className="text-[13.5px] font-mono font-bold text-[#4DB6AC]">
-                                {t.snap.rarity ?? 0} / 20
-                              </span>
-                            </div>
-
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-[11.5px] text-muted-foreground">
-                                Market Liquidity
-                              </span>
-                              <span className="text-[13.5px] font-mono font-bold text-[#81C784]">
-                                {formatLiquidityLabel(t.snap.liquidity)}
-                              </span>
-                            </div>
-                          </div>
-
-                          {(t.prev.notice || t.snap.notice) && (
-                            <div className="pt-2.5 border-t border-border/50 grid grid-cols-1 sm:grid-cols-2 gap-3 text-[12px]">
-                              <div className="flex flex-col gap-0.5">
-                                <span className="text-muted-foreground">
-                                  Previous Notice
+                            {/* LEVEL 1: Event Summary */}
+                            <div
+                              onClick={() => handleSelectSnapshot(t.id, false)}
+                              className={`px-4 py-3 sm:px-5 sm:py-4 flex flex-col sm:flex-row gap-4 sm:items-center cursor-pointer transition-colors ${
+                                isSelected ? "bg-primary/[0.04]" : "hover:bg-muted/40"
+                              }`}
+                            >
+                              
+                              {/* Timestamp */}
+                              <div className="flex sm:flex-col items-baseline sm:items-start justify-between gap-1 w-full sm:w-[150px] shrink-0 border-b sm:border-b-0 sm:border-r border-border/50 pb-2 sm:pb-0 sm:pr-4">
+                                <span className="text-[13px] font-bold font-mono text-foreground">
+                                  {t.dateFormatted.split(",")[1]?.trim() || t.dateFormatted}
                                 </span>
-                                <span className="text-foreground/80 italic leading-relaxed">
-                                  {t.prev.notice
-                                    ? `“${t.prev.notice}”`
-                                    : "None"}
+                                <span className="text-[11.5px] font-bold font-mono text-muted-foreground">
+                                  {t.relativeTime}
                                 </span>
                               </div>
-                              <div className="flex flex-col gap-0.5">
-                                <span className="text-muted-foreground">
-                                  Recorded Notice
-                                </span>
-                                <span className="text-foreground italic leading-relaxed">
-                                  {t.snap.notice
-                                    ? `“${t.snap.notice}”`
-                                    : "None"}
-                                </span>
+
+                              {/* Changes */}
+                              <div className="flex-1 min-w-0">
+                                <SnapshotDiffList
+                                  curr={t.snap}
+                                  prev={t.prev}
+                                  changed={t.changed}
+                                />
+                              </div>
+
+                              {/* Action */}
+                              <div className="shrink-0 flex items-center justify-end mt-2 sm:mt-0">
+                                <button
+                                  type="button"
+                                  aria-expanded={isExpanded}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    triggerHaptic("light");
+                                    setExpandedEventIds((prev) => ({
+                                      ...prev,
+                                      [t.id]: !prev[t.id],
+                                    }));
+                                  }}
+                                  className={`px-3 py-1.5 rounded-[5px] text-[11.5px] font-bold border transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95 ${
+                                    isExpanded
+                                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                                      : "bg-muted/50 border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                                  }`}
+                                >
+                                  {isExpanded ? "Hide Details" : "View Details"}
+                                </button>
                               </div>
                             </div>
-                          )}
-                        </div>
-                      )}
+
+                            {/* LEVEL 2: Expanded Details */}
+                            {isExpanded && (
+                              <div
+                                onClick={(e) => e.stopPropagation()}
+                                className="bg-background border-t border-border px-4 py-4 sm:px-5 sm:py-5 flex flex-col gap-4 cursor-default"
+                              >
+                                <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-border/50">
+                                  <span className="text-[12.5px] font-bold text-foreground uppercase tracking-wider">
+                                    Complete Snapshot Record
+                                  </span>
+                                  <span className="text-[11.5px] font-mono text-muted-foreground">
+                                    ID: {t.snap.id.slice(0, 8)}
+                                  </span>
+                                </div>
+
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                  <div className="flex flex-col gap-1 bg-card p-3 rounded-[6px] border border-border">
+                                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                                      Recorded Value
+                                    </span>
+                                    <span className="text-[15px] font-bold font-mono text-foreground">
+                                      {formatSnapValue(t.snap)}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex flex-col gap-1 bg-card p-3 rounded-[6px] border border-border">
+                                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                                      Market Status
+                                    </span>
+                                    <span className="text-[14px] font-bold text-foreground capitalize">
+                                      {t.snap.status || "stable"}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex flex-col gap-1 bg-card p-3 rounded-[6px] border border-border">
+                                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                                      Rarity Rating
+                                    </span>
+                                    <span className="text-[15px] font-bold font-mono text-[#4DB6AC]">
+                                      {t.snap.rarity ?? 0} / 20
+                                    </span>
+                                  </div>
+
+                                  <div className="flex flex-col gap-1 bg-card p-3 rounded-[6px] border border-border">
+                                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                                      Market Liquidity
+                                    </span>
+                                    <span className="text-[15px] font-bold font-mono text-[#81C784]">
+                                      {formatLiquidityLabel(t.snap.liquidity)}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {(t.prev.notice || t.snap.notice) && (
+                                  <div className="pt-3 border-t border-border/50 grid grid-cols-1 sm:grid-cols-2 gap-4 text-[12.5px]">
+                                    <div className="flex flex-col gap-1">
+                                      <span className="font-bold text-muted-foreground">
+                                        Previous Notice
+                                      </span>
+                                      <span className="text-foreground/80 italic leading-relaxed bg-muted/30 p-2 rounded-[4px]">
+                                        {t.prev.notice
+                                          ? `"${t.prev.notice}"`
+                                          : "None"}
+                                      </span>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                      <span className="font-bold text-muted-foreground">
+                                        Recorded Notice
+                                      </span>
+                                      <span className="text-foreground italic leading-relaxed bg-primary/5 p-2 rounded-[4px] border border-primary/20">
+                                        {t.snap.notice
+                                          ? `"${t.snap.notice}"`
+                                          : "None"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             )}
           </section>

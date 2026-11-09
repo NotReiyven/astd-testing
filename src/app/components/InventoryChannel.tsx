@@ -7,7 +7,6 @@ import {
   GiHeartInside,
   GiFairyWand,
   GiEyeTarget,
-  GiArchiveRegister,
 } from "react-icons/gi";
 import { useUnits } from "../../context/UnitContext";
 import { useShowDelay } from "../../hooks/useShowDelay";
