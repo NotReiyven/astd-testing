@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/ProfileChannel.tsx
+// ================================================
+
 import { useState, useEffect, useMemo, memo } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import {
@@ -25,9 +29,13 @@ import {
 } from "../../store/useProfileStore";
 import { ProfileCustomizerModal } from "./Profile/ProfileCustomizerModal";
 import { DeleteAccountModal } from "./Profile/DeleteAccountModal";
+import { TradeJournalTab } from "./Profile/TradeJournalTab";
 import { ProfileViewCount } from "./shared/ProfileViewCount";
 import { useAuthStore, UserProfile } from "../../store/useAuthStore";
-import { useTradingAdsStore, TradingAd } from "../../store/useTradingAdsStore";
+import {
+  useTradingAdsStore,
+  TradingAd,
+} from "../../store/useTradingAdsStore";
 import { useAdInteractionStore } from "../../store/useAdInteractionStore";
 import { useInventoryStore } from "../../store/useInventoryStore";
 import {
@@ -47,8 +55,12 @@ import { useUnits } from "../../context/UnitContext";
 import { getUnitConservativeValue } from "./InventoryChannel/inventoryUtils";
 import { useShowDelay } from "../../hooks/useShowDelay";
 import { ErrorState } from "./ui/ErrorState";
-import { EmptyState } from "./ui/EmptyState";
-import { GRID_STATUS_CFG, TIER_CONFIG, getTier, getObtainability } from "../../data";
+import {
+  GRID_STATUS_CFG,
+  TIER_CONFIG,
+  getTier,
+  getObtainability,
+} from "../../data";
 import { StatusIcon } from "./shared/Formatters";
 import { TradeCard, MasterUnit } from "../../types";
 import { safeOpenExternal } from "../../store/useExternalLinkStore";
@@ -496,7 +508,10 @@ function AdItemGrid({
   if (items.length === 0) return null;
   return (
     <div className="flex flex-col gap-2 flex-1 min-w-0">
-      <span className="text-[11.5px] tracking-wide" style={{ color: labelColor }}>
+      <span
+        className="text-[11.5px] tracking-wide"
+        style={{ color: labelColor }}
+      >
         {label} ({items.reduce((acc, i) => acc + i.qty, 0)})
       </span>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -529,7 +544,6 @@ function AdHistorySkeletonList({ count = 2 }: { count?: number }) {
           key={idx}
           className="bg-card border border-border rounded-[8px] p-5 flex flex-col gap-4 animate-pulse"
         >
-          {/* Top Metadata & Action Bar Skeleton */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border">
             <div className="flex items-center gap-2">
               <div className="h-5 w-24 rounded-[4px] bg-muted" />
@@ -543,7 +557,6 @@ function AdHistorySkeletonList({ count = 2 }: { count?: number }) {
             </div>
           </div>
 
-          {/* Offering & Requesting Unit Tiles Skeleton */}
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto_1fr] gap-4 items-start">
             <div className="flex flex-col gap-2">
               <div className="h-3.5 w-24 rounded bg-muted/70" />
@@ -636,7 +649,6 @@ function ProfileChannelSkeleton({ compact }: { compact?: boolean }) {
       role="status"
       aria-label="Loading trader profile"
     >
-      {/* Banner & Identity Header Skeleton */}
       <div className="w-full relative shrink-0 border-b border-border bg-card">
         <div
           className={`w-full relative overflow-hidden border-b border-border bg-muted/50 animate-pulse ${
@@ -670,10 +682,8 @@ function ProfileChannelSkeleton({ compact }: { compact?: boolean }) {
         </div>
       </div>
 
-      {/* Main Content Container Skeleton */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6 flex flex-col gap-6">
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 items-start">
-          {/* Left Sidebar Skeleton */}
           <aside className="flex flex-col gap-4">
             <div className="bg-card border border-border rounded-[8px] p-5 flex flex-col gap-4 shadow-sm animate-pulse">
               <div className="grid grid-cols-2 gap-2.5">
@@ -713,7 +723,6 @@ function ProfileChannelSkeleton({ compact }: { compact?: boolean }) {
             </div>
           </aside>
 
-          {/* Right Workspace Skeleton */}
           <div className="flex-1 flex flex-col min-w-0 gap-5">
             <div className="flex items-center gap-2 border-b border-border pb-3">
               <div className="h-9 w-36 rounded-[6px] bg-card border border-border animate-pulse" />
@@ -778,7 +787,6 @@ export function ProfileChannel() {
     tradeJournal,
     journalPublic,
     toggleJournalPrivacy,
-    updateJournalOutcome,
   } = useTradeStore();
 
   const openHistoryModal = useHistoryModalStore((s) => s.openModal);
@@ -802,21 +810,23 @@ export function ProfileChannel() {
   );
   const isInspectingOtherUser = Boolean(!isOwner && targetId);
 
-  const [profileData, setProfileData] = useState<UserProfileData | null>(() => {
-    if (targetId && useProfileStore.getState().cache[targetId]?.data) {
-      return useProfileStore.getState().cache[targetId].data;
+  const [profileData, setProfileData] = useState<UserProfileData | null>(
+    () => {
+      if (targetId && useProfileStore.getState().cache[targetId]?.data) {
+        return useProfileStore.getState().cache[targetId].data;
+      }
+      if (isOwner && currentUser) {
+        return {
+          ...currentUser,
+          global_rep: (currentUser as any).global_rep ?? 0,
+          bio: (currentUser as any).bio ?? "",
+          banner_color: (currentUser as any).banner_color ?? "#121214",
+          roblox_username: (currentUser as any).roblox_username ?? "",
+        };
+      }
+      return null;
     }
-    if (isOwner && currentUser) {
-      return {
-        ...currentUser,
-        global_rep: (currentUser as any).global_rep ?? 0,
-        bio: (currentUser as any).bio ?? "",
-        banner_color: (currentUser as any).banner_color ?? "#121214",
-        roblox_username: (currentUser as any).roblox_username ?? "",
-      };
-    }
-    return null;
-  });
+  );
   const effectiveStatus = useEffectiveStatus(targetId, profileData?.status, {
     includeInvisibleForSelf: isOwner,
   });
@@ -827,9 +837,9 @@ export function ProfileChannel() {
     if (isOwner && currentUser) return false;
     return true;
   });
-  const [activeTab, setActiveTab] = useState<"board" | "wishlist" | "journal" | "settings">(
-    "board"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "board" | "wishlist" | "journal" | "settings"
+  >("board");
   const [joinNumber, setJoinNumber] = useState<number | null>(null);
   const [adFilter, setAdFilter] = useState<
     "all" | "live" | "expired" | "private"
@@ -840,10 +850,8 @@ export function ProfileChannel() {
   const [deletingAdId, setDeletingAdId] = useState<string | null>(null);
   const [repostingAdId, setRepostingAdId] = useState<string | null>(null);
 
-  // Wishlist quick-add search state (for owner)
   const [wishlistSearch, setWishlistSearch] = useState("");
 
-  // Edit Profile Modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -888,7 +896,10 @@ export function ProfileChannel() {
         }
         return;
       }
-      if (!profileData && !useProfileStore.getState().cache[targetId]?.data) {
+      if (
+        !profileData &&
+        !useProfileStore.getState().cache[targetId]?.data
+      ) {
         setIsLoading(true);
       }
 
@@ -933,7 +944,6 @@ export function ProfileChannel() {
     fetchWishlist,
   ]);
 
-  // Record profile view when visiting someone else's profile
   useEffect(() => {
     if (targetId && !isOwner) {
       void recordView(targetId, "profile");
@@ -976,7 +986,7 @@ export function ProfileChannel() {
       useToastStore
         .getState()
         .addToast(
-          "Could not save profile—check your connection and try again.",
+          "Could not save profile. Check your connection and try again.",
           "error"
         );
     }
@@ -984,7 +994,11 @@ export function ProfileChannel() {
   };
 
   const handleToggleProfilePrivacy = async (
-    field: "ad_history_public" | "wishlist_public" | "hide_discord_id" | "hide_view_count"
+    field:
+      | "ad_history_public"
+      | "wishlist_public"
+      | "hide_discord_id"
+      | "hide_view_count"
   ) => {
     if (!isOwner || !targetId || !profileData) return;
     triggerHaptic("light");
@@ -998,7 +1012,9 @@ export function ProfileChannel() {
     const optimistic = { ...profileData, [field]: nextVal };
     setProfileData(optimistic);
 
-    const { error } = await saveProfileUpdates(targetId, { [field]: nextVal });
+    const { error } = await saveProfileUpdates(targetId, {
+      [field]: nextVal,
+    });
     if (error) {
       setProfileData(profileData);
       useToastStore
@@ -1101,7 +1117,8 @@ export function ProfileChannel() {
 
   const handleCopyProfileLink = () => {
     triggerHaptic("light");
-    const identifier = profileData?.discord_id || targetId || profileData?.username;
+    const identifier =
+      profileData?.discord_id || targetId || profileData?.username;
     const uniqueUrl = identifier
       ? `${window.location.origin}/profile/${identifier}`
       : window.location.href;
@@ -1127,11 +1144,12 @@ export function ProfileChannel() {
     setTimeout(() => setCopiedRoblox(false), 2000);
   };
 
-  // Filtered units for quick wishlist addition
   const wishlistSearchResults = useMemo(() => {
     const q = wishlistSearch.trim().toLowerCase();
     if (!q) return [];
-    const existingSet = new Set(activeWishlistItems.map((w) => w.unit_id));
+    const existingSet = new Set(
+      activeWishlistItems.map((w) => w.unit_id)
+    );
     return ALL_UNITS.filter(
       (u) =>
         !existingSet.has(u.id) &&
@@ -1139,7 +1157,6 @@ export function ProfileChannel() {
           (u.subtitle && u.subtitle.toLowerCase().includes(q)))
     ).slice(0, 6);
   }, [wishlistSearch, ALL_UNITS, activeWishlistItems]);
-
 
   if (isAuthLoading && !targetId) {
     return <ProfileChannelSkeleton compact={globalCompactMode} />;
@@ -1150,7 +1167,6 @@ export function ProfileChannel() {
     return (
       <div className="flex-1 w-full h-full font-sans overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-10 bg-background flex flex-col items-center">
         <div className="max-w-3xl w-full flex flex-col gap-5 pb-12">
-          {/* Sign-In Header Banner */}
           <div className="bg-card border border-border rounded-[8px] p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex flex-col text-center sm:text-left gap-1">
               <h2 className="text-[18px] text-foreground">
@@ -1174,7 +1190,6 @@ export function ProfileChannel() {
             </button>
           </div>
 
-          {/* 1. Appearance & Layout Density */}
           <div className="bg-card border border-border rounded-[8px] p-5 shadow-sm flex flex-col gap-4">
             <div className="flex flex-col gap-0.5 border-b border-border pb-3">
               <h3 className="text-[14px] text-foreground">
@@ -1236,79 +1251,13 @@ export function ProfileChannel() {
               ))}
             </div>
 
-            {/* Typography Font Picker */}
-            <div className="pt-3 border-t border-border/70 flex flex-col gap-2">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[13px] text-foreground">
-                  Typography Font
-                </span>
-                <span className="text-[12px] text-muted-foreground">
-                  Choose the primary font family used across the application.
-                </span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                {[
-                  {
-                    id: "luckiest-guy",
-                    label: "Luckiest Guy",
-                    desc: "Classic ASTD display",
-                    previewFont: "'Luckiest Guy', cursive, sans-serif",
-                  },
-                  {
-                    id: "lilita-one",
-                    label: "Lilita One",
-                    desc: "Bold rounded display sans",
-                    previewFont: "'Lilita One', cursive, sans-serif",
-                  },
-                  {
-                    id: "russo-one",
-                    label: "Russo One",
-                    desc: "Bold geometric display",
-                    previewFont: "'Russo One', sans-serif",
-                  },
-                  {
-                    id: "rubik-dirt",
-                    label: "Rubik Dirt",
-                    desc: "Grungy distressed display",
-                    previewFont: "'Rubik Dirt', cursive, sans-serif",
-                  },
-                ].map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() => {
-                      triggerHaptic("light");
-                      setFontFamily(f.id as FontFamily);
-                    }}
-                    className={`p-3 rounded-[6px] border text-left flex flex-col gap-1 cursor-pointer transition-colors ${
-                      fontFamily === f.id
-                        ? "bg-popover border-primary ring-1 ring-primary/40 shadow-xs"
-                        : "bg-popover/40 border-border hover:bg-popover"
-                    }`}
-                  >
-                    <span
-                      style={{ fontFamily: f.previewFont }}
-                      className="text-[13px] font-bold text-foreground leading-tight truncate"
-                    >
-                      {f.label}
-                    </span>
-                    <span className="text-[11px] text-muted-foreground truncate">
-                      {f.desc}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Global Compact Mode */}
             <div className="pt-3 border-t border-border/70 flex items-center justify-between gap-4">
               <div className="flex flex-col gap-0.5">
                 <span className="text-[13px] text-foreground">
                   Global Compact Mode
                 </span>
                 <span className="text-[12px] text-muted-foreground">
-                  Tightens padding and card spacing across the entire app to fit
-                  more units on screen.
+                  Tightens padding and card spacing across the entire app.
                 </span>
               </div>
               <button
@@ -1335,7 +1284,6 @@ export function ProfileChannel() {
             </div>
           </div>
 
-          {/* 2. Navigation & Trade Analyzer Defaults */}
           <div className="bg-card border border-border rounded-[8px] p-5 shadow-sm flex flex-col gap-4">
             <div className="flex items-center justify-between gap-2 border-b border-border pb-3">
               <div className="flex flex-col gap-0.5">
@@ -1343,8 +1291,8 @@ export function ProfileChannel() {
                   Navigation & Trade Analyzer Defaults
                 </h3>
                 <p className="text-[12px] text-muted-foreground">
-                  Configure your default startup channel and which panels appear
-                  in the Trade Analyzer.
+                  Configure your default startup channel and which panels
+                  appear in the Trade Analyzer.
                 </p>
               </div>
               <button
@@ -1354,7 +1302,10 @@ export function ProfileChannel() {
                   updateAnalyzerSettings(DEFAULT_ANALYZER_SETTINGS);
                   useToastStore
                     .getState()
-                    .addToast("Trade Analyzer settings reset to defaults.", "info");
+                    .addToast(
+                      "Trade Analyzer settings reset to defaults.",
+                      "info"
+                    );
                 }}
                 className="px-2.5 py-1.5 rounded-[5px] bg-popover hover:bg-muted border border-border text-muted-foreground hover:text-foreground text-[11px] font-mono flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors"
               >
@@ -1408,94 +1359,6 @@ export function ProfileChannel() {
                     </span>
                     <span className="text-[11px] text-muted-foreground truncate">
                       {opt.desc}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Trade Analyzer Panel & Metric Toggles */}
-            <div className="pt-3 border-t border-border/70 flex flex-col gap-2">
-              <span className="text-[12px] text-muted-foreground">
-                Trade Analyzer Visible Sections & Metrics
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {(
-                  [
-                    {
-                      key: "showSummaryMetrics",
-                      label: "Forecast & Metrics Bar",
-                      active: analyzerSettings?.showSummaryMetrics ?? true,
-                    },
-                    {
-                      key: "showStFlip",
-                      label: "ST Flip Indicator",
-                      active: analyzerSettings?.showStFlip ?? true,
-                    },
-                    {
-                      key: "showLtHold",
-                      label: "LT Hold Indicator",
-                      active: analyzerSettings?.showLtHold ?? true,
-                    },
-                    {
-                      key: "showRarity",
-                      label: "Rarity Comparison Metric",
-                      active: analyzerSettings?.showRarity ?? true,
-                    },
-                    {
-                      key: "showLiquidity",
-                      label: "Liquidity Comparison Metric",
-                      active: analyzerSettings?.showLiquidity ?? true,
-                    },
-                    {
-                      key: "showMomentumSummary",
-                      label: "Status Momentum Summary",
-                      active: analyzerSettings?.showMomentumSummary ?? true,
-                    },
-                    {
-                      key: "showTermsInTrade",
-                      label: "Terms in This Trade",
-                      active: analyzerSettings?.showTermsInTrade ?? true,
-                    },
-                    {
-                      key: "showGiveNotices",
-                      label: "You Give Unit Notices",
-                      active: analyzerSettings?.showGiveNotices ?? true,
-                    },
-                    {
-                      key: "showGetNotices",
-                      label: "You Get Unit Notices",
-                      active: analyzerSettings?.showGetNotices ?? true,
-                    },
-                    {
-                      key: "collapseUnitsByDefault",
-                      label: "Collapse Analyzer Units by Default",
-                      active: analyzerSettings?.collapseUnitsByDefault ?? false,
-                    },
-                  ] as const
-                ).map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => {
-                      triggerHaptic("light");
-                      updateAnalyzerSettings({
-                        [item.key]: !item.active,
-                      });
-                    }}
-                    className="flex items-center justify-between px-3.5 py-2.5 rounded-[6px] bg-popover border border-border hover:border-foreground/30 transition-colors cursor-pointer text-left"
-                  >
-                    <span className="text-[12.5px] text-foreground">
-                      {item.label}
-                    </span>
-                    <span
-                      className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-[4px] border shadow-xs ${
-                        item.active
-                          ? "bg-[#23a559] border-[#23a559]/40 text-white"
-                          : "bg-[#475569] border-white/20 text-white"
-                      }`}
-                    >
-                      {item.active ? "Shown" : "Hidden"}
                     </span>
                   </button>
                 ))}
@@ -1613,7 +1476,6 @@ export function ProfileChannel() {
 
   return (
     <div className="flex-1 w-full h-full font-sans relative overflow-y-auto custom-scrollbar pb-16 z-10 bg-background">
-      {/* Return Bar when inspecting another user's profile */}
       {isInspectingOtherUser && (
         <ViewingUserBar
           targetUserId={targetId!}
@@ -1629,9 +1491,7 @@ export function ProfileChannel() {
         />
       )}
 
-      {/* Discord-Style Profile Banner & Identity Header */}
       <div className="w-full relative shrink-0 border-b border-border bg-card">
-        {/* Customizable Banner Surface */}
         <div
           className={`w-full relative overflow-hidden border-b border-border transition-[height] duration-200 ease-out ${
             globalCompactMode
@@ -1649,17 +1509,14 @@ export function ProfileChannel() {
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent pointer-events-none" />
-          {/* Subtle top accent trim */}
           <div
             className="absolute top-0 left-0 right-0 h-[3px]"
             style={{ backgroundColor: accentColor }}
           />
         </div>
 
-        {/* Identity Row */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pb-5 relative z-20">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 -mt-10 md:-mt-12">
-            {/* Avatar + Name + Badges */}
             <div className="flex flex-col sm:flex-row sm:items-end gap-4 min-w-0 flex-1">
               <div className="relative shrink-0 self-start">
                 <UserAvatar
@@ -1670,7 +1527,6 @@ export function ProfileChannel() {
                   alt={safeDisplayName}
                   priority={true}
                 />
-                {/* Presence Indicator Dot */}
                 <div
                   className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-4 border-card z-10"
                   style={{ backgroundColor: statusDotColor }}
@@ -1679,13 +1535,11 @@ export function ProfileChannel() {
               </div>
 
               <div className="flex flex-col gap-2 min-w-0 flex-1 pb-0.5">
-                {/* Row 1: Username & Sequence Rank */}
                 <div className="flex items-center gap-2.5 flex-wrap min-w-0">
                   <h1 className="text-[22px] sm:text-[26px] text-foreground leading-tight truncate">
                     {safeDisplayName}
                   </h1>
 
-                  {/* Sequence Rank Badge */}
                   {typeof joinNumber === "number" && (
                     <span
                       className="inline-flex items-center text-[11px] font-mono font-bold px-2 py-0.5 rounded-[4px] bg-[#475569] text-white border border-white/20 shrink-0 select-none shadow-xs"
@@ -1696,10 +1550,7 @@ export function ProfileChannel() {
                   )}
                 </div>
 
-                {/* Row 2: Badges Tray (Wraps gracefully for users with many badges) */}
                 <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-
-                  {/* Early Community Role Badge (Founder, OG, Veteran) */}
                   {(() => {
                     const earlyRole = getEarlyUserRole(
                       joinNumber ?? profileData.join_number
@@ -1724,7 +1575,6 @@ export function ProfileChannel() {
                     );
                   })()}
 
-                  {/* Unique Roblox-Style Trader ID Pill with 1-Click Copy */}
                   {targetId && (
                     <button
                       type="button"
@@ -1743,8 +1593,8 @@ export function ProfileChannel() {
                     </button>
                   )}
 
-                  {/* Discord Role Pills */}
-                  {profileData.role_details && profileData.role_details.length > 0 ? (
+                  {profileData.role_details &&
+                  profileData.role_details.length > 0 ? (
                     profileData.role_details.map((r) => (
                       <DiscordRolePill
                         key={r.name}
@@ -1755,13 +1605,9 @@ export function ProfileChannel() {
                       />
                     ))
                   ) : profileData.role && profileData.role !== "user" ? (
-                    <DiscordRolePill
-                      name={profileData.role}
-                      size="sm"
-                    />
+                    <DiscordRolePill name={profileData.role} size="sm" />
                   ) : null}
 
-                  {/* Reputation Pill */}
                   <span
                     className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[5px] border text-[11.5px] font-semibold shadow-xs"
                     style={{
@@ -1774,13 +1620,11 @@ export function ProfileChannel() {
                     {repRank.label} ({safeRep > 0 ? `+${safeRep}` : safeRep})
                   </span>
 
-                  {/* View Counter (next to Reputation Badge) */}
                   <ProfileViewCount
                     profile={profileData}
                     isOwner={isOwner}
                   />
 
-                  {/* Trading Stance Pill */}
                   <span
                     className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[5px] border text-[11.5px] font-semibold shadow-xs"
                     style={{
@@ -1797,7 +1641,6 @@ export function ProfileChannel() {
                   </span>
                 </div>
 
-                {/* Quick Presence Switcher for Owner */}
                 {isOwner && (
                   <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
                     <span className="text-[11.5px] text-muted-foreground mr-1">
@@ -1835,7 +1678,6 @@ export function ProfileChannel() {
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex items-center gap-2.5 shrink-0">
               <button
                 type="button"
@@ -1880,16 +1722,13 @@ export function ProfileChannel() {
         </div>
       </div>
 
-      {/* Main Content Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6 flex flex-col gap-6">
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 items-start">
-          {/* LEFT SIDEBAR: Unified Trader Overview Card */}
           <aside className="flex flex-col gap-4 lg:sticky lg:top-6">
             <div
               className="bg-card border border-border rounded-[8px] p-5 flex flex-col gap-4 shadow-sm"
               style={{ borderTop: `2px solid ${accentColor}` }}
             >
-              {/* Compact 2x2 Key Metrics Grid */}
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="bg-popover border border-border rounded-[6px] p-3 flex flex-col gap-0.5">
                   <span className="text-[11px] text-muted-foreground">
@@ -1899,7 +1738,8 @@ export function ProfileChannel() {
                     {totalVaultValue.toLocaleString()}
                   </span>
                   <span className="text-[10.5px] text-muted-foreground font-mono">
-                    {activeVaultItems.reduce((a, b) => a + b.quantity, 0)} units
+                    {activeVaultItems.reduce((a, b) => a + b.quantity, 0)}{" "}
+                    units
                   </span>
                 </div>
 
@@ -1960,10 +1800,11 @@ export function ProfileChannel() {
                 </div>
               </div>
 
-              {/* Reputation Progress Bar */}
               <div className="flex flex-col gap-1.5 pt-2 border-t border-border">
                 <div className="flex items-center justify-between text-[11.5px]">
-                  <span className="text-muted-foreground">Reputation Rank</span>
+                  <span className="text-muted-foreground">
+                    Reputation Rank
+                  </span>
                   <span className="font-mono" style={{ color: repRank.color }}>
                     {repRank.label} ({safeRep} / {repRank.next})
                   </span>
@@ -1979,7 +1820,6 @@ export function ProfileChannel() {
                 </div>
               </div>
 
-              {/* About Me */}
               <div className="flex flex-col gap-1.5 pt-2 border-t border-border">
                 <span className="text-[12px] text-muted-foreground">
                   About Me
@@ -1995,13 +1835,11 @@ export function ProfileChannel() {
                 )}
               </div>
 
-              {/* Connected Accounts (Discord & Roblox) */}
               <div className="flex flex-col gap-2 pt-2 border-t border-border">
                 <span className="text-[12px] text-muted-foreground">
                   Trader Identifiers
                 </span>
 
-                {/* Discord ID (Respects Privacy Flag) */}
                 {!profileData.hide_discord_id || isOwner ? (
                   <div className="flex items-center justify-between gap-2 bg-popover px-3 py-2 rounded-[6px] border border-border min-w-0 overflow-hidden">
                     <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
@@ -2020,7 +1858,9 @@ export function ProfileChannel() {
                       className="flex items-center gap-1.5 text-[11.5px] font-mono text-foreground hover:text-primary transition-colors cursor-pointer min-w-0 overflow-hidden"
                       title={`Copy Discord ID (${profileData.discord_id})`}
                     >
-                      <span className="truncate">{profileData.discord_id}</span>
+                      <span className="truncate">
+                        {profileData.discord_id}
+                      </span>
                       {copiedDiscordId ? (
                         <IconCheck className="w-3.5 h-3.5 text-[#23a559] shrink-0" />
                       ) : (
@@ -2037,7 +1877,6 @@ export function ProfileChannel() {
                   </div>
                 )}
 
-                {/* Roblox Username */}
                 {profileData.roblox_username && (
                   <div className="flex items-center justify-between gap-2 bg-popover px-3 py-2 rounded-[6px] border border-border min-w-0 overflow-hidden">
                     <span className="text-[11.5px] text-muted-foreground flex items-center gap-1.5 shrink-0 whitespace-nowrap">
@@ -2063,8 +1902,9 @@ export function ProfileChannel() {
                 )}
               </div>
 
-              {/* Discord-Standard Roles Section */}
-              {((profileData.role_details && profileData.role_details.length > 0) || (profileData.role && profileData.role !== "user")) && (
+              {((profileData.role_details &&
+                profileData.role_details.length > 0) ||
+                (profileData.role && profileData.role !== "user")) && (
                 <div className="bg-card border border-border rounded-[6px] p-4 flex flex-col gap-2.5 shadow-xs">
                   <div className="flex items-center justify-between border-b border-border pb-2">
                     <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
@@ -2072,7 +1912,8 @@ export function ProfileChannel() {
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-1.5 pt-0.5">
-                    {profileData.role_details && profileData.role_details.length > 0 ? (
+                    {profileData.role_details &&
+                    profileData.role_details.length > 0 ? (
                       profileData.role_details.map((r) => (
                         <DiscordRolePill
                           key={r.name}
@@ -2083,16 +1924,12 @@ export function ProfileChannel() {
                         />
                       ))
                     ) : (
-                      <DiscordRolePill
-                        name={profileData.role}
-                        size="md"
-                      />
+                      <DiscordRolePill name={profileData.role} size="md" />
                     )}
                   </div>
                 </div>
               )}
 
-              {/* Vault Action Button */}
               <button
                 type="button"
                 onClick={handleInspectVault}
@@ -2104,7 +1941,9 @@ export function ProfileChannel() {
                     style={{ color: accentColor }}
                   />
                   <span>
-                    {isOwner ? "Open My Inventory Vault" : "Inspect Public Vault"}
+                    {isOwner
+                      ? "Open My Inventory Vault"
+                      : "Inspect Public Vault"}
                   </span>
                 </span>
                 <IconArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-[color,transform] duration-150" />
@@ -2112,9 +1951,7 @@ export function ProfileChannel() {
             </div>
           </aside>
 
-          {/* RIGHT MAIN WORKSPACE: Ad History, Target Wishlist, Journal, Preferences */}
           <div className="flex-1 flex flex-col min-w-0 gap-5">
-            {/* Clean Tab Navigation (No Overflow Scrollbar Artifacts) */}
             <div
               className="flex bg-input rounded-[4px] p-1 border border-border shadow-inner w-full sm:w-auto overflow-x-auto hide-scrollbar shrink-0 mb-2"
               role="tablist"
@@ -2237,19 +2074,23 @@ export function ProfileChannel() {
               )}
             </div>
 
-            {/* ============================================================== */}
-            {/* TAB 1: AD HISTORY (Public/Private + Delete + Repost + Load)    */}
-            {/* ============================================================== */}
             {activeTab === "board" && (
               <div className="flex flex-col gap-4 animate-fade-in">
-                {/* Ad History Toolbar */}
                 <div className="bg-card border border-border rounded-[8px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {(
                       [
-                        { id: "all", label: "All Posts", count: userAdHistory.length },
+                        {
+                          id: "all",
+                          label: "All Posts",
+                          count: userAdHistory.length,
+                        },
                         { id: "live", label: "Live", count: liveAdsCount },
-                        { id: "expired", label: "Expired", count: expiredAdsCount },
+                        {
+                          id: "expired",
+                          label: "Expired",
+                          count: expiredAdsCount,
+                        },
                         ...(isOwner
                           ? [
                               {
@@ -2285,7 +2126,6 @@ export function ProfileChannel() {
                     })}
                   </div>
 
-                  {/* Owner Master Privacy Toggle for Ad History */}
                   {isOwner && (
                     <button
                       type="button"
@@ -2313,7 +2153,6 @@ export function ProfileChannel() {
                   )}
                 </div>
 
-                {/* Ad History Content */}
                 {!isAdHistoryVisibleToVisitor ? (
                   <div className="bg-card border border-border rounded-[8px] p-12 text-center flex flex-col items-center justify-center gap-2 min-h-[280px]">
                     <div className="w-10 h-10 rounded-full bg-popover border border-border flex items-center justify-center text-muted-foreground mb-1">
@@ -2323,8 +2162,8 @@ export function ProfileChannel() {
                       Ad History is Private
                     </h3>
                     <p className="text-[13px] text-muted-foreground max-w-sm">
-                      {profileData.username} has chosen to keep their trading ad
-                      history private.
+                      {profileData.username} has chosen to keep their trading
+                      ad history private.
                     </p>
                   </div>
                 ) : showHistorySkeleton ? (
@@ -2350,17 +2189,21 @@ export function ProfileChannel() {
 
                       const isTakingOffers =
                         ad.ad_type === "lf_offers" ||
-                        (ad.ad_type === "standard" && ad.get_items.length === 0);
+                        (ad.ad_type === "standard" &&
+                          ad.get_items.length === 0);
                       const isInventory = ad.ad_type === "inventory";
 
                       let typeLabel = "Specific Trade";
-                      let typeStyle = "bg-[#5865F2] text-white border-[#5865F2]/40 shadow-xs";
+                      let typeStyle =
+                        "bg-[#5865F2] text-white border-[#5865F2]/40 shadow-xs";
                       if (isInventory) {
                         typeLabel = "Vault Showcase";
-                        typeStyle = "bg-[#8b5cf6] text-white border-[#8b5cf6]/40 shadow-xs";
+                        typeStyle =
+                          "bg-[#8b5cf6] text-white border-[#8b5cf6]/40 shadow-xs";
                       } else if (isTakingOffers) {
                         typeLabel = "Taking Offers";
-                        typeStyle = "bg-[#d97706] text-white border-[#f59e0b]/40 shadow-xs";
+                        typeStyle =
+                          "bg-[#d97706] text-white border-[#f59e0b]/40 shadow-xs";
                       }
 
                       const totalGiveVal = ad.give_items.reduce((acc, i) => {
@@ -2383,13 +2226,13 @@ export function ProfileChannel() {
                         <div
                           key={ad.id}
                           className={`bg-card border rounded-[8px] p-5 flex flex-col gap-4 transition-colors ${
-                            isLive ? "border-border" : "border-border/70 opacity-95"
+                            isLive
+                              ? "border-border"
+                              : "border-border/70 opacity-95"
                           }`}
                         >
-                          {/* Top Metadata & Action Bar */}
                           <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border">
                             <div className="flex items-center gap-2 flex-wrap">
-                              {/* Live vs Expired Badge */}
                               {isLive ? (
                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[4px] bg-[#23a559] text-white border border-[#23a559]/40 text-[11px] font-mono font-bold uppercase tracking-wider shadow-xs">
                                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
@@ -2424,34 +2267,39 @@ export function ProfileChannel() {
                               </span>
                             </div>
 
-                            {/* Per-Ad Controls */}
                             <div className="flex items-center gap-2 flex-wrap">
-                              {/* Load into Trade Analyzer */}
                               <button
                                 type="button"
-                                onClick={() => handleLoadAdIntoCalculator(ad)}
+                                onClick={() =>
+                                  handleLoadAdIntoCalculator(ad)
+                                }
                                 className="h-7 px-2.5 rounded-[4px] bg-[#475569] hover:bg-[#334155] border border-white/20 text-white text-[11px] font-bold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-95 shrink-0"
                                 title="Load these units into the Trade Analyzer"
                               >
                                 <GiAbacus className="w-3.5 h-3.5 shrink-0" />
-                                <span className="leading-none">Calculator</span>
+                                <span className="leading-none">
+                                  Calculator
+                                </span>
                               </button>
 
-                              {/* View Comments / Discussion */}
                               <button
                                 type="button"
                                 onClick={() => {
                                   triggerHaptic("light");
-                                  void openAdContext(ad.id, currentUser?.id);
+                                  void openAdContext(
+                                    ad.id,
+                                    currentUser?.id
+                                  );
                                 }}
                                 className="h-7 px-2.5 rounded-[4px] bg-[#5865F2] hover:bg-[#4752c4] border border-[#5865F2]/40 text-white text-[11px] font-bold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-95 shrink-0"
                                 title="View discussion, comments, and trade analytics for this listing"
                               >
                                 <GiChatBubble className="w-3.5 h-3.5 shrink-0 text-white" />
-                                <span className="leading-none">Discussion</span>
+                                <span className="leading-none">
+                                  Discussion
+                                </span>
                               </button>
 
-                              {/* Owner-only Per-Ad Visibility, Repost & Delete */}
                               {isOwner && (
                                 <>
                                   <button
@@ -2491,7 +2339,9 @@ export function ProfileChannel() {
                                       title="Repost this trade to the live Trading Board for 24 hours"
                                     >
                                       <GiCycle className="w-3.5 h-3.5 shrink-0" />
-                                      <span className="leading-none">Repost</span>
+                                      <span className="leading-none">
+                                        Repost
+                                      </span>
                                     </AsyncButton>
                                   )}
 
@@ -2501,7 +2351,9 @@ export function ProfileChannel() {
                                         type="button"
                                         size="sm"
                                         variant="destructive"
-                                        isLoading={deletingAdId === ad.id}
+                                        isLoading={
+                                          deletingAdId === ad.id
+                                        }
                                         onClick={() =>
                                           handleDeleteAdFromHistory(ad.id)
                                         }
@@ -2509,7 +2361,9 @@ export function ProfileChannel() {
                                       >
                                         Confirm Delete
                                       </AsyncButton>
-                                      <span className="text-white/60">·</span>
+                                      <span className="text-white/60">
+                                        ·
+                                      </span>
                                       <button
                                         type="button"
                                         disabled={deletingAdId === ad.id}
@@ -2539,14 +2393,12 @@ export function ProfileChannel() {
                             </div>
                           </div>
 
-                          {/* Ad Note */}
                           {ad.note && (
                             <div className="border-l-2 border-primary pl-3 py-1 text-[12.5px] text-foreground/90 bg-popover/60 rounded-r-[4px]">
-                              “{ad.note}”
+                              "{ad.note}"
                             </div>
                           )}
 
-                          {/* Ad Units Grid */}
                           {isInventory ? (
                             <AdItemGrid
                               items={ad.give_items}
@@ -2600,12 +2452,8 @@ export function ProfileChannel() {
               </div>
             )}
 
-            {/* ============================================================== */}
-            {/* TAB 2: TARGET WISHLIST (Improved Layout + Inline Search Adder) */}
-            {/* ============================================================== */}
             {activeTab === "wishlist" && (
               <div className="flex flex-col gap-4 animate-fade-in">
-                {/* Wishlist Header & Owner Quick-Add Toolbar */}
                 <div className="bg-card border border-border rounded-[8px] p-4 flex flex-col gap-3">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-col gap-0.5">
@@ -2643,7 +2491,6 @@ export function ProfileChannel() {
                     )}
                   </div>
 
-                  {/* Owner Inline Unit Search to Add to Wishlist */}
                   {isOwner && currentUser && (
                     <div className="pt-2 border-t border-border flex flex-col gap-2">
                       <div className="relative">
@@ -2652,7 +2499,9 @@ export function ProfileChannel() {
                           name="profile_wishlist_search"
                           type="text"
                           value={wishlistSearch}
-                          onChange={(e) => setWishlistSearch(e.target.value)}
+                          onChange={(e) =>
+                            setWishlistSearch(e.target.value)
+                          }
                           placeholder="Search any unit to add to your Target Wishlist…"
                           className="w-full bg-popover border border-border rounded-[6px] px-3.5 py-2 text-[12.5px] text-foreground outline-none focus:border-primary transition-colors"
                         />
@@ -2721,7 +2570,6 @@ export function ProfileChannel() {
                   )}
                 </div>
 
-                {/* Wishlist Content */}
                 {!isWishlistVisibleToVisitor ? (
                   <div className="bg-card border border-border rounded-[8px] p-12 text-center flex flex-col items-center justify-center gap-2 min-h-[280px]">
                     <div className="w-10 h-10 rounded-full bg-popover border border-border flex items-center justify-center text-muted-foreground mb-1">
@@ -2735,7 +2583,8 @@ export function ProfileChannel() {
                       private.
                     </p>
                   </div>
-                ) : showWishlistSkeleton && activeWishlistItems.length === 0 ? (
+                ) : showWishlistSkeleton &&
+                  activeWishlistItems.length === 0 ? (
                   <WishlistGridSkeleton count={6} />
                 ) : activeWishlistItems.length === 0 ? (
                   <div className="bg-card border border-border rounded-[8px] p-12 text-center flex flex-col items-center justify-center gap-2 min-h-[280px]">
@@ -2759,7 +2608,8 @@ export function ProfileChannel() {
 
                       const tierKey = getTier(master);
                       const tierColor =
-                        TIER_CONFIG[tierKey]?.badgeColor || "var(--primary)";
+                        TIER_CONFIG[tierKey]?.badgeColor ||
+                        "var(--primary)";
                       const obtainability = getObtainability(master);
                       const cfg = master.status
                         ? GRID_STATUS_CFG[
@@ -2769,7 +2619,9 @@ export function ProfileChannel() {
                       const unitVal =
                         master.value === "owner"
                           ? "Owner's Choice"
-                          : getUnitConservativeValue(master).toLocaleString();
+                          : getUnitConservativeValue(
+                              master
+                            ).toLocaleString();
 
                       return (
                         <div
@@ -2777,9 +2629,10 @@ export function ProfileChannel() {
                           className="bg-card border border-border hover:border-foreground/35 rounded-[8px] p-3.5 flex flex-col justify-between gap-3 transition-colors group min-w-0 overflow-hidden"
                         >
                           <div className="flex items-start gap-3 min-w-0">
-                            {/* Unit Portrait */}
                             <div
-                              onClick={() => openHistoryModal(master.id, "value")}
+                              onClick={() =>
+                                openHistoryModal(master.id, "value")
+                              }
                               className="w-14 h-14 rounded-[6px] bg-popover border overflow-hidden relative shrink-0 cursor-pointer"
                               style={{ borderColor: `${tierColor}66` }}
                               title="Inspect Market History"
@@ -2799,7 +2652,6 @@ export function ProfileChannel() {
                               </span>
                             </div>
 
-                            {/* Unit Info */}
                             <div className="flex flex-col min-w-0 flex-1 gap-0.5">
                               <div className="flex items-start justify-between gap-1.5 min-w-0">
                                 <button
@@ -2860,7 +2712,6 @@ export function ProfileChannel() {
                             </div>
                           </div>
 
-                          {/* Card Footer: Stacked Metrics Strip + 2-Column Action Buttons */}
                           <div className="pt-2.5 border-t border-border/70 flex flex-col gap-2">
                             <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
                               <button
@@ -2915,7 +2766,8 @@ export function ProfileChannel() {
                                     id: master.id,
                                     name: master.name,
                                     subtitle: master.subtitle,
-                                    value: getUnitConservativeValue(master),
+                                    value:
+                                      getUnitConservativeValue(master),
                                     qty: 1,
                                   });
                                   useToastStore
@@ -2941,15 +2793,17 @@ export function ProfileChannel() {
               </div>
             )}
 
-            {/* ============================================================== */}
-            {/* TAB 3: TRADE JOURNAL (Private, Optional Log)                   */}
-            {/* ============================================================== */}
             {activeTab === "journal" && (
               <div className="flex flex-col gap-4 animate-fade-in">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex flex-col gap-0.5">
-                    <h3 className="text-[16px] font-bold text-foreground">Trade Journal</h3>
-                    <p className="text-[12px] text-muted-foreground">Log your completed trades to track your long-term win rate and personal performance.</p>
+                    <h3 className="text-[16px] font-bold text-foreground">
+                      Trade Journal
+                    </h3>
+                    <p className="text-[12px] text-muted-foreground">
+                      Log your completed trades to track your long-term win
+                      rate and personal performance.
+                    </p>
                   </div>
                   {isOwner && (
                     <label className="flex items-center gap-2 text-[12px] text-muted-foreground cursor-pointer bg-card px-3 py-1.5 rounded-[6px] border border-border shadow-sm">
@@ -2965,61 +2819,7 @@ export function ProfileChannel() {
                 </div>
 
                 {isOwner || journalPublic ? (
-                  tradeJournal.length === 0 ? (
-                    <EmptyState
-                      title="No trades logged yet"
-                      description="Log a trade from the Calculator to start building your personal win-rate."
-                      action={{
-                        label: "Open Calculator",
-                        onClick: () => {
-                          window.dispatchEvent(new Event("open-analyzer"));
-                        }
-                      }}
-                    />
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                      {tradeJournal.map((entry) => (
-                        <div key={entry.id} className="bg-card border border-border rounded-[8px] p-4 flex flex-col gap-3">
-                          <div className="flex items-center justify-between border-b border-border pb-2">
-                            <span className="text-[12px] text-muted-foreground font-mono">
-                              {new Date(entry.timestamp).toLocaleDateString()}
-                            </span>
-                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-[4px] uppercase tracking-wider ${
-                              entry.outcome === "win" ? "bg-[#23a559]/20 text-[#23a559]" :
-                              entry.outcome === "loss" ? "bg-destructive/20 text-destructive" :
-                              entry.outcome === "fair" ? "bg-[#3b82f6]/20 text-[#3b82f6]" :
-                              "bg-muted text-muted-foreground"
-                            }`}>
-                              {entry.outcome}
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4 text-[12px]">
-                            <div className="flex flex-col gap-1">
-                              <span className="text-[#FAA61A] font-bold">You Gave:</span>
-                              {entry.give.map((c) => (
-                                <span key={c.id} className="text-foreground truncate">{c.qty}x {c.name}</span>
-                              ))}
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <span className="text-primary font-bold">You Got:</span>
-                              {entry.get.map((c) => (
-                                <span key={c.id} className="text-foreground truncate">{c.qty}x {c.name}</span>
-                              ))}
-                            </div>
-                          </div>
-
-                          {isOwner && entry.outcome === "pending" && (
-                            <div className="flex gap-2 pt-2 border-t border-border">
-                              <button onClick={() => updateJournalOutcome(entry.id, "win")} className="flex-1 py-1.5 bg-[#23a559]/20 hover:bg-[#23a559] text-[#23a559] hover:text-white rounded text-[11px] font-bold transition-colors cursor-pointer">Mark Win</button>
-                              <button onClick={() => updateJournalOutcome(entry.id, "fair")} className="flex-1 py-1.5 bg-[#3b82f6]/20 hover:bg-[#3b82f6] text-[#3b82f6] hover:text-white rounded text-[11px] font-bold transition-colors cursor-pointer">Mark Fair</button>
-                              <button onClick={() => updateJournalOutcome(entry.id, "loss")} className="flex-1 py-1.5 bg-destructive/20 hover:bg-destructive text-destructive hover:text-white rounded text-[11px] font-bold transition-colors cursor-pointer">Mark Loss</button>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )
+                  <TradeJournalTab />
                 ) : (
                   <div className="text-center py-10 text-muted-foreground text-[13px]">
                     This trader has kept their Trade Journal private.
@@ -3028,12 +2828,8 @@ export function ProfileChannel() {
               </div>
             )}
 
-            {/* ============================================================== */}
-            {/* TAB 4: PREFERENCES & PRIVACY (Discord-Style Settings)          */}
-            {/* ============================================================== */}
             {activeTab === "settings" && isOwner && (
               <div className="flex flex-col gap-5 animate-fade-in">
-                {/* 1. Profile Privacy & Data Security */}
                 <div className="bg-card border border-border rounded-[8px] p-5 flex flex-col gap-4">
                   <div className="flex flex-col gap-0.5 border-b border-border pb-3">
                     <h3 className="text-[14px] text-foreground">
@@ -3046,7 +2842,6 @@ export function ProfileChannel() {
                   </div>
 
                   <div className="flex flex-col divide-y divide-border/70">
-                    {/* Public Ad History Toggle */}
                     <div className="py-3 first:pt-0 flex items-center justify-between gap-4">
                       <div className="flex flex-col gap-0.5">
                         <span className="text-[13px] text-foreground">
@@ -3079,7 +2874,6 @@ export function ProfileChannel() {
                       </button>
                     </div>
 
-                    {/* Public Target Wishlist Toggle */}
                     <div className="py-3 flex items-center justify-between gap-4">
                       <div className="flex flex-col gap-0.5">
                         <span className="text-[13px] text-foreground">
@@ -3111,7 +2905,6 @@ export function ProfileChannel() {
                       </button>
                     </div>
 
-                    {/* Hide Raw Discord ID Toggle */}
                     <div className="py-3 flex items-center justify-between gap-4">
                       <div className="flex flex-col gap-0.5">
                         <span className="text-[13px] text-foreground">
@@ -3143,15 +2936,14 @@ export function ProfileChannel() {
                       </button>
                     </div>
 
-                    {/* Hide Profile View Counter Toggle */}
                     <div className="py-3 last:pb-0 flex items-center justify-between gap-4">
                       <div className="flex flex-col gap-0.5">
                         <span className="text-[13px] text-foreground">
                           Hide Profile View Counter
                         </span>
                         <span className="text-[12px] text-muted-foreground">
-                          Only you will be able to see your view count and vault
-                          stats.
+                          Only you will be able to see your view count and
+                          vault stats.
                         </span>
                       </div>
                       <button
@@ -3177,7 +2969,6 @@ export function ProfileChannel() {
                   </div>
                 </div>
 
-                {/* 2. Appearance & Density */}
                 <div className="bg-card border border-border rounded-[8px] p-5 flex flex-col gap-4">
                   <div className="flex items-center justify-between gap-2 border-b border-border pb-3">
                     <div className="flex flex-col gap-0.5">
@@ -3249,14 +3040,14 @@ export function ProfileChannel() {
                     ))}
                   </div>
 
-                  {/* Typography Font Picker */}
                   <div className="pt-3 border-t border-border/70 flex flex-col gap-2">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-[13px] text-foreground">
                         Typography Font
                       </span>
                       <span className="text-[12px] text-muted-foreground">
-                        Choose the primary font family used across the application.
+                        Choose the primary font family used across the
+                        application.
                       </span>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -3265,13 +3056,15 @@ export function ProfileChannel() {
                           id: "luckiest-guy",
                           label: "Luckiest Guy",
                           desc: "Classic ASTD display",
-                          previewFont: "'Luckiest Guy', cursive, sans-serif",
+                          previewFont:
+                            "'Luckiest Guy', cursive, sans-serif",
                         },
                         {
                           id: "lilita-one",
                           label: "Lilita One",
                           desc: "Bold rounded display sans",
-                          previewFont: "'Lilita One', cursive, sans-serif",
+                          previewFont:
+                            "'Lilita One', cursive, sans-serif",
                         },
                         {
                           id: "russo-one",
@@ -3283,7 +3076,8 @@ export function ProfileChannel() {
                           id: "rubik-dirt",
                           label: "Rubik Dirt",
                           desc: "Grungy distressed display",
-                          previewFont: "'Rubik Dirt', cursive, sans-serif",
+                          previewFont:
+                            "'Rubik Dirt', cursive, sans-serif",
                         },
                       ].map((f) => (
                         <button
@@ -3313,15 +3107,14 @@ export function ProfileChannel() {
                     </div>
                   </div>
 
-                  {/* Global Compact Mode */}
                   <div className="pt-3 border-t border-border/70 flex items-center justify-between gap-4">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-[13px] text-foreground">
                         Global Compact Mode
                       </span>
                       <span className="text-[12px] text-muted-foreground">
-                        Tightens padding and card spacing across the entire app
-                        to fit more units on screen.
+                        Tightens padding and card spacing across the entire
+                        app to fit more units on screen.
                       </span>
                     </div>
                     <button
@@ -3338,14 +3131,15 @@ export function ProfileChannel() {
                     >
                       <div
                         className={`absolute top-0.5 left-0.5 bg-white w-5 h-5 rounded-full transition-transform ${
-                          globalCompactMode ? "translate-x-5" : "translate-x-0"
+                          globalCompactMode
+                            ? "translate-x-5"
+                            : "translate-x-0"
                         }`}
                       />
                     </button>
                   </div>
                 </div>
 
-                {/* 3. Startup Channel & Trade Calculator Preferences */}
                 <div className="bg-card border border-border rounded-[8px] p-5 flex flex-col gap-4">
                   <div className="flex items-center justify-between gap-2 border-b border-border pb-3">
                     <div className="flex flex-col gap-0.5">
@@ -3353,15 +3147,17 @@ export function ProfileChannel() {
                         Navigation & Trade Analyzer Defaults
                       </h3>
                       <p className="text-[12px] text-muted-foreground">
-                        Configure your default startup channel and which panels
-                        appear in the Trade Analyzer.
+                        Configure your default startup channel and which
+                        panels appear in the Trade Analyzer.
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => {
                         triggerHaptic("light");
-                        updateAnalyzerSettings(DEFAULT_ANALYZER_SETTINGS);
+                        updateAnalyzerSettings(
+                          DEFAULT_ANALYZER_SETTINGS
+                        );
                         useToastStore
                           .getState()
                           .addToast(
@@ -3427,7 +3223,6 @@ export function ProfileChannel() {
                     </div>
                   </div>
 
-                  {/* Trade Analyzer Panel Toggles */}
                   <div className="pt-3 border-t border-border/70 flex flex-col gap-2">
                     <span className="text-[12px] text-muted-foreground">
                       Trade Analyzer Visible Sections & Metrics
@@ -3438,7 +3233,9 @@ export function ProfileChannel() {
                           {
                             key: "showSummaryMetrics",
                             label: "Forecast & Metrics Bar",
-                            active: analyzerSettings?.showSummaryMetrics ?? true,
+                            active:
+                              analyzerSettings?.showSummaryMetrics ??
+                              true,
                           },
                           {
                             key: "showStFlip",
@@ -3458,34 +3255,41 @@ export function ProfileChannel() {
                           {
                             key: "showLiquidity",
                             label: "Liquidity Comparison Metric",
-                            active: analyzerSettings?.showLiquidity ?? true,
+                            active:
+                              analyzerSettings?.showLiquidity ?? true,
                           },
                           {
                             key: "showMomentumSummary",
                             label: "Status Momentum Summary",
                             active:
-                              analyzerSettings?.showMomentumSummary ?? true,
+                              analyzerSettings?.showMomentumSummary ??
+                              true,
                           },
                           {
                             key: "showTermsInTrade",
                             label: "Terms in This Trade",
-                            active: analyzerSettings?.showTermsInTrade ?? true,
+                            active:
+                              analyzerSettings?.showTermsInTrade ??
+                              true,
                           },
                           {
                             key: "showGiveNotices",
                             label: "You Give Unit Notices",
-                            active: analyzerSettings?.showGiveNotices ?? true,
+                            active:
+                              analyzerSettings?.showGiveNotices ?? true,
                           },
                           {
                             key: "showGetNotices",
                             label: "You Get Unit Notices",
-                            active: analyzerSettings?.showGetNotices ?? true,
+                            active:
+                              analyzerSettings?.showGetNotices ?? true,
                           },
                           {
                             key: "collapseUnitsByDefault",
                             label: "Collapse Analyzer Units by Default",
                             active:
-                              analyzerSettings?.collapseUnitsByDefault ?? false,
+                              analyzerSettings?.collapseUnitsByDefault ??
+                              false,
                           },
                         ] as const
                       ).map((item) => (
@@ -3517,14 +3321,15 @@ export function ProfileChannel() {
                     </div>
                   </div>
 
-                  {/* Danger Zone: Delete Account */}
                   <div className="pt-4 border-t border-destructive/30 flex flex-col gap-3">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-[13px] font-bold text-destructive">
                         Danger Zone
                       </span>
                       <span className="text-[12px] text-muted-foreground">
-                        Irreversible actions for your account. Once deleted, your ads, inventory vault, and profile data cannot be recovered.
+                        Irreversible actions for your account. Once deleted,
+                        your ads, inventory vault, and profile data cannot be
+                        recovered.
                       </span>
                     </div>
 
@@ -3534,7 +3339,8 @@ export function ProfileChannel() {
                           Delete this account
                         </span>
                         <span className="text-[11.5px] text-muted-foreground">
-                          Permanently delete your profile and all associated data from the platform.
+                          Permanently delete your profile and all associated
+                          data from the platform.
                         </span>
                       </div>
                       <button
@@ -3557,7 +3363,6 @@ export function ProfileChannel() {
         </div>
       </div>
 
-      {/* Isolated Memoized Profile Customizer Modal */}
       {profileData && isOwner && (
         <ProfileCustomizerModal
           isOpen={isEditModalOpen}
@@ -3568,13 +3373,14 @@ export function ProfileChannel() {
         />
       )}
 
-      {/* Delete Account Confirmation Modal */}
       {isOwner && (
         <DeleteAccountModal
           isOpen={isDeleteModalOpen}
           onClose={() => setIsDeleteModalOpen(false)}
           username={
-            profileData?.username || currentUser?.username || "your account"
+            profileData?.username ||
+            currentUser?.username ||
+            "your account"
           }
         />
       )}

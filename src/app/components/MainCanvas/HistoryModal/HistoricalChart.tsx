@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/MainCanvas/HistoryModal/HistoricalChart.tsx
+// ================================================
+
 import { HistorySnapshot } from "../../../../hooks/useUnitHistory";
 import { GRID_STATUS_CFG } from "../../../../data";
 import { triggerHaptic } from "../../../../data/helpers";
@@ -43,6 +47,11 @@ interface HistoricalChartProps {
 
   handleChartKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
   handleStepSnapshot: (dir: -1 | 1) => void;
+
+  // Baseline + band analytics
+  baseline7dValue: number | null;
+  mean30d: number | null;
+  std30d: number | null;
 }
 
 export function HistoricalChart({
@@ -67,13 +76,14 @@ export function HistoricalChart({
   error,
   handleChartKeyDown,
   handleStepSnapshot,
+  baseline7dValue,
+  mean30d,
+  std30d,
 }: HistoricalChartProps) {
   const displayLen = filteredHistory.length;
   const latestSnap = filteredHistory[filteredHistory.length - 1];
 
-  const currentValFormatted = latestSnap
-    ? formatSnapValue(latestSnap)
-    : "N/A";
+  const currentValFormatted = latestSnap ? formatSnapValue(latestSnap) : "N/A";
   const currentRarityVal = latestSnap?.rarity ?? 0;
   const currentLiqVal = formatLiquidityLabel(latestSnap?.liquidity);
 
@@ -101,8 +111,23 @@ export function HistoricalChart({
     if (isSelected) {
       return (
         <g onClick={handleDotClick} className="cursor-pointer">
-          <circle cx={cx} cy={cy} r={8} fill="none" stroke="#ffffff" strokeWidth={1.5} opacity={0.9} />
-          <circle cx={cx} cy={cy} r={4.5} fill={currentConfig.color} stroke="#ffffff" strokeWidth={1.5} />
+          <circle
+            cx={cx}
+            cy={cy}
+            r={8}
+            fill="none"
+            stroke="#ffffff"
+            strokeWidth={1.5}
+            opacity={0.9}
+          />
+          <circle
+            cx={cx}
+            cy={cy}
+            r={4.5}
+            fill={currentConfig.color}
+            stroke="#ffffff"
+            strokeWidth={1.5}
+          />
         </g>
       );
     }
@@ -110,7 +135,14 @@ export function HistoricalChart({
     if (isMax) {
       return (
         <g onClick={handleDotClick} className="cursor-pointer">
-          <circle cx={cx} cy={cy} r={4} fill="#23a559" stroke="#111214" strokeWidth={1.5} />
+          <circle
+            cx={cx}
+            cy={cy}
+            r={4}
+            fill="#23a559"
+            stroke="#111214"
+            strokeWidth={1.5}
+          />
         </g>
       );
     }
@@ -118,7 +150,14 @@ export function HistoricalChart({
     if (isMin) {
       return (
         <g onClick={handleDotClick} className="cursor-pointer">
-          <circle cx={cx} cy={cy} r={4} fill="var(--destructive)" stroke="#111214" strokeWidth={1.5} />
+          <circle
+            cx={cx}
+            cy={cy}
+            r={4}
+            fill="var(--destructive)"
+            stroke="#111214"
+            strokeWidth={1.5}
+          />
         </g>
       );
     }
@@ -142,7 +181,8 @@ export function HistoricalChart({
     const point: ChartPoint = payload[0].payload;
     if (!point) return null;
 
-    const snapStatusCfg = GRID_STATUS_CFG[point.fullSnap.status as keyof typeof GRID_STATUS_CFG];
+    const snapStatusCfg =
+      GRID_STATUS_CFG[point.fullSnap.status as keyof typeof GRID_STATUS_CFG];
 
     return (
       <div
@@ -205,6 +245,9 @@ export function HistoricalChart({
     );
   };
 
+  const hasBand =
+    activeMetric === "value" && mean30d !== null && std30d !== null && std30d > 0;
+
   return (
     <section
       aria-label="Historical chart"
@@ -224,7 +267,8 @@ export function HistoricalChart({
           </div>
           <div className="flex items-center gap-2 text-[12px] text-muted-foreground flex-wrap font-medium">
             <span className="font-mono">
-              {filteredHistory.length} snapshot{filteredHistory.length === 1 ? "" : "s"} in range
+              {filteredHistory.length} snapshot
+              {filteredHistory.length === 1 ? "" : "s"} in range
             </span>
             {activeMetric !== "liquidity" && plottableChartData.length > 1 && (
               <>
@@ -247,6 +291,24 @@ export function HistoricalChart({
             {activeMetric === "value" && ocSnapshotCount > 0 && (
               <span className="text-[#FAA61A] font-bold bg-[#FAA61A]/10 px-1.5 py-0.5 rounded border border-[#FAA61A]/20">
                 {ocSnapshotCount} O/C
+              </span>
+            )}
+            {hasBand && (
+              <span className="text-muted-foreground font-mono">
+                ±1σ band ({std30d!.toLocaleString(undefined, {
+                  maximumFractionDigits: 0,
+                })}
+                )
+              </span>
+            )}
+            {baseline7dValue !== null && activeMetric === "value" && (
+              <span className="text-muted-foreground font-mono">
+                7d baseline{" "}
+                <strong className="text-foreground">
+                  {baseline7dValue.toLocaleString(undefined, {
+                    maximumFractionDigits: 0,
+                  })}
+                </strong>
               </span>
             )}
           </div>
@@ -387,6 +449,7 @@ export function HistoricalChart({
                   ResponsiveContainer,
                   CartesianGrid,
                   ReferenceLine,
+                  ReferenceArea,
                 } = RechartsLib;
                 const dataForChart =
                   activeMetric === "value" ? plottableChartData : chartData;
@@ -435,7 +498,7 @@ export function HistoricalChart({
                         axisLine={false}
                         tickMargin={10}
                         tickFormatter={(snapId: string) => {
-                          const pt = dataForChart.find((d) => d.snapId === snapId);
+                          const pt = dataForChart.find((d: ChartPoint) => d.snapId === snapId);
                           return pt ? pt.axisLabel : "";
                         }}
                       />
@@ -445,7 +508,9 @@ export function HistoricalChart({
                         tickLine={false}
                         axisLine={false}
                         width={48}
-                        ticks={activeMetric === "liquidity" ? [1, 2, 3] : undefined}
+                        ticks={
+                          activeMetric === "liquidity" ? [1, 2, 3] : undefined
+                        }
                         tickFormatter={(v: any) =>
                           activeMetric === "liquidity"
                             ? v === 3
@@ -460,7 +525,9 @@ export function HistoricalChart({
                             : v
                         }
                         domain={
-                          activeMetric === "liquidity" ? [0.5, 3.5] : ["auto", "auto"]
+                          activeMetric === "liquidity"
+                            ? [0.5, 3.5]
+                            : ["auto", "auto"]
                         }
                       />
                       <Tooltip
@@ -471,6 +538,36 @@ export function HistoricalChart({
                         }}
                         content={<CustomChartTooltip />}
                       />
+
+                      {activeMetric === "value" &&
+                        mean30d !== null &&
+                        std30d !== null &&
+                        std30d > 0 && (
+                          <ReferenceArea
+                            y1={mean30d - std30d}
+                            y2={mean30d + std30d}
+                            fill={currentConfig.color}
+                            fillOpacity={0.08}
+                            stroke="none"
+                            ifOverflow="hidden"
+                          />
+                        )}
+
+                      {activeMetric === "value" && baseline7dValue !== null && (
+                        <ReferenceLine
+                          y={baseline7dValue}
+                          stroke="var(--muted-foreground)"
+                          strokeDasharray="4 4"
+                          strokeOpacity={0.65}
+                          label={{
+                            value: "7d ago",
+                            position: "insideTopRight",
+                            fill: "var(--muted-foreground)",
+                            fontSize: 10,
+                          }}
+                        />
+                      )}
+
                       {selectedSnapId && (
                         <ReferenceLine
                           x={selectedSnapId}
@@ -480,7 +577,9 @@ export function HistoricalChart({
                         />
                       )}
                       <Area
-                        type={activeMetric === "liquidity" ? "stepAfter" : "monotone"}
+                        type={
+                          activeMetric === "liquidity" ? "stepAfter" : "monotone"
+                        }
                         isAnimationActive={false}
                         dataKey="value"
                         stroke={currentConfig.color}

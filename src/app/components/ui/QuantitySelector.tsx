@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/ui/QuantitySelector.tsx
+// ================================================
+
 import React, { useState, useEffect, memo } from "react";
 
 const IconMinus = ({ className }: { className?: string }) => (
@@ -71,9 +75,9 @@ export const QuantitySelector = memo(
           onClick={handleMinus}
           title="Shift+Click to remove 10"
           aria-label="Decrease quantity"
-          className="w-10 h-10 md:w-6 md:h-6 flex items-center justify-center text-[#949BA4] hover:text-[#DBDEE1] hover:bg-[#2B2D31] rounded-[4px] md:rounded-[3px] transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] cursor-pointer"
+          className="w-8 h-8 md:w-6 md:h-6 flex items-center justify-center text-[#949BA4] hover:text-[#DBDEE1] hover:bg-[#2B2D31] rounded-[4px] md:rounded-[3px] transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] cursor-pointer"
         >
-          <IconMinus className="w-4 h-4 md:w-3 md:h-3" />
+          <IconMinus className="w-3.5 h-3.5 md:w-3 md:h-3" />
         </button>
 
         <input
@@ -102,16 +106,16 @@ export const QuantitySelector = memo(
             }
           }}
           title="Up/Down arrows to adjust. Shift for ±10"
-          className="w-12 h-10 md:w-8 md:h-6 bg-transparent hover:bg-[rgba(255,255,255,0.04)] focus:bg-[#111214] text-center text-[15px] md:text-[12.5px] font-bold text-[#F2F3F5] tabular-nums outline-none focus:ring-1 focus:ring-[#5865F2] rounded-[3px] transition-[background-color,box-shadow] duration-150 cursor-text select-all"
+          className="w-10 h-8 md:w-8 md:h-6 bg-transparent hover:bg-[rgba(255,255,255,0.04)] focus:bg-[#111214] text-center text-[13px] md:text-[12.5px] font-bold text-[#F2F3F5] tabular-nums outline-none focus:ring-1 focus:ring-[#5865F2] rounded-[3px] transition-[background-color,box-shadow] duration-150 cursor-text select-all"
         />
 
         <button
           onClick={handlePlus}
           title="Shift+Click to add 10"
           aria-label="Increase quantity"
-          className="w-10 h-10 md:w-6 md:h-6 flex items-center justify-center text-[#949BA4] hover:text-[#DBDEE1] hover:bg-[#2B2D31] rounded-[4px] md:rounded-[3px] transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] cursor-pointer"
+          className="w-8 h-8 md:w-6 md:h-6 flex items-center justify-center text-[#949BA4] hover:text-[#DBDEE1] hover:bg-[#2B2D31] rounded-[4px] md:rounded-[3px] transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5865F2] cursor-pointer"
         >
-          <IconPlus className="w-4 h-4 md:w-3 md:h-3" />
+          <IconPlus className="w-3.5 h-3.5 md:w-3 md:h-3" />
         </button>
       </div>
     );

@@ -1,11 +1,15 @@
+// ================================================
+// FILE: src/store/useProfileStore.ts
+// ================================================
+
 import React from "react";
 import { create } from "zustand";
 import { supabase } from "../lib/supabase";
-import { logger } from '../lib/logger';
-import { get as getIdb, set as setIdb } from 'idb-keyval';
+import { logger } from "../lib/logger";
 import { useToastStore } from "./useToastStore";
 import { resolveSafeUsername } from "../data/helpers";
 import { useAuthStore } from "./useAuthStore";
+import { enqueueSigned } from "../lib/offlineQueue";
 import {
   formatRoleLabel,
   getStandardRoleColor,
@@ -105,7 +109,7 @@ export interface UserProfileData {
   roblox_username: string;
   global_rep: number;
   status: "online" | "dnd" | "invisible" | "offline";
-  
+
   view_count?: number;
   vault_view_count?: number;
   last_viewed_at?: string;
@@ -215,7 +219,11 @@ export function unpackProfileRow(raw: any): UserProfileData {
       const burl = params.get("burl");
       if (burl) {
         let cleanBurl = burl;
-        if (cleanBurl.includes("%25") || cleanBurl.includes("%3A") || cleanBurl.includes("%2F")) {
+        if (
+          cleanBurl.includes("%25") ||
+          cleanBurl.includes("%3A") ||
+          cleanBurl.includes("%2F")
+        ) {
           try {
             cleanBurl = decodeURIComponent(cleanBurl);
           } catch {
@@ -258,16 +266,21 @@ export function unpackProfileRow(raw: any): UserProfileData {
       ? raw.global_rep
       : 0;
 
-  // Unpack user roles
   let assigned_roles: string[] = [];
   const roleDetailsMap = new Map<string, UserRoleBadge>();
 
   if (Array.isArray(raw?.user_roles)) {
     for (const ur of raw.user_roles) {
-      const rName = ur?.roles?.name || ur?.role_name || (typeof ur === "string" ? ur : null);
+      const rName =
+        ur?.roles?.name ||
+        ur?.role_name ||
+        (typeof ur === "string" ? ur : null);
       if (typeof rName === "string" && rName.trim()) {
         const cleanName = rName.trim();
-        const roleRank = typeof ur?.roles?.rank === "number" ? ur.roles.rank : getStandardRoleRank(cleanName);
+        const roleRank =
+          typeof ur?.roles?.rank === "number"
+            ? ur.roles.rank
+            : getStandardRoleRank(cleanName);
         const roleColor = ur?.roles?.color || getStandardRoleColor(cleanName);
         roleDetailsMap.set(cleanName.toLowerCase(), {
           id: cleanName.toLowerCase(),
@@ -297,7 +310,11 @@ export function unpackProfileRow(raw: any): UserProfileData {
     }
   }
 
-  if (raw?.role && raw.role !== "user" && !roleDetailsMap.has(raw.role.toLowerCase())) {
+  if (
+    raw?.role &&
+    raw.role !== "user" &&
+    !roleDetailsMap.has(raw.role.toLowerCase())
+  ) {
     roleDetailsMap.set(raw.role.toLowerCase(), {
       id: raw.role.toLowerCase(),
       name: raw.role,
@@ -307,12 +324,13 @@ export function unpackProfileRow(raw: any): UserProfileData {
     });
   }
 
-  const role_details = Array.from(roleDetailsMap.values()).sort((a, b) => a.rank - b.rank);
+  const role_details = Array.from(roleDetailsMap.values()).sort(
+    (a, b) => a.rank - b.rank
+  );
   assigned_roles = role_details.map((r) => r.name);
 
   const resolvedUsername = resolveSafeUsername(raw?.username, {
-    joinNumber:
-      typeof raw?.join_number === "number" ? raw.join_number : null,
+    joinNumber: typeof raw?.join_number === "number" ? raw.join_number : null,
     discordId: raw?.discord_id,
     userId: raw?.id,
   });
@@ -337,8 +355,10 @@ export function unpackProfileRow(raw: any): UserProfileData {
     assigned_roles,
     role_details,
     view_count: typeof raw?.view_count === "number" ? raw.view_count : 0,
-    vault_view_count: typeof raw?.vault_view_count === "number" ? raw.vault_view_count : 0,
-    vault_view_stats: typeof raw?.vault_view_stats === "object" ? raw.vault_view_stats : {},
+    vault_view_count:
+      typeof raw?.vault_view_count === "number" ? raw.vault_view_count : 0,
+    vault_view_stats:
+      typeof raw?.vault_view_stats === "object" ? raw.vault_view_stats : {},
     last_viewed_at: raw?.last_viewed_at || undefined,
   };
 }
@@ -356,10 +376,17 @@ export function packBannerConfig(profile: Partial<UserProfileData>): string {
   if (profile.banner_style && VALID_STYLES.includes(profile.banner_style)) {
     params.set("bs", profile.banner_style);
   }
-  if (profile.banner_image_url && typeof profile.banner_image_url === "string" && profile.banner_image_url.trim()) {
+  if (
+    profile.banner_image_url &&
+    typeof profile.banner_image_url === "string" &&
+    profile.banner_image_url.trim()
+  ) {
     params.set("burl", profile.banner_image_url.trim());
   }
-  if (profile.trading_stance && VALID_STANCES.includes(profile.trading_stance)) {
+  if (
+    profile.trading_stance &&
+    VALID_STANCES.includes(profile.trading_stance)
+  ) {
     params.set("ts", profile.trading_stance);
   }
   if (profile.ad_history_public === false) {
@@ -488,7 +515,8 @@ export function getBannerCssStyle(
       return {
         backgroundColor: base,
         backgroundImage: `radial-gradient(circle at 20% 30%, rgba(255,255,255,0.7) 1px, transparent 1.5px), radial-gradient(circle at 80% 25%, rgba(255,255,255,0.8) 1.5px, transparent 2px), radial-gradient(circle at 45% 65%, rgba(255,255,255,0.6) 1px, transparent 1.5px), radial-gradient(circle at 70% 80%, rgba(255,255,255,0.75) 1.2px, transparent 1.8px), radial-gradient(circle at 10% 85%, rgba(255,255,255,0.5) 1px, transparent 1.5px), linear-gradient(135deg, ${base} 0%, ${accent}50 100%)`,
-        backgroundSize: "120px 120px, 160px 160px, 100px 100px, 140px 140px, 90px 90px, 100% 100%",
+        backgroundSize:
+          "120px 120px, 160px 160px, 100px 100px, 140px 140px, 90px 90px, 100% 100%",
       };
     default:
       return { backgroundColor: base };
@@ -530,13 +558,20 @@ interface ProfileState {
     userId: string,
     updates: Partial<UserProfileData>
   ) => Promise<{ error: any }>;
-  recordView: (targetUserId: string, type: "profile" | "vault", sourceUnitId?: string) => Promise<void>;
+  recordView: (
+    targetUserId: string,
+    type: "profile" | "vault",
+    sourceUnitId?: string
+  ) => Promise<void>;
 }
 
 const CACHE_TTL = 5 * 60 * 1000;
 const NOT_FOUND_TTL = 60 * 1000;
 const inFlightBatchRequests = new Map<string, Promise<UserProfileData[]>>();
-const inFlightSingleRequests = new Map<string, Promise<UserProfileData | null>>();
+const inFlightSingleRequests = new Map<
+  string,
+  Promise<UserProfileData | null>
+>();
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
   cache: {},
@@ -565,7 +600,9 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     const currentUser = useAuthStore.getState().profile;
     if (currentUser?.id === targetUserId) return;
 
-    const sessionKey = `astd_viewed_${type}_${targetUserId}_${sourceUnitId || "any"}`;
+    const sessionKey = `astd_viewed_${type}_${targetUserId}_${
+      sourceUnitId || "any"
+    }`;
     try {
       if (sessionStorage.getItem(sessionKey)) return;
       sessionStorage.setItem(sessionKey, "true");
@@ -585,13 +622,14 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
             set((state) => {
               const existing = state.cache[targetUserId];
               if (!existing) return state;
-              
+
               const updatedData = { ...existing.data };
               if (type === "profile") {
                 updatedData.view_count = (updatedData.view_count || 0) + 1;
                 updatedData.last_viewed_at = new Date().toISOString();
               } else {
-                updatedData.vault_view_count = (updatedData.vault_view_count || 0) + 1;
+                updatedData.vault_view_count =
+                  (updatedData.vault_view_count || 0) + 1;
                 if (sourceUnitId) {
                   const stats = { ...(updatedData.vault_view_stats || {}) };
                   stats[sourceUnitId] = (stats[sourceUnitId] || 0) + 1;
@@ -672,12 +710,16 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
           }
 
           if (error || !data) {
-            logger.warn("ASTD-PROF-004", "Relational profile query failed, trying simple select fallback", {
-              scope: "useProfileStore",
-              action: "fetchProfilesBatch",
-              metadata: { count: missingIds.length },
-              error,
-            });
+            logger.warn(
+              "ASTD-PROF-004",
+              "Relational profile query failed, trying simple select fallback",
+              {
+                scope: "useProfileStore",
+                action: "fetchProfilesBatch",
+                metadata: { count: missingIds.length },
+                error,
+              }
+            );
             const fallbackRes = await supabase
               .from("profiles")
               .select("*")
@@ -685,12 +727,16 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
             data = fallbackRes.data;
             error = fallbackRes.error;
             if (error) {
-              logger.error("ASTD-PROF-005", "Fallback profile query also failed", {
-                scope: "useProfileStore",
-                action: "fetchProfilesBatch",
-                metadata: { count: missingIds.length },
-                error,
-              });
+              logger.error(
+                "ASTD-PROF-005",
+                "Fallback profile query also failed",
+                {
+                  scope: "useProfileStore",
+                  action: "fetchProfilesBatch",
+                  metadata: { count: missingIds.length },
+                  error,
+                }
+              );
             }
           }
 
@@ -772,7 +818,6 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
         let { data, error } = await query.maybeSingle();
 
         if (error || !data) {
-          // Fallback query without relational join if restricted
           let fallbackQuery = supabase.from("profiles").select("*");
           if (UUID_REGEX.test(cleanId)) {
             fallbackQuery = fallbackQuery.eq("id", cleanId);
@@ -789,7 +834,12 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
         }
 
         if (error || !data) {
-          logger.error('ASTD-UI-001', `Failed to fetch profile for ${cleanId}: ${error?.message ?? 'unknown'}`);
+          logger.error(
+            "ASTD-UI-001",
+            `Failed to fetch profile for ${cleanId}: ${
+              error?.message ?? "unknown"
+            }`
+          );
           set((state) => ({
             notFoundCache: { ...state.notFoundCache, [cleanId]: now },
           }));
@@ -810,7 +860,9 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
             .maybeSingle();
 
           if (repLog?.action_type) {
-            const match = repLog.action_type.match(/MASTER REP OVERRIDE:\s*([+-]?\d+)/i);
+            const match = repLog.action_type.match(
+              /MASTER REP OVERRIDE:\s*([+-]?\d+)/i
+            );
             if (match) {
               const parsed = parseInt(match[1], 10);
               if (!Number.isNaN(parsed)) {
@@ -833,7 +885,12 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
             ...state.cache,
             [resolvedId]: { data: profileData, timestamp: now },
             ...(profileData.discord_id
-              ? { [profileData.discord_id]: { data: profileData, timestamp: now } }
+              ? {
+                  [profileData.discord_id]: {
+                    data: profileData,
+                    timestamp: now,
+                  },
+                }
               : {}),
             [cleanId]: { data: profileData, timestamp: now },
           },
@@ -875,14 +932,15 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
     const previousData = get().cache[userId]?.data;
     const existing = previousData;
-    
+
     const merged: Partial<UserProfileData> = {
-      banner_color: updates.banner_color ?? existing?.banner_color ?? "#121214",
+      banner_color:
+        updates.banner_color ?? existing?.banner_color ?? "#121214",
       accent_color: updates.accent_color ?? existing?.accent_color ?? "#7289da",
       banner_style: updates.banner_style ?? existing?.banner_style ?? "gradient",
       banner_image_url:
         "banner_image_url" in updates
-          ? (updates.banner_image_url || undefined)
+          ? updates.banner_image_url || undefined
           : existing?.banner_image_url,
       trading_stance:
         updates.trading_stance ?? existing?.trading_stance ?? "open",
@@ -894,8 +952,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
         updates.hide_discord_id ?? existing?.hide_discord_id ?? false,
       hide_view_count:
         updates.hide_view_count ?? existing?.hide_view_count ?? false,
-      private_ad_ids:
-        updates.private_ad_ids ?? existing?.private_ad_ids ?? [],
+      private_ad_ids: updates.private_ad_ids ?? existing?.private_ad_ids ?? [],
       master_rep_override: existing?.master_rep_override ?? null,
     };
 
@@ -924,9 +981,19 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     }
 
     if (!navigator.onLine) {
-      const queue: any[] = (await getIdb("astd_offline_profile")) || [];
-      queue.push({ userId, updates: dbPayload });
-      await setIdb("astd_offline_profile", queue);
+      const ok = await enqueueSigned(
+        "astd_offline_profile",
+        { userId, updates: dbPayload },
+        userId
+      );
+
+      if (!ok) {
+        return {
+          error: new Error(
+            "Could not save profile changes to device storage. Try again."
+          ),
+        };
+      }
 
       get().updateLocalProfile(userId, merged);
       useToastStore
@@ -939,18 +1006,18 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       .from("profiles")
       .update(dbPayload)
       .eq("id", userId);
-      
+
     if (!error) {
       get().updateLocalProfile(userId, merged);
-      
+
       if (previousData) {
         useToastStore.getState().addToast("Profile updated.", "success", {
           action: {
             label: "Undo",
             onClick: () => {
               void get().saveProfileUpdates(userId, previousData);
-            }
-          }
+            },
+          },
         });
       }
     }

@@ -1,3 +1,7 @@
+// ================================================
+// FILE: vite.config.ts
+// ================================================
+
 import { defineConfig, loadEnv, Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -119,10 +123,36 @@ export default defineConfig(({ mode }) => {
                 cacheName: "unit-images-cache",
                 expiration: {
                   maxEntries: 500,
-                  maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+                  maxAgeSeconds: 60 * 60 * 24 * 30,
                 },
                 cacheableResponse: {
                   statuses: [0, 200],
+                },
+              },
+            },
+            {
+              // Cache-fallback for the sync sheet endpoint. If the tab is
+              // closed while offline and Chromium supports Background Sync,
+              // the browser can still replay this request on reconnect.
+              // Browsers without Background Sync simply fall back to the
+              // useNetworkSync online-event path.
+              urlPattern: /\/api\/syncSheet$/,
+              handler: "NetworkFirst",
+              options: {
+                cacheName: "sync-sheet-cache",
+                networkTimeoutSeconds: 8,
+                expiration: {
+                  maxEntries: 4,
+                  maxAgeSeconds: 60 * 60 * 6,
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+                backgroundSync: {
+                  name: "astd-sync-sheet-queue",
+                  options: {
+                    maxRetentionTime: 24 * 60,
+                  },
                 },
               },
             },

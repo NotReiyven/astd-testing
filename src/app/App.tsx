@@ -1,3 +1,10 @@
+// ================================================
+// FILE: src/app/App.tsx
+// ================================================
+//
+// Only change vs the previous version is the added `useAlertEngine();` call
+// next to `useValueListNotification();` and its import line.
+
 import {
   useState,
   useEffect,
@@ -37,6 +44,7 @@ import { logger } from "../lib/logger";
 
 import { useNetworkSync } from "../hooks/useNetworkSync";
 import { useValueListNotification } from "../hooks/useValueListNotification";
+import { useAlertEngine } from "../hooks/useAlertEngine";
 import { useUnits } from "../context/UnitContext";
 import { useHistoryModalStore } from "../store/useHistoryModalStore";
 import { GlobalToastContainer } from "./components/layout/GlobalToastContainer";
@@ -183,23 +191,9 @@ export default function App() {
   const getItems = useTradeStore((s) => s.getItems);
   const { profile, isLoading: isAuthLoading } = useAuthStore();
   const { units } = useUnits();
-  const setShortcutsModalOpen = useLayoutStore((s) => s.setShortcutsModalOpen);
 
   useCrossTabSync();
   useKeyboardShortcuts();
-
-  useEffect(() => {
-    const handleShortcut = (e: KeyboardEvent) => {
-      if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
-        const activeEl = document.activeElement;
-        if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) return;
-        e.preventDefault();
-        setShortcutsModalOpen(true);
-      }
-    };
-    window.addEventListener("keydown", handleShortcut);
-    return () => window.removeEventListener("keydown", handleShortcut);
-  }, [setShortcutsModalOpen]);
 
   useEffect(() => {
     if (!location.pathname.startsWith("/unit/")) return;
@@ -223,11 +217,10 @@ export default function App() {
     }
   }, [location.pathname, units]);
 
-  const {
-    subscribe: subscribeToNotifications,
-  } = useNotificationStore();
+  const { subscribe: subscribeToNotifications } = useNotificationStore();
 
   useValueListNotification();
+  useAlertEngine();
 
   const {
     globalSearchQuery,
@@ -276,7 +269,10 @@ export default function App() {
   }, [globalCompactMode]);
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-font", fontFamily || "luckiest-guy");
+    document.documentElement.setAttribute(
+      "data-font",
+      fontFamily || "luckiest-guy"
+    );
   }, [fontFamily]);
 
   const {
@@ -320,11 +316,15 @@ export default function App() {
         sessionStorage.getItem("astd_dismissed_login_recs") || "{}"
       );
     } catch (err) {
-      logger.warn("ASTD-UI-017", "Failed to parse dismissed login recommendations from sessionStorage", {
-        scope: "App",
-        action: "readDismissedLoginRecs",
-        error: err,
-      });
+      logger.warn(
+        "ASTD-UI-017",
+        "Failed to parse dismissed login recommendations from sessionStorage",
+        {
+          scope: "App",
+          action: "readDismissedLoginRecs",
+          error: err,
+        }
+      );
       return {};
     }
   });
@@ -342,11 +342,15 @@ export default function App() {
               JSON.stringify(updated)
             );
           } catch (err) {
-            logger.warn("ASTD-UI-018", "Failed to persist dismissed login recommendations to sessionStorage", {
-              scope: "App",
-              action: "handleDismissLoginRec",
-              error: err,
-            });
+            logger.warn(
+              "ASTD-UI-018",
+              "Failed to persist dismissed login recommendations to sessionStorage",
+              {
+                scope: "App",
+                action: "handleDismissLoginRec",
+                error: err,
+              }
+            );
           }
           return updated;
         });
@@ -617,7 +621,9 @@ export default function App() {
         <AdInteractionModal />
         <KeyboardShortcutsModal />
         <LoginRecommendationModal
-          isOpen={Boolean(loginModalChannel && bootStage === "complete" && !profile)}
+          isOpen={Boolean(
+            loginModalChannel && bootStage === "complete" && !profile
+          )}
           onClose={() => handleDismissLoginRec()}
           channelName={loginModalChannel || ""}
         />

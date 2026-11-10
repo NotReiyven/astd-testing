@@ -1,15 +1,20 @@
+// ================================================
+// FILE: src/lib/alertEngine.ts
+// ================================================
+
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useNotificationStore } from "../store/useNotificationStore";
 import { useToastStore } from "../store/useToastStore";
-import { useUnits } from "../context/UnitContext";
 import { triggerHaptic } from "../data/helpers";
+import { MasterUnit } from "../types";
 
 export interface UnitAlert {
   unitId: string;
   condition: "above" | "below" | "status_change";
   value?: number;
   lastKnownStatus?: string;
+  weeklyDigest?: boolean;
 }
 
 interface AlertState {
@@ -25,8 +30,11 @@ export const useAlertStore = create<AlertState>()(
       addAlert: (userId, alert) =>
         set((state) => {
           const userAlerts = state.alerts[userId] || [];
-          // Prevent duplicate conditions on the same unit
-          if (userAlerts.some((a) => a.unitId === alert.unitId && a.condition === alert.condition)) {
+          if (
+            userAlerts.some(
+              (a) => a.unitId === alert.unitId && a.condition === alert.condition
+            )
+          ) {
             return state;
           }
           return {
@@ -42,7 +50,9 @@ export const useAlertStore = create<AlertState>()(
           return {
             alerts: {
               ...state.alerts,
-              [userId]: userAlerts.filter((a) => !(a.unitId === unitId && a.condition === condition)),
+              [userId]: userAlerts.filter(
+                (a) => !(a.unitId === unitId && a.condition === condition)
+              ),
             },
           };
         }),
@@ -53,7 +63,9 @@ export const useAlertStore = create<AlertState>()(
 
 let alertInterval: ReturnType<typeof setInterval> | null = null;
 
-export function startAlertEngine(userId: string) {
+type GetUnits = () => MasterUnit[];
+
+export function startAlertEngine(userId: string, getUnits: GetUnits) {
   if (alertInterval) return;
 
   alertInterval = setInterval(() => {
@@ -61,28 +73,32 @@ export function startAlertEngine(userId: string) {
     const userAlerts = alerts[userId] || [];
     if (userAlerts.length === 0) return;
 
-    // Context must be accessed via the store, not a hook
-    const units = (useUnits as any).getState?.().units || [];
+    const units = getUnits();
     if (units.length === 0) return;
 
     const notifications = useNotificationStore.getState();
-    const activeAlerts = [...userAlerts]; // copy for safe iteration
+    const activeAlerts = [...userAlerts];
 
     activeAlerts.forEach((alert) => {
-      const unit = units.find((u: any) => u.id === alert.unitId);
+      // Weekly alerts are handled by the cron job, not the instant engine.
+      if (alert.weeklyDigest) return;
+
+      const unit = units.find((u) => u.id === alert.unitId);
       if (!unit) return;
 
       let triggered = false;
       let message = "";
 
       if (alert.condition === "above" && alert.value !== undefined) {
-        const currentVal = typeof unit.value === "number" ? unit.value : unit.valueMin || 0;
+        const currentVal =
+          typeof unit.value === "number" ? unit.value : unit.valueMin || 0;
         if (currentVal > alert.value) {
           triggered = true;
           message = `${unit.name} has risen above ${alert.value.toLocaleString()} (Current: ${currentVal.toLocaleString()}).`;
         }
       } else if (alert.condition === "below" && alert.value !== undefined) {
-        const currentVal = typeof unit.value === "number" ? unit.value : unit.valueMin || 0;
+        const currentVal =
+          typeof unit.value === "number" ? unit.value : unit.valueMin || 0;
         if (currentVal < alert.value) {
           triggered = true;
           message = `${unit.name} has dropped below ${alert.value.toLocaleString()} (Current: ${currentVal.toLocaleString()}).`;
@@ -95,7 +111,6 @@ export function startAlertEngine(userId: string) {
       }
 
       if (triggered) {
-        // Remove alert immediately to prevent spam
         useAlertStore.getState().removeAlert(userId, alert.unitId, alert.condition);
 
         void notifications.createNotification({
@@ -120,7 +135,7 @@ export function startAlertEngine(userId: string) {
         });
       }
     });
-  }, 60000); // Check every 60 seconds
+  }, 60000);
 }
 
 export function stopAlertEngine() {
@@ -128,4 +143,9 @@ export function stopAlertEngine() {
     clearInterval(alertInterval);
     alertInterval = null;
   }
+}
+
+export function getWeeklyDigestAlerts(userId: string): UnitAlert[] {
+  const userAlerts = useAlertStore.getState().alerts[userId] || [];
+  return userAlerts.filter((a) => a.weeklyDigest === true);
 }

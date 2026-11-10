@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/TradeAnalyzer/ActiveCardRow.tsx
+// ================================================
+
 import { useCallback, useMemo, memo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GripVertical } from "lucide-react";
@@ -126,16 +130,16 @@ export const ActiveCardRow = memo(function ActiveCardRow({
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
       }}
-      className={`flex flex-col bg-card hover:bg-muted/70 rounded-[8px] border transition-[background-color,border-color] duration-150 animate-fade-in group ${
+      className={`flex flex-col w-full min-w-0 max-w-full bg-card hover:bg-muted/70 rounded-[8px] border transition-[background-color,border-color] duration-150 animate-fade-in group ${
         qtyOpen ? "p-2.5" : "px-2.5 py-1.5"
       } ${isPinned ? "border-primary" : "border-border"}`}
     >
       {/* ── Top Row: Drag Handle / Avatar / Name / Value / Toggle ── */}
-      <div className="flex items-center gap-2 w-full min-w-0">
+      <div className="flex flex-wrap items-center gap-2 w-full min-w-0">
         
         {/* DRAG HANDLE */}
         <div
-          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-1 -ml-1 touch-none"
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-1 -ml-1 touch-none shrink-0"
           draggable={true}
           onDragStart={(e) => onDragStart(e, card, type)}
           onDragEnd={onDragEnd}
@@ -144,9 +148,9 @@ export const ActiveCardRow = memo(function ActiveCardRow({
         </div>
 
         <div
-          className={`relative ${
+          className={`relative shrink-0 rounded-[4px] bg-muted overflow-hidden flex items-center justify-center border transition-[width,height,border-color] duration-150 ${
             qtyOpen ? "w-9 h-9" : "w-7 h-7"
-          } flex-shrink-0 rounded-[4px] bg-muted overflow-hidden flex items-center justify-center border transition-[width,height,border-color] duration-150 ${
+          } ${
             isPinned ? "border-primary/50" : "border-border"
           }`}
         >
@@ -171,7 +175,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
             </span>
             {dropCfg && (
               <div
-                className="flex-shrink-0 flex items-center gap-1 px-1.5 py-[1px] rounded-[3px] shadow-xs font-mono font-bold select-none"
+                className="flex-shrink-0 flex items-center gap-1 px-1.5 py-[1px] rounded-[3px] shadow-xs font-mono font-bold select-none hidden sm:flex"
                 style={{
                   background: dropCfg.bg,
                   border: `1px solid ${dropCfg.border}`,
@@ -202,7 +206,7 @@ export const ActiveCardRow = memo(function ActiveCardRow({
             type="button"
             onClick={toggleQty}
             title="Expand unit controls"
-            className="text-[10.5px] font-bold font-mono text-foreground tabular-nums bg-muted hover:bg-popover border border-border rounded-[4px] px-1.5 py-0.5 shrink-0 cursor-pointer transition-colors"
+            className="text-[10.5px] font-bold font-mono text-foreground tabular-nums bg-muted hover:bg-popover border border-border rounded-[4px] px-1.5 py-0.5 cursor-pointer transition-colors shrink-0"
           >
             ×{card.qty}
           </button>
@@ -263,10 +267,10 @@ export const ActiveCardRow = memo(function ActiveCardRow({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.16, ease: "easeInOut" }}
-            className="overflow-hidden"
+            className="overflow-hidden w-full max-w-full"
           >
-            <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-border/70 min-w-0">
-              <div className="flex items-center gap-1.5 ml-auto">
+            <div className="flex flex-wrap items-center justify-end gap-2 mt-2 pt-2 border-t border-border/70 w-full min-w-0">
+              <div className="flex flex-wrap items-center justify-end gap-1.5 ml-auto w-full min-w-0">
                 <QuantitySelector qty={card.qty} onChange={handleQtyInput} minQty={1} />
                 
                 <div className="flex items-center shrink-0 gap-1 ml-1">

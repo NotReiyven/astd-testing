@@ -1,8 +1,12 @@
+// ================================================
+// FILE: src/store/useInventoryStore.ts
+// ================================================
+
 import { create } from "zustand";
 import { supabase } from "../lib/supabase";
-import { get as getIdb, set as setIdb } from "idb-keyval";
 import { useToastStore } from "./useToastStore";
 import { logger } from "../lib/logger";
+import { enqueueSigned } from "../lib/offlineQueue";
 
 export interface InventoryItem {
   id: string;
@@ -59,7 +63,6 @@ const safeGenerateId = () => {
     : Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
 
-// Split request IDs for Inventory and Wishlist
 let activeInvFetchId = 0;
 let activeViewInvFetchId = 0;
 let activeWishlistFetchId = 0;
@@ -107,7 +110,9 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   fetchInventory: async (userId: string, isViewing = false) => {
     if (!userId) return;
 
-    const currentRequestId = isViewing ? ++activeViewInvFetchId : ++activeInvFetchId;
+    const currentRequestId = isViewing
+      ? ++activeViewInvFetchId
+      : ++activeInvFetchId;
 
     set({ isLoading: true });
     const { data, error } = await supabase
@@ -116,7 +121,6 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
-    // Discard if a newer fetch was initiated
     if (isViewing && currentRequestId !== activeViewInvFetchId) return;
     if (!isViewing && currentRequestId !== activeInvFetchId) return;
 
@@ -145,7 +149,9 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   fetchWishlist: async (userId: string, isViewing = false) => {
     if (!userId) return;
 
-    const currentRequestId = isViewing ? ++activeViewWishlistFetchId : ++activeWishlistFetchId;
+    const currentRequestId = isViewing
+      ? ++activeViewWishlistFetchId
+      : ++activeWishlistFetchId;
 
     const { data, error } = await supabase
       .from("user_wishlist")
@@ -153,7 +159,6 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
-    // Discard if a newer wishlist fetch was initiated
     if (isViewing && currentRequestId !== activeViewWishlistFetchId) return;
     if (!isViewing && currentRequestId !== activeWishlistFetchId) return;
 
@@ -205,17 +210,23 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
         });
 
         if (!navigator.onLine) {
-          const queue = (await getIdb("astd_offline_inventory")) || [];
-          queue.push({
-            action: "UPSERT",
-            userId,
-            unitId,
-            quantity: newQuantity,
-          });
-          await setIdb("astd_offline_inventory", queue);
-          useToastStore
-            .getState()
-            .addToast("Offline. Vault updated locally.", "info");
+          const ok = await enqueueSigned(
+            "astd_offline_inventory",
+            { action: "UPSERT", userId, unitId, quantity: newQuantity },
+            userId
+          );
+          if (ok) {
+            useToastStore
+              .getState()
+              .addToast("Offline. Vault updated locally.", "info");
+          } else {
+            useToastStore
+              .getState()
+              .addToast(
+                "Offline. Could not save Vault change to device storage.",
+                "error"
+              );
+          }
           return;
         }
 
@@ -240,17 +251,23 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
         set({ items: [optimisticItem, ...previousItems] });
 
         if (!navigator.onLine) {
-          const queue = (await getIdb("astd_offline_inventory")) || [];
-          queue.push({
-            action: "UPSERT",
-            userId,
-            unitId,
-            quantity: newQuantity,
-          });
-          await setIdb("astd_offline_inventory", queue);
-          useToastStore
-            .getState()
-            .addToast("Offline. Vault updated locally.", "info");
+          const ok = await enqueueSigned(
+            "astd_offline_inventory",
+            { action: "UPSERT", userId, unitId, quantity: newQuantity },
+            userId
+          );
+          if (ok) {
+            useToastStore
+              .getState()
+              .addToast("Offline. Vault updated locally.", "info");
+          } else {
+            useToastStore
+              .getState()
+              .addToast(
+                "Offline. Could not save Vault change to device storage.",
+                "error"
+              );
+          }
           return;
         }
 
@@ -272,12 +289,23 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
 
     try {
       if (!navigator.onLine) {
-        const queue = (await getIdb("astd_offline_inventory")) || [];
-        queue.push({ action: "REMOVE", userId, unitId });
-        await setIdb("astd_offline_inventory", queue);
-        useToastStore
-          .getState()
-          .addToast("Offline. Vault updated locally.", "info");
+        const ok = await enqueueSigned(
+          "astd_offline_inventory",
+          { action: "REMOVE", userId, unitId },
+          userId
+        );
+        if (ok) {
+          useToastStore
+            .getState()
+            .addToast("Offline. Vault updated locally.", "info");
+        } else {
+          useToastStore
+            .getState()
+            .addToast(
+              "Offline. Could not save Vault change to device storage.",
+              "error"
+            );
+        }
         return;
       }
 
@@ -302,12 +330,23 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       const { id, ...itemForDb } = item;
 
       if (!navigator.onLine) {
-        const queue = (await getIdb("astd_offline_inventory")) || [];
-        queue.push({ action: "RESTORE", item: itemForDb });
-        await setIdb("astd_offline_inventory", queue);
-        useToastStore
-          .getState()
-          .addToast("Offline. Item restored locally.", "info");
+        const ok = await enqueueSigned(
+          "astd_offline_inventory",
+          { action: "RESTORE", item: itemForDb },
+          itemForDb.user_id
+        );
+        if (ok) {
+          useToastStore
+            .getState()
+            .addToast("Offline. Item restored locally.", "info");
+        } else {
+          useToastStore
+            .getState()
+            .addToast(
+              "Offline. Could not save Vault change to device storage.",
+              "error"
+            );
+        }
         return;
       }
 
@@ -335,17 +374,23 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
 
     try {
       if (!navigator.onLine) {
-        const queue = (await getIdb("astd_offline_inventory")) || [];
-        queue.push({
-          action: "TOGGLE_PIN",
-          userId,
-          unitId,
-          status: nextStatus,
-        });
-        await setIdb("astd_offline_inventory", queue);
-        useToastStore
-          .getState()
-          .addToast("Offline. Pin status updated locally.", "info");
+        const ok = await enqueueSigned(
+          "astd_offline_inventory",
+          { action: "TOGGLE_PIN", userId, unitId, status: nextStatus },
+          userId
+        );
+        if (ok) {
+          useToastStore
+            .getState()
+            .addToast("Offline. Pin status updated locally.", "info");
+        } else {
+          useToastStore
+            .getState()
+            .addToast(
+              "Offline. Could not save Vault change to device storage.",
+              "error"
+            );
+        }
         return;
       }
 
@@ -368,12 +413,23 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
 
     try {
       if (!navigator.onLine) {
-        const queue = (await getIdb("astd_offline_inventory")) || [];
-        queue.push({ action: "CLEAR_ALL", userId });
-        await setIdb("astd_offline_inventory", queue);
-        useToastStore
-          .getState()
-          .addToast("Offline. Vault cleared locally.", "info");
+        const ok = await enqueueSigned(
+          "astd_offline_inventory",
+          { action: "CLEAR_ALL", userId },
+          userId
+        );
+        if (ok) {
+          useToastStore
+            .getState()
+            .addToast("Offline. Vault cleared locally.", "info");
+        } else {
+          useToastStore
+            .getState()
+            .addToast(
+              "Offline. Could not save Vault change to device storage.",
+              "error"
+            );
+        }
         return;
       }
 
@@ -395,12 +451,23 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
 
     try {
       if (!navigator.onLine) {
-        const queue = (await getIdb("astd_offline_inventory")) || [];
-        queue.push({ action: "CLEAR_UNPINNED", userId });
-        await setIdb("astd_offline_inventory", queue);
-        useToastStore
-          .getState()
-          .addToast("Offline. Unpinned units cleared locally.", "info");
+        const ok = await enqueueSigned(
+          "astd_offline_inventory",
+          { action: "CLEAR_UNPINNED", userId },
+          userId
+        );
+        if (ok) {
+          useToastStore
+            .getState()
+            .addToast("Offline. Unpinned units cleared locally.", "info");
+        } else {
+          useToastStore
+            .getState()
+            .addToast(
+              "Offline. Could not save Vault change to device storage.",
+              "error"
+            );
+        }
         return;
       }
 
@@ -427,9 +494,11 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
 
     try {
       if (!navigator.onLine) {
-        const queue = (await getIdb("astd_offline_wishlist")) || [];
-        queue.push({ action: existing ? "REMOVE" : "ADD", userId, unitId });
-        await setIdb("astd_offline_wishlist", queue);
+        const ok = await enqueueSigned(
+          "astd_offline_wishlist",
+          { action: existing ? "REMOVE" : "ADD", userId, unitId },
+          userId
+        );
 
         if (existing) {
           set({
@@ -445,9 +514,18 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
           set({ wishlistItems: [optimisticItem, ...previousItems] });
         }
 
-        useToastStore
-          .getState()
-          .addToast("Offline. Wishlist updated locally.", "info");
+        if (ok) {
+          useToastStore
+            .getState()
+            .addToast("Offline. Wishlist updated locally.", "info");
+        } else {
+          useToastStore
+            .getState()
+            .addToast(
+              "Offline. Could not save Wishlist change to device storage.",
+              "error"
+            );
+        }
         return;
       }
 

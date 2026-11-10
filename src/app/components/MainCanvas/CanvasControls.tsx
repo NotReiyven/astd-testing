@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/MainCanvas/CanvasControls.tsx
+// ================================================
+
 import {
   LayoutGrid,
   List,
@@ -71,7 +75,6 @@ export function CanvasControls({
   isSelectMode,
   setIsSelectMode,
 }: CanvasControlsProps) {
-  
   const FilterNodes = (
     <>
       <CustomDropdown
@@ -137,34 +140,49 @@ export function CanvasControls({
 
       <div className="flex bg-input rounded-[4px] p-1 border border-border shadow-inner ml-auto md:ml-0 h-[var(--ui-height-btn)]">
         <button
-          onClick={() => { triggerHaptic("light"); setViewMode("grid"); }}
+          onClick={() => {
+            triggerHaptic("light");
+            setViewMode("grid");
+          }}
           aria-label="Grid View"
           data-tooltip="Grid View"
           data-tooltip-side="bottom"
           className={`p-1.5 rounded-[3px] transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 focus-visible:outline-none flex items-center justify-center h-full w-9 cursor-pointer ${
-            viewMode === "grid" ? "bg-foreground text-background shadow-sm font-bold" : "text-muted-foreground hover:text-foreground hover:bg-card"
+            viewMode === "grid"
+              ? "bg-foreground text-background shadow-sm font-bold"
+              : "text-muted-foreground hover:text-foreground hover:bg-card"
           }`}
         >
           <LayoutGrid className="w-4 h-4" />
         </button>
         <button
-          onClick={() => { triggerHaptic("light"); setViewMode("list"); }}
+          onClick={() => {
+            triggerHaptic("light");
+            setViewMode("list");
+          }}
           aria-label="List View"
           data-tooltip="List View"
           data-tooltip-side="bottom"
           className={`p-1.5 rounded-[3px] transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 focus-visible:outline-none flex items-center justify-center h-full w-9 cursor-pointer ${
-            viewMode === "list" ? "bg-foreground text-background shadow-sm font-bold" : "text-muted-foreground hover:text-foreground hover:bg-card"
+            viewMode === "list"
+              ? "bg-foreground text-background shadow-sm font-bold"
+              : "text-muted-foreground hover:text-foreground hover:bg-card"
           }`}
         >
           <List className="w-4 h-4" />
         </button>
         <button
-          onClick={() => { triggerHaptic("light"); setViewMode("compact"); }}
+          onClick={() => {
+            triggerHaptic("light");
+            setViewMode("compact");
+          }}
           aria-label="Compact View"
           data-tooltip="Compact View"
           data-tooltip-side="bottom"
           className={`hidden md:flex p-2 rounded-[3px] transition-[transform,background-color,color,box-shadow] duration-150 active:scale-95 focus-visible:outline-none items-center justify-center h-full w-10 cursor-pointer ${
-            viewMode === "compact" ? "bg-foreground text-background shadow-sm font-bold" : "text-muted-foreground hover:text-foreground hover:bg-card"
+            viewMode === "compact"
+              ? "bg-foreground text-background shadow-sm font-bold"
+              : "text-muted-foreground hover:text-foreground hover:bg-card"
           }`}
         >
           <AlignJustify className="w-4 h-4" />
@@ -173,8 +191,12 @@ export function CanvasControls({
     </>
   );
 
-  const { units } = useUnits();
-  const hasNewUnits = units.some((u) => getTier(u) === "New");
+  const { units, isLoading } = useUnits();
+
+  // Reserve the "New" tab slot during the initial load so the tab bar
+  // does not shift when units arrive. Once loading finishes, narrow to
+  // whether any unit actually reports tier "New".
+  const hasNewUnits = isLoading || units.some((u) => getTier(u) === "New");
   const visibleFilters = FILTERS.filter((f) => f !== "New" || hasNewUnits);
 
   return (
@@ -188,7 +210,8 @@ export function CanvasControls({
               onClick={() => {
                 triggerHaptic("light");
                 setActiveTierFilter(f);
-                if (f !== "All") window.dispatchEvent(new Event("academy-used-filter"));
+                if (f !== "All")
+                  window.dispatchEvent(new Event("academy-used-filter"));
               }}
               className={`px-3.5 h-full rounded-[3px] text-xs font-bold tracking-wider uppercase transition-[transform,background-color,color,box-shadow] duration-150 whitespace-nowrap focus-visible:outline-none shrink-0 cursor-pointer active:scale-95 flex items-center justify-center ${
                 activeTierFilter === f && !deferredSearchQuery
@@ -201,8 +224,8 @@ export function CanvasControls({
           ))}
         </div>
       </div>
-      
-      <ResponsiveToolbar 
+
+      <ResponsiveToolbar
         title="List Controls"
         filterNodes={FilterNodes}
         actionNodes={ActionNodes}

@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/TradeAnalyzer/TradeSectionPanel.tsx
+// ================================================
+
 import { useState, useRef, useEffect, memo, useMemo } from "react";
 import { motion, useMotionValue, useTransform, useReducedMotion } from "framer-motion";
 import { GiMagnifyingGlass } from "react-icons/gi";
@@ -27,7 +31,7 @@ function MagneticCTA({ children, onClick, ariaLabel }: { children: React.ReactNo
   const prefersReducedMotion = useReducedMotion();
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  
+
   const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left - rect.width / 2;
@@ -35,7 +39,7 @@ function MagneticCTA({ children, onClick, ariaLabel }: { children: React.ReactNo
     mouseX.set(x);
     mouseY.set(y);
   };
-  
+
   const handleMouseLeave = () => {
     mouseX.set(0);
     mouseY.set(0);
@@ -77,7 +81,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
   onReorder,
   onMoveToOtherSide,
 }: TradeSectionPanelProps) {
-  
+
   const { units: ALL_UNITS } = useUnits();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -124,11 +128,11 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
     e.preventDefault();
     // Only reorder if dragging within the same list
     if (!draggedItem || draggedItem.type !== type || draggedItem.id === targetId) return;
-    
+
     const currentItems = [...items];
     const draggedIdx = currentItems.findIndex(c => c.id === draggedItem.id);
     const targetIdx = currentItems.findIndex(c => c.id === targetId);
-    
+
     if (draggedIdx !== -1 && targetIdx !== -1) {
       const [moved] = currentItems.splice(draggedIdx, 1);
       currentItems.splice(targetIdx, 0, moved);
@@ -138,7 +142,32 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
 
   const handlePanelDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "move"; // Force move cursor
+
+    // The browser cancels a drop when the target's `dropEffect` is not
+    // permitted by the source's `effectAllowed`. In that case the drop
+    // event never fires at all, which looks to the user like the panel
+    // ignores the drop.
+    //
+    // Sources in this app:
+    //   TierGridCard (value list) -> effectAllowed = "copy"
+    //   ActiveCardRow (analyzer)  -> effectAllowed = "move"
+    //
+    // The previous code hardcoded dropEffect = "move", which silently
+    // rejected every value list drag before handlePanelDrop could run.
+    // Match dropEffect to whatever the source actually permits.
+    const allowed = e.dataTransfer.effectAllowed;
+    if (
+      allowed === "copy" ||
+      allowed === "copyLink" ||
+      allowed === "copyMove"
+    ) {
+      e.dataTransfer.dropEffect = "copy";
+    } else if (allowed === "link") {
+      e.dataTransfer.dropEffect = "link";
+    } else {
+      // "move", "linkMove", "all", "uninitialized"
+      e.dataTransfer.dropEffect = "move";
+    }
   };
 
   const handlePanelDrop = (e: React.DragEvent) => {
@@ -236,7 +265,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
   const accentColorHex = isGive ? "#FAA61A" : "var(--primary)";
 
   let dropZoneClasses =
-    "flex flex-col justify-center rounded-[6px] transition-colors duration-150 ";
+    "flex flex-col justify-center rounded-[6px] transition-colors duration-150 w-full min-w-0 ";
   let dropZoneStyle: React.CSSProperties = {
     minHeight: items.length === 0 ? "90px" : "auto",
   };
@@ -268,7 +297,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
   };
 
   return (
-    <div className="px-[var(--panel-p)] py-[calc(var(--panel-p)*0.75)]">
+    <div className="px-[var(--panel-p)] py-[calc(var(--panel-p)*0.75)] w-full min-w-0">
       <div className="flex items-baseline justify-between mb-3">
         <div className="flex items-center gap-2">
           <div
@@ -298,9 +327,9 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
         </div>
       </div>
 
-      <div className="relative mb-[var(--gap-sm)]">
+      <div className="relative mb-[var(--gap-sm)] w-full min-w-0">
         <div
-          className="flex items-center gap-2 px-3 h-[var(--ui-height-input)] rounded-[4px] focus-within:border-primary bg-input transition-colors duration-100"
+          className="flex items-center gap-2 px-3 h-[var(--ui-height-input)] rounded-[4px] focus-within:border-primary bg-input transition-colors duration-100 w-full min-w-0"
           style={{
             border: open
               ? `1px solid ${accentColorHex}`
@@ -317,7 +346,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
             value={query}
             placeholder="Search to add units…"
             aria-label={`Search to add units to ${label}`}
-            className="flex-1 bg-transparent outline-none text-base md:text-sm font-medium text-foreground placeholder-muted-foreground"
+            className="flex-1 min-w-0 bg-transparent outline-none text-base md:text-sm font-medium text-foreground placeholder-muted-foreground"
             style={{ caretColor: accentColorHex }}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -375,7 +404,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
 
         {open && (results.length > 0 || query.trim().length > 0) && (
           <div
-            className="absolute left-0 right-0 mt-1 rounded-[6px] overflow-hidden bg-card border border-border shadow-lg z-[999999]"
+            className="absolute left-0 right-0 mt-1 rounded-[6px] overflow-hidden bg-card border border-border shadow-lg z-[999999] w-full max-w-full"
             onMouseDown={(e) => e.preventDefault()}
           >
             <p className="px-3 pt-2.5 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted border-b border-border">
@@ -446,7 +475,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
             )}
           </div>
         ) : (
-          <div className="flex flex-col gap-[var(--gap-sm)]">
+          <div className="flex flex-col gap-[var(--gap-sm)] w-full min-w-0">
             {items.map((card) => (
               <ActiveCardRow
                 key={card.id}

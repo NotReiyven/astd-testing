@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/hooks/useGlobalEvents.ts
+// ================================================
+
 import { useEffect } from "react";
 import { triggerHaptic } from "../data/helpers";
 import { useToastStore } from "../store/useToastStore";
@@ -10,8 +14,6 @@ export function useGlobalEvents({
   setTutorialTab,
   setGuideState,
 }: any) {
-
-  // Global Window Event Listeners
   useEffect(() => {
     const handleSetTab = (e: Event) =>
       setTutorialTab((e as CustomEvent).detail);
@@ -35,6 +37,8 @@ export function useGlobalEvents({
         setCompletedGuides((p: any) => ({ ...p, hasVault: true }));
       if (e.type === "academy-wishlist")
         setCompletedGuides((p: any) => ({ ...p, hasWishlist: true }));
+      if (e.type === "academy-trade-logged")
+        setCompletedGuides((p: any) => ({ ...p, hasTradeJournal: true }));
     };
 
     const handleWelcomeClosed = () => {
@@ -67,7 +71,6 @@ export function useGlobalEvents({
         }
       );
 
-      // Guest Tour Progression
       setGuideState((prev: any) =>
         prev.type === "guest_tour" && prev.step === 3
           ? { ...prev, step: 4 }
@@ -85,7 +88,6 @@ export function useGlobalEvents({
 
     const handleOpenAnalyzer = () => {
       setIsAnalyzerOpen(true);
-      // Advance Guest Tour from Step 2 to Step 3 if triggered
       setGuideState((prev: any) =>
         prev.type === "guest_tour" && prev.step === 2
           ? { ...prev, step: 3 }
@@ -103,6 +105,7 @@ export function useGlobalEvents({
       "academy-saved-preset",
       "academy-vault",
       "academy-wishlist",
+      "academy-trade-logged",
     ];
 
     window.addEventListener("set-tutorial-tab", handleSetTab);

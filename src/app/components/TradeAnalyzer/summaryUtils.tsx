@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/TradeAnalyzer/summaryUtils.tsx
+// ================================================
+
 import { TradeCard, MasterUnit } from "../../../types";
 import { sanitizeUsername } from "../../../data/helpers";
 
@@ -124,6 +128,19 @@ export interface TradeForecastBreakdown {
   st: number;
   lt: number;
   rawValueRatio: number;
+
+  // Inputs surfaced for the "Explain this score" drawer.
+  vGiven: number;
+  vReceived: number;
+  liquidityGive: number;
+  liquidityGet: number;
+  rarityGive: number;
+  rarityGet: number;
+  stMomentumGive: number;
+  stMomentumGet: number;
+  ltMomentumGive: number;
+  ltMomentumGet: number;
+
   stLiquidityMult: number;
   ltLiquidityMult: number;
   stRarityMult: number;
@@ -142,6 +159,16 @@ export const getTradeForecastBreakdown = (
     st: 0,
     lt: 0,
     rawValueRatio: 0,
+    vGiven: 0,
+    vReceived: 0,
+    liquidityGive: 1,
+    liquidityGet: 1,
+    rarityGive: 0,
+    rarityGet: 0,
+    stMomentumGive: 1,
+    stMomentumGet: 1,
+    ltMomentumGive: 1,
+    ltMomentumGet: 1,
     stLiquidityMult: 1,
     ltLiquidityMult: 1,
     stRarityMult: 1,
@@ -151,21 +178,21 @@ export const getTradeForecastBreakdown = (
   };
 
   if (giveItems.length === 0 || getItems.length === 0) return defaultBreakdown;
-  
+
   const unitMap = getUnitMap(ALL_UNITS);
   const isOC = (id: string) => {
     const u = unitMap.get(id);
     return u?.value === "owner" || u?.valueDisplay === "Owner's Choice";
   };
-  
+
   if (giveItems.some((i) => isOC(i.id)) || getItems.some((i) => isOC(i.id)))
     return defaultBreakdown;
 
-  const v_given = giveItems.reduce((acc, c) => acc + c.value * c.qty, 0);
-  const v_received = getItems.reduce((acc, c) => acc + c.value * c.qty, 0);
-  if (v_given === 0) return defaultBreakdown;
+  const vGiven = giveItems.reduce((acc, c) => acc + c.value * c.qty, 0);
+  const vReceived = getItems.reduce((acc, c) => acc + c.value * c.qty, 0);
+  if (vGiven === 0) return defaultBreakdown;
 
-  const vw = v_received / v_given;
+  const vw = vReceived / vGiven;
 
   const getTm = (items: TradeCard[], type: "st" | "lt") => {
     let weightedSum = 0;
@@ -182,17 +209,20 @@ export const getTradeForecastBreakdown = (
     return totalWeight > 0 ? weightedSum / totalWeight : 1;
   };
 
-  const tm_st_given = getTm(giveItems, "st");
-  const tm_st_received = getTm(getItems, "st");
-  const tm_lt_given = getTm(giveItems, "lt");
-  const tm_lt_received = getTm(getItems, "lt");
+  const stMomentumGive = getTm(giveItems, "st");
+  const stMomentumGet = getTm(getItems, "st");
+  const ltMomentumGive = getTm(giveItems, "lt");
+  const ltMomentumGet = getTm(getItems, "lt");
 
-  const vt_st = vw * (tm_st_received / tm_st_given);
-  const vt_lt = vw * (tm_lt_received / tm_lt_given);
+  const stMomentum = stMomentumGet / stMomentumGive;
+  const ltMomentum = ltMomentumGet / ltMomentumGive;
 
-  const ld =
-    getLiquidityScore(getItems, ALL_UNITS) /
-    Math.max(getLiquidityScore(giveItems, ALL_UNITS), 0.01);
+  const vtSt = vw * stMomentum;
+  const vtLt = vw * ltMomentum;
+
+  const liquidityGive = getLiquidityScore(giveItems, ALL_UNITS);
+  const liquidityGet = getLiquidityScore(getItems, ALL_UNITS);
+  const ld = liquidityGet / Math.max(liquidityGive, 0.01);
 
   const getRa = (items: TradeCard[]) => {
     let r = parseFloat(avgStat(items, "rarity", ALL_UNITS));
@@ -200,23 +230,34 @@ export const getTradeForecastBreakdown = (
     return Math.max(r, 0.1);
   };
 
-  const ra = getRa(getItems) / getRa(giveItems);
+  const rarityGive = getRa(giveItems);
+  const rarityGet = getRa(getItems);
+  const ra = rarityGet / rarityGive;
 
-  const score_st = (0.8 * (vt_st - 1) + 0.6 * (ld - 1) + 0.1 * (ra - 1)) * 100;
-  const score_lt =
-    (0.85 * (vt_lt - 1) + 0.4 * (ld - 1) + 0.25 * (ra - 1)) * 100;
+  const scoreSt = (0.8 * (vtSt - 1) + 0.6 * (ld - 1) + 0.1 * (ra - 1)) * 100;
+  const scoreLt = (0.85 * (vtLt - 1) + 0.4 * (ld - 1) + 0.25 * (ra - 1)) * 100;
 
   return {
     calculable: true,
-    st: score_st,
-    lt: score_lt,
+    st: scoreSt,
+    lt: scoreLt,
     rawValueRatio: vw,
+    vGiven,
+    vReceived,
+    liquidityGive,
+    liquidityGet,
+    rarityGive,
+    rarityGet,
+    stMomentumGive,
+    stMomentumGet,
+    ltMomentumGive,
+    ltMomentumGet,
     stLiquidityMult: ld,
-    ltLiquidityMult: ld, // Liquidity weight is currently the same for both
+    ltLiquidityMult: ld,
     stRarityMult: ra,
-    ltRarityMult: ra, // Rarity weight is currently the same for both
-    stMomentum: tm_st_received / tm_st_given,
-    ltMomentum: tm_lt_received / tm_lt_given,
+    ltRarityMult: ra,
+    stMomentum,
+    ltMomentum,
   };
 };
 

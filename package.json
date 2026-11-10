@@ -8,7 +8,7 @@
     "build": "npx vite build && node scripts/prerender-seo.mjs",
     "dev": "vite --open",
     "check:rls": "node scripts/check-rls.mjs",
-    "check:secrets": "node -e \"const fs=require('fs');const path=require('path');const files=['dist/index.html', 'dist/assets']; if(!fs.existsSync('dist')){console.error('Run npm run build first');process.exit(1);} const bundle=JSON.stringify(fs.readdirSync('dist/assets').map(f=>fs.readFileSync(path.join('dist/assets',f),'utf8')).join('')); const secrets=['SERVICE_ROLE', 'SUPABASE_SERVICE', 'CRON_SECRET', 'ADMIN_SECRET', 'SYNC_SECRET', 'RESEND_API_KEY']; let found=false; secrets.forEach(s=>{if(bundle.includes(s)){console.error('❌ Exposed secret found in bundle:',s);found=true;}}); if(found) process.exit(1); console.log('✅ No secret patterns found in bundle.');\"",
+    "check:secrets": "node scripts/check-secrets.mjs",
     "verify": "npm run check:rls && npm run build && npm run check:secrets"
   },
   "dependencies": {

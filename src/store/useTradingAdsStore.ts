@@ -1,12 +1,16 @@
+// ================================================
+// FILE: src/store/useTradingAdsStore.ts
+// ================================================
+
 import { create } from "zustand";
 import { supabase } from "../lib/supabase";
 import { TradeCard } from "../types";
 import DOMPurify from "dompurify";
-import { get as getIdb, set as setIdb } from "idb-keyval";
 import { useToastStore } from "./useToastStore";
 import { useProfileStore } from "./useProfileStore";
 import { useAuthStore } from "./useAuthStore";
 import { logger } from "../lib/logger";
+import { enqueueSigned } from "../lib/offlineQueue";
 
 export interface TradingAd {
   id: string;
@@ -146,7 +150,11 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
 
     let records = (data || []) as TradingAd[];
 
-    if (!options.isOwner && Array.isArray(options.privateAdIds) && options.privateAdIds.length > 0) {
+    if (
+      !options.isOwner &&
+      Array.isArray(options.privateAdIds) &&
+      options.privateAdIds.length > 0
+    ) {
       const hiddenSet = new Set(options.privateAdIds);
       records = records.filter((ad) => !hiddenSet.has(ad.id));
     }
@@ -191,7 +199,9 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
                 .single()
                 .then(({ data, error }) => {
                   if (!error && data) {
-                    set((state) => ({ ads: [data as TradingAd, ...state.ads] }));
+                    set((state) => ({
+                      ads: [data as TradingAd, ...state.ads],
+                    }));
                   }
                 });
             } else if (eventType === "DELETE") {
@@ -224,11 +234,9 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
           { event: "UPDATE", schema: "public", table: "profiles" },
           (payload) => {
             if (payload.new?.id) {
-              useProfileStore
-                .getState()
-                .updateLocalProfile(payload.new.id, {
-                  status: payload.new.status,
-                });
+              useProfileStore.getState().updateLocalProfile(payload.new.id, {
+                status: payload.new.status,
+              });
             }
             set((state) => ({
               ads: state.ads.map((ad) =>
@@ -268,7 +276,9 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
           "External links and invite URLs are strictly prohibited in trade notes.",
           "error"
         );
-      return { error: new Error("Phishing or external link detected in note.") };
+      return {
+        error: new Error("Phishing or external link detected in note."),
+      };
     }
 
     const payload: any = {};
@@ -291,17 +301,6 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
     );
 
     if (!isStaff) {
-      let localPendingCount = 0;
-      try {
-        const offlineQueue: any[] = (await getIdb("astd_offline_ads")) || [];
-        if (Array.isArray(offlineQueue)) {
-          localPendingCount = offlineQueue.filter(
-            (item) =>
-              item && typeof item === "object" && item.user_id === payload.user_id
-          ).length;
-        }
-      } catch {}
-
       let serverActiveCount = 0;
       if (navigator.onLine) {
         const { count } = await supabase
@@ -315,11 +314,9 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
         }
       }
 
-      if (serverActiveCount + localPendingCount >= MAX_ACTIVE_ADS_REGULAR) {
+      if (serverActiveCount >= MAX_ACTIVE_ADS_REGULAR) {
         const msg =
-          localPendingCount > 0
-            ? `Listing limit reached: ${serverActiveCount} active + ${localPendingCount} queued = ${MAX_ACTIVE_ADS_REGULAR} max.`
-            : "Listing limit reached: Regular users can have at most 3 active listings simultaneously.";
+          "Listing limit reached: Regular users can have at most 3 active listings simultaneously.";
         useToastStore.getState().addToast(msg, "warning");
         return { error: new Error(msg) };
       }
@@ -375,7 +372,9 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
 
     const validTypes = ["standard", "lf_offers", "inventory"];
     const requestedType = adData.ad_type || adData.adType || "standard";
-    payload.ad_type = validTypes.includes(requestedType) ? requestedType : "standard";
+    payload.ad_type = validTypes.includes(requestedType)
+      ? requestedType
+      : "standard";
 
     const rawGive = Array.isArray(adData.give_items || adData.giveItems)
       ? adData.give_items || adData.giveItems
@@ -396,35 +395,44 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
     if (rawExpires) {
       payload.expires_at = rawExpires;
     } else {
-      const hours = Math.min(24, Math.max(1, Number(adData.ttlHours || adData.ttl || 24)));
+      const hours = Math.min(
+        24,
+        Math.max(1, Number(adData.ttlHours || adData.ttl || 24))
+      );
       const exp = new Date();
       exp.setHours(exp.getHours() + hours);
       payload.expires_at = exp.toISOString();
     }
 
     if (!navigator.onLine) {
-      try {
-        const queue: any[] = (await getIdb("astd_offline_ads")) || [];
-        queue.push({ ...payload, _queuedAt: Date.now() });
-        await setIdb("astd_offline_ads", queue);
+      const ok = await enqueueSigned(
+        "astd_offline_ads",
+        payload,
+        payload.user_id
+      );
 
-        try {
-          localStorage.setItem(
-            `astd_last_ad_posted_${payload.user_id}`,
-            Date.now().toString()
-          );
-        } catch {}
-
-        useToastStore
-          .getState()
-          .addToast(
-            "Offline. Your listing is queued and will publish automatically when you reconnect.",
-            "info"
-          );
-        return { error: null, queued: true };
-      } catch (queueErr) {
-        return { error: queueErr as Error };
+      if (!ok) {
+        return {
+          error: new Error(
+            "Could not save your listing to device storage. Try again."
+          ),
+        };
       }
+
+      try {
+        localStorage.setItem(
+          `astd_last_ad_posted_${payload.user_id}`,
+          Date.now().toString()
+        );
+      } catch {}
+
+      useToastStore
+        .getState()
+        .addToast(
+          "Offline. Your listing is queued and will publish automatically when you reconnect.",
+          "info"
+        );
+      return { error: null, queued: true };
     }
 
     const { error } = await supabase.from("trading_ads").insert(payload);
@@ -483,10 +491,12 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
       return false;
     }
 
-    const deletedAd = get().ads.find(a => a.id === id) || get().userAdHistory.find(a => a.id === id);
+    const deletedAd =
+      get().ads.find((a) => a.id === id) ||
+      get().userAdHistory.find((a) => a.id === id);
     const currentAds = get().ads;
     const currentHistory = get().userAdHistory;
-    
+
     set({
       ads: currentAds.filter((ad) => ad.id !== id),
       userAdHistory: currentHistory.filter((ad) => ad.id !== id),
@@ -517,8 +527,8 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
           label: "Undo",
           onClick: () => {
             void get().restoreDeletedAd(deletedAd);
-          }
-        }
+          },
+        },
       });
     }
 
@@ -557,7 +567,9 @@ export const useTradingAdsStore = create<TradingAdsState>((set, get) => ({
       return false;
     }
 
-    const newExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const newExpires = new Date(
+      Date.now() + 24 * 60 * 60 * 1000
+    ).toISOString();
     const result = await get().createAd({
       user_id: session.user.id,
       ad_type: ad.ad_type,

@@ -1,6 +1,17 @@
+// ================================================
+// FILE: src/app/components/MainCanvas/UnitCard/TierGridCard.tsx
+// ================================================
+
 import React, { useState, memo, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { GiPayMoney, GiReceiveMoney, GiHourglass, GiChest, GiCheckMark, GiSpinningBlades } from "react-icons/gi";
+import {
+  GiPayMoney,
+  GiReceiveMoney,
+  GiHourglass,
+  GiChest,
+  GiCheckMark,
+  GiSpinningBlades,
+} from "react-icons/gi";
 import { FiCopy } from "react-icons/fi";
 import { PopupUnit, GridUnit, MasterUnit } from "../../../../types";
 import {
@@ -12,7 +23,10 @@ import {
   THEORY_RARITY_SCALE,
   THEORY_LIQUIDITY_SCALE,
 } from "../../../../data";
-import { getAvatarStyle, getInitials } from "../../TradeAnalyzer/summaryUtils";
+import {
+  getAvatarStyle,
+  getInitials,
+} from "../../TradeAnalyzer/summaryUtils";
 import { useTradeStore } from "../../../../store/useTradeStore";
 import { useHistoryModalStore } from "../../../../store/useHistoryModalStore";
 import { triggerHaptic, copyTextWithFallback } from "../../../../data/helpers";
@@ -24,12 +38,9 @@ import {
   StatusIcon,
 } from "../../shared/Formatters";
 import { GridValueDisplay } from "./GridValueDisplay";
+import { SentimentVoteStrip } from "./SentimentVoteStrip";
 import { useToastStore } from "../../../../store/useToastStore";
 import { logger } from "../../../../lib/logger";
-
-/* -------------------------------------------------------------------------- */
-/* Image fallback (module-level, zero React state)                            */
-/* -------------------------------------------------------------------------- */
 
 const BLANK_PIXEL =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
@@ -105,10 +116,6 @@ const CardImage = memo(function CardImage({
   );
 });
 
-/* -------------------------------------------------------------------------- */
-/* Status Badge                                                               */
-/* -------------------------------------------------------------------------- */
-
 export function GridStatusBadge({ status }: { status: string }) {
   const c = GRID_STATUS_CFG[status as keyof typeof GRID_STATUS_CFG];
   const badgeRef = useRef<HTMLDivElement>(null);
@@ -175,9 +182,7 @@ export function GridStatusBadge({ status }: { status: string }) {
         }}
       >
         <StatusIcon status={status} />
-        <span className="leading-none">
-          {c.label}
-        </span>
+        <span className="leading-none">{c.label}</span>
       </div>
 
       {tipPos &&
@@ -215,10 +220,6 @@ export function GridStatusBadge({ status }: { status: string }) {
     </div>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/* Stat Footer                                                                */
-/* -------------------------------------------------------------------------- */
 
 export function GridStatFooter({
   rarity,
@@ -274,10 +275,6 @@ export function GridStatFooter({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* Tier Grid Card                                                             */
-/* -------------------------------------------------------------------------- */
-
 interface TierGridCardProps {
   unit: GridUnit;
   searchQuery?: string;
@@ -311,20 +308,18 @@ function TierGridCardImpl({
 
   const handleSaveToInventory = async () => {
     if (!profile) {
-      useToastStore
-        .getState()
-        .addToast(
-          "Sign in with Discord to save units to your Vault.",
-          "warning",
-          {
-            action: {
-              label: "Login",
-              onClick: () => {
-                void useAuthStore.getState().loginWithDiscord();
-              },
+      useToastStore.getState().addToast(
+        "Sign in with Discord to save units to your Vault.",
+        "warning",
+        {
+          action: {
+            label: "Login",
+            onClick: () => {
+              void useAuthStore.getState().loginWithDiscord();
             },
-          }
-        );
+          },
+        }
+      );
       return;
     }
 
@@ -336,26 +331,26 @@ function TierGridCardImpl({
         .addToast(`Added 1× ${unit.name} to your Vault.`, "success");
       setMenuOpen(false);
     } catch (err) {
-      logger.error("ASTD-INV-011", `Failed to save ${unit.name} to vault from TierGridCard`, {
-        scope: "TierGridCard",
-        action: "handleSaveToInventory",
-        metadata: { unitId: unit.id },
-        error: err,
-      });
+      logger.error(
+        "ASTD-INV-011",
+        `Failed to save ${unit.name} to vault from TierGridCard`,
+        {
+          scope: "TierGridCard",
+          action: "handleSaveToInventory",
+          metadata: { unitId: unit.id },
+          error: err,
+        }
+      );
       useToastStore
         .getState()
-        .addToast(
-          `Could not save ${unit.name} to your Vault. Try again.`,
-          "error",
-          {
-            action: {
-              label: "Retry",
-              onClick: () => {
-                void handleSaveToInventory();
-              },
+        .addToast(`Could not save ${unit.name} to your Vault. Try again.`, "error", {
+          action: {
+            label: "Retry",
+            onClick: () => {
+              void handleSaveToInventory();
             },
-          }
-        );
+          },
+        });
     } finally {
       setIsSaving(false);
     }
@@ -511,15 +506,19 @@ function TierGridCardImpl({
             </div>
 
             <div className="flex flex-col mt-auto pt-3 w-full">
-              <div
-                className="pl-2 border-l-[3px] w-full min-w-0 mb-1 h-9 flex items-center hover:bg-white/5 cursor-pointer rounded-r transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openModal(unit.id, "value");
-                }}
-                style={{ borderColor: tierColor }}
-              >
-                <GridValueDisplay unit={unit as GridUnit} />
+              <div className="flex items-center justify-between gap-2 w-full">
+                <div
+                  className="pl-2 border-l-[3px] min-w-0 flex-1 h-9 flex items-center hover:bg-white/5 cursor-pointer rounded-r transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openModal(unit.id, "value");
+                  }}
+                  style={{ borderColor: tierColor }}
+                >
+                  <GridValueDisplay unit={unit as GridUnit} />
+                </div>
+
+                <SentimentVoteStrip unitId={unit.id} />
               </div>
 
               <GridStatFooter

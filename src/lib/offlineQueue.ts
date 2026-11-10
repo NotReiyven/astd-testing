@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/lib/offlineQueue.ts
+// ================================================
+
 import { get as getIdb, set as setIdb } from "idb-keyval";
 import { logger } from "./logger";
 
@@ -16,19 +20,15 @@ export type QueueKey = (typeof QUEUE_KEYS)[number];
 // ----------------------------------------------------------------------------
 
 async function getHmacKey(userId: string): Promise<CryptoKey | null> {
-  // Derive a stable, session-specific key from the user ID.
-  // In a perfect world, we'd use the JWT `session_id` claim, but the user ID
-  // is sufficient to isolate queues per user on a shared device.
   try {
     const enc = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey(
+    return await crypto.subtle.importKey(
       "raw",
       enc.encode(`astd-offline-queue-${userId}`),
       { name: "HMAC", hash: "SHA-256" },
       false,
       ["sign", "verify"]
     );
-    return keyMaterial;
   } catch (err) {
     logger.warn("ASTD-OFF-001", "Failed to derive HMAC key for offline queue", {
       scope: "offlineQueue",
@@ -40,7 +40,7 @@ async function getHmacKey(userId: string): Promise<CryptoKey | null> {
   }
 }
 
-async function signPayload(payload: any, userId: string): Promise<string> {
+async function signPayload(payload: unknown, userId: string): Promise<string> {
   const key = await getHmacKey(userId);
   if (!key) return "";
   const enc = new TextEncoder();
@@ -51,16 +51,21 @@ async function signPayload(payload: any, userId: string): Promise<string> {
     .join("");
 }
 
-async function verifyPayload(payload: any, signature: string, userId: string): Promise<boolean> {
+async function verifyPayload(
+  payload: unknown,
+  signature: string,
+  userId: string
+): Promise<boolean> {
   const key = await getHmacKey(userId);
-  if (!key) return false;
+  if (!key || !signature) return false;
+
   const enc = new TextEncoder();
   const data = enc.encode(JSON.stringify(payload));
-  
-  // Convert hex string back to Uint8Array
-  const sigBytes = new Uint8Array(signature.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)));
-  
+
   try {
+    const sigBytes = new Uint8Array(
+      signature.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16))
+    );
     return await crypto.subtle.verify("HMAC", key, sigBytes, data);
   } catch {
     return false;
@@ -68,12 +73,12 @@ async function verifyPayload(payload: any, signature: string, userId: string): P
 }
 
 // ----------------------------------------------------------------------------
-// Queue Enqueueing (Write path)
+// Enqueueing (Write path)
 // ----------------------------------------------------------------------------
 
 export async function enqueueSigned(
   key: QueueKey,
-  itemPayload: Record<string, any>,
+  itemPayload: Record<string, unknown>,
   userId: string
 ): Promise<boolean> {
   try {
@@ -81,8 +86,6 @@ export async function enqueueSigned(
     if (!signature) return false;
 
     const queue: any[] = (await getIdb(key)) || [];
-    
-    // Ensure the item is tagged with the owning user
     const signedItem = {
       ...itemPayload,
       _owner: userId,
@@ -105,44 +108,145 @@ export async function enqueueSigned(
 }
 
 // ----------------------------------------------------------------------------
-// Queue Processing (Read path)
+// Legacy migration
 // ----------------------------------------------------------------------------
+//
+// Older builds wrote queue items without `_owner` or `_sig`. When we shipped
+// HMAC verification, those items became indistinguishable from "another
+// account's item" and were silently deleted. This migration signs any legacy
+// unsigned items that are owned by the current user before the sync loop
+// runs, so those items are not lost.
+
+export interface LegacyMigrationResult {
+  migrated: number;
+  skipped: number;
+}
+
+export async function migrateLegacyQueue(
+  key: QueueKey,
+  currentUserId: string
+): Promise<LegacyMigrationResult> {
+  try {
+    const rawQueue: any[] = (await getIdb(key)) || [];
+    if (!Array.isArray(rawQueue) || rawQueue.length === 0) {
+      return { migrated: 0, skipped: 0 };
+    }
+
+    let migrated = 0;
+    let skipped = 0;
+    const updated: any[] = [];
+
+    for (const item of rawQueue) {
+      if (!item || typeof item !== "object") {
+        continue;
+      }
+
+      if (item._sig && item._owner) {
+        // Already signed. Keep as-is.
+        updated.push(item);
+        continue;
+      }
+
+      // Legacy item: try to determine its owner from payload.userId or
+      // payload.user_id. If it belongs to the current user, sign it now.
+      // Otherwise drop it (it can no longer be safely attributed).
+      const candidateOwner =
+        typeof item.userId === "string"
+          ? item.userId
+          : typeof item.user_id === "string"
+          ? item.user_id
+          : null;
+
+      if (!candidateOwner || candidateOwner !== currentUserId) {
+        skipped++;
+        continue;
+      }
+
+      const payloadForSig = { ...item };
+      delete payloadForSig._owner;
+      delete payloadForSig._sig;
+      delete payloadForSig._queuedAt;
+      delete payloadForSig._syncId;
+      delete payloadForSig._attempts;
+
+      const signature = await signPayload(payloadForSig, currentUserId);
+      if (!signature) {
+        skipped++;
+        continue;
+      }
+
+      updated.push({
+        ...payloadForSig,
+        _owner: currentUserId,
+        _sig: signature,
+        _queuedAt: item._queuedAt || Date.now(),
+      });
+      migrated++;
+    }
+
+    if (migrated > 0 || skipped > 0) {
+      await setIdb(key, updated);
+      logger.info("ASTD-OFF-006", "Legacy offline queue migration completed", {
+        scope: "offlineQueue",
+        action: "migrateLegacyQueue",
+        metadata: { key, currentUserId, migrated, skipped },
+      });
+    }
+
+    return { migrated, skipped };
+  } catch (err) {
+    logger.error("ASTD-OFF-007", "Legacy offline queue migration failed", {
+      scope: "offlineQueue",
+      action: "migrateLegacyQueue",
+      metadata: { key, currentUserId },
+      error: err,
+    });
+    return { migrated: 0, skipped: 0 };
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Verification (Read path)
+// ----------------------------------------------------------------------------
+
+export interface VerifiedQueueResult {
+  items: any[];
+  droppedForOwnerMismatch: number;
+  droppedForSignatureMismatch: number;
+}
 
 export async function getVerifiedQueue(
   key: QueueKey,
   currentUserId: string
-): Promise<any[]> {
+): Promise<VerifiedQueueResult> {
   try {
     const rawQueue: any[] = (await getIdb(key)) || [];
-    if (!Array.isArray(rawQueue)) return [];
+    if (!Array.isArray(rawQueue)) {
+      return { items: [], droppedForOwnerMismatch: 0, droppedForSignatureMismatch: 0 };
+    }
 
     const verified: any[] = [];
     const rejected: any[] = [];
-    let queueMutated = false;
+    let droppedForOwnerMismatch = 0;
+    let droppedForSignatureMismatch = 0;
 
     for (const item of rawQueue) {
       if (!item || typeof item !== "object") continue;
 
-      // 1. Immediately reject items belonging to a different user
       if (item._owner !== currentUserId) {
-        queueMutated = true;
+        rejected.push(item);
+        droppedForOwnerMismatch++;
         continue;
       }
 
-      // 2. Verify HMAC signature
       const { _sig, _owner, _queuedAt, ...payload } = item;
       const isValid = await verifyPayload(payload, _sig, currentUserId);
 
       if (isValid) {
-        // Preserve sync metadata for the network layer
-        verified.push({
-          ...item,
-          _sig: undefined,
-          _owner: undefined,
-        });
+        verified.push(item);
       } else {
         rejected.push(item);
-        queueMutated = true;
+        droppedForSignatureMismatch++;
         logger.warn("ASTD-OFF-003", "Rejected tampered offline queue item", {
           scope: "offlineQueue",
           action: "getVerifiedQueue",
@@ -151,12 +255,14 @@ export async function getVerifiedQueue(
       }
     }
 
-    // If we dropped items, rewrite the queue in IndexedDB immediately
-    if (queueMutated && rejected.length > 0) {
-      await setIdb(key, rawQueue.filter((i) => !rejected.includes(i)));
+    if (rejected.length > 0) {
+      await setIdb(
+        key,
+        rawQueue.filter((i) => !rejected.includes(i))
+      );
     }
 
-    return verified;
+    return { items: verified, droppedForOwnerMismatch, droppedForSignatureMismatch };
   } catch (err) {
     logger.error("ASTD-OFF-004", "Failed to read and verify offline queue", {
       scope: "offlineQueue",
@@ -164,7 +270,7 @@ export async function getVerifiedQueue(
       metadata: { key },
       error: err,
     });
-    return [];
+    return { items: [], droppedForOwnerMismatch: 0, droppedForSignatureMismatch: 0 };
   }
 }
 
@@ -176,12 +282,7 @@ export async function removeVerifiedItems(
     const queue: any[] = (await getIdb(key)) || [];
     const idSet = new Set(processedIds);
     const filtered = queue.filter((item) => !idSet.has(item._syncId));
-    
-    if (filtered.length === 0) {
-      await setIdb(key, []);
-    } else {
-      await setIdb(key, filtered);
-    }
+    await setIdb(key, filtered);
   } catch (err) {
     logger.error("ASTD-OFF-005", "Failed to remove processed items from queue", {
       scope: "offlineQueue",
@@ -190,4 +291,8 @@ export async function removeVerifiedItems(
       error: err,
     });
   }
+}
+
+export function getQueueKeys(): readonly QueueKey[] {
+  return QUEUE_KEYS;
 }

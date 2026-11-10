@@ -1139,7 +1139,7 @@ export function InventoryChannel() {
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6 mb-8">
                     <div className="bg-card border border-border rounded-[8px] p-5 sm:p-6 flex flex-col justify-between relative shadow-sm">
-                      <Sparkline />
+                      <Sparkline data={[]} />
                       <div className="relative z-10">
                         <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                           <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">

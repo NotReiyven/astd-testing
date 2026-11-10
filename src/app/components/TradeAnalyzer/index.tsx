@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/TradeAnalyzer/index.tsx
+// ================================================
+
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   GiAbacus,
@@ -30,6 +34,7 @@ import { useAuthStore } from "../../../store/useAuthStore";
 import { useToastStore } from "../../../store/useToastStore";
 import { useTradeUndo } from "../../../hooks/useTradeUndo";
 import { useTradeGlobalInput } from "../../../hooks/useTradeGlobalInput";
+import { useSavePresetHotkey } from "../../../hooks/useSavePresetHotkey";
 import { RollingNumber } from "../shared/Formatters";
 import { useBottomSheet } from "../../../hooks/useBottomSheet";
 import { InlineHint } from "../ui/InlineHint";
@@ -83,6 +88,9 @@ export function TradeAnalyzerPanel({
     ...DEFAULT_ANALYZER_SETTINGS,
     ...(rawSettings || {}),
   };
+
+  // Wires Cmd/Ctrl+S (dispatched by useKeyboardShortcuts) to preset save.
+  useSavePresetHotkey({ enabled: isOpen });
 
   const [copied, setCopied] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -889,7 +897,6 @@ export function TradeAnalyzerPanel({
               </button>
             </div>
 
-            {/* Unit Rows Section */}
             <div className="flex flex-col gap-2">
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
                 Unit Cards
@@ -905,7 +912,6 @@ export function TradeAnalyzerPanel({
               )}
             </div>
 
-            {/* Forecast & Metrics Section */}
             <div className="flex flex-col gap-2">
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
                 Summary Metrics
@@ -953,7 +959,6 @@ export function TradeAnalyzerPanel({
               )}
             </div>
 
-            {/* Trade Notices Section */}
             <div className="flex flex-col gap-2">
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-0.5">
                 Trade Notices
@@ -1015,182 +1020,182 @@ export function TradeAnalyzerPanel({
           </div>
         )}
 
-          <TradeSummaryBox
-            isAnalyzerTarget={isGuestStep3}
-            giveTotal={giveTotal}
-            getTotal={getTotal}
-            givePercent={givePercent}
-            getPercent={getPercent}
-            giveItems={giveItems}
-            getItems={getItems}
-            ALL_UNITS={ALL_UNITS}
-            isCompact={isMobile && isInputFocused}
-          />
+        <TradeSummaryBox
+          isAnalyzerTarget={isGuestStep3}
+          giveTotal={giveTotal}
+          getTotal={getTotal}
+          givePercent={givePercent}
+          getPercent={getPercent}
+          giveItems={giveItems}
+          getItems={getItems}
+          ALL_UNITS={ALL_UNITS}
+          isCompact={isMobile && isInputFocused}
+        />
 
-          <div className="flex-1 min-h-0 overflow-y-auto py-1 custom-scrollbar overscroll-y-contain pb-safe flex flex-col [&>*]:shrink-0">
-            <div
-              className={`relative transition-[box-shadow,background-color] duration-300 ${
-                isClearTarget
-                  ? "ring-2 ring-primary rounded-[8px] bg-primary/5 shadow-lg z-[100005]"
-                  : ""
-              }`}
-            >
-              <TradeSectionPanel
-                label="You Give"
-                type="give"
-                items={giveItems}
-                isDraggingGlobal={isGlobalDragging}
-                onQtyChange={(id, qty) => {
-                  const item = giveItems.find((i) => i.id === id);
-                  if (item && qty > item.qty) {
-                    window.dispatchEvent(
-                      new CustomEvent("trade-added", {
-                        detail: { name: item.name, type: "give" },
-                      })
-                    );
-                  }
-                  changeQty("give", id, qty);
-                }}
-                onRemove={(id) => removeCard("give", id)}
-                onClear={() => {
-                  const prevGive = [...giveItems];
-                  const prevGet = [...getItems];
-                  saveUndoState();
-                  clearSection("give");
-                  addToast("Cleared unpinned items from You Give.", "info", {
-                    dedupeKey: "clear-give",
-                    action: {
-                      label: "Undo",
-                      onClick: () => {
-                        overwrite(prevGive, prevGet);
-                        addToast("Restored You Give items.", "info");
-                      },
-                    },
-                  });
-                }}
-                onAdd={(card) => {
-                  addCard("give", card);
-                  window.dispatchEvent(
-                    new CustomEvent("trade-added", {
-                      detail: { name: card.name, type: "give" },
-                    })
-                  );
-                }}
-                pinnedIds={pinnedIdsSet}
-                onTogglePin={(id) => {
-                  togglePin("give", id);
-                }}
-                onInputFocus={() => setIsInputFocused(true)}
-                onInputBlur={() => setIsInputFocused(false)}
-                onReorder={(newOrder) => reorderCards("give", newOrder)}
-                onMoveToOtherSide={(cardId) => {
-                  const card = giveItems.find((c) => c.id === cardId);
-                  if (!card) return;
-                  const newGive = giveItems.filter((c) => c.id !== cardId);
-                  const existingGet = getItems.find((c) => c.id === cardId);
-                  let newGet;
-                  if (existingGet) {
-                    newGet = getItems.map((c) => c.id === cardId ? { ...c, qty: c.qty + card.qty } : c);
-                  } else {
-                    newGet = [...getItems, card];
-                  }
-                  overwrite(newGive, newGet);
-                  triggerHaptic("medium");
-                  addToast(`Moved ${card.name} to You Get.`, "success");
-                }}
-              />
-            </div>
-
-            <div className="relative mx-[var(--panel-p)] flex items-center justify-center my-[var(--gap-sm)]">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
-              </div>
-              <button
-                type="button"
-                aria-label="Swap Give and Get"
-                onClick={() => {
-                  triggerHaptic("light");
-                  swap();
-                }}
-                className="relative flex items-center justify-center w-11 h-11 md:w-8 md:h-8 rounded-full transition-colors z-10 bg-muted border border-border text-muted-foreground hover:text-foreground hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring touch-manipulation cursor-pointer"
-                title="Swap Give and Get"
-              >
-                <GiTrade className="w-5 h-5 md:w-4 md:h-4" />
-              </button>
-            </div>
-
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-1 custom-scrollbar overscroll-y-contain pb-safe flex flex-col">
+          <div
+            className={`relative transition-[box-shadow,background-color] duration-300 ${
+              isClearTarget
+                ? "ring-2 ring-primary rounded-[8px] bg-primary/5 shadow-lg z-[100005]"
+                : ""
+            }`}
+          >
             <TradeSectionPanel
-              label="You Get"
-              type="get"
-              items={getItems}
+              label="You Give"
+              type="give"
+              items={giveItems}
               isDraggingGlobal={isGlobalDragging}
               onQtyChange={(id, qty) => {
-                const item = getItems.find((i) => i.id === id);
+                const item = giveItems.find((i) => i.id === id);
                 if (item && qty > item.qty) {
                   window.dispatchEvent(
                     new CustomEvent("trade-added", {
-                      detail: { name: item.name, type: "get" },
+                      detail: { name: item.name, type: "give" },
                     })
                   );
                 }
-                changeQty("get", id, qty);
+                changeQty("give", id, qty);
               }}
-              onRemove={(id) => removeCard("get", id)}
+              onRemove={(id) => removeCard("give", id)}
               onClear={() => {
                 const prevGive = [...giveItems];
                 const prevGet = [...getItems];
                 saveUndoState();
-                clearSection("get");
-                addToast("Cleared unpinned items from You Get.", "info", {
-                  dedupeKey: "clear-get",
+                clearSection("give");
+                addToast("Cleared unpinned items from You Give.", "info", {
+                  dedupeKey: "clear-give",
                   action: {
                     label: "Undo",
                     onClick: () => {
                       overwrite(prevGive, prevGet);
-                      addToast("Restored You Get items.", "info");
+                      addToast("Restored You Give items.", "info");
                     },
                   },
                 });
               }}
               onAdd={(card) => {
-                addCard("get", card);
+                addCard("give", card);
                 window.dispatchEvent(
                   new CustomEvent("trade-added", {
-                    detail: { name: card.name, type: "get" },
+                    detail: { name: card.name, type: "give" },
                   })
                 );
               }}
               pinnedIds={pinnedIdsSet}
               onTogglePin={(id) => {
-                togglePin("get", id);
+                togglePin("give", id);
               }}
               onInputFocus={() => setIsInputFocused(true)}
               onInputBlur={() => setIsInputFocused(false)}
-              onReorder={(newOrder) => reorderCards("get", newOrder)}
+              onReorder={(newOrder) => reorderCards("give", newOrder)}
               onMoveToOtherSide={(cardId) => {
-                const card = getItems.find((c) => c.id === cardId);
+                const card = giveItems.find((c) => c.id === cardId);
                 if (!card) return;
-                const newGet = getItems.filter((c) => c.id !== cardId);
-                const existingGive = giveItems.find((c) => c.id === cardId);
-                let newGive;
-                if (existingGive) {
-                  newGive = giveItems.map((c) => c.id === cardId ? { ...c, qty: c.qty + card.qty } : c);
+                const newGive = giveItems.filter((c) => c.id !== cardId);
+                const existingGet = getItems.find((c) => c.id === cardId);
+                let newGet;
+                if (existingGet) {
+                  newGet = getItems.map((c) => c.id === cardId ? { ...c, qty: c.qty + card.qty } : c);
                 } else {
-                  newGive = [...giveItems, card];
+                  newGet = [...getItems, card];
                 }
                 overwrite(newGive, newGet);
                 triggerHaptic("medium");
-                addToast(`Moved ${card.name} to You Give.`, "success");
+                addToast(`Moved ${card.name} to You Get.`, "success");
               }}
             />
-
-            <TradeNotices
-              giveItems={giveItems}
-              getItems={getItems}
-              ALL_UNITS={ALL_UNITS}
-            />
           </div>
+
+          <div className="relative mx-[var(--panel-p)] flex items-center justify-center my-[var(--gap-sm)]">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
+            <button
+              type="button"
+              aria-label="Swap Give and Get"
+              onClick={() => {
+                triggerHaptic("light");
+                swap();
+              }}
+              className="relative flex items-center justify-center w-11 h-11 md:w-8 md:h-8 rounded-full transition-colors z-10 bg-muted border border-border text-muted-foreground hover:text-foreground hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring touch-manipulation cursor-pointer"
+              title="Swap Give and Get"
+            >
+              <GiTrade className="w-5 h-5 md:w-4 md:h-4" />
+            </button>
+          </div>
+
+          <TradeSectionPanel
+            label="You Get"
+            type="get"
+            items={getItems}
+            isDraggingGlobal={isGlobalDragging}
+            onQtyChange={(id, qty) => {
+              const item = getItems.find((i) => i.id === id);
+              if (item && qty > item.qty) {
+                window.dispatchEvent(
+                  new CustomEvent("trade-added", {
+                    detail: { name: item.name, type: "get" },
+                  })
+                );
+              }
+              changeQty("get", id, qty);
+            }}
+            onRemove={(id) => removeCard("get", id)}
+            onClear={() => {
+              const prevGive = [...giveItems];
+              const prevGet = [...getItems];
+              saveUndoState();
+              clearSection("get");
+              addToast("Cleared unpinned items from You Get.", "info", {
+                dedupeKey: "clear-get",
+                action: {
+                  label: "Undo",
+                  onClick: () => {
+                    overwrite(prevGive, prevGet);
+                    addToast("Restored You Get items.", "info");
+                  },
+                },
+              });
+            }}
+            onAdd={(card) => {
+              addCard("get", card);
+              window.dispatchEvent(
+                new CustomEvent("trade-added", {
+                  detail: { name: card.name, type: "get" },
+                })
+              );
+            }}
+            pinnedIds={pinnedIdsSet}
+            onTogglePin={(id) => {
+              togglePin("get", id);
+            }}
+            onInputFocus={() => setIsInputFocused(true)}
+            onInputBlur={() => setIsInputFocused(false)}
+            onReorder={(newOrder) => reorderCards("get", newOrder)}
+            onMoveToOtherSide={(cardId) => {
+              const card = getItems.find((c) => c.id === cardId);
+              if (!card) return;
+              const newGet = getItems.filter((c) => c.id !== cardId);
+              const existingGive = giveItems.find((c) => c.id === cardId);
+              let newGive;
+              if (existingGive) {
+                newGive = giveItems.map((c) => c.id === cardId ? { ...c, qty: c.qty + card.qty } : c);
+              } else {
+                newGive = [...giveItems, card];
+              }
+              overwrite(newGive, newGet);
+              triggerHaptic("medium");
+              addToast(`Moved ${card.name} to You Give.`, "success");
+            }}
+          />
+
+          <TradeNotices
+            giveItems={giveItems}
+            getItems={getItems}
+            ALL_UNITS={ALL_UNITS}
+          />
         </div>
+      </div>
     </>
   );
 

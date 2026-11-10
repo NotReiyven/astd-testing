@@ -1,7 +1,20 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+// ================================================
+// FILE: src/app/components/MainCanvas/HistoryModal/index.tsx
+// ================================================
+
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import { GiCheckMark } from "react-icons/gi";
 import { useHistoryModalStore } from "../../../../store/useHistoryModalStore";
-import { useUnitHistory, HistorySnapshot } from "../../../../hooks/useUnitHistory";
+import {
+  useUnitHistory,
+  HistorySnapshot,
+} from "../../../../hooks/useUnitHistory";
 import { useUnits } from "../../../../context/UnitContext";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useInventoryStore } from "../../../../store/useInventoryStore";
@@ -17,7 +30,10 @@ import {
 } from "../../../../data";
 import { getAvatarStyle, getInitials } from "../../TradeAnalyzer/summaryUtils";
 import { StatusIcon } from "../UnitGrid";
-import { triggerHaptic, copyTextWithFallback } from "../../../../data/helpers";
+import {
+  triggerHaptic,
+  copyTextWithFallback,
+} from "../../../../data/helpers";
 import { AsyncButton } from "../../ui/AsyncButton";
 
 import {
@@ -43,14 +59,83 @@ import { AuditTimeline } from "./AuditTimeline";
 
 type TimelineFilter = "All" | ChangedField;
 
+interface LastVisitDiff {
+  value: { old: unknown; new: unknown } | null;
+  status: { old: string; new: string } | null;
+  rarity: { old: number; new: number } | null;
+  timestamp?: number | null;
+}
+
 const METRIC_CONFIGS: Record<
   Metric,
   { label: string; color: string; gradientId: string; unitLabel: string }
 > = {
-  value: { label: "Value History", color: "var(--primary)", gradientId: "valueGrad", unitLabel: "Value" },
-  rarity: { label: "Rarity History", color: "#4DB6AC", gradientId: "rarityGrad", unitLabel: "Rarity" },
-  liquidity: { label: "Liquidity History", color: "#81C784", gradientId: "liqGrad", unitLabel: "Liquidity" },
+  value: {
+    label: "Value History",
+    color: "var(--primary)",
+    gradientId: "valueGrad",
+    unitLabel: "Value",
+  },
+  rarity: {
+    label: "Rarity History",
+    color: "#4DB6AC",
+    gradientId: "rarityGrad",
+    unitLabel: "Rarity",
+  },
+  liquidity: {
+    label: "Liquidity History",
+    color: "#81C784",
+    gradientId: "liqGrad",
+    unitLabel: "Liquidity",
+  },
 };
+
+function computeBaseline7d(
+  history: HistorySnapshot[],
+  currentValue: number | null
+): number | null {
+  if (currentValue === null) return null;
+  const cutoff = Date.now() - 7 * 86_400_000;
+  let best: { value: number; distance: number } | null = null;
+  for (const snap of history) {
+    const num = getSnapNumericValue(snap);
+    if (num === null) continue;
+    const ts = new Date(snap.recorded_at).getTime();
+    if (Number.isNaN(ts)) continue;
+    
+    // Only consider snapshots within the last 7 days. If the history is older
+    // than 7 days, return null to hide the baseline and prevent Y-axis glitches.
+    if (ts < cutoff) continue;
+
+    const distance = Math.abs(ts - cutoff);
+    if (!best || distance < best.distance) {
+      best = { value: num, distance };
+    }
+  }
+  return best ? best.value : null;
+}
+
+function computeMeanStd(history: HistorySnapshot[]): {
+  mean: number | null;
+  std: number | null;
+} {
+  const cutoff = Date.now() - 30 * 86_400_000;
+  const values: number[] = [];
+  for (const snap of history) {
+    const num = getSnapNumericValue(snap);
+    if (num === null) continue;
+    const ts = new Date(snap.recorded_at).getTime();
+    if (Number.isNaN(ts) || ts < cutoff) continue;
+    values.push(num);
+  }
+  if (values.length < 2) return { mean: null, std: null };
+  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  const variance =
+    values.reduce((acc, v) => acc + (v - mean) * (v - mean), 0) /
+    values.length;
+  const std = Math.sqrt(variance);
+  return { mean, std };
+}
 
 export function HistoryModal() {
   const isOpen = useHistoryModalStore((s) => s.isOpen);
@@ -80,13 +165,20 @@ export function HistoryModal() {
   const [rangeFilter, setRangeFilter] = useState<RangeKey>("ALL");
   const [timelineFilter, setTimelineFilter] = useState<TimelineFilter>("All");
   const [selectedSnapId, setSelectedSnapId] = useState<string | null>(null);
-  const [expandedEventIds, setExpandedEventIds] = useState<Record<string, boolean>>({});
+  const [expandedEventIds, setExpandedEventIds] = useState<
+    Record<string, boolean>
+  >({});
   const [isCompareOpen, setIsCompareOpen] = useState(false);
-  const [compareMode, setCompareMode] = useState<"previous" | "baseline">("previous");
-  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
+  const [compareMode, setCompareMode] = useState<"previous" | "baseline">(
+    "previous"
+  );
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">(
+    "idle"
+  );
   const [isVaultPending, setIsVaultPending] = useState(false);
   const [isWishlistPending, setIsWishlistPending] = useState(false);
-  const [diffSinceLastVisit, setDiffSinceLastVisit] = useState<any>(null);
+  const [diffSinceLastVisit, setDiffSinceLastVisit] =
+    useState<LastVisitDiff | null>(null);
   const [alertValue, setAlertValue] = useState("");
   const [shareLinkCopied, setShareLinkCopied] = useState(false);
 
@@ -101,11 +193,12 @@ export function HistoryModal() {
     [unitId, units]
   );
 
-  // Lifecycle: reset state on open
   useEffect(() => {
     if (!isOpen) return;
     previousFocusRef.current =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     setIsScrolled(false);
     setRangeFilter("ALL");
     setTimelineFilter("All");
@@ -125,7 +218,6 @@ export function HistoryModal() {
     };
   }, [isOpen, unitId]);
 
-  // Lazy-load Recharts
   useEffect(() => {
     if (isOpen && !RechartsLib) {
       import("recharts")
@@ -136,7 +228,6 @@ export function HistoryModal() {
     }
   }, [isOpen, RechartsLib]);
 
-  // Item 12: diff since last visit
   useEffect(() => {
     if (!isOpen || !currentUnit) return;
 
@@ -158,7 +249,11 @@ export function HistoryModal() {
             currentUnit.rarity !== last.rarity
               ? { old: last.rarity, new: currentUnit.rarity }
               : null,
+          timestamp:
+            typeof last.timestamp === "number" ? last.timestamp : null,
         });
+      } else {
+        setDiffSinceLastVisit(null);
       }
       localStorage.setItem(
         storageKey,
@@ -174,7 +269,6 @@ export function HistoryModal() {
     }
   }, [isOpen, currentUnit]);
 
-  // Modal close handler
   const handleModalClose = useCallback(() => {
     triggerHaptic("light");
     closeModal();
@@ -183,7 +277,6 @@ export function HistoryModal() {
     }
   }, [closeModal]);
 
-  // ESC + Focus trap
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -232,7 +325,6 @@ export function HistoryModal() {
     };
   }, [isOpen, handleModalClose, selectedSnapId]);
 
-  // URL sync
   useEffect(() => {
     if (!isOpen || !currentUnit) return;
     const targetPath = `/unit/${currentUnit.id}`;
@@ -254,7 +346,6 @@ export function HistoryModal() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  // Derived data: display history
   const displayHistory = useMemo<HistorySnapshot[]>(() => {
     if (!currentUnit) return [];
     const list = [...history];
@@ -264,9 +355,12 @@ export function HistoryModal() {
         id: "live-now",
         unit_id: currentUnit.id,
         recorded_at: new Date().toISOString(),
-        value: typeof currentUnit.value === "number" ? currentUnit.value : null,
+        value:
+          typeof currentUnit.value === "number" ? currentUnit.value : null,
         value_type:
-          typeof currentUnit.value === "number" ? "number" : String(currentUnit.value),
+          typeof currentUnit.value === "number"
+            ? "number"
+            : String(currentUnit.value),
         value_display:
           currentUnit.value === "owner"
             ? "Owner's Choice"
@@ -313,7 +407,8 @@ export function HistoryModal() {
   }, [displayHistory]);
 
   const filteredHistory = useMemo<HistorySnapshot[]>(() => {
-    if (rangeFilter === "ALL" || displayHistory.length <= 1) return displayHistory;
+    if (rangeFilter === "ALL" || displayHistory.length <= 1)
+      return displayHistory;
     const cutoff = Date.now() - RANGE_DAYS[rangeFilter] * 86_400_000;
     const firstIdx = displayHistory.findIndex(
       (s) => new Date(s.recorded_at).getTime() >= cutoff
@@ -414,7 +509,10 @@ export function HistoryModal() {
           const prevRarity = prev.rarity ?? 0;
           prevDisplayLabel = String(prevRarity);
           deltaFromPrev = plotVal - prevRarity;
-          pctFromPrev = prevRarity > 0 ? ((plotVal - prevRarity) / prevRarity) * 100 : null;
+          pctFromPrev =
+            prevRarity > 0
+              ? ((plotVal - prevRarity) / prevRarity) * 100
+              : null;
         }
       } else {
         plotVal = liquidityToPlotValue(snap.liquidity);
@@ -459,10 +557,17 @@ export function HistoryModal() {
     const latestNumVal = getSnapNumericValue(latestSnap);
     const baseNumVal = getSnapNumericValue(firstNumericSnap);
 
-    const canCalc = latestNumVal !== null && baseNumVal !== null && baseNumVal > 0 &&
+    const canCalc =
+      latestNumVal !== null &&
+      baseNumVal !== null &&
+      baseNumVal > 0 &&
       firstNumericSnap?.id !== latestSnap?.id;
-    const valueDelta = canCalc ? (latestNumVal as number) - (baseNumVal as number) : null;
-    const valuePct = canCalc ? ((valueDelta as number) / (baseNumVal as number)) * 100 : null;
+    const valueDelta = canCalc
+      ? (latestNumVal as number) - (baseNumVal as number)
+      : null;
+    const valuePct = canCalc
+      ? ((valueDelta as number) / (baseNumVal as number)) * 100
+      : null;
 
     const rarityStart = firstSnap?.rarity ?? currentUnit?.rarity ?? 0;
     const rarityEnd = latestSnap?.rarity ?? currentUnit?.rarity ?? 0;
@@ -474,61 +579,114 @@ export function HistoryModal() {
       firstNumericSnap,
       valueDelta,
       valuePct,
-      baselineDate: firstNumericSnap ? formatShortDate(firstNumericSnap.recorded_at) : null,
-      rarityDelta: filteredHistory.length > 1 ? rarityEnd - rarityStart : null,
+      baselineDate: firstNumericSnap
+        ? formatShortDate(firstNumericSnap.recorded_at)
+        : null,
+      rarityDelta:
+        filteredHistory.length > 1 ? rarityEnd - rarityStart : null,
       maxVal: numericVals.length > 0 ? Math.max(...numericVals) : 0,
       minVal: numericVals.length > 0 ? Math.min(...numericVals) : 0,
     };
   }, [filteredHistory, plottableChartData, currentUnit]);
 
+  const baseline7dValue = useMemo(() => {
+    if (!currentUnit) return null;
+    const currentNum =
+      typeof currentUnit.value === "number" ? currentUnit.value : null;
+    return computeBaseline7d(displayHistory, currentNum);
+  }, [currentUnit, displayHistory]);
+
+  // FIX: computeMeanStd returns { mean, std }. Alias on destructure.
+  const { mean: mean30d, std: std30d } = useMemo(
+    () => computeMeanStd(displayHistory),
+    [displayHistory]
+  );
+
+  const sparklineValues = useMemo(
+    () => plottableChartData.map((d) => d.value as number),
+    [plottableChartData]
+  );
+
+  const sparklineBand = useMemo<[number, number] | null>(() => {
+    if (mean30d === null || std30d === null) return null;
+    return [mean30d - std30d, mean30d + std30d];
+  }, [mean30d, std30d]);
+
   const selectedPoint = useMemo(
-    () => (selectedSnapId ? chartData.find((d) => d.snapId === selectedSnapId) ?? null : null),
+    () =>
+      selectedSnapId
+        ? chartData.find((d) => d.snapId === selectedSnapId) ?? null
+        : null,
     [chartData, selectedSnapId]
   );
 
-  const handleSelectSnapshot = useCallback((snapId: string, scrollIntoTimeline = false) => {
-    triggerHaptic("light");
-    setSelectedSnapId((prev) => (prev === snapId ? null : snapId));
-    if (scrollIntoTimeline) {
-      setTimeout(() => {
-        const el = timelineRefs.current[snapId];
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }, 40);
-    }
-  }, []);
+  const handleSelectSnapshot = useCallback(
+    (snapId: string, scrollIntoTimeline = false) => {
+      triggerHaptic("light");
+      setSelectedSnapId((prev) => (prev === snapId ? null : snapId));
+      if (scrollIntoTimeline) {
+        setTimeout(() => {
+          const el = timelineRefs.current[snapId];
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 40);
+      }
+    },
+    []
+  );
 
-  const handleStepSnapshot = useCallback((dir: -1 | 1) => {
-    if (chartData.length === 0) return;
-    triggerHaptic("light");
-    if (!selectedSnapId) {
-      const startIdx = dir === -1 ? chartData.length - 1 : 0;
-      setSelectedSnapId(chartData[startIdx].snapId);
-      return;
-    }
-    const currIdx = chartData.findIndex((d) => d.snapId === selectedSnapId);
-    if (currIdx === -1) {
-      setSelectedSnapId(chartData[chartData.length - 1].snapId);
-      return;
-    }
-    const nextIdx = Math.max(0, Math.min(chartData.length - 1, currIdx + dir));
-    setSelectedSnapId(chartData[nextIdx].snapId);
-  }, [chartData, selectedSnapId]);
+  const handleStepSnapshot = useCallback(
+    (dir: -1 | 1) => {
+      if (chartData.length === 0) return;
+      triggerHaptic("light");
+      if (!selectedSnapId) {
+        const startIdx = dir === -1 ? chartData.length - 1 : 0;
+        setSelectedSnapId(chartData[startIdx].snapId);
+        return;
+      }
+      const currIdx = chartData.findIndex(
+        (d) => d.snapId === selectedSnapId
+      );
+      if (currIdx === -1) {
+        setSelectedSnapId(chartData[chartData.length - 1].snapId);
+        return;
+      }
+      const nextIdx = Math.max(
+        0,
+        Math.min(chartData.length - 1, currIdx + dir)
+      );
+      setSelectedSnapId(chartData[nextIdx].snapId);
+    },
+    [chartData, selectedSnapId]
+  );
 
   const handleChartKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (chartData.length === 0) return;
-    if (e.key === "ArrowLeft") { e.preventDefault(); handleStepSnapshot(-1); }
-    else if (e.key === "ArrowRight") { e.preventDefault(); handleStepSnapshot(1); }
-    else if (e.key === "Home") { e.preventDefault(); setSelectedSnapId(chartData[0].snapId); }
-    else if (e.key === "End") { e.preventDefault(); setSelectedSnapId(chartData[chartData.length - 1].snapId); }
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      handleStepSnapshot(-1);
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      handleStepSnapshot(1);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      setSelectedSnapId(chartData[0].snapId);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      setSelectedSnapId(chartData[chartData.length - 1].snapId);
+    }
   };
 
   if (!isOpen || !unitId || !currentUnit) return null;
 
   const tierKey = getTier(currentUnit);
-  const tierCfg = TIER_CONFIG[tierKey] || { badgeColor: "#5865F2", label: tierKey };
+  const tierCfg = TIER_CONFIG[tierKey] || {
+    badgeColor: "#5865F2",
+    label: tierKey,
+  };
   const proxyUrl = getProxyImage(currentUnit.id, currentUnit.imageUrl);
   const latestSnap = rangeSummary.latestSnap;
-  const statusCfg = GRID_STATUS_CFG[latestSnap?.status as keyof typeof GRID_STATUS_CFG] ||
+  const statusCfg =
+    GRID_STATUS_CFG[latestSnap?.status as keyof typeof GRID_STATUS_CFG] ||
     GRID_STATUS_CFG[currentUnit.status as keyof typeof GRID_STATUS_CFG] ||
     GRID_STATUS_CFG.stable;
 
@@ -539,10 +697,16 @@ export function HistoryModal() {
     currentUnit.valueDisplay === "O/C"
       ? "Owner's Choice"
       : currentUnit.valueDisplay ||
-        (typeof currentUnit.value === "number" ? currentUnit.value.toLocaleString() : "N/A");
+        (typeof currentUnit.value === "number"
+          ? currentUnit.value.toLocaleString()
+          : "N/A");
   const currentRarityVal = latestSnap?.rarity ?? currentUnit.rarity ?? 0;
-  const currentLiqVal = formatLiquidityLabel(latestSnap?.liquidity ?? currentUnit.liquidity);
-  const ocSnapshotCount = filteredHistory.filter((s) => isOwnerChoiceSnap(s)).length;
+  const currentLiqVal = formatLiquidityLabel(
+    latestSnap?.liquidity ?? currentUnit.liquidity
+  );
+  const ocSnapshotCount = filteredHistory.filter((s) =>
+    isOwnerChoiceSnap(s)
+  ).length;
 
   const activeShiftEvent: TimelineEvent | null = selectedPoint
     ? selectedPoint.prevSnap && selectedPoint.changedFields.length > 0
@@ -557,13 +721,22 @@ export function HistoryModal() {
       : null
     : timeline[0] ?? null;
 
-  const compareTargetCurr = selectedPoint?.fullSnap ?? latestSnap ?? displayHistory[displayHistory.length - 1];
-  const compareTargetPrev = compareMode === "baseline"
-    ? rangeSummary.firstSnap ?? null
-    : (compareTargetCurr ? predecessorMap.get(compareTargetCurr.id) : null) ?? timeline[0]?.prev ?? null;
+  const compareTargetCurr =
+    selectedPoint?.fullSnap ??
+    latestSnap ??
+    displayHistory[displayHistory.length - 1];
+  const compareTargetPrev =
+    compareMode === "baseline"
+      ? rangeSummary.firstSnap ?? null
+      : (compareTargetCurr
+          ? predecessorMap.get(compareTargetCurr.id)
+          : null) ??
+        timeline[0]?.prev ??
+        null;
 
   const hasUnitContext = Boolean(
-    currentUnit.notice || (currentUnit.secondaryTags && currentUnit.secondaryTags.length > 0)
+    currentUnit.notice ||
+      (currentUnit.secondaryTags && currentUnit.secondaryTags.length > 0)
   );
 
   const handleAddToVault = async () => {
@@ -582,9 +755,15 @@ export function HistoryModal() {
         dedupeKey: `history-vault-${currentUnit.id}`,
       });
     } catch (err) {
-      logger.error("ASTD-INV-012", `Failed to add ${currentUnit.name} to vault`, {
-        scope: "HistoryModal", action: "handleAddToVault", error: err,
-      });
+      logger.error(
+        "ASTD-INV-012",
+        `Failed to add ${currentUnit.name} to vault`,
+        {
+          scope: "HistoryModal",
+          action: "handleAddToVault",
+          error: err,
+        }
+      );
       addToast(`Could not save ${currentUnit.name} to your Vault.`, "error", {
         action: { label: "Retry", onClick: () => void handleAddToVault() },
       });
@@ -615,7 +794,9 @@ export function HistoryModal() {
       );
     } catch (err) {
       logger.error("ASTD-INV-013", `Failed to toggle wishlist`, {
-        scope: "HistoryModal", action: "handleToggleWishlist", error: err,
+        scope: "HistoryModal",
+        action: "handleToggleWishlist",
+        error: err,
       });
       addToast(`Could not update Wishlist.`, "error", {
         action: { label: "Retry", onClick: () => void handleToggleWishlist() },
@@ -642,7 +823,9 @@ export function HistoryModal() {
 
   const handleCopySummary = async () => {
     const lines: string[] = [
-      `${currentUnit.name} (${currentUnit.subtitle || "Official Unit"}) - Tier ${tierKey}`,
+      `${currentUnit.name} (${
+        currentUnit.subtitle || "Official Unit"
+      }) - Tier ${tierKey}`,
       `Value: ${currentValFormatted}${
         rangeSummary.valuePct !== null
           ? ` (${rangeSummary.valuePct >= 0 ? "+" : ""}${rangeSummary.valuePct.toFixed(1)}% vs ${rangeSummary.baselineDate})`
@@ -653,10 +836,20 @@ export function HistoryModal() {
     if (timeline.length > 0) {
       const recent = timeline.slice(0, 3).map((ev) => {
         const parts: string[] = [];
-        if (ev.changed.includes("Value")) parts.push(`Value ${formatSnapValue(ev.prev)} -> ${formatSnapValue(ev.snap)}`);
-        if (ev.changed.includes("Status")) parts.push(`Status ${ev.prev.status} -> ${ev.snap.status}`);
-        if (ev.changed.includes("Rarity")) parts.push(`Rarity ${ev.prev.rarity} -> ${ev.snap.rarity}`);
-        if (ev.changed.includes("Liquidity")) parts.push(`Liq ${formatLiquidityLabel(ev.prev.liquidity)} -> ${formatLiquidityLabel(ev.snap.liquidity)}`);
+        if (ev.changed.includes("Value"))
+          parts.push(
+            `Value ${formatSnapValue(ev.prev)} -> ${formatSnapValue(ev.snap)}`
+          );
+        if (ev.changed.includes("Status"))
+          parts.push(`Status ${ev.prev.status} -> ${ev.snap.status}`);
+        if (ev.changed.includes("Rarity"))
+          parts.push(`Rarity ${ev.prev.rarity} -> ${ev.snap.rarity}`);
+        if (ev.changed.includes("Liquidity"))
+          parts.push(
+            `Liq ${formatLiquidityLabel(
+              ev.prev.liquidity
+            )} -> ${formatLiquidityLabel(ev.snap.liquidity)}`
+          );
         return `- ${formatShortDate(ev.snap.recorded_at)}: ${parts.join(", ")}`;
       });
       lines.push("Recent Shifts:", ...recent);
@@ -684,22 +877,32 @@ export function HistoryModal() {
       aria-label={`${currentUnit.name} market history`}
       aria-labelledby="history-modal-title"
     >
-      <div className="absolute inset-0 bg-black/85 transition-opacity" onClick={handleModalClose} />
+      <div
+        className="absolute inset-0 bg-black/85 transition-opacity"
+        onClick={handleModalClose}
+      />
 
       <div className="bg-card border border-border rounded-none sm:rounded-[12px] w-full h-full sm:h-auto sm:max-w-6xl sm:max-h-[92vh] flex flex-col relative shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden animate-slide-up">
-        <div className="absolute top-0 left-0 right-0 h-[3px] z-[200]" style={{ background: tierCfg.badgeColor }} />
+        <div
+          className="absolute top-0 left-0 right-0 h-[3px] z-[200]"
+          style={{ background: tierCfg.badgeColor }}
+        />
 
-        {/* SECTION A: Unit Header */}
         <header
           className={`px-4 sm:px-6 py-4 shrink-0 z-[100] bg-popover transition-shadow ${
-            isScrolled ? "border-b border-border shadow-md" : "border-b border-border"
+            isScrolled
+              ? "border-b border-border shadow-md"
+              : "border-b border-border"
           }`}
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center justify-between sm:justify-start gap-4 min-w-0">
               <div className="flex items-center gap-4 min-w-0">
                 <div className="relative overflow-hidden bg-[#0b0c0e] flex items-center justify-center border border-border w-14 h-14 rounded-[8px] shrink-0 shadow-sm">
-                  <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg z-0" style={getAvatarStyle(currentUnit.name)}>
+                  <div
+                    className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg z-0"
+                    style={getAvatarStyle(currentUnit.name)}
+                  >
                     {getInitials(currentUnit.name)}
                   </div>
                   {proxyUrl && (
@@ -715,27 +918,45 @@ export function HistoryModal() {
 
                 <div className="flex flex-col min-w-0 gap-1">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <h2 id="history-modal-title" className="text-foreground text-[20px] sm:text-[24px] font-black tracking-tight truncate leading-none">
+                    <h2
+                      id="history-modal-title"
+                      className="text-foreground text-[20px] sm:text-[24px] font-black tracking-tight truncate leading-none"
+                    >
                       {currentUnit.name}
                     </h2>
                     {statusCfg && (
                       <span
                         className="text-[10.5px] font-bold font-mono tracking-wider uppercase px-2 py-0.5 rounded-[4px] border inline-flex items-center gap-1 leading-none shadow-xs select-none"
-                        style={{ backgroundColor: statusCfg.bg, color: statusCfg.color, borderColor: statusCfg.border }}
+                        style={{
+                          backgroundColor: statusCfg.bg,
+                          color: statusCfg.color,
+                          borderColor: statusCfg.border,
+                        }}
                       >
                         <StatusIcon status={currentUnit.status} />
-                        <span className="leading-none">{statusCfg.label}</span>
+                        <span className="leading-none">
+                          {statusCfg.label}
+                        </span>
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-2 text-[13px] text-muted-foreground truncate font-medium">
-                    <span className="truncate">{currentUnit.subtitle || "Official Unit"}</span>
+                    <span className="truncate">
+                      {currentUnit.subtitle || "Official Unit"}
+                    </span>
                     <span className="text-border">•</span>
-                    <span className="font-bold" style={{ color: tierCfg.badgeColor }}>Tier {tierKey}</span>
+                    <span
+                      className="font-bold"
+                      style={{ color: tierCfg.badgeColor }}
+                    >
+                      Tier {tierKey}
+                    </span>
                     {currentUnit.obtainability && (
                       <>
                         <span className="text-border">•</span>
-                        <span className="text-muted-foreground truncate">{currentUnit.obtainability}</span>
+                        <span className="text-muted-foreground truncate">
+                          {currentUnit.obtainability}
+                        </span>
                       </>
                     )}
                   </div>
@@ -748,20 +969,35 @@ export function HistoryModal() {
                 aria-label="Close"
                 className="sm:hidden text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-[6px] transition-colors shrink-0 cursor-pointer"
               >
-                <svg viewBox="0 0 16 16" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <svg
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  className="w-5 h-5"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                >
                   <path d="M4 4L12 12M12 4L4 12" />
                 </svg>
               </button>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap shrink-0" aria-live="polite">
+            <div
+              className="flex items-center gap-2 flex-wrap shrink-0"
+              aria-live="polite"
+            >
               <AsyncButton
                 type="button"
                 size="sm"
                 onClick={handleAddToVault}
                 isLoading={isVaultPending}
                 className="px-3 py-2 rounded-[6px] border border-[#23a559]/40 bg-[#23a559] hover:bg-[#1f934f] text-white text-[12px] font-bold font-mono uppercase tracking-wider tabular-nums transition-colors shadow-sm active:scale-95"
-                title={profile ? "Add 1 copy to your Vault" : "Sign in with Discord to save to your Vault"}
+                title={
+                  profile
+                    ? "Add 1 copy to your Vault"
+                    : "Sign in with Discord to save to your Vault"
+                }
               >
                 +Vault{vaultQty > 0 ? ` (${vaultQty})` : ""}
               </AsyncButton>
@@ -778,9 +1014,27 @@ export function HistoryModal() {
                     ? "border-[#8b5cf6]/40 bg-[#8b5cf6] text-white hover:bg-[#7c3aed]"
                     : "border-border bg-card hover:bg-muted text-foreground"
                 }`}
-                title={profile ? (isWishlisted ? "Remove from Target Wishlist" : "Add to Target Wishlist") : "Sign in with Discord to manage your Wishlist"}
+                title={
+                  profile
+                    ? isWishlisted
+                      ? "Remove from Target Wishlist"
+                      : "Add to Target Wishlist"
+                    : "Sign in with Discord to manage your Wishlist"
+                }
               >
-                <svg className={`w-3.5 h-3.5 ${isWishlisted ? "text-amber-300" : "text-muted-foreground"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  className={`w-3.5 h-3.5 ${
+                    isWishlisted
+                      ? "text-amber-300"
+                      : "text-muted-foreground"
+                  }`}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
                 <span>{isWishlisted ? "Wishlisted" : "Wishlist"}</span>
@@ -799,11 +1053,21 @@ export function HistoryModal() {
                 {shareLinkCopied ? (
                   <>
                     <GiCheckMark className="w-3.5 h-3.5 text-[#23a559]" />
-                    <span className="font-semibold text-[#23a559]">Copied</span>
+                    <span className="font-semibold text-[#23a559]">
+                      Copied
+                    </span>
                   </>
                 ) : (
                   <>
-                    <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5 shrink-0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      className="w-3.5 h-3.5 shrink-0"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M6.5 9.5a3.5 3.5 0 0 0 4.95 0l2-2a3.5 3.5 0 0 0-4.95-4.95l-1 1" />
                       <path d="M9.5 6.5a3.5 3.5 0 0 0-4.95 0l-2 2a3.5 3.5 0 0 0 4.95 4.95l1-1" />
                     </svg>
@@ -821,10 +1085,20 @@ export function HistoryModal() {
                 {copyState === "copied" ? (
                   <span className="text-[#23a559] font-semibold">Copied</span>
                 ) : copyState === "error" ? (
-                  <span className="text-destructive font-semibold">Failed</span>
+                  <span className="text-destructive font-semibold">
+                    Failed
+                  </span>
                 ) : (
                   <>
-                    <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5 shrink-0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      className="w-3.5 h-3.5 shrink-0"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <rect x="5" y="5" width="8" height="8" rx="1.5" />
                       <path d="M3 11V3.5C3 2.95 3.45 2.5 4 2.5H11" />
                     </svg>
@@ -840,7 +1114,15 @@ export function HistoryModal() {
                 aria-label="Close"
                 className="hidden sm:inline-flex text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded-[6px] transition-colors shrink-0 cursor-pointer ml-1"
               >
-                <svg viewBox="0 0 16 16" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <svg
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  className="w-5 h-5"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                >
                   <path d="M4 4L12 12M12 4L4 12" />
                 </svg>
               </button>
@@ -848,7 +1130,6 @@ export function HistoryModal() {
           </div>
         </header>
 
-        {/* Scrollable Body */}
         <div
           ref={scrollRef}
           onScroll={(e) => setIsScrolled(e.currentTarget.scrollTop > 10)}
@@ -882,6 +1163,9 @@ export function HistoryModal() {
               compareTargetPrev={compareTargetPrev}
               onResetSelection={() => setSelectedSnapId(null)}
               hasUnitContext={hasUnitContext}
+              sparklineValues={sparklineValues}
+              sparklineBaseline={baseline7dValue}
+              sparklineBand={sparklineBand}
             />
 
             <HistoricalChart
@@ -906,6 +1190,9 @@ export function HistoryModal() {
               error={error}
               handleChartKeyDown={handleChartKeyDown}
               handleStepSnapshot={handleStepSnapshot}
+              baseline7dValue={baseline7dValue}
+              mean30d={mean30d}
+              std30d={std30d}
             />
           </div>
 

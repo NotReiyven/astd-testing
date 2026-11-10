@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/app/components/Admin/SecuritySettingsTab.tsx
+// ================================================
+
 import React, { useState, useEffect, useCallback } from "react";
 import {
   GiLockedFortress,
@@ -6,6 +10,9 @@ import {
   GiKey,
   GiScrollUnfurled,
   GiRadarSweep,
+  GiCheckMark,
+  GiCrossMark,
+  GiHazardSign,
 } from "react-icons/gi";
 import { supabase } from "../../../lib/supabase";
 import { useAuthStore } from "../../../store/useAuthStore";
@@ -22,6 +29,27 @@ interface SecurityAlert {
   link_url?: string;
   link_text?: string;
   created_at: string;
+}
+
+type CheckStatus = "ok" | "warn" | "fail";
+
+interface SecurityCheck {
+  id: string;
+  label: string;
+  status: CheckStatus;
+  detail: string;
+}
+
+interface SecurityStatusResponse {
+  ok: boolean;
+  checks: SecurityCheck[];
+  rls: {
+    enabled: number;
+    disabled: number;
+    tables: string[];
+    enabledWithoutPolicies: string[];
+  };
+  timestamp: string;
 }
 
 const ALERT_PRESETS: {
@@ -62,6 +90,246 @@ const alertSchema = z.object({
   ]),
   link_text: z.string().max(50).nullable().optional(),
 });
+
+function statusColor(status: CheckStatus): {
+  border: string;
+  bg: string;
+  text: string;
+} {
+  if (status === "ok") {
+    return {
+      border: "border-[#23a559]/40",
+      bg: "bg-[#23a559]/10",
+      text: "text-[#23a559]",
+    };
+  }
+  if (status === "warn") {
+    return {
+      border: "border-[#FAA61A]/40",
+      bg: "bg-[#FAA61A]/10",
+      text: "text-[#FAA61A]",
+    };
+  }
+  return {
+    border: "border-destructive/40",
+    bg: "bg-destructive/10",
+    text: "text-destructive",
+  };
+}
+
+function SecurityPosturePanel() {
+  const addToast = useToastStore((s) => s.addToast);
+  const [data, setData] = useState<SecurityStatusResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const fetchStatus = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setErrorMessage("No active session. Sign in again.");
+        setIsLoading(false);
+        return;
+      }
+
+      const res = await fetch("/api/admin/securityStatus", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!res.ok) {
+        let detail = `Request failed (HTTP ${res.status})`;
+        try {
+          const json = await res.json();
+          if (json?.error) detail = String(json.error);
+        } catch {}
+        setErrorMessage(detail);
+        setIsLoading(false);
+        return;
+      }
+
+      const json = (await res.json()) as SecurityStatusResponse;
+      setData(json);
+    } catch (err) {
+      logger.warn("ASTD-SEC-010", "Failed to fetch security posture status", {
+        scope: "SecuritySettingsTab",
+        action: "fetchStatus",
+        error: err,
+      });
+      setErrorMessage("Network error while fetching security posture.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchStatus();
+  }, [fetchStatus]);
+
+  const handleRefresh = () => {
+    triggerHaptic("light");
+    void fetchStatus();
+  };
+
+  const handleCopyReport = async () => {
+    if (!data) return;
+    triggerHaptic("light");
+    const json = JSON.stringify(data, null, 2);
+    try {
+      await navigator.clipboard.writeText(json);
+      addToast("Copied security report to clipboard.", "success");
+    } catch {
+      addToast("Could not copy report automatically.", "error");
+    }
+  };
+
+  return (
+    <div className="bg-card border border-border rounded-[6px] p-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between border-b border-border pb-2.5">
+        <div className="flex items-center gap-2">
+          <GiShieldEchoes className="w-4 h-4 text-primary" />
+          <span className="text-[13px] font-bold text-foreground">
+            Security Posture
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="h-7 px-2.5 rounded-[4px] bg-[#2b2d31] hover:bg-[#35373c] border border-border text-[11px] font-mono text-foreground flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <GiRadarSweep
+              className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`}
+            />
+            <span>Re-scan</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleCopyReport}
+            disabled={!data}
+            className="h-7 px-2.5 rounded-[4px] bg-[#2b2d31] hover:bg-[#35373c] border border-border text-[11px] font-mono text-foreground flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            Copy
+          </button>
+        </div>
+      </div>
+
+      {isLoading && !data && (
+        <div className="py-4 flex items-center justify-center gap-2 text-[11.5px] font-mono text-muted-foreground">
+          <GiRadarSweep className="w-4 h-4 animate-spin text-primary" />
+          <span>Scanning security posture…</span>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="bg-destructive/10 border border-destructive/40 rounded-[5px] p-3 flex items-start gap-2">
+          <GiHazardSign className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[12px] font-bold text-destructive">
+              Could not read security posture
+            </span>
+            <span className="text-[11.5px] text-foreground/80 font-mono">
+              {errorMessage}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {data && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {data.checks.map((check) => {
+              const tone = statusColor(check.status);
+              return (
+                <div
+                  key={check.id}
+                  className={`border ${tone.border} ${tone.bg} rounded-[5px] p-2.5 flex items-start gap-2`}
+                >
+                  <span className={`shrink-0 mt-0.5 ${tone.text}`}>
+                    {check.status === "ok" ? (
+                      <GiCheckMark className="w-3.5 h-3.5" />
+                    ) : check.status === "warn" ? (
+                      <GiHazardSign className="w-3.5 h-3.5" />
+                    ) : (
+                      <GiCrossMark className="w-3.5 h-3.5" />
+                    )}
+                  </span>
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <span className="text-[12px] font-bold text-foreground">
+                      {check.label}
+                    </span>
+                    <span className="text-[11px] font-mono text-foreground/75 break-words">
+                      {check.detail}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-1 pt-3 border-t border-border grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono">
+            <div className="flex flex-col gap-0.5 bg-input/40 rounded-[4px] p-2 border border-border">
+              <span className="text-muted-foreground uppercase tracking-wider text-[10px]">
+                RLS enabled
+              </span>
+              <span className="text-foreground font-bold text-[13px]">
+                {data.rls.enabled}
+              </span>
+            </div>
+            <div className="flex flex-col gap-0.5 bg-input/40 rounded-[4px] p-2 border border-border">
+              <span className="text-muted-foreground uppercase tracking-wider text-[10px]">
+                RLS missing
+              </span>
+              <span
+                className={`font-bold text-[13px] ${
+                  data.rls.disabled > 0 ? "text-destructive" : "text-foreground"
+                }`}
+              >
+                {data.rls.disabled}
+              </span>
+            </div>
+            <div className="flex flex-col gap-0.5 bg-input/40 rounded-[4px] p-2 border border-border">
+              <span className="text-muted-foreground uppercase tracking-wider text-[10px]">
+                RLS w/o policies
+              </span>
+              <span
+                className={`font-bold text-[13px] ${
+                  data.rls.enabledWithoutPolicies.length > 0
+                    ? "text-[#FAA61A]"
+                    : "text-foreground"
+                }`}
+              >
+                {data.rls.enabledWithoutPolicies.length}
+              </span>
+            </div>
+            <div className="flex flex-col gap-0.5 bg-input/40 rounded-[4px] p-2 border border-border">
+              <span className="text-muted-foreground uppercase tracking-wider text-[10px]">
+                Last checked
+              </span>
+              <span className="text-foreground font-bold text-[11px] truncate">
+                {new Date(data.timestamp).toLocaleTimeString()}
+              </span>
+            </div>
+          </div>
+
+          {data.rls.tables.length > 0 && (
+            <div className="bg-destructive/10 border border-destructive/40 rounded-[5px] p-2.5 text-[11.5px] font-mono text-destructive">
+              Tables missing RLS: {data.rls.tables.join(", ")}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 
 export const SecuritySettingsTab = () => {
   const { profile } = useAuthStore();
@@ -254,7 +522,7 @@ export const SecuritySettingsTab = () => {
       await fetchAlerts();
     } catch (err) {
       addToast("Broadcast failed.", "error");
-      logger.error('ASTD-UI-010', 'Broadcast failed', { err });
+      logger.error("ASTD-UI-010", "Broadcast failed", { err });
     } finally {
       setSubmitting(false);
     }
@@ -283,7 +551,7 @@ export const SecuritySettingsTab = () => {
       await fetchAlerts();
     } catch (err) {
       addToast("Failed to terminate alert.", "error");
-      logger.error('ASTD-UI-011', 'Alert termination failed', { err });
+      logger.error("ASTD-UI-011", "Alert termination failed", { err });
     } finally {
       setSubmitting(false);
     }
@@ -405,7 +673,8 @@ export const SecuritySettingsTab = () => {
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between text-[10px]">
                   <span className="text-muted-foreground">
-                    TYPE: <strong className="text-foreground">MASTER-UNLOCK</strong>
+                    TYPE:{" "}
+                    <strong className="text-foreground">MASTER-UNLOCK</strong>
                   </span>
                   <button
                     type="button"
@@ -426,7 +695,9 @@ export const SecuritySettingsTab = () => {
                   value={challengeInput}
                   onChange={(e) => {
                     setChallengeInput(e.target.value);
-                    if (e.target.value.trim().toUpperCase() === "MASTER-UNLOCK") {
+                    if (
+                      e.target.value.trim().toUpperCase() === "MASTER-UNLOCK"
+                    ) {
                       setAckChecked(true);
                     }
                   }}
@@ -490,6 +761,8 @@ export const SecuritySettingsTab = () => {
             Lock
           </button>
         </div>
+
+        <SecurityPosturePanel />
 
         {activeAlert && (
           <div className="bg-destructive/10 border border-destructive rounded-[6px] p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-mono">
