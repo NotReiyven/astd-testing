@@ -1,7 +1,3 @@
-// ================================================
-// FILE: src/app/components/TradeAnalyzer/TradeSummaryBox.tsx
-// ================================================
-
 import { useState, useMemo } from "react";
 import {
   avgStat,
@@ -10,19 +6,10 @@ import {
   getShareText,
 } from "./summaryUtils";
 import { TradeCard, MasterUnit } from "../../../types";
-import {
-  GiUpgrade,
-  GiHourglass,
-  GiCalculator,
-  GiScrollUnfurled,
-} from "react-icons/gi";
+import { GiUpgrade, GiHourglass, GiCalculator } from "react-icons/gi";
 import { FiCopy, FiChevronUp } from "react-icons/fi";
 import { RollingNumber } from "../shared/Formatters";
-import {
-  useTradeStore,
-  DEFAULT_ANALYZER_SETTINGS,
-} from "../../../store/useTradeStore";
-import { useAuthStore } from "../../../store/useAuthStore";
+import { useTradeStore, DEFAULT_ANALYZER_SETTINGS } from "../../../store/useTradeStore";
 import { triggerHaptic, copyTextWithFallback } from "../../../data/helpers";
 import { useToastStore } from "../../../store/useToastStore";
 
@@ -36,11 +23,6 @@ interface TradeSummaryBoxProps {
   getItems: TradeCard[];
   ALL_UNITS: MasterUnit[];
   isCompact?: boolean;
-}
-
-function formatStat(n: number, digits = 2): string {
-  if (!Number.isFinite(n)) return "-";
-  return n.toFixed(digits);
 }
 
 export function TradeSummaryBox({
@@ -58,12 +40,7 @@ export function TradeSummaryBox({
   const [showBreakdown, setShowBreakdown] = useState<boolean>(false);
 
   const rawSettings = useTradeStore((s) => s.analyzerSettings);
-  const updateAnalyzerSettings = useTradeStore(
-    (s) => s.updateAnalyzerSettings
-  );
-  const logTrade = useTradeStore((s) => s.logTrade);
-  const profile = useAuthStore((s) => s.profile);
-  const loginWithDiscord = useAuthStore((s) => s.loginWithDiscord);
+  const updateAnalyzerSettings = useTradeStore((s) => s.updateAnalyzerSettings);
   const addToast = useToastStore((s) => s.addToast);
 
   const settings = {
@@ -146,32 +123,6 @@ export function TradeSummaryBox({
     setShowBreakdown((prev) => !prev);
   };
 
-  const handleLogTrade = () => {
-    if (!profile) {
-      addToast("Sign in with Discord to log this trade.", "warning", {
-        action: {
-          label: "Login",
-          onClick: () => {
-            void loginWithDiscord();
-          },
-        },
-      });
-      return;
-    }
-    if (giveItems.length === 0 && getItems.length === 0) return;
-
-    const valueDiff = getTotal - giveTotal;
-    logTrade(valueDiff);
-    triggerHaptic("success");
-    addToast(
-      "Trade logged to your journal. You can update the outcome later.",
-      "success",
-      {
-        dedupeKey: "trade-journal-log",
-      }
-    );
-  };
-
   const valDiff = getTotal - giveTotal;
 
   if (isCompact) {
@@ -188,7 +139,9 @@ export function TradeSummaryBox({
 
         <div className="flex items-center gap-1 font-mono text-[11px] font-black shrink-0">
           {isOcPresent ? (
-            <span className="text-muted-foreground">N/A (O/C)</span>
+            <span className="text-muted-foreground">
+              N/A (O/C)
+            </span>
           ) : (
             <span
               className={
@@ -217,20 +170,19 @@ export function TradeSummaryBox({
     );
   }
 
-  const gridColsClass =
-    visibleMetricCount === 1 ? "grid-cols-1" : "grid-cols-2";
+  const gridColsClass = visibleMetricCount === 1 ? "grid-cols-1" : "grid-cols-2";
 
   return (
     <div
-      className={`flex-shrink-0 mx-[var(--panel-p)] mt-[var(--gap-md)] rounded-[8px] p-[var(--panel-p)] relative bg-card border transition-[border-color,box-shadow] duration-300 z-20 shadow-sm flex flex-col gap-2.5 min-w-0 w-full max-w-full ${
+      className={`flex-shrink-0 mx-[var(--panel-p)] mt-[var(--gap-md)] rounded-[8px] p-[var(--panel-p)] relative bg-card border transition-[border-color,box-shadow] duration-300 z-20 shadow-sm flex flex-col gap-2.5 min-w-0 self-stretch ${
         isAnalyzerTarget
           ? "border-primary shadow-[0_0_20px_var(--primary)] ring-4 ring-primary/30 z-[100005]"
           : "border-border"
       }`}
     >
-      <div className="flex flex-wrap items-start justify-between w-full gap-2 min-w-0">
-        <div className="flex-1 min-w-[60px] text-left">
-          <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 truncate">
+      <div className="flex items-start justify-between w-full gap-2 min-w-0">
+        <div className="flex-1 min-w-0 text-left">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
             Total Give
           </p>
           <p
@@ -251,7 +203,7 @@ export function TradeSummaryBox({
               <span className="text-[14px] md:text-[16px] font-black font-mono tabular-nums text-muted-foreground">
                 N/A
               </span>
-              <span className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-0.5 text-center">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-0.5">
                 O/C Present
               </span>
             </>
@@ -269,15 +221,15 @@ export function TradeSummaryBox({
                 {getTotal > giveTotal ? "+" : ""}
                 <RollingNumber value={valDiff} />
               </span>
-              <span className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-0.5">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-0.5">
                 Raw Diff
               </span>
             </>
           ) : null}
         </div>
 
-        <div className="flex-1 min-w-[60px] text-right">
-          <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 truncate">
+        <div className="flex-1 min-w-0 text-right">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
             Total Get
           </p>
           <p
@@ -312,7 +264,10 @@ export function TradeSummaryBox({
               <div
                 className="bg-[#FAA61A] transition-[width] duration-500"
                 style={{
-                  width: `${Math.max(0, Math.min(100, givePercent))}%`,
+                  width: `${Math.max(
+                    0,
+                    Math.min(100, givePercent)
+                  )}%`,
                 }}
               />
             )}
@@ -321,7 +276,10 @@ export function TradeSummaryBox({
               <div
                 className="bg-primary transition-[width] duration-500"
                 style={{
-                  width: `${Math.max(0, Math.min(100, getPercent))}%`,
+                  width: `${Math.max(
+                    0,
+                    Math.min(100, getPercent)
+                  )}%`,
                 }}
               />
             )}
@@ -364,13 +322,11 @@ export function TradeSummaryBox({
           </button>
 
           {isMetricsVisible && (
-            <div
-              className={`grid ${gridColsClass} gap-1.5 w-full min-w-0 max-w-full`}
-            >
+            <div className={`grid ${gridColsClass} gap-1.5 w-full min-w-0`}>
               {settings.showStFlip && (
                 <div
                   onClick={handleOpenBreakdown}
-                  className="flex flex-col items-center justify-center min-w-0 p-2 rounded-[6px] bg-black/20 border border-border/50 hover:bg-black/30 transition-colors cursor-pointer relative"
+                  className="flex flex-col items-center justify-center min-w-0 p-2 rounded-[6px] bg-background border border-border hover:bg-popover transition-colors cursor-pointer relative"
                   onMouseEnter={() => handleEnter("st")}
                   onMouseLeave={handleLeave}
                 >
@@ -391,9 +347,7 @@ export function TradeSummaryBox({
                     }`}
                   >
                     {forecast.calculable
-                      ? `${forecast.st > 0 ? "+" : ""}${forecast.st.toFixed(
-                          1
-                        )}`
+                      ? `${forecast.st > 0 ? "+" : ""}${forecast.st.toFixed(1)}`
                       : "-"}
                   </span>
 
@@ -405,8 +359,7 @@ export function TradeSummaryBox({
                     <strong className="text-[#FAA61A] block mb-1">
                       Short-Term Flip
                     </strong>
-                    Scores &gt; 0 are wins. Click to see the exact math
-                    breakdown.
+                    Scores above 0 are wins. Click to see the exact math breakdown.
                   </div>
                 </div>
               )}
@@ -414,7 +367,7 @@ export function TradeSummaryBox({
               {settings.showLtHold && (
                 <div
                   onClick={handleOpenBreakdown}
-                  className="flex flex-col items-center justify-center min-w-0 p-2 rounded-[6px] bg-black/20 border border-border/50 hover:bg-black/30 transition-colors cursor-pointer relative"
+                  className="flex flex-col items-center justify-center min-w-0 p-2 rounded-[6px] bg-background border border-border hover:bg-popover transition-colors cursor-pointer relative"
                   onMouseEnter={() => handleEnter("lt")}
                   onMouseLeave={handleLeave}
                 >
@@ -436,9 +389,7 @@ export function TradeSummaryBox({
                     }`}
                   >
                     {forecast.calculable
-                      ? `${forecast.lt > 0 ? "+" : ""}${forecast.lt.toFixed(
-                          1
-                        )}`
+                      ? `${forecast.lt > 0 ? "+" : ""}${forecast.lt.toFixed(1)}`
                       : "-"}
                   </span>
 
@@ -450,15 +401,14 @@ export function TradeSummaryBox({
                     <strong className="text-primary block mb-1">
                       Long-Term Hold
                     </strong>
-                    Scores &gt; 0 are wins. Click to see the exact math
-                    breakdown.
+                    Scores above 0 are wins. Click to see the exact math breakdown.
                   </div>
                 </div>
               )}
 
               {settings.showRarity && (
                 <div
-                  className="flex flex-col items-center justify-center min-w-0 p-2 rounded-[6px] bg-black/20 border border-border/50 hover:bg-black/30 transition-colors cursor-help relative"
+                  className="flex flex-col items-center justify-center min-w-0 p-2 rounded-[6px] bg-background border border-border hover:bg-popover transition-colors cursor-help relative"
                   onMouseEnter={() => handleEnter("rarity")}
                   onMouseLeave={handleLeave}
                 >
@@ -471,7 +421,7 @@ export function TradeSummaryBox({
                       {avgStat(giveItems, "rarity", ALL_UNITS)}
                     </span>
                     <span className="text-muted-foreground text-[8px] shrink-0">
-                      ➔
+                      →
                     </span>
                     <span className="truncate">
                       {avgStat(getItems, "rarity", ALL_UNITS)}
@@ -484,7 +434,7 @@ export function TradeSummaryBox({
                     }`}
                   >
                     <strong className="text-foreground block mb-1">
-                      Rarity (0–20)
+                      Rarity (0 to 20)
                     </strong>
                     <span className="text-[#23a559] font-bold">
                       Higher is better.
@@ -496,7 +446,7 @@ export function TradeSummaryBox({
 
               {settings.showLiquidity && (
                 <div
-                  className="flex flex-col items-center justify-center min-w-0 p-2 rounded-[6px] bg-black/20 border border-border/50 hover:bg-black/30 transition-colors cursor-help relative"
+                  className="flex flex-col items-center justify-center min-w-0 p-2 rounded-[6px] bg-background border border-border hover:bg-popover transition-colors cursor-help relative"
                   onMouseEnter={() => handleEnter("liquidity")}
                   onMouseLeave={handleLeave}
                 >
@@ -507,7 +457,7 @@ export function TradeSummaryBox({
                   <span className="text-[11px] font-bold text-foreground font-mono tabular-nums leading-none flex items-center justify-center gap-0.5 max-w-full whitespace-nowrap overflow-hidden">
                     <span className="truncate">{getLiqLabel(giveItems)}</span>
                     <span className="text-muted-foreground text-[8px] shrink-0">
-                      ➔
+                      →
                     </span>
                     <span className="truncate">{getLiqLabel(getItems)}</span>
                   </span>
@@ -530,136 +480,40 @@ export function TradeSummaryBox({
             </div>
           )}
 
-          {showBreakdown && forecast.calculable && (
-            <div className="mt-2 p-3 bg-popover border border-border rounded-[6px] text-[11px] font-mono text-muted-foreground animate-fade-in shadow-inner flex flex-col gap-1.5 min-w-0 w-full max-w-full">
-              <div className="flex items-center justify-between border-b border-border/50 pb-1.5 mb-1.5 text-foreground font-bold font-sans text-[12px]">
+          {showBreakdown && (
+            <div className="mt-2 p-3 bg-popover border border-border rounded-[6px] text-[11px] font-mono text-muted-foreground animate-fade-in shadow-inner flex flex-col gap-1.5 min-w-0 w-full">
+              <div className="flex items-center justify-between border-b border-border pb-1.5 mb-1.5 text-foreground font-bold font-sans text-[12px]">
                 <span className="flex items-center gap-1.5">
                   <GiCalculator className="w-3.5 h-3.5" /> Score Breakdown
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setShowBreakdown(false)}
-                  className="text-muted-foreground hover:text-foreground cursor-pointer"
-                  aria-label="Collapse score breakdown"
-                >
+                <button onClick={() => setShowBreakdown(false)} className="text-muted-foreground hover:text-foreground">
                   <FiChevronUp className="w-4 h-4" />
                 </button>
               </div>
 
               <div className="flex justify-between items-center">
                 <span>Raw Value Ratio:</span>
-                <span
-                  className="text-foreground font-bold"
-                  title={`${forecast.vGiven.toLocaleString()} give → ${forecast.vReceived.toLocaleString()} receive`}
-                >
-                  {formatStat(forecast.rawValueRatio)}x
-                </span>
+                <span className="text-foreground font-bold">{forecast.rawValueRatio.toFixed(2)}x</span>
               </div>
-              <div className="flex justify-between items-center text-[10.5px] text-muted-foreground/80 -mt-1 mb-0.5">
-                <span className="truncate">
-                  {forecast.vGiven.toLocaleString()} →{" "}
-                  {forecast.vReceived.toLocaleString()}
-                </span>
-              </div>
-
               <div className="flex justify-between items-center">
                 <span>Liquidity Multiplier:</span>
-                <span className="text-foreground font-bold">
-                  {formatStat(forecast.stLiquidityMult)}x
-                </span>
+                <span className="text-foreground font-bold">{forecast.stLiquidityMult.toFixed(2)}x</span>
               </div>
-              <div className="flex justify-between items-center text-[10.5px] text-muted-foreground/80 -mt-1 mb-0.5">
-                <span className="truncate">
-                  {formatStat(forecast.liquidityGive)} →{" "}
-                  {formatStat(forecast.liquidityGet)}
-                </span>
-              </div>
-
               <div className="flex justify-between items-center">
                 <span>Rarity Multiplier:</span>
-                <span className="text-foreground font-bold">
-                  {formatStat(forecast.stRarityMult)}x
-                </span>
+                <span className="text-foreground font-bold">{forecast.stRarityMult.toFixed(2)}x</span>
               </div>
-              <div className="flex justify-between items-center text-[10.5px] text-muted-foreground/80 -mt-1 mb-0.5">
-                <span className="truncate">
-                  {formatStat(forecast.rarityGive, 1)} →{" "}
-                  {formatStat(forecast.rarityGet, 1)}
-                </span>
-              </div>
-
               <div className="flex justify-between items-center">
                 <span>Status Momentum (ST):</span>
-                <span
-                  className={`font-bold ${
-                    forecast.stMomentum > 1
-                      ? "text-[#23a559]"
-                      : forecast.stMomentum < 1
-                      ? "text-rose-400"
-                      : "text-foreground"
-                  }`}
-                >
-                  {forecast.stMomentum > 1 ? "+" : ""}
-                  {((forecast.stMomentum - 1) * 100).toFixed(1)}%
+                <span className={`font-bold ${forecast.stMomentum > 1 ? 'text-[#23a559]' : forecast.stMomentum < 1 ? 'text-rose-400' : 'text-foreground'}`}>
+                  {forecast.stMomentum > 1 ? "+" : ""}{((forecast.stMomentum - 1) * 100).toFixed(1)}%
                 </span>
               </div>
-              <div className="flex justify-between items-center text-[10.5px] text-muted-foreground/80 -mt-1 mb-0.5">
-                <span className="truncate">
-                  {formatStat(forecast.stMomentumGive)} →{" "}
-                  {formatStat(forecast.stMomentumGet)}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span>Status Momentum (LT):</span>
-                <span
-                  className={`font-bold ${
-                    forecast.ltMomentum > 1
-                      ? "text-[#23a559]"
-                      : forecast.ltMomentum < 1
-                      ? "text-rose-400"
-                      : "text-foreground"
-                  }`}
-                >
-                  {forecast.ltMomentum > 1 ? "+" : ""}
-                  {((forecast.ltMomentum - 1) * 100).toFixed(1)}%
-                </span>
-              </div>
-              <div className="flex justify-between items-center text-[10.5px] text-muted-foreground/80 -mt-1 mb-0.5">
-                <span className="truncate">
-                  {formatStat(forecast.ltMomentumGive)} →{" "}
-                  {formatStat(forecast.ltMomentumGet)}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center border-t border-border/50 pt-1.5 mt-1.5">
-                <span className="font-sans font-bold text-foreground">
-                  ST Formula:
-                </span>
-                <span className="text-foreground/70 text-[10px] text-right">
-                  (0.8 · value) + (0.6 · liq) + (0.1 · rarity)
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="font-sans font-bold text-foreground">
-                  LT Formula:
-                </span>
-                <span className="text-foreground/70 text-[10px] text-right">
-                  (0.85 · value) + (0.4 · liq) + (0.25 · rarity)
-                </span>
+              <div className="flex justify-between items-center border-t border-border pt-1.5 mt-1.5">
+                <span className="font-sans font-bold text-foreground">Formula:</span>
+                <span className="text-foreground/70 text-[10px]">(0.8 * value) + (0.6 * liq) + (0.1 * rarity)</span>
               </div>
             </div>
-          )}
-
-          {profile && (giveItems.length > 0 || getItems.length > 0) && (
-            <button
-              type="button"
-              onClick={handleLogTrade}
-              className="mt-1 w-full flex items-center justify-center gap-1.5 py-1.5 rounded-[4px] text-[11px] font-bold uppercase tracking-wider bg-popover border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer focus-visible:outline-none"
-              title="Save this trade to your private journal"
-            >
-              <GiScrollUnfurled className="w-3.5 h-3.5" /> Log this trade
-            </button>
           )}
         </>
       )}

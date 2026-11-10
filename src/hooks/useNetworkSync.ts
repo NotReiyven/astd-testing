@@ -23,8 +23,6 @@ const MAX_BATCH_SIZE = 50;
 const MAX_RETRIES = 3;
 const SYNC_TOAST_ID = "network-sync-status";
 
-const MAX_ACTIVE_ADS_REGULAR = 3;
-
 export const PERMANENT_HTTP_STATUSES = new Set([400, 404, 409, 422]);
 export const PERMANENT_DB_CODES = new Set([
   "23502",
@@ -502,31 +500,16 @@ export async function syncAllQueues(): Promise<void> {
         );
       }
 
-      const liveProfile = useAuthStore.getState().profile;
-      const callerRole = (liveProfile?.role || "user").toLowerCase();
-      const isStaffNow = ["mod", "admin", "master"].includes(callerRole);
-
-      if (!isStaffNow) {
-        const { count, error: countError } = await supabase
-          .from("trading_ads")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", cleanPayload.user_id)
-          .gt("expires_at", new Date().toISOString());
-        if (countError) {
-          const err = new Error(
-            `Could not verify active listing count: ${countError.message}`
-          ) as Error & { status?: number };
-          err.status = 503;
-          throw err;
-        }
-        if ((count || 0) >= MAX_ACTIVE_ADS_REGULAR) {
-          throw makePermanentError(
-            `Active listing limit reached (${MAX_ACTIVE_ADS_REGULAR}). Queued ad dropped.`
-          );
-        }
-      }
-
-      const res = await supabase.from("trading_ads").insert(cleanPayload);
+      // CHANGED: Use the RPC to bypass the RLS recursion issue.
+      // The RPC handles the staff bypass, active limit, and 15-minute cooldown atomically.
+      const res = await supabase.rpc("create_trading_ad", {
+        p_ad_type: cleanPayload.ad_type || "standard",
+        p_give_items: cleanPayload.give_items || [],
+        p_get_items: cleanPayload.get_items || [],
+        p_note: cleanPayload.note || "",
+        p_expires_at: cleanPayload.expires_at,
+      });
+      
       throwIfError(res);
     });
 

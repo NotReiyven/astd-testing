@@ -70,6 +70,31 @@ const FORMAT_OPTIONS = [
   },
 ];
 
+function formatPublishError(err: any): string {
+  const raw =
+    typeof err?.message === "string" ? err.message.trim() : "";
+  const lower = raw.toLowerCase();
+
+  if (lower.includes("infinite recursion")) {
+    return "Trade board is temporarily unavailable. Please try again in a few minutes.";
+  }
+  if (lower.includes("active listing limit") || lower.includes("listing limit reached")) {
+    return "You already have 3 active listings. Delete one before posting a new ad.";
+  }
+  if (lower.includes("cooldown")) {
+    return raw;
+  }
+  if (lower.includes("rate limit") || lower.includes("429") || lower.includes("too many requests")) {
+    return "You are posting too quickly. Please wait a moment and try again.";
+  }
+  if (lower.includes("jwt") || lower.includes("session")) {
+    return "Your session expired. Sign in with Discord again to continue.";
+  }
+  return raw.length > 0
+    ? raw
+    : "Could not publish trade ad. Please try again.";
+}
+
 export function AdComposerModal() {
   const profile = useAuthStore((s) => s.profile);
   const loginWithDiscord = useAuthStore((s) => s.loginWithDiscord);
@@ -358,7 +383,6 @@ export function AdComposerModal() {
         throw result.error;
       }
 
-      // ── OFFLINE-QUEUED PATH ──
       if (result.queued) {
         triggerHaptic("medium");
         addToast(
@@ -375,7 +399,6 @@ export function AdComposerModal() {
         return;
       }
 
-      // ── ONLINE SUCCESS PATH ──
       window.dispatchEvent(new Event("academy-posted-ad"));
 
       addToast("Published your listing to the Live Trading Board.", "success");
@@ -393,10 +416,7 @@ export function AdComposerModal() {
     } catch (err: any) {
       logger.error("ASTD-UI-032", "Ad publish failed", { err });
 
-      const errMessage =
-        typeof err?.message === "string" && err.message.trim().length > 0
-          ? err.message
-          : "Could not publish trade ad—you may be rate limited. Try again in a moment.";
+      const errMessage = formatPublishError(err);
 
       setError(errMessage);
 
@@ -499,8 +519,7 @@ export function AdComposerModal() {
             transition={{ type: "spring", bounce: 0, duration: 0.25 }}
             className="bg-card border border-border rounded-[10px] shadow-2xl flex flex-col relative w-full max-w-[500px] max-h-[90vh] overflow-hidden"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-popover/60 shrink-0">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-popover shrink-0">
               <div className="flex items-center gap-2.5">
                 <h2 className="text-[15px] font-bold text-foreground tracking-tight">
                   Publish Trade Ad
@@ -526,7 +545,6 @@ export function AdComposerModal() {
               </button>
             </div>
 
-            {/* Body */}
             <div className="flex-1 overflow-y-auto custom-scrollbar p-5 flex flex-col gap-5">
               {showDiscardConfirm && (
                 <div
@@ -590,7 +608,6 @@ export function AdComposerModal() {
                 </div>
               )}
 
-              {/* Cooldown or Active Listing Status Banners */}
               {isOnCooldown && (
                 <div
                   role="alert"
@@ -637,7 +654,7 @@ export function AdComposerModal() {
                   <span className="opacity-95 font-medium normal-case font-sans">Unlimited listings · Zero cooldown</span>
                 </div>
               ) : (
-                <div className="flex items-center justify-between px-3 py-1.5 rounded-[4px] bg-muted/60 border border-border text-foreground text-[11px]">
+                <div className="flex items-center justify-between px-3 py-1.5 rounded-[4px] bg-muted border border-border text-foreground text-[11px]">
                   <span>
                     Active Listings:{" "}
                     <strong className="text-white font-mono">
@@ -657,7 +674,6 @@ export function AdComposerModal() {
                 </div>
               )}
 
-              {/* 3-Column Format Selector */}
               <div className="flex flex-col gap-2">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                   Listing Type
@@ -710,10 +726,9 @@ export function AdComposerModal() {
                 </div>
               </div>
 
-              {/* Live Payload Summary Strip */}
               <div className="flex flex-col gap-1.5">
                 <div
-                  className={`bg-popover/70 border rounded-[8px] p-3 flex flex-col gap-2.5 ${
+                  className={`bg-popover border rounded-[8px] p-3 flex flex-col gap-2.5 ${
                     itemsError ? "border-destructive" : "border-border"
                   }`}
                 >
@@ -743,7 +758,7 @@ export function AdComposerModal() {
                       </div>
 
                       {adType === "standard" && (
-                        <div className="flex flex-col gap-1.5 pt-2 border-t border-border/60">
+                        <div className="flex flex-col gap-1.5 pt-2 border-t border-border">
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-primary tabular-nums">
                               Requesting ({getItems.reduce((s, i) => s + i.qty, 0)})
@@ -770,7 +785,6 @@ export function AdComposerModal() {
                 )}
               </div>
 
-              {/* Note & Quick Tags */}
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <label
@@ -852,7 +866,6 @@ export function AdComposerModal() {
                 )}
               </div>
 
-              {/* Compact Duration Bar */}
               <div className="flex items-center justify-between gap-3 pt-1">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 shrink-0">
                   <GiHourglass className="w-3.5 h-3.5 text-muted-foreground" />{" "}
@@ -881,8 +894,7 @@ export function AdComposerModal() {
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="px-5 py-3.5 bg-popover/60 border-t border-border flex items-center justify-end gap-2.5 shrink-0">
+            <div className="px-5 py-3.5 bg-popover border-t border-border flex items-center justify-end gap-2.5 shrink-0">
               <button
                 type="button"
                 onClick={handleClose}
