@@ -5,7 +5,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
-import { apiLogger } from "./lib/logger.js";
+import { apiLogger } from "../_lib/logger.js";
 
 export const config = {
   maxDuration: 15,

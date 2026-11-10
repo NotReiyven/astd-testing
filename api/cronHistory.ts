@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { parseSpreadsheet, SpreadsheetData, ParsedUnit } from "./lib/parseSheet.js";
-import { apiLogger } from "./lib/logger.js";
+import { parseSpreadsheet, SpreadsheetData, ParsedUnit } from "../_lib/parseSheet.js";
+import { apiLogger } from "../_lib/logger.js";
 
 interface UnitStateRow {
   unit_id: string;

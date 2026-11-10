@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { apiLogger } from "../lib/logger.js";
-import { verifyLiveClearance } from "../lib/clearance.js";
+import { apiLogger } from "../../_lib/logger.js";
+import { verifyLiveClearance } from "../../_lib/clearance.js";
 
 export const config = {
   maxDuration: 60,

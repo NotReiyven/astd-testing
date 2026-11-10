@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
-import { apiLogger } from "./lib/logger.js";
+import { apiLogger } from "../_lib/logger.js";
 
 export const config = {
   maxDuration: 15,

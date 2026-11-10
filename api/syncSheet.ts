@@ -4,8 +4,8 @@
 
 import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
-import { parseSpreadsheet, SpreadsheetData } from "./lib/parseSheet.js";
-import { apiLogger } from "./lib/logger.js";
+import { parseSpreadsheet, SpreadsheetData } from "../_lib/parseSheet.js";
+import { apiLogger } from "../_lib/logger.js";
 
 // Top-level tunables & constants
 const RATELIMIT_REQUESTS = 15;
