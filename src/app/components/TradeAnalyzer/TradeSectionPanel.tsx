@@ -53,7 +53,9 @@ function MagneticCTA({ children, onClick, ariaLabel }: { children: React.ReactNo
       className="text-[10px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none rounded-[4px] px-3 py-1.5 bg-muted border border-border hover:bg-destructive hover:text-destructive-foreground hover:border-destructive text-muted-foreground cursor-pointer"
       onClick={onClick}
       aria-label={ariaLabel}
-      // @ts-expect-error Framer motion omits mouse events in favor of pointer events in its types, but native React mouse events still work
+      // `as any` retains the framer-motion type escape hatch for onMouseMove.
+      // The previous `@ts-expect-error` was removed because framer-motion v11
+      // types already accept this handler (TS2578: unused directive).
       onMouseMove={handleMouseMove as any}
       onMouseLeave={handleMouseLeave}
       style={{ x, y }}
