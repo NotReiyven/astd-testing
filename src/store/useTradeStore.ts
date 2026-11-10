@@ -1,3 +1,7 @@
+// ================================================
+// FILE: src/store/useTradeStore.ts
+// ================================================
+
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { TradeCard } from "../types";
@@ -46,6 +50,8 @@ export interface TradeJournalEntry {
   get: TradeCard[];
   valueDiff: number;
   outcome: "pending" | "win" | "fair" | "loss";
+  notes?: string;
+  strategy?: string;
 }
 
 interface TradeState {
@@ -81,8 +87,10 @@ interface TradeState {
   restorePreset: (preset: TradePreset, index: number) => void;
   loadPreset: (id: string) => void;
 
-  logTrade: (valueDiff: number) => void;
+  logTrade: (valueDiff: number) => string;
+  updateJournalEntry: (id: string, updates: Partial<TradeJournalEntry>) => void;
   updateJournalOutcome: (id: string, outcome: TradeJournalEntry["outcome"]) => void;
+  deleteJournalEntry: (id: string) => void;
   toggleJournalPrivacy: () => void;
 }
 
@@ -266,20 +274,35 @@ export const useTradeStore = create<TradeState>()(
 
       logTrade: (valueDiff) => {
         const state = get();
-        if (state.giveItems.length === 0 && state.getItems.length === 0) return;
+        if (state.giveItems.length === 0 && state.getItems.length === 0) return "";
         
+        const newId = Date.now().toString();
         const newEntry: TradeJournalEntry = {
-          id: Date.now().toString(),
+          id: newId,
           timestamp: new Date().toISOString(),
           give: [...state.giveItems],
           get: [...state.getItems],
           valueDiff,
           outcome: "pending",
+          notes: "",
+          strategy: "",
         };
         
         set({ tradeJournal: [newEntry, ...state.tradeJournal] });
-        window.dispatchEvent(new Event("academy-trade-logged"));
+        
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("academy-trade-logged"));
+        }
+        
+        return newId;
       },
+
+      updateJournalEntry: (id, updates) =>
+        set((state) => ({
+          tradeJournal: state.tradeJournal.map((t) =>
+            t.id === id ? { ...t, ...updates } : t
+          ),
+        })),
 
       updateJournalOutcome: (id, outcome) =>
         set((state) => ({
@@ -288,12 +311,17 @@ export const useTradeStore = create<TradeState>()(
           ),
         })),
 
+      deleteJournalEntry: (id) =>
+        set((state) => ({
+          tradeJournal: state.tradeJournal.filter((t) => t.id !== id),
+        })),
+
       toggleJournalPrivacy: () =>
         set((state) => ({ journalPublic: !state.journalPublic })),
     }),
     {
       name: "astd_trade_storage",
-      version: 6,
+      version: 7,
       migrate: (persistedState: any, version: number) => {
         if (version < 3) {
           persistedState.giveItems = Array.isArray(persistedState.giveItems) ? persistedState.giveItems : [];
@@ -306,6 +334,13 @@ export const useTradeStore = create<TradeState>()(
         if (version < 6) {
           persistedState.tradeJournal = [];
           persistedState.journalPublic = false;
+        }
+        if (version < 7) {
+          persistedState.tradeJournal = (persistedState.tradeJournal || []).map((t: any) => ({
+            ...t,
+            notes: t.notes || "",
+            strategy: t.strategy || "",
+          }));
         }
         persistedState.analyzerSettings = {
           ...DEFAULT_ANALYZER_SETTINGS,

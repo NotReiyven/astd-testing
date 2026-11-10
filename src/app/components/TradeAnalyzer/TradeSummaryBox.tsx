@@ -6,10 +6,18 @@ import {
   getShareText,
 } from "./summaryUtils";
 import { TradeCard, MasterUnit } from "../../../types";
-import { GiUpgrade, GiHourglass, GiCalculator } from "react-icons/gi";
+import {
+  GiUpgrade,
+  GiHourglass,
+  GiCalculator,
+  GiScrollUnfurled,
+} from "react-icons/gi";
 import { FiCopy, FiChevronUp } from "react-icons/fi";
 import { RollingNumber } from "../shared/Formatters";
-import { useTradeStore, DEFAULT_ANALYZER_SETTINGS } from "../../../store/useTradeStore";
+import {
+  useTradeStore,
+  DEFAULT_ANALYZER_SETTINGS,
+} from "../../../store/useTradeStore";
 import { triggerHaptic, copyTextWithFallback } from "../../../data/helpers";
 import { useToastStore } from "../../../store/useToastStore";
 
@@ -41,6 +49,7 @@ export function TradeSummaryBox({
 
   const rawSettings = useTradeStore((s) => s.analyzerSettings);
   const updateAnalyzerSettings = useTradeStore((s) => s.updateAnalyzerSettings);
+  const logTrade = useTradeStore((s) => s.logTrade);
   const addToast = useToastStore((s) => s.addToast);
 
   const settings = {
@@ -117,6 +126,25 @@ export function TradeSummaryBox({
     }
   };
 
+  const handleLogTrade = () => {
+    if (giveItems.length === 0 && getItems.length === 0) return;
+
+    triggerHaptic("success");
+    logTrade(valDiff);
+    
+    addToast("Trade logged. Add notes in your Journal.", "success", {
+      action: {
+        label: "Open Journal",
+        onClick: () => {
+          // Navigate to profile, which defaults to the Trade Journal tab
+          window.document.dispatchEvent(
+            new CustomEvent("navigate", { detail: "profile" })
+          );
+        },
+      },
+    });
+  };
+
   const handleOpenBreakdown = () => {
     if (!forecast.calculable) return;
     triggerHaptic("light");
@@ -139,9 +167,7 @@ export function TradeSummaryBox({
 
         <div className="flex items-center gap-1 font-mono text-[11px] font-black shrink-0">
           {isOcPresent ? (
-            <span className="text-muted-foreground">
-              N/A (O/C)
-            </span>
+            <span className="text-muted-foreground">N/A (O/C)</span>
           ) : (
             <span
               className={
@@ -244,15 +270,29 @@ export function TradeSummaryBox({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleCopyTrade}
-          disabled={giveItems.length === 0 && getItems.length === 0}
-          title="Copy formatted trade to clipboard"
-          className="ml-1 p-1.5 md:p-2 rounded-[4px] bg-muted hover:bg-primary/20 text-muted-foreground hover:text-primary border border-border transition-colors shrink-0 disabled:opacity-50 cursor-pointer"
-        >
-          <FiCopy className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1.5 ml-1 shrink-0">
+          <button
+            type="button"
+            onClick={handleLogTrade}
+            disabled={giveItems.length === 0 && getItems.length === 0}
+            title="Log this trade to your Journal"
+            aria-label="Log trade to journal"
+            className="p-1.5 md:p-2 rounded-[4px] bg-muted hover:bg-primary/20 text-muted-foreground hover:text-primary border border-border transition-colors shrink-0 disabled:opacity-50 cursor-pointer flex items-center justify-center"
+          >
+            <GiScrollUnfurled className="w-4 h-4" />
+          </button>
+          
+          <button
+            type="button"
+            onClick={handleCopyTrade}
+            disabled={giveItems.length === 0 && getItems.length === 0}
+            title="Copy formatted trade to clipboard"
+            aria-label="Copy trade to clipboard"
+            className="p-1.5 md:p-2 rounded-[4px] bg-muted hover:bg-primary/20 text-muted-foreground hover:text-primary border border-border transition-colors shrink-0 disabled:opacity-50 cursor-pointer flex items-center justify-center"
+          >
+            <FiCopy className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       <div className="flex w-full h-[6px] gap-1.5 rounded-full overflow-hidden bg-popover">
@@ -264,10 +304,7 @@ export function TradeSummaryBox({
               <div
                 className="bg-[#FAA61A] transition-[width] duration-500"
                 style={{
-                  width: `${Math.max(
-                    0,
-                    Math.min(100, givePercent)
-                  )}%`,
+                  width: `${Math.max(0, Math.min(100, givePercent))}%`,
                 }}
               />
             )}
@@ -276,10 +313,7 @@ export function TradeSummaryBox({
               <div
                 className="bg-primary transition-[width] duration-500"
                 style={{
-                  width: `${Math.max(
-                    0,
-                    Math.min(100, getPercent)
-                  )}%`,
+                  width: `${Math.max(0, Math.min(100, getPercent))}%`,
                 }}
               />
             )}
@@ -303,7 +337,7 @@ export function TradeSummaryBox({
             <span>
               {isMetricsVisible
                 ? "Forecast & Metrics"
-                : "Show Metrics (ST • LT • Rarity • Liq)"}
+                : "Show Metrics (ST - LT - Rarity - Liq)"}
             </span>
 
             <svg
