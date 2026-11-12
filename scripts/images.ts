@@ -716,8 +716,10 @@ export const UNIT_IMAGES: Record<string, string> = {
   "prince-of-layabouts-skull-knight": "https://static.wikia.nocookie.net/allstartd/images/9/9d/Prince_of_Layabouts_%28%F0%9F%92%80%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20261022172922",
   "prince-of-layabouts": "https://static.wikia.nocookie.net/allstartd/images/b/b8/Prince_of_Layabouts_%28Pose%29.png/revision/latest?cb=20261018064224",
   "trello-lady": "https://static.wikia.nocookie.net/allstartd/images/8/80/Trello_Lady_%28Pose%29.png/revision/latest?cb=20261016211901",
+  "harrison": "https://static.wikia.nocookie.net/allstartd/images/d/d0/Harrison_%28Pose%29.png/revision/latest?cb=20261016211935",
   "harrison-resurrection": "https://static.wikia.nocookie.net/allstartd/images/6/6c/Harrison_%28Resurrection%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20261016162331",
-  "the-guardian-team-captain": "https://static.wikia.nocookie.net/allstartd/images/d/d0/Harrison_%28Pose%29.png/revision/latest?cb=20261016211935",
+  "the-guardian": "https://static.wikia.nocookie.net/allstartd/images/a/a9/The_Guardian_%28Pose%29.png/revision/latest?cb=20261016211802",
+  "the-guardian-team-captain": "https://static.wikia.nocookie.net/allstartd/images/4/41/The_Guardian_%28Team_Captain%29_%28Pose%29.png/revision/latest/scale-to-width-down/1000?cb=20261016162429",
   "ring": "https://static.wikia.nocookie.net/allstartd/images/b/be/Ring_%28Pose%29.png/revision/latest?cb=20260715064823",
   "ice-witch": "https://static.wikia.nocookie.net/allstartd/images/6/6e/Ice_Witch_%28Pose%29.png/revision/latest?cb=20261016211838",
 };
