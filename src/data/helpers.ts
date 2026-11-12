@@ -45,6 +45,8 @@ export function getRarityLabel(v: number) {
 const ASSET_CDN_BASE_URL =
   import.meta.env.VITE_ASSET_CDN_BASE_URL?.replace(/\/+$/, "");
 
+export const UNIT_ASSET_VERSION = "20261113b";
+
 export function getUnitAssetUrl(unitId: string) {
   if (!unitId) return null;
   const resolvedSlug = resolveUnitImageSlug(unitId);
@@ -54,9 +56,9 @@ export function getUnitAssetUrl(unitId: string) {
     !LOCAL_PREFERRED_UNIT_SLUGS.has(resolvedSlug) &&
     !LOCAL_PREFERRED_UNIT_SLUGS.has(toUnitSlug(unitId))
   ) {
-    return `${ASSET_CDN_BASE_URL}/units/${resolvedSlug}.webp`;
+    return `${ASSET_CDN_BASE_URL}/units/${resolvedSlug}.webp?v=${UNIT_ASSET_VERSION}`;
   }
-  return `/units/${resolvedSlug}.webp`;
+  return `/units/${resolvedSlug}.webp?v=${UNIT_ASSET_VERSION}`;
 }
 
 export function getProxyImage(unitId: string, _fallbackUrl?: string) {
@@ -78,7 +80,7 @@ export function handleImageError(
     target.setAttribute("data-fallback-stage", "1");
     const resolvedSlug = resolveUnitImageSlug(id);
     if (resolvedSlug) {
-      target.src = `/units/${resolvedSlug}.webp?retry=1`;
+      target.src = `/units/${resolvedSlug}.webp?retry=1&v=${UNIT_ASSET_VERSION}`;
       return true;
     }
   }

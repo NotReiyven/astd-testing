@@ -117,10 +117,10 @@ export default defineConfig(({ mode }) => {
           globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
           runtimeCaching: [
             {
-              urlPattern: /^\/units\/.*\.webp$/,
-              handler: "CacheFirst",
+              urlPattern: /^\/units\/.*\.webp(?:\?.*)?$/,
+              handler: "StaleWhileRevalidate",
               options: {
-                cacheName: "unit-images-cache",
+                cacheName: "unit-images-cache-v2",
                 expiration: {
                   maxEntries: 500,
                   maxAgeSeconds: 60 * 60 * 24 * 30,

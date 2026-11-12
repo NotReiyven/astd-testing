@@ -395,7 +395,7 @@ export async function GET(request: Request) {
     const cdnBase =
       process.env.VITE_ASSET_CDN_BASE_URL?.replace(/\/+$/, "") ||
       "https://cdn.jsdelivr.net/gh/NotReiyven/astd-assets@main";
-    const unitImage = `${cdnBase}/units/${resolvedId}.webp`;
+    const unitImage = `${cdnBase}/units/${resolvedId}.webp?v=20261113b`;
     const unitUrl = `https://all-star-vl.vercel.app/unit/${resolvedId}`;
 
     let customHtml = baseHtml;
