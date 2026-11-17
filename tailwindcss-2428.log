@@ -1,8 +1,0 @@
-2026-08-28T09:21:37.272907Z  INFO tailwindcss_oxide::scanner: Provided sources:
-2026-08-28T09:21:37.273648Z  INFO tailwindcss_oxide::scanner: Source: PublicSourceEntry { base: "C:/Users/Admin/Documents/high fid", pattern: "**/*", negated: false }
-2026-08-28T09:21:37.274544Z  INFO tailwindcss_oxide::scanner: Optimized sources:
-2026-08-28T09:21:37.274595Z  INFO tailwindcss_oxide::scanner: Source: Auto { base: "C:\\Users\\Admin\\Documents\\high fid" }
-2026-08-28T09:21:38.414831Z  INFO tailwindcss_oxide::scanner: Provided sources:
-2026-08-28T09:21:38.414876Z  INFO tailwindcss_oxide::scanner: Source: PublicSourceEntry { base: "C:/Users/Admin/Documents/high fid", pattern: "**/*", negated: false }
-2026-08-28T09:21:38.415192Z  INFO tailwindcss_oxide::scanner: Optimized sources:
-2026-08-28T09:21:38.415205Z  INFO tailwindcss_oxide::scanner: Source: Auto { base: "C:\\Users\\Admin\\Documents\\high fid" }
