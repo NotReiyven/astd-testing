@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React from "react";
 import { createPortal } from "react-dom";
 import { GiCrown } from "react-icons/gi";
@@ -60,7 +59,7 @@ function CountUpNumber({ targetValue }: { targetValue: number }) {
   const [displayValue, setDisplayValue] = React.useState(0);
 
   React.useEffect(() => {
-    let start: number;
+    let start: number | undefined;
     let frame: number;
     const duration = 1000;
     const animate = (time: number) => {
@@ -219,7 +218,6 @@ function ModalContent({
                     animationBegin={0}
                     animationDuration={1000}
                     animationEasing="ease-out"
-                    activeIndex={activeIndex}
                     activeShape={renderActiveShape}
                     onMouseEnter={(_, index) => setActiveIndex(index)}
                     onMouseLeave={() => setActiveIndex(undefined)}
@@ -229,8 +227,8 @@ function ModalContent({
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value: number, name: string, props: any) => [
-                      <div className="flex flex-col gap-0.5">
+                    formatter={(value: number, _name: string, props: any) => [
+                      <div className="flex flex-col gap-0.5" key="tip">
                         <span className="font-mono text-[14px] text-foreground">
                           {value.toLocaleString()}
                         </span>

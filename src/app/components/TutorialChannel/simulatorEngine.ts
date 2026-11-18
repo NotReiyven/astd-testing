@@ -65,7 +65,7 @@ export const buildScenariosList = (ALL_UNITS: MasterUnit[]): Scenario[] => {
     const type = Math.floor(Math.random() * 5);
 
     let g1: MasterUnit | null = null;
-    let q1 = Math.floor(Math.random() * 2) + 1;
+    const q1 = Math.floor(Math.random() * 2) + 1;
     let match: { unit: MasterUnit; q2: number } | null = null;
     let title = "";
     let desc = "";

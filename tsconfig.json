@@ -17,8 +17,15 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Linting */
+    /* Type checking — incremental strict rollout.
+       strictNullChecks and noImplicitAny are the two highest-impact strict
+       flags and are enabled first. Once the codebase is clean under these,
+       enable the remaining flags (strictFunctionTypes, strictPropertyInitialization,
+       strictBindCallApply, useUnknownInCatchVariables) one at a time, then
+       flip `strict: true` for the full set. */
     "strict": false,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true

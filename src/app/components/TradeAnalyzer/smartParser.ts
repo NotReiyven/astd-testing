@@ -550,11 +550,15 @@ const executeNERPipeline = (
   else if (lastWant) pivotIndex = lastWant.index!;
 
   spans.forEach((span) => {
-    if (pivotIndex !== -1)
-      span.start < pivotIndex
-        ? giveCandidates.push(span)
-        : getCandidates.push(span);
-    else giveCandidates.push(span);
+    if (pivotIndex !== -1) {
+      if (span.start < pivotIndex) {
+        giveCandidates.push(span);
+      } else {
+        getCandidates.push(span);
+      }
+    } else {
+      giveCandidates.push(span);
+    }
   });
 
   const buildResult = (bucket: EntitySpan[], col: "give" | "get") => {

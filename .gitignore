@@ -1,44 +1,42 @@
 
-# Dependencies
-node_modules/
-
-# Build output
+# Build artifacts
 dist/
 dist-ssr/
+coverage/
 
-# Deployment
+# Deployment and development caches
 .vercel/
 .netlify/
-
-# Local caches
 .vite/
 .cache/
 .turbo/
 
+# Dependencies
+node_modules/
+
+# Test artifacts
+test-results/
+playwright-report/
+
+# Generated screenshots and visual test output
+screenshots/
+artifacts/
+
+# Temporary exports and project snapshots
+gitingest*.txt
+digest*.txt
+*.log
+*.bak
+*.tmp
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
 # Environment variables and secrets
-.env
 .env*
 !.env.example
 !.env.*.example
 
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-pnpm-debug.log*
-
-# Temporary and backup files
-*.bak
-*.tmp
-
-# TypeScript build information
+# TypeScript build cache
 *.tsbuildinfo
-
-# Test output
-coverage/
-test-results/
-playwright-report/
-
-# Operating system
-.DS_Store
-Thumbs.db

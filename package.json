@@ -1,15 +1,27 @@
 {
-  "name": "@figma/my-make-file",
+  "name": "astd-value-list",
   "private": true,
   "version": "0.0.1",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "fetch-images": "node scripts/fetch-images.mjs",
-    "build": "npx vite build && node scripts/prerender-seo.mjs",
     "dev": "vite --open",
+    "build": "vite build && node scripts/prerender-seo.mjs",
+    "preview": "vite preview",
+    "fetch-images": "node scripts/fetch-images.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "check:rls": "node scripts/check-rls.mjs",
     "check:secrets": "node scripts/check-secrets.mjs",
-    "verify": "npm run check:rls && npm run build && npm run check:secrets"
+    "verify": "npm run check:rls && npm run typecheck && npm run lint && npm run test:run && npm run build && npm run check:secrets"
   },
   "dependencies": {
     "@sentry/react": "^11.4.0",
@@ -35,6 +47,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@eslint/js": "^9.15.0",
     "@tailwindcss/vite": "4.1.12",
     "@types/dompurify": "^3.0.5",
     "@types/node": "^26.4.0",
@@ -42,11 +55,19 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "@vitejs/plugin-react": "4.7.0",
+    "@vitest/coverage-v8": "^2.1.9",
+    "eslint": "^9.15.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.14",
+    "globals": "^15.12.0",
     "pg": "^8.13.1",
+    "prettier": "^3.4.1",
     "sharp": "^0.35.4",
     "tailwindcss": "4.1.12",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.15.0",
     "vite": "^6.4.3",
-    "vite-plugin-pwa": "^1.3.0"
+    "vite-plugin-pwa": "^1.3.0",
+    "vitest": "^2.1.9"
   }
 }

@@ -156,7 +156,7 @@ export function Sidebar({
     return order
       .map((tier) => {
         const tierUnits = units.filter((u) => getTier(u) === tier);
-        let subCats = Array.from(
+        const subCats = Array.from(
           new Set(tierUnits.map((u) => u.subCategory || "Uncategorized"))
         );
 

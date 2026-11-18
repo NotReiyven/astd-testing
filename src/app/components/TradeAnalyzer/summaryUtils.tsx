@@ -65,15 +65,16 @@ export const avgStat = (
 ) => {
   if (items.length === 0) return "-";
   let weightedSum = 0;
-  let totalWeight = 0;
+  const totalWeight = 0;
   const unitMap = getUnitMap(ALL_UNITS);
 
   items.forEach((c) => {
     const master = unitMap.get(c.id);
-    if (master && typeof master[key] === "number") {
+    const masterRecord = master as unknown as Record<string, unknown> | undefined;
+    const rawVal = masterRecord?.[key];
+    if (typeof rawVal === "number") {
       const weight = getItemWeight(c, master);
-      weightedSum += (master[key] as number) * weight;
-      totalWeight += weight;
+      weightedSum += rawVal * weight;
     }
   });
 

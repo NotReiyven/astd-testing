@@ -17,6 +17,7 @@ function jsonResponse(status: number, body: Record<string, any>) {
 }
 
 const INVISIBLE_UNICODE_REGEX =
+  // eslint-disable-next-line no-control-regex -- intentional: strips zero-width, bidi, and ASCII control characters for username sanitization
   /[\u0000-\u001F\u007F-\u009F\u00AD\u1680\u180E\u2000-\u200F\u2028-\u202F\u205F-\u206F\u2800\u3000\u3164\uFFA0\uFEFF]/g;
 
 function sanitizeUsername(raw: unknown): string | null {

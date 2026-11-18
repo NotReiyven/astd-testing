@@ -26,7 +26,7 @@ async function main() {
     process.exit(1);
   }
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("profiles")
     .update({ join_number: newNumber })
     .eq("id", userId);

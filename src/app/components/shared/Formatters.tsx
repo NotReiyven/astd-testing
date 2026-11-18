@@ -354,11 +354,11 @@ export function RollingNumber({
   const [displayValue, setDisplayValue] = useState(value);
 
   useEffect(() => {
-    let start = displayValue;
-    let end = value;
+    const start = displayValue;
+    const end = value;
     if (start === end) return;
 
-    let startTime = performance.now();
+    const startTime = performance.now();
     const duration = 300;
 
     const animate = (currTime: number) => {

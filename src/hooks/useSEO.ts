@@ -23,7 +23,7 @@ export function useSEO({ title, description }: SEOProps) {
       }
 
       // Update Open Graph Description
-      let ogDescription = document.querySelector('meta[property="og:description"]');
+      const ogDescription = document.querySelector('meta[property="og:description"]');
       if (ogDescription) {
         ogDescription.setAttribute("content", description);
       }

@@ -5,14 +5,19 @@ import { GRID_STATUS_CFG } from "../../../../data";
 import { StatusIcon } from "../../shared/Formatters";
 
 export function GridStatusBadge({ status }: { status: UnitStatus }) {
-  const c = GRID_STATUS_CFG[status];
-  if (!c) return null;
+  // Hooks MUST run in the same order every render. Previously these were
+  // called after `if (!c) return null;`, which crashes React with
+  // "Rendered fewer hooks than expected" whenever the status config is
+  // unknown on one render but known on the next.
   const badgeRef = useRef<HTMLDivElement>(null);
   const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     return () => setTipPos(null);
   }, []);
+
+  const c = GRID_STATUS_CFG[status];
+  if (!c) return null;
 
   const toggleTip = (e?: React.MouseEvent | React.TouchEvent) => {
     if (e) {

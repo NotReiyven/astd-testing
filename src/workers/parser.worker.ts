@@ -119,7 +119,7 @@ const buildLexicon = (ALL_UNITS: MasterUnit[]) => {
 
 const cleanTradeText = (input: string): string[] => {
   let text = input.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-  let lines = text.split("\n").map((line) => {
+  const lines = text.split("\n").map((line) => {
     const nlfMatch = line.match(/\b(nlf|not looking for)\b/i);
     if (nlfMatch && nlfMatch.index !== undefined)
       return line.substring(0, nlfMatch.index);
@@ -263,7 +263,7 @@ self.onmessage = (e) => {
   let getPart = "";
 
   const hwMatch = text.match(
-    /\b(?:have|h|give|giving)\b\s*[:\-]?\s*(.*?)\s*\b(?:want|w|lf|looking for|get|getting)\b\s*[:\-]?\s*(.*)/i
+    /\b(?:have|h|give|giving)\b\s*[:-]?\s*(.*?)\s*\b(?:want|w|lf|looking for|get|getting)\b\s*[:-]?\s*(.*)/i
   );
   if (hwMatch) {
     givePart = hwMatch[1];

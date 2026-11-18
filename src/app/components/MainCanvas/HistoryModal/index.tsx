@@ -242,8 +242,8 @@ export function HistoryModal() {
               ? { old: last.value, new: currentUnit.value }
               : null,
           status:
-            currentUnit.status !== last.status
-              ? { old: last.status, new: currentUnit.status }
+            currentUnit.status !== last.status && currentUnit.status
+              ? { old: String(last.status ?? "stable"), new: currentUnit.status }
               : null,
           rarity:
             currentUnit.rarity !== last.rarity

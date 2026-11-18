@@ -268,7 +268,7 @@ export const TradeSectionPanel = memo(function TradeSectionPanel({
 
   let dropZoneClasses =
     "flex flex-col justify-center rounded-[6px] transition-colors duration-150 w-full min-w-0 ";
-  let dropZoneStyle: React.CSSProperties = {
+  const dropZoneStyle: React.CSSProperties = {
     minHeight: items.length === 0 ? "90px" : "auto",
   };
 

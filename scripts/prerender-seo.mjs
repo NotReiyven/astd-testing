@@ -9,21 +9,6 @@ const publicDir = path.join(rootDir, "public");
 const unitsFile = path.join(rootDir, "src/data/units.ts");
 const templatePath = path.join(distDir, "index.html");
 
-function escapeHtml(str) {
-  if (!str) return "";
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-function escapeJson(str) {
-  if (!str) return "";
-  return String(str).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-}
-
 function parseUnits(filePath) {
   if (!fs.existsSync(filePath)) {
     console.warn(`[SEO Prerender] units.ts not found at ${filePath}`);
