@@ -14,6 +14,7 @@ import {
   GiScales,
   GiCycle,
   GiPriceTag,
+  GiChest,
 } from "react-icons/gi";
 import { triggerHaptic } from "../../../data/helpers";
 
@@ -166,6 +167,7 @@ export function StatusIcon({ status }: { status?: string | null }) {
   if (lower === "deflated") return <GiShatter className={sz} />;
   if (lower === "highballed") return <GiMoneyStack className={sz} />;
   if (lower === "hyped") return <GiFlame className={sz} />;
+  if (lower === "collectible") return <GiChest className={sz} />;
   if (lower === "gatekept") return <GiLockedFortress className={sz} />;
   if (lower === "black-marketed") return <GiRobberMask className={sz} />;
   if (lower === "manipulated") return <GiHazardSign className={sz} />;

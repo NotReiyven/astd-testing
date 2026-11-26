@@ -93,6 +93,7 @@ const TAG_WEIGHTS: Record<string, { st: number; lt: number }> = {
   lowballed: { st: 0.85, lt: 0.8 },
   highballed: { st: 1.15, lt: 1.1 },
   hyped: { st: 1.15, lt: 0.7 },
+  collectible: { st: 0.95, lt: 1.05 },
   gatekept: { st: 1.1, lt: 1.1 },
   "black-marketed": { st: 0.8, lt: 0.85 },
   manipulated: { st: 0.6, lt: 0.5 },

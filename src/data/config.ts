@@ -170,6 +170,13 @@ export const GRID_STATUS_CFG: Record<
     border: "rgba(255, 255, 255, 0.2)",
     color: "#ffffff",
   },
+  collectible: {
+    label: "Collectible",
+    tip: "If a unit has this tag, it means it is sought after by collectors and can get overpays from them. Otherwise, it is unwanted in the general market.",
+    bg: "#f1c232",
+    border: "rgba(0, 0, 0, 0.15)",
+    color: "#09090b",
+  },
   gatekept: {
     label: "Gatekept",
     tip: "If a unit is gatekept, it means owners are refusing to trade this unit for any reason, waiting for rise or huge overpay, usually.",
@@ -388,6 +395,13 @@ export const THEORY_SECONDARY_TAGS = [
     border: "rgba(255, 255, 255, 0.2)",
     color: "#ffffff",
     def: "If a unit is hyped, then it can either be a new unit, or something big changed, skyrocketing a units value and demand.",
+  },
+  {
+    tag: "Collectible",
+    bg: "#f1c232",
+    border: "rgba(0, 0, 0, 0.15)",
+    color: "#09090b",
+    def: "If a unit has this tag, it means it is sought after by collectors and can get overpays from them. Otherwise, it is unwanted in the general market.",
   },
   {
     tag: "Gatekept",

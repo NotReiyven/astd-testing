@@ -26,6 +26,8 @@ const STATUS_DEFS: Record<string, string> = {
     "If a unit has this tag, it typically trades at fair value or above.",
   gatekept:
     "If a unit is gatekept, it means owners are refusing to trade this unit for any reason, waiting for a gain in value.",
+  collectible:
+    "If a unit has this tag, it means it is sought after by collectors and can get overpays from them. Otherwise, it is unwanted in the general market.",
   "black-marketed":
     "If a unit has this tag, it means that people who buy units with outside-game currency are heavily impacting it.",
   manipulated:

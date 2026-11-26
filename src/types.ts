@@ -9,6 +9,7 @@ export type UnitStatus =
   | "lowballed"
   | "highballed"
   | "hyped"
+  | "collectible"
   | "gatekept"
   | "manipulated"
   | "black-marketed";

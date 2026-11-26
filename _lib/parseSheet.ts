@@ -68,6 +68,7 @@ const COLOR_TARGETS = [
   { tag: "highballed", r: 0, g: 255, b: 255 },
   { tag: "hyped", r: 11, g: 83, b: 148 },
   { tag: "hyped", r: 7, g: 55, b: 99 },
+  { tag: "collectible", r: 241, g: 194, b: 50 },
   { tag: "varies", r: 103, g: 78, b: 167 },
   { tag: "varies", r: 142, g: 124, b: 195 },
   { tag: "varies", r: 180, g: 167, b: 214 },
@@ -533,13 +534,13 @@ export function parseSpreadsheet(data: SpreadsheetData) {
       const rawStatusText = colMap.statusTxt !== -1 ? cleanText(getCellStr(colMap.statusTxt).toLowerCase().trim().replace(" ", "-")) : "";
       const validStatuses = [
         "stable", "unstable", "rising", "dropping", "inflated", "deflated",
-        "varies", "lowballed", "highballed", "hyped", "gatekept", "black-marketed", "manipulated"
+        "varies", "lowballed", "highballed", "hyped", "collectible", "gatekept", "black-marketed", "manipulated"
       ];
 
       let unitStatus = validStatuses.includes(rawStatusText) ? rawStatusText : parsedTag;
 
       const secondaryTagsSet = new Set<string>();
-      const validSecondaryTags = ["hyped", "gatekept", "black-marketed", "black marketed", "manipulated"];
+      const validSecondaryTags = ["hyped", "collectible", "gatekept", "black-marketed", "black marketed", "manipulated"];
 
       const rsdStrings = [
         colMap.rarity !== -1 ? getCellStr(colMap.rarity) : "",
